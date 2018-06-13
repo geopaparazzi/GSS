@@ -44,6 +44,7 @@ public class GpsLogsData implements ISpatialTable {
         this.altimetry = altimetry;
         this.timestamp = timestamp;
         this.gpsLog = gpsLog;
+        the_geom.setSRID(ISpatialTable.SRID);
     }
 
 }

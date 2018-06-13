@@ -73,6 +73,7 @@ public class ProjectsImporter {
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170216_075147_compleanno_hydrologis.gpap",
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170205_130453_valencia_geopap.gpap",
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20180317_091712_bonn_codesprint.gpap",
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap",
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap"};
 
         String dbPath = "/home/hydrologis/TMP/GEOPAPSERVER/database.mv.db";
@@ -111,6 +112,8 @@ public class ProjectsImporter {
                         // projectInfo(connection, outputFolderFile);
 
                         importNotes(gpapConnection, notesDao, imagesDao, imageDataDao, user);
+
+                        insertImage(user, gpapConnection, null, null, imagesDao, imageDataDao);
 
                         // gpsLogToShapefiles(connection, user);
                         // /*
@@ -167,7 +170,7 @@ public class ProjectsImporter {
 
                 if (form != null && form.trim().length() > 0) {
                     // check for images and import those also
-                    checkImages(user, gpapConnection, gpapNoteId, note.id, imagesDao, imageDataDao, form);
+                    insertImage(user, gpapConnection, gpapNoteId, note.id, imagesDao, imageDataDao);
                 }
 
             }
@@ -176,41 +179,44 @@ public class ProjectsImporter {
 
     }
 
-    private void checkImages( GpapUsers user, IHMConnection gpapConnection, long gpapNoteId, long newNoteId,
-            Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao, String formString ) throws Exception {
-        JSONObject sectionObject = new JSONObject(formString);
-        String sectionName = sectionObject.getString("sectionname");
-        sectionName = sectionName.replaceAll("\\s+", "_");
-        List<String> formNames4Section = Utilities.getFormNames4Section(sectionObject);
+    // private void checkImages( GpapUsers user, IHMConnection gpapConnection, long gpapNoteId, long
+    // newNoteId,
+    // Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao, String formString ) throws
+    // Exception {
+    // JSONObject sectionObject = new JSONObject(formString);
+    // String sectionName = sectionObject.getString("sectionname");
+    // sectionName = sectionName.replaceAll("\\s+", "_");
+    // List<String> formNames4Section = Utilities.getFormNames4Section(sectionObject);
+    //
+    // LinkedHashMap<String, String> valuesMap = new LinkedHashMap<>();
+    // LinkedHashMap<String, String> typesMap = new LinkedHashMap<>();
+    // GeopaparazziUtilities.extractValues(sectionObject, formNames4Section, valuesMap, typesMap);
+    //
+    // Set<Entry<String, String>> entrySet = valuesMap.entrySet();
+    //
+    // for( Entry<String, String> entry : entrySet ) {
+    // String key = entry.getKey();
+    // String type = typesMap.get(key);
+    // if (isMedia(type)) {
+    // String value = entry.getValue();
+    // // extract images to media folder
+    // String[] imageSplit = value.split(OmsGeopaparazziProject3To4Converter.IMAGE_ID_SEPARATOR);
+    // for( String image : imageSplit ) {
+    // image = image.trim();
+    // if (image.length() == 0)
+    // continue;
+    // long imageId = Long.parseLong(image);
+    //
+    // insertImageById(user, gpapConnection, gpapNoteId, newNoteId, imagesDao, imageDataDao,
+    // imageId);
+    //
+    // }
+    // }
+    // }
+    // }
 
-        LinkedHashMap<String, String> valuesMap = new LinkedHashMap<>();
-        LinkedHashMap<String, String> typesMap = new LinkedHashMap<>();
-        GeopaparazziUtilities.extractValues(sectionObject, formNames4Section, valuesMap, typesMap);
-
-        Set<Entry<String, String>> entrySet = valuesMap.entrySet();
-
-        for( Entry<String, String> entry : entrySet ) {
-            String key = entry.getKey();
-            String type = typesMap.get(key);
-            if (isMedia(type)) {
-                String value = entry.getValue();
-                // extract images to media folder
-                String[] imageSplit = value.split(OmsGeopaparazziProject3To4Converter.IMAGE_ID_SEPARATOR);
-                for( String image : imageSplit ) {
-                    image = image.trim();
-                    if (image.length() == 0)
-                        continue;
-                    long imageId = Long.parseLong(image);
-
-                    insertImageById(user, gpapConnection, gpapNoteId, newNoteId, imagesDao, imageDataDao, imageId);
-
-                }
-            }
-        }
-    }
-
-    private void insertImageById( GpapUsers user, IHMConnection gpapConnection, long gpapNoteId, long newNoteId,
-            Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao, long imageId ) throws Exception {
+    private void insertImage( GpapUsers user, IHMConnection gpapConnection, Long gpapNoteId, Long newNoteId,
+            Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao ) throws Exception {
 
         String sql = "select " + //
                 imgLonFN + "," + //
@@ -222,13 +228,18 @@ public class ProjectsImporter {
                 imgdImadedataDataFN + "," + //
                 imgdImadedataThumbFN + //
                 " from " + TABLE_IMAGES + " i, " + TABLE_IMAGE_DATA + " id  where " + //
-                "i." + imgImagedataidFN + "=" + "id." + imgdImadedataidFN + " and " + //
-                imgNoteidFN + "=" + gpapNoteId;
+                "i." + imgImagedataidFN + "=" + "id." + imgdImadedataidFN + " and "; //
+
+        if (gpapNoteId != null) {
+            sql += imgNoteidFN + "=" + gpapNoteId;
+        } else {
+            sql += " (" + imgNoteidFN + " is null or " + imgNoteidFN + "=-1)";
+        }
 
         try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {
             statement.setQueryTimeout(30); // set timeout to 30 sec.
 
-            if (rs.next()) {
+            while( rs.next() ) {
                 int i = 1;
                 double lon = rs.getDouble(i++);
                 double lat = rs.getDouble(i++);
@@ -243,7 +254,12 @@ public class ProjectsImporter {
                 ImageData imgData = new ImageData(imgBytes, thumbBytes);
                 imageDataDao.create(imgData);
 
-                Images img = new Images(point, altim, ts, azim, text, new Notes(newNoteId), imgData, user);
+                Notes note = null;
+                if (newNoteId != null) {
+                    note = new Notes(newNoteId);
+                }
+
+                Images img = new Images(point, altim, ts, azim, text, note, imgData, user);
                 imagesDao.create(img);
             }
         }

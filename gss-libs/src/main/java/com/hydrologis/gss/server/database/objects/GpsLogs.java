@@ -51,6 +51,7 @@ public class GpsLogs implements ISpatialTable {
         this.endTs = endTs;
         this.the_geom = the_geom;
         this.gpapUser = gpapUser;
+        the_geom.setSRID(ISpatialTable.SRID);
     }
 
 }

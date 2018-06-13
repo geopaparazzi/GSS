@@ -72,6 +72,7 @@ public class Notes implements ISpatialTable {
         this.form = form;
         this.style = style;
         this.gpapUser = gpapUser;
+        the_geom.setSRID(ISpatialTable.SRID);
     }
 
     public Notes( Point the_geom, double altimetry, Date timestamp, String description, String text, String form, String style,

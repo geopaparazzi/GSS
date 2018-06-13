@@ -65,6 +65,7 @@ public class Images implements ISpatialTable {
         this.notes = notes;
         this.imageData = imageData;
         this.gpapUser = gpapUser;
+        the_geom.setSRID(ISpatialTable.SRID);
     }
 
 }

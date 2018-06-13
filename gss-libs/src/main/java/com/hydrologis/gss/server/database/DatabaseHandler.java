@@ -38,7 +38,6 @@ public class DatabaseHandler implements AutoCloseable, IDbVisitor {
     private ConnectionSource connectionSource;
     private ASpatialDb db;
     private List<Class< ? >> tableClasses = Arrays.asList(//
-            // SELF
             GpapUsers.class, //
             Notes.class, //
             ImageData.class, //
