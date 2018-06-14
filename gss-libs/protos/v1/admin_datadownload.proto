@@ -1,0 +1,15 @@
+package sensitServer;
+
+import "status.proto";
+import "admindata.proto";
+
+option java_package = "com.gasleaksensors.databases.v1.proto.datatransfer";
+option java_outer_classname = "AdminDownloadProtos";
+
+message Data {
+	required Status status = 1;
+	repeated UsersProto users = 2;
+	repeated UserLevelsProto userLevels = 3;
+	repeated MachinesProto machines = 4;
+	repeated PipesStatusProto pipesStatus = 5;
+}

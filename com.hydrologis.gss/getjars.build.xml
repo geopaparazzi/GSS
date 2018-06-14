@@ -1,0 +1,83 @@
+<!-- This Ant build script downloads dependency jars for this project- -->
+<project name="com.gasleaksensors.libs" default="build" basedir="."
+	xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+    <description>Download open source jars from the internet.</description>
+
+	<!-- folder to copy to -->
+    <property name="lib" value="${basedir}${file.separator}libs" />
+    <property name="libs_src_dir" value="${lib}${file.separator}sources" />
+    
+    <property environment="env" />
+    <dirname file="${ant.file.refresh_libs}" property="refresh_libs_basedir" />
+    <available property="already_downloaded" type="dir" file="${lib}" />
+
+    <!--
+      Bootstrap Maven: Check/get maven jars and defines the Ant task
+      -->
+    <property name="maven_download_dir" value="${user.home}/.m2/repository/org/apache/maven/maven-ant-tasks/2.0.10/" />
+    <available property="bootstrapped" type="dir" file="${maven_download_dir}" />
+
+    <target name="bootstrap" unless="bootstrapped">
+        <mkdir dir="${maven_download_dir}" />
+        <get src="http://central.maven.org/maven2/org/apache/maven/maven-ant-tasks/2.0.10/maven-ant-tasks-2.0.10.jar" 
+             dest="${maven_download_dir}" />
+    </target>
+
+    <target name="init" depends="bootstrap">
+        <taskdef uri="antlib:org.apache.maven.artifact.ant" resource="org/apache/maven/artifact/ant/antlib.xml">
+            <classpath>
+                <fileset dir="${maven_download_dir}">
+                    <include name="*.jar" />
+                </fileset>
+            </classpath>
+        </taskdef>
+    </target>
+
+    <!--
+      Clean: Removes lib/ folder altogether
+      -->
+    <target name="clean" description="deletes external libraries folder">
+        <delete dir="${lib}" />
+    </target>
+
+    <!--
+      Load the dependencies
+      -->
+    <target name="load_m2_deps" depends="init" unless="already_downloaded">
+        <!-- The Maven repositories -->
+        <artifact:localRepository id="local.repository" path="${user.home}/.m2/repository" />
+        <artifact:remoteRepository id="central.repository" url="http://repo1.maven.org/maven2" />
+
+        <artifact:dependencies filesetId="dependency.fileset" sourcesFilesetId="sources.dependency.fileset" versionsId="dependency.versions" useScope="runtime">
+            <localRepository refid="local.repository" />
+            <remoteRepository refid="central.repository" />
+
+            <!-- The jars to load (and dependencies) -->
+
+            <dependency groupId="com.carrotsearch" artifactId="hppc" version="0.7.1" />
+            <dependency groupId="com.google.protobuf" artifactId="protobuf-java" version="2.6.1" />
+        </artifact:dependencies>
+    </target>
+
+    <!--
+      Main: load dependencies and copy jars into lib/ and lib/source/ folders
+      -->
+    <target name="build" depends="load_m2_deps" unless="already_downloaded">
+        <description>Download the jars - used by a manual "clean"</description>
+
+        <!-- (flat) copy all downloaded JARs (classes) to plugin directory ${lib} -->
+        <copy todir="${lib}" verbose="true" flatten="true">
+            <fileset refid="dependency.fileset" />
+        </copy>
+
+        <!-- (flat) copy downloaded source JARs (sources) to plugin directory ${libs_src_dir} -->
+        <copy todir="${libs_src_dir}" flatten="true" verbose="true">
+            <fileset refid="sources.dependency.fileset" />
+            <chainedmapper>
+                <mapper type="flatten" />
+                <globmapper from="*-sources.jar" to="*-sources.zip" />
+            </chainedmapper>
+        </copy>
+        <!-- <eclipse.refreshLocal resource="net.refractions.udig.libs/lib" depth="infinite"/>    -->
+    </target>
+</project>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="eu.hydrologis.stage.entrypoint">
+      <entrypoint
+            class="com.hydrologis.gss.entrypoints.MapviewerEntryPoint"
+            id="com.hydrologis.gss.entrypoints.MapviewerEntryPoint"
+            path="/mapviewer"
+            title="Map Viewer">
+      </entrypoint>
+      <entrypoint
+            class="com.hydrologis.gss.entrypoints.DashboardEntryPoint"
+            id="com.hydrologis.gss.entrypoints.DashboardEntryPoint"
+            path="/dashboard"
+            title="Dashboard">
+      </entrypoint>
+      <entrypoint
+            class="com.hydrologis.gss.entrypoints.SettingsEntryPoint"
+            id="com.hydrologis.gss.entrypoints.SettingsEntryPoint"
+            path="/settings"
+            title="Settings">
+      </entrypoint>
+      <entrypoint
+            class="com.hydrologis.gss.entrypoints.LogViewEntryPoint"
+            id="com.hydrologis.gss.entrypoints.LogViewEntryPoint"
+            path="/log"
+            title="Log Viewer">
+      </entrypoint>
+   </extension>
+         <extension
+         point="org.eclipse.equinox.http.registry.servlets">
+      <servlet
+            alias="/downloadadmin"
+            class="com.hydrologis.gss.servlets.DownloadAdminServlet">
+      </servlet>
+      <servlet
+            alias="/downloaddata"
+            class="com.hydrologis.gss.servlets.DownloadDataServlet">
+      </servlet>
+      <servlet
+            alias="/uploaddata"
+            class="com.hydrologis.gss.servlets.UploadDataServlet">
+      </servlet>
+            <servlet
+            alias="/getworktile"
+            class="com.hydrologis.gss.servlets.WorkTilesGeneratorServlet">
+      </servlet>
+      <servlet
+            alias="/rwt-resources/org.eclipse.swt.browser/getworktile"
+            class="com.hydrologis.gss.servlets.WorkTilesGeneratorServlet">
+      </servlet>
+      <servlet
+            alias="/getpipetile"
+            class="com.hydrologis.gss.servlets.PipesTilesGeneratorServlet">
+      </servlet>
+      <servlet
+            alias="/rwt-resources/org.eclipse.swt.browser/getpipetile"
+            class="com.hydrologis.gss.servlets.PipesTilesGeneratorServlet">
+      </servlet>
+      <servlet
+            alias="/geteventstile"
+            class="com.hydrologis.gss.servlets.EventsTilesGeneratorServlet">
+      </servlet>
+      <servlet
+            alias="/rwt-resources/org.eclipse.swt.browser/geteventstile"
+            class="com.hydrologis.gss.servlets.EventsTilesGeneratorServlet">
+      </servlet>
+            <servlet
+            alias="/getgpstile"
+            class="com.hydrologis.gss.servlets.GpspointsTilesGeneratorServlet">
+      </servlet>
+      <servlet
+            alias="/rwt-resources/org.eclipse.swt.browser/getgpstile"
+            class="com.hydrologis.gss.servlets.GpspointsTilesGeneratorServlet">
+      </servlet>
+   </extension>
+
+   
+   
+<extension
+               id="sensit_product"
+               point="org.eclipse.core.runtime.products">
+            <product
+                  application="com.hydrologis.gss.GssApplication4Export"
+                  name="Geopaparazzi Survey Server">
+               <property
+                     name="appName"
+                     value="Sensit Server">
+               </property>
+            </product>
+         </extension>
+<extension
+         id="com.hydrologis.gss.GssApplication4Export"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="com.hydrologis.gss.GssApplication4Export">
+         </run>
+      </application>
+   </extension>
+</plugin>

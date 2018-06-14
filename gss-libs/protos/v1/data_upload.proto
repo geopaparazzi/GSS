@@ -1,0 +1,15 @@
+package sensitServer;
+
+import "status.proto";
+import "data.proto";
+
+option java_package = "com.gasleaksensors.databases.v1.proto.datatransfer";
+option java_outer_classname = "DataUploadProtos";
+
+message Data {
+	required Status status = 1;
+	repeated WorkUploadProto work = 2;
+	repeated GpsPointProto gpsPoints = 3;
+	repeated EventsProto events = 4;
+	repeated SessionsProto sessions = 5;
+}
