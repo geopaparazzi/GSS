@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
@@ -34,7 +35,10 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
+import org.hortonmachine.gears.libs.modules.HMConstants;
 
+import com.gasleaksensors.databases.v2.core.objects.Sessions;
 import com.hydrologis.gss.GssContext;
 import com.hydrologis.gss.GssDbProvider;
 import com.hydrologis.gss.map.GssMapBrowser;
@@ -45,6 +49,7 @@ import com.hydrologis.gss.utils.GssGuiUtilities;
 import com.hydrologis.gss.utils.GssLoginDialog;
 import com.hydrologis.gss.utils.GssMapsHandler;
 import com.hydrologis.gss.utils.GssUserPermissionsHandler;
+import com.hydrologis.gss.utils.ImageCache;
 
 import eu.hydrologis.stage.libs.entrypoints.StageEntryPoint;
 import eu.hydrologis.stage.libs.html.HtmlFeatureChooser;
@@ -116,7 +121,25 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         GssGuiUtilities.addLogo(horizToolbarComposite);
         GssGuiUtilities.addPagesLinks(vertToolbarComposite, this, isAdmin);
+
         ToolBar toolsToolBar = new ToolBar(horizToolbarComposite, SWT.FLAT);
+
+        final ToolItem devicesItem = new ToolItem(toolsToolBar, SWT.CHECK);
+        devicesItem.setImage(ImageCache.getInstance().getImage(display, ImageCache.GROUP));
+        devicesItem.setWidth(200);
+        devicesItem.setText("Toggle Devices View");
+        devicesItem.setToolTipText("Toggle the devices view to add and remove data to visualize.");
+        devicesItem.addSelectionListener(new SelectionAdapter(){
+            @Override
+            public void widgetSelected( SelectionEvent e ) {
+                if (devicesItem.getSelection()) {
+                    mainSashComposite.setMaximizedControl(null);
+                } else {
+                    mainSashComposite.setMaximizedControl(mapComposite);
+                }
+            }
+        });
+
         GssGuiUtilities.addToolBarSeparator(toolsToolBar);
         GssGuiUtilities.addVerticalFiller(vertToolbarComposite);
         GssGuiUtilities.addHorizontalFiller(horizToolbarComposite);
@@ -170,7 +193,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         loadMapBrowser();
 
         mainSashComposite.setWeights(new int[]{2, 8});
-//        mainSashComposite.setMaximizedControl(mapComposite);
+        mainSashComposite.setMaximizedControl(mapComposite);
 
         GssGuiUtilities.addFooter(name, composite);
     }
@@ -210,7 +233,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         GridData devicesViewerGroupGD = new GridData(SWT.FILL, SWT.FILL, true, true);
         devicesViewerGroup.setLayoutData(devicesViewerGroupGD);
         devicesViewerGroup.setLayout(new GridLayout(3, true));
-//        devicesViewerGroup.setText("Surveyors");
+        // devicesViewerGroup.setText("Surveyors");
 
         devicesCombo = new Combo(devicesViewerGroup, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
         GridData devicesGD = new GridData(SWT.FILL, SWT.FILL, true, false);
@@ -230,9 +253,9 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         Composite tableComposite = new Composite(devicesViewerGroup, SWT.NONE);
         GridData tableCompositeGD = new GridData(SWT.FILL, SWT.FILL, true, true);
-        tableCompositeGD.horizontalSpan=3;
+        tableCompositeGD.horizontalSpan = 3;
         tableComposite.setLayoutData(tableCompositeGD);
-        
+
         devicesTableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
         devicesTableViewer.setContentProvider(DevicesTableContentProvider.getInstance());
 
@@ -260,14 +283,14 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             }
         });
         new Label(devicesViewerGroup, SWT.NONE);
-        
+
         Button removeButton = new Button(devicesViewerGroup, SWT.PUSH);
         removeButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         removeButton.setText("   -   ");
         removeButton.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
-                
+
             }
         });
 

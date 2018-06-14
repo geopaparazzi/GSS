@@ -35,6 +35,7 @@ public class ImageCache {
     public static final String WORKSTATS = "work_stats.gif";
     public static final String REPORTS = "reports.gif";
     public static final String SAVE_SPACE = "save_edit_space.gif";
+    public static final String FILLER = "filler.png";
 
     private static ImageCache imageCache;
 
