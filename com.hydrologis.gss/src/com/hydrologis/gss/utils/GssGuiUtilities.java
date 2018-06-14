@@ -36,7 +36,7 @@ public class GssGuiUtilities {
         footerLabel.setData(RWT.MARKUP_ENABLED, Boolean.TRUE);
 
         footerLabel.setText("<small>Welcome <b>" + userName
-                + "</b> - Geopaparazzi Survey Server is powered by http://www.hydrologis.com</small>");
+                + "</b> - Geopaparazzi Survey Server is powered by <a href='http://www.hydrologis.com'>HydroloGIS</a></small>");
         footerLabel.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, true, false));
     }
 
