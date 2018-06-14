@@ -24,7 +24,7 @@ public class GpapUsers {
     @DatabaseField(columnName = DEVICE_FIELD_NAME, canBeNull = false)
     public String deviceId;
 
-    @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = true)
+    @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
     public String name;
 
     @DatabaseField(columnName = USERNAME_FIELD_NAME, canBeNull = true)

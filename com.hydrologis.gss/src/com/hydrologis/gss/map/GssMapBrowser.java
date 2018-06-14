@@ -30,7 +30,7 @@ public class GssMapBrowser extends LeafletMapBrowser implements ProgressListener
 
         StringBuilder sb = new StringBuilder();
         sb.append("{ ");
-        sb.append(q("color") + ": ").append(q("black")).append(",");
+        sb.append(q("color") + ": ").append(q("red")).append(",");
         sb.append(q("opacity") + ": ").append(q("1")).append(",");
         sb.append(q("weight") + ": ").append(q("1")).append(",");
         sb.append(q("fillColor") + ": ").append(q("black")).append(",");
@@ -69,6 +69,16 @@ public class GssMapBrowser extends LeafletMapBrowser implements ProgressListener
                 return null;
             }
 
+        };
+        new BrowserFunction(this, "getDataIcon"){
+            @Override
+            public Object function( Object[] arguments ) {
+                if (arguments != null) {
+                    return null;
+                }
+                return null;
+            }
+            
         };
     }
 

@@ -9,16 +9,26 @@
 package com.hydrologis.gss.entrypoints;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.window.Window;
+import org.eclipse.rap.rwt.widgets.DialogCallback;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -29,7 +39,6 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ToolBar;
@@ -37,9 +46,13 @@ import org.eclipse.swt.widgets.ToolItem;
 
 import com.hydrologis.gss.GssContext;
 import com.hydrologis.gss.GssDbProvider;
+import com.hydrologis.gss.GssSession;
+import com.hydrologis.gss.entrypoints.settings.WebUsersUIHandler;
 import com.hydrologis.gss.map.GssMapBrowser;
 import com.hydrologis.gss.server.database.DatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
+import com.hydrologis.gss.server.database.objects.GpsLogs;
+import com.hydrologis.gss.server.database.objects.Notes;
 import com.hydrologis.gss.utils.DevicesTableContentProvider;
 import com.hydrologis.gss.utils.GssGuiUtilities;
 import com.hydrologis.gss.utils.GssLoginDialog;
@@ -51,14 +64,19 @@ import eu.hydrologis.stage.libs.entrypoints.StageEntryPoint;
 import eu.hydrologis.stage.libs.html.HtmlFeatureChooser;
 import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.map.IMapObserver;
+import eu.hydrologis.stage.libs.providers.data.SpatialDbDataProvider;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
 import eu.hydrologis.stage.libs.utils.StageUtils;
+import eu.hydrologis.stage.libs.utilsrap.MessageDialogUtil;
 
 /**
  * @author Andrea Antonello (www.hydrologis.com)
  */
 @SuppressWarnings("serial")
 public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver {
+
+    private static final String NOTES = "Notes";
+    private static final String LOGS = "Gps Logs";
 
     public static final String ID = "com.hydrologis.gss.entrypoints.MapviewerEntryPoint";
 
@@ -78,6 +96,12 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
     private TableViewer devicesTableViewer;
 
+    private List<GpapUsers> visibleDevices = new ArrayList<>();
+
+    private GssDbProvider dbp;
+    private List<GpapUsers> allDevices;
+    private Map<String, GpapUsers> deviceNamesMap;
+
     @Override
     protected void createPage( final Composite parent ) {
 
@@ -96,8 +120,14 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         parentShell = parent.getShell();
         display = parent.getDisplay();
 
-        GssDbProvider dbp = GssContext.instance().getDbProvider();
+        dbp = GssContext.instance().getDbProvider();
         databaseHandler = dbp.getDatabaseHandler();
+        try {
+            allDevices = databaseHandler.getDao(GpapUsers.class).queryForAll();
+        } catch (SQLException e1) {
+            e1.printStackTrace();
+        }
+        deviceNamesMap = allDevices.stream().collect(Collectors.toMap(gu -> getUserName(gu), Function.identity()));
 
         final Composite composite = new Composite(parent, SWT.NONE);
         composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -133,6 +163,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                 } else {
                     mainSashComposite.setMaximizedControl(mapComposite);
                 }
+                GssSession.setDevicesVisible(devicesItem.getSelection());
             }
         });
 
@@ -189,14 +220,27 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         loadMapBrowser();
 
         mainSashComposite.setWeights(new int[]{2, 8});
-        mainSashComposite.setMaximizedControl(mapComposite);
+        if (!GssSession.areDevicesVisible()) {
+            mainSashComposite.setMaximizedControl(mapComposite);
+        }
 
         GssGuiUtilities.addFooter(name, composite);
+
+        String[] loadedGpapUsers = GssSession.getLoadedGpapUsers();
+        if (loadedGpapUsers != null) {
+            for( String loadedGpapUser : loadedGpapUsers ) {
+                GpapUsers gpapUser = deviceNamesMap.get(loadedGpapUser);
+                visibleDevices.add(gpapUser);
+                addDeviceToMap(gpapUser);
+            }
+        }
+        devicesTableViewer.setInput(visibleDevices);
     }
 
     private void loadMapBrowser() {
         if (mapBrowser != null) {
             String mapHtml = mapBrowser.getMapHtml();
+            mapHtml = HtmlFeatureChooser.INSTANCE.addDebugging(mapHtml);
             mapHtml = HtmlFeatureChooser.INSTANCE.addUndefinedProgressBar(mapHtml);
             mapHtml = HtmlFeatureChooser.INSTANCE.addCursors(mapHtml);
             String replacement = "";
@@ -228,7 +272,11 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         Composite devicesViewerGroup = new Composite(parent, SWT.BORDER);
         GridData devicesViewerGroupGD = new GridData(SWT.FILL, SWT.FILL, true, true);
         devicesViewerGroup.setLayoutData(devicesViewerGroupGD);
-        devicesViewerGroup.setLayout(new GridLayout(3, true));
+        GridLayout devicesViewerLayout = new GridLayout(3, true);
+        devicesViewerLayout.marginWidth = 15;
+        devicesViewerLayout.marginHeight = 15;
+        devicesViewerLayout.verticalSpacing = 15;
+        devicesViewerGroup.setLayout(devicesViewerLayout);
         // devicesViewerGroup.setText("Surveyors");
 
         devicesCombo = new Combo(devicesViewerGroup, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
@@ -236,15 +284,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         devicesGD.horizontalSpan = 3;
         devicesCombo.setLayoutData(devicesGD);
 
-        List<GpapUsers> devices = databaseHandler.getDao(GpapUsers.class).queryForAll();
-        Map<String, GpapUsers> deviceNames = devices.stream().collect(Collectors.toMap(gu -> {
-            if (gu.name != null) {
-                return gu.name;
-            } else {
-                return gu.deviceId;
-            }
-        }, Function.identity()));
-        devicesCombo.setItems(deviceNames.keySet().toArray(new String[0]));
+        devicesCombo.setItems(deviceNamesMap.keySet().toArray(new String[0]));
         devicesCombo.setToolTipText("Select device to add");
 
         Composite tableComposite = new Composite(devicesViewerGroup, SWT.NONE);
@@ -267,18 +307,43 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         devicesTableGD.horizontalSpan = 3;
         devicesTableViewer.getTable().setLayoutData(devicesTableGD);
 
-        devicesTableViewer.setInput(devices);
-
         Button addButton = new Button(devicesViewerGroup, SWT.PUSH);
         addButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         addButton.setText("   +   ");
         addButton.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
+                String selected = devicesCombo.getText();
+                GpapUsers user = deviceNamesMap.get(selected);
+                if (!visibleDevices.contains(user)) {
+                    visibleDevices.add(user);
+                }
+                devicesTableViewer.setInput(visibleDevices);
+
+                addDeviceToMap(user);
+                addDevicesToSession();
 
             }
+
         });
-        new Label(devicesViewerGroup, SWT.NONE);
+        Button addAllButton = new Button(devicesViewerGroup, SWT.PUSH);
+        addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        addAllButton.setText("   +ALL   ");
+        addAllButton.addSelectionListener(new SelectionAdapter(){
+            @Override
+            public void widgetSelected( SelectionEvent e ) {
+                String[] all = devicesCombo.getItems();
+                for( String selected : all ) {
+                    GpapUsers user = deviceNamesMap.get(selected);
+                    if (!visibleDevices.contains(user)) {
+                        visibleDevices.add(user);
+                    }
+                    devicesTableViewer.setInput(visibleDevices);
+                    addDeviceToMap(user);
+                    addDevicesToSession();
+                }
+            }
+        });
 
         Button removeButton = new Button(devicesViewerGroup, SWT.PUSH);
         removeButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
@@ -286,35 +351,126 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         removeButton.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
-
+                IStructuredSelection selection = (IStructuredSelection) devicesTableViewer.getSelection();
+                if (!selection.isEmpty()) {
+                    Iterator< ? > iterator = selection.iterator();
+                    List<String> namesToRemove = new ArrayList<>();
+                    while( iterator.hasNext() ) {
+                        Object object = iterator.next();
+                        if (object instanceof GpapUsers) {
+                            GpapUsers user = (GpapUsers) object;
+                            if (visibleDevices.contains(user)) {
+                                visibleDevices.remove(user);
+                                namesToRemove.add(getUserName(user));
+                            }
+                        }
+                    }
+                    devicesTableViewer.setInput(visibleDevices);
+                    removeDeviceFromMap(namesToRemove);
+                    addDevicesToSession();
+                }
             }
         });
 
         // add right click menu
-        // MenuManager manager = new MenuManager();
-        // devicesTableViewer.getControl().setMenu(manager.createContextMenu(devicesTableViewer.getControl()));
-        // manager.addMenuListener(new IMenuListener(){
-        // private static final long serialVersionUID = 1L;
-        //
-        // @Override
-        // public void menuAboutToShow( IMenuManager manager ) {
-        // if (devicesTableViewer.getSelection() instanceof IStructuredSelection) {
-        //
-        // }
-        // }
-        //
-        // });
-        // manager.setRemoveAllWhenShown(true);
+        MenuManager manager = new MenuManager();
+        devicesTableViewer.getControl().setMenu(manager.createContextMenu(devicesTableViewer.getControl()));
+        manager.addMenuListener(new IMenuListener(){
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void menuAboutToShow( IMenuManager manager ) {
+                IStructuredSelection selection = (IStructuredSelection) devicesTableViewer.getSelection();
+                Object firstElement = selection.getFirstElement();
+                if (firstElement instanceof GpapUsers) {
+                    GpapUsers selectedUser = (GpapUsers) firstElement;
+                    manager.add(new Action("Zoom to data", null){
+                        @Override
+                        public void run() {
+                            String notesLayer = getLayerName(selectedUser, NOTES);
+                            String logsLayer = getLayerName(selectedUser, LOGS);
+
+                            String script = mapBrowser.getZoomToLayer(notesLayer);
+                            script += mapBrowser.getZoomToLayer(logsLayer);
+                            mapBrowser.runScript(script);
+                        }
+                    });
+                }
+
+                if (devicesTableViewer.getSelection() instanceof IStructuredSelection) {
+
+                }
+            }
+
+        });
+        manager.setRemoveAllWhenShown(true);
 
         parent.layout();
     }
 
-    private String getSelectedPlantCode() {
-        String impCode = devicesCombo.getText();
-        if (impCode.trim().length() == 0) {
-            return null;
+    private void addDevicesToSession() {
+        String[] newLoadedGpapUsers = new String[visibleDevices.size()];
+        for( int i = 0; i < newLoadedGpapUsers.length; i++ ) {
+            newLoadedGpapUsers[i] = getUserName(visibleDevices.get(i));
         }
-        return impCode;
+        GssSession.setLoadedGpapUsers(newLoadedGpapUsers);
+    }
+
+    private void addDeviceToMap( GpapUsers user ) {
+        mapBrowser.runScript(mapBrowser.getStartUndefindedProgress("Loading device data..."));
+        try {
+            SpatialDbDataProvider notesProv = new SpatialDbDataProvider(dbp.getDb(), getLayerName(user, NOTES),
+                    DatabaseHandler.getTableName(Notes.class), new String[]{Notes.TEXT_FIELD_NAME, Notes.ALTIM_FIELD_NAME});
+            String notesName = notesProv.getName();
+            String notesScript = mapBrowser.getRemoveDataLayer(notesName);
+            String notesGeoJson = notesProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
+            if (notesGeoJson != null) {
+                notesGeoJson = notesGeoJson.replaceAll("'", "`");
+                notesScript += "addJsonMap('" + notesName + "','" + notesGeoJson + "',null);";
+            }
+            mapBrowser.runScript(notesScript);
+
+            SpatialDbDataProvider logsProv = new SpatialDbDataProvider(dbp.getDb(), getLayerName(user, LOGS),
+                    DatabaseHandler.getTableName(GpsLogs.class),
+                    new String[]{GpsLogs.NAME_FIELD_NAME, GpsLogs.STARTTS_FIELD_NAME, GpsLogs.ENDTS_FIELD_NAME});
+            String logsName = logsProv.getName();
+            String logsScript = mapBrowser.getRemoveDataLayer(logsName);
+            String logsGeoJson = logsProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
+            if (logsGeoJson != null) {
+                // logsGeoJson = logsGeoJson.replaceAll("'", "`");
+                logsScript += "addJsonMap('" + logsName + "','" + logsGeoJson + "',null);";
+            }
+            mapBrowser.runScript(logsScript);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mapBrowser.runScript(mapBrowser.getStopUndefindedProgress());
+        }
+
+    }
+
+    private void removeDeviceFromMap( List<String> namesToRemove ) {
+        try {
+            String script = "";
+            for( String name : namesToRemove ) {
+                String layerName = getLayerName(name, NOTES);
+                script += mapBrowser.getRemoveDataLayer(layerName);
+                layerName = getLayerName(name, LOGS);
+                script += mapBrowser.getRemoveDataLayer(layerName);
+            }
+            mapBrowser.runScript(script);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private String getLayerName( GpapUsers user, String postFix ) {
+        return postFix + ": " + user.deviceId;
+    }
+    private String getLayerName( String comboString, String postFix ) {
+        return postFix + ": " + comboString;
     }
 
     private TableColumn createColumn( TableViewer viewer, String name, int dataIndex ) {
@@ -340,14 +496,14 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         public String getText( Object element ) {
             if (element instanceof GpapUsers) {
                 GpapUsers user = (GpapUsers) element;
-                if (user.name != null && user.name.length() > 0) {
-                    return user.name;
-                } else {
-                    return user.deviceId;
-                }
+                return getUserName(user);
             }
             return "???";
         }
+    }
+
+    private String getUserName( GpapUsers user ) {
+        return user.name;
     }
 
     @Override
