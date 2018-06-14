@@ -1,17 +1,14 @@
 package com.hydrologis.gss.server.utils;
 
-import static org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.TABLE_IMAGE_DATA;
+import static org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.TABLE_GPSLOG_PROPERTIES;
 import static org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.TABLE_IMAGES;
+import static org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.TABLE_IMAGE_DATA;
 import static org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.TABLE_NOTES;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
@@ -19,25 +16,28 @@ import org.hortonmachine.dbs.compat.IHMConnection;
 import org.hortonmachine.dbs.compat.IHMResultSet;
 import org.hortonmachine.dbs.compat.IHMStatement;
 import org.hortonmachine.dbs.spatialite.hm.SqliteDb;
-import org.hortonmachine.gears.io.geopaparazzi.GeopaparazziUtilities;
-import org.hortonmachine.gears.io.geopaparazzi.OmsGeopaparazziProject3To4Converter;
-import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
-import org.hortonmachine.gears.io.geopaparazzi.geopap4.DaoImages;
+import org.hortonmachine.gears.io.geopaparazzi.OmsGeopaparazzi4Converter;
+import org.hortonmachine.gears.io.geopaparazzi.geopap4.DaoGpsLog.GpsLog;
+import org.hortonmachine.gears.io.geopaparazzi.geopap4.DaoGpsLog.GpsPoint;
+import org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.GpsLogsPropertiesTableFields;
 import org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.ImageDataTableFields;
 import org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.ImageTableFields;
 import org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.NotesTableFields;
 import org.hortonmachine.gears.utils.files.FileUtilities;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
-import org.json.JSONObject;
 
 import com.hydrologis.gss.server.database.DatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
+import com.hydrologis.gss.server.database.objects.GpsLogs;
+import com.hydrologis.gss.server.database.objects.GpsLogsData;
+import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
 import com.j256.ormlite.dao.Dao;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 
 public class ProjectsImporter {
@@ -45,7 +45,6 @@ public class ProjectsImporter {
     private static final String idFN = NotesTableFields.COLUMN_ID.getFieldName();
     private static final String tsFN = NotesTableFields.COLUMN_TS.getFieldName();
     private static final String altimFN = NotesTableFields.COLUMN_ALTIM.getFieldName();
-    private static final String dirtyFN = NotesTableFields.COLUMN_ISDIRTY.getFieldName();
     private static final String formFN = NotesTableFields.COLUMN_FORM.getFieldName();
     private static final String latFN = NotesTableFields.COLUMN_LAT.getFieldName();
     private static final String lonFN = NotesTableFields.COLUMN_LON.getFieldName();
@@ -53,7 +52,6 @@ public class ProjectsImporter {
     private static final String descFN = NotesTableFields.COLUMN_DESCRIPTION.getFieldName();
     private static final String styleFN = NotesTableFields.COLUMN_STYLE.getFieldName();
 
-    private static final String imgIdFN = ImageTableFields.COLUMN_ID.getFieldName();
     private static final String imgLonFN = ImageTableFields.COLUMN_LON.getFieldName();
     private static final String imgLatFN = ImageTableFields.COLUMN_LAT.getFieldName();
     private static final String imgAltimFN = ImageTableFields.COLUMN_ALTIM.getFieldName();
@@ -66,6 +64,10 @@ public class ProjectsImporter {
     private static final String imgdImadedataidFN = ImageDataTableFields.COLUMN_ID.getFieldName();
     private static final String imgdImadedataDataFN = ImageDataTableFields.COLUMN_IMAGE.getFieldName();
     private static final String imgdImadedataThumbFN = ImageDataTableFields.COLUMN_THUMBNAIL.getFieldName();
+
+    private static final String logPropIdFN = GpsLogsPropertiesTableFields.COLUMN_LOGID.getFieldName();
+    private static final String logPropColorFN = GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_COLOR.getFieldName();
+    private static final String logPropWidthFN = GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_WIDTH.getFieldName();
 
     public ProjectsImporter() throws Exception {
 
@@ -95,6 +97,9 @@ public class ProjectsImporter {
             Dao<Images, ? > imagesDao = dbHandler.getDao(Images.class);
             Dao<ImageData, ? > imageDataDao = dbHandler.getDao(ImageData.class);
             Dao<GpapUsers, ? > gpapUsersDao = dbHandler.getDao(GpapUsers.class);
+            Dao<GpsLogs, ? > logsDao = dbHandler.getDao(GpsLogs.class);
+            Dao<GpsLogsData, ? > logsDataDao = dbHandler.getDao(GpsLogsData.class);
+            Dao<GpsLogsProperties, ? > logsPropertiesDao = dbHandler.getDao(GpsLogsProperties.class);
 
             for( String tmpDbPath : dbsToImport ) {
                 String dummyDeviceId = FileUtilities.getNameWithoutExtention(new File(tmpDbPath));
@@ -115,11 +120,7 @@ public class ProjectsImporter {
 
                         insertImage(user, gpapConnection, null, null, imagesDao, imageDataDao);
 
-                        // gpsLogToShapefiles(connection, user);
-                        // /*
-                        // * import media as point shapefile, containing the path
-                        // */
-                        // mediaToShapeFile(connection, mediaFolderFile, pm);
+                        importGpsLog(gpapConnection, logsDao, logsDataDao, logsPropertiesDao, user);
 
                         return null;
                     });
@@ -129,6 +130,44 @@ public class ProjectsImporter {
             }
 
         }
+    }
+
+    private void importGpsLog( IHMConnection gpapConnection, Dao<GpsLogs, ? > logsDao, Dao<GpsLogsData, ? > logsDataDao,
+            Dao<GpsLogsProperties, ? > logsPropertiesDao, GpapUsers user ) throws Exception {
+        List<GpsLog> logsList = OmsGeopaparazzi4Converter.getGpsLogsList(gpapConnection);
+        for( GpsLog log : logsList ) {
+            List<GpsPoint> gpsPointList = log.points;
+            List<Coordinate> logCoordinates = gpsPointList.stream().map(gp -> new Coordinate(gp.lon, gp.lat))
+                    .collect(Collectors.toList());
+            LineString logLine = gf.createLineString(logCoordinates.toArray(new Coordinate[logCoordinates.size()]));
+            GpsLogs newLog = new GpsLogs(log.text, log.startTime, log.endTime, logLine, user);
+            logsDao.create(newLog);
+
+            List<GpsLogsData> dataList = new ArrayList<>();
+            for( GpsPoint gpsPoint : gpsPointList ) {
+                Coordinate c = new Coordinate(gpsPoint.lon, gpsPoint.lat);
+                Point point = gf.createPoint(c);
+
+                GpsLogsData gpsLogsData = new GpsLogsData(point, gpsPoint.altim, gpsPoint.utctime, newLog);
+                dataList.add(gpsLogsData);
+            }
+            logsDataDao.create(dataList);
+
+            String sql = "select " + //
+                    logPropColorFN + "," + //
+                    logPropWidthFN + " from " + //
+                    TABLE_GPSLOG_PROPERTIES + " where " + logPropIdFN + "=" + log.id;
+            try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {
+                if (rs.next()) {
+                    String color = rs.getString(1);
+                    float width = rs.getFloat(2);
+
+                    GpsLogsProperties gpsLogsProperties = new GpsLogsProperties(color, width, newLog);
+                    logsPropertiesDao.create(gpsLogsProperties);
+                }
+            }
+        }
+
     }
 
     private void importNotes( IHMConnection gpapConnection, Dao<Notes, ? > notesDao, Dao<Images, ? > imagesDao,
@@ -263,11 +302,6 @@ public class ProjectsImporter {
                 imagesDao.create(img);
             }
         }
-
-    }
-
-    public static boolean isMedia( String type ) {
-        return type.equals("pictures") || type.equals("map") || type.equals("sketch");
     }
 
     public static void main( String[] args ) throws Exception {
