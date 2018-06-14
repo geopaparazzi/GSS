@@ -28,7 +28,6 @@ import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TableViewerFocusCellManager;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.rap.rwt.RWT;
-import org.eclipse.rap.rwt.widgets.DialogCallback;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -46,7 +45,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
-import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.log.EMessageType;
 import org.hortonmachine.dbs.log.Logger;
 import org.hortonmachine.dbs.log.Message;
@@ -54,17 +52,14 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-import com.gasleaksensors.libs.SensitContextV1;
 import com.hydrologis.gss.utils.GssGuiUtilities;
 import com.hydrologis.gss.utils.GssLoginDialog;
 import com.hydrologis.gss.utils.GssUserPermissionsHandler;
 
 import eu.hydrologis.stage.libs.entrypoints.StageEntryPoint;
-import eu.hydrologis.stage.libs.log.StageLogger;
-import eu.hydrologis.stage.libs.registry.User;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
+import eu.hydrologis.stage.libs.registry.User;
 import eu.hydrologis.stage.libs.utils.StageUtils;
-import eu.hydrologis.stage.libs.utilsrap.MessageDialogUtil;
 import eu.hydrologis.stage.libs.workspace.StageWorkspace;
 
 /**
@@ -229,85 +224,6 @@ public class LogViewEntryPoint extends StageEntryPoint {
             e.printStackTrace();
         }
 
-        Group dangerGroup = new Group(mainComposite, parentShell.getStyle());
-        GridData dangerGD = new GridData(GridData.FILL, GridData.FILL, true, false);
-        dangerGD.horizontalSpan = 6;
-        dangerGroup.setLayoutData(dangerGD);
-        dangerGroup.setLayout(new GridLayout(1, false));
-        dangerGroup.setText("DANGER ZONE");
-
-        Composite buttonComposite = new Composite(dangerGroup, SWT.None);
-        GridLayout buttonCompositeLayout = new GridLayout(6, false);
-        buttonComposite.setLayout(buttonCompositeLayout);
-        GridData buttonCompositeGD = new GridData(GridData.FILL, GridData.FILL, true, true);
-        buttonComposite.setLayoutData(buttonCompositeGD);
-        // buttonComposite.setBackground(new Color(display, 255, 0, 0));
-
-        final Button clearDatabaseButton = new Button(buttonComposite, SWT.FLAT);
-        clearDatabaseButton.setText("Clear Database");
-        clearDatabaseButton.setToolTipText("Clear Database from Work, leaving users and machines");
-        clearDatabaseButton.addSelectionListener(new SelectionAdapter(){
-            @Override
-            public void widgetSelected( SelectionEvent e ) {
-                MessageDialogUtil.openConfirm(parentShell, "WARNING",
-                        "Are you sure you want to erase the work done from the database?", new DialogCallback(){
-                            @Override
-                            public void dialogClosed( int returnCode ) {
-                                if (returnCode == 0) {
-                                    ASpatialDb db = SensitContextV1.instance().getDbProviderForSession().getDb();
-                                    try {
-                                        SensitContextV1.instance().getContextProvider().deleteWork(db);
-                                    } catch (Exception e) {
-                                        StageLogger.logError(this, e);
-                                        MessageDialogUtil.openWarning(parentShell, "ERROR", "An error occurred.", null);
-                                    }
-                                    MessageDialogUtil.openInformation(parentShell, "INFO", "Work deleted.", null);
-                                }
-                            }
-                        });
-            }
-        });
-
-        Label dummyLabel = new Label(buttonComposite, SWT.NONE);
-        GridData dummyLabelGD = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        dummyLabelGD.widthHint = 50;
-        dummyLabel.setLayoutData(dummyLabelGD);
-
-        final Text queryText = new Text(buttonComposite, SWT.SINGLE | SWT.LEAD | SWT.BORDER);
-        GridData queryTextGD = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        queryTextGD.widthHint = 200;
-        queryText.setLayoutData(queryTextGD);
-        queryText.setText("");
-
-        final Button runQueryButton = new Button(buttonComposite, SWT.FLAT);
-        runQueryButton.setText("Run Insert/Update/Delete Query");
-        runQueryButton.setToolTipText("Run an Insert/Update/Delete Query (use at your own risk, no SELECT queries)");
-        runQueryButton.addSelectionListener(new SelectionAdapter(){
-            @Override
-            public void widgetSelected( SelectionEvent e ) {
-                String query = queryText.getText().trim();
-                if (query.length() == 0) {
-                    return;
-                }
-                MessageDialogUtil.openConfirm(parentShell, "WARNING", "Are you sure you want to run the query: " + query,
-                        new DialogCallback(){
-                            @Override
-                            public void dialogClosed( int returnCode ) {
-                                if (returnCode == 0) {
-                                    ASpatialDb db = SensitContextV1.instance().getDbProviderForSession().getDb();
-                                    try {
-                                        db.executeInsertUpdateDeleteSql(query);
-                                        MessageDialogUtil.openInformation(parentShell, "INFO", "Query executed.", null);
-                                    } catch (Exception e) {
-                                        StageLogger.logError(this, e);
-                                        MessageDialogUtil.openWarning(parentShell, "ERROR",
-                                                "An error occurred:\n" + e.getMessage(), null);
-                                    }
-                                }
-                            }
-                        });
-            }
-        });
 
         String name = "Anonymous User";
         if (loggedUser != null)
