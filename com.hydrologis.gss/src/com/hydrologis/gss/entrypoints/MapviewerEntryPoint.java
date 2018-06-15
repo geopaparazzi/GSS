@@ -30,6 +30,8 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.window.Window;
 import org.eclipse.rap.rwt.widgets.DialogCallback;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.browser.ProgressEvent;
+import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -73,7 +75,7 @@ import eu.hydrologis.stage.libs.utilsrap.MessageDialogUtil;
  * @author Andrea Antonello (www.hydrologis.com)
  */
 @SuppressWarnings("serial")
-public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver {
+public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver, ProgressListener {
 
     private static final String NOTES = "Notes";
     private static final String LOGS = "Gps Logs";
@@ -152,8 +154,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         final ToolItem devicesItem = new ToolItem(toolsToolBar, SWT.CHECK);
         devicesItem.setImage(ImageCache.getInstance().getImage(display, ImageCache.GROUP));
-        devicesItem.setWidth(200);
-        devicesItem.setText("Toggle Devices View");
+        devicesItem.setWidth(300);
+        devicesItem.setText("      Devices      ");
         devicesItem.setToolTipText("Toggle the devices view to add and remove data to visualize.");
         devicesItem.addSelectionListener(new SelectionAdapter(){
             @Override
@@ -217,15 +219,22 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         GridData mapBrowserGD = new GridData(SWT.FILL, SWT.FILL, true, true);
         mapBrowser.setLayoutData(mapBrowserGD);
         mapBrowser.addMapObserver(this);
+        mapBrowser.addProgressListener(this);
         loadMapBrowser();
 
         mainSashComposite.setWeights(new int[]{2, 8});
         if (!GssSession.areDevicesVisible()) {
             mainSashComposite.setMaximizedControl(mapComposite);
+        }else {
+            devicesItem.setSelection(true);
         }
 
         GssGuiUtilities.addFooter(name, composite);
 
+    }
+
+    @Override
+    public void completed( ProgressEvent event ) {
         String[] loadedGpapUsers = GssSession.getLoadedGpapUsers();
         if (loadedGpapUsers != null) {
             for( String loadedGpapUser : loadedGpapUsers ) {
@@ -512,8 +521,10 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
     @Override
     public void layerFeatureClicked( String layerName, Object[] properties ) {
-        // TODO Auto-generated method stub
+    }
 
+    @Override
+    public void changed( ProgressEvent event ) {
     }
 
 }
