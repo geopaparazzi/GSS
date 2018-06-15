@@ -165,7 +165,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         });
         GssGuiUtilities.addToolBarSeparator(toolsToolBar);
         final ToolItem zoomToAllItem = new ToolItem(toolsToolBar, SWT.PUSH);
-        zoomToAllItem.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.ZOOM_TO_ALL));
+        zoomToAllItem.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
+                eu.hydrologis.stage.libs.utils.ImageCache.ZOOM_TO_ALL));
         zoomToAllItem.setWidth(300);
         zoomToAllItem.setText("Zoom to all");
         zoomToAllItem.setToolTipText("Zoom to all teh current data.");
@@ -175,8 +176,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                 mapBrowser.zoomToAll();
             }
         });
-        
-        
+
         GssGuiUtilities.addVerticalFiller(vertToolbarComposite);
         GssGuiUtilities.addHorizontalFiller(horizToolbarComposite);
         GssGuiUtilities.addAdminTools(vertToolbarComposite, this, isAdmin);
@@ -232,7 +232,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         mainSashComposite.setWeights(new int[]{2, 8});
         if (!GssSession.areDevicesVisible()) {
             mainSashComposite.setMaximizedControl(mapComposite);
-        }else {
+        } else {
             zoomToAllItem.setSelection(true);
         }
 
@@ -325,7 +325,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         Button addButton = new Button(devicesViewerGroup, SWT.PUSH);
         addButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        addButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.ADD));
+        addButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
+                eu.hydrologis.stage.libs.utils.ImageCache.ADD));
         addButton.setToolTipText("Add selected surveyor to the map.");
         addButton.addSelectionListener(new SelectionAdapter(){
             @Override
@@ -345,7 +346,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         });
         Button addAllButton = new Button(devicesViewerGroup, SWT.PUSH);
         addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        addAllButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.ADDALL));
+        addAllButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
+                eu.hydrologis.stage.libs.utils.ImageCache.ADDALL));
         addAllButton.setToolTipText("Add all surveyors to the map.");
         addAllButton.addSelectionListener(new SelectionAdapter(){
             @Override
@@ -365,7 +367,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         Button removeButton = new Button(devicesViewerGroup, SWT.PUSH);
         removeButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        removeButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.DELETE));
+        removeButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
+                eu.hydrologis.stage.libs.utils.ImageCache.DELETE));
         removeButton.setToolTipText("Remove selected surveyors from map.");
         removeButton.addSelectionListener(new SelectionAdapter(){
             @Override
@@ -397,20 +400,27 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         manager.addMenuListener(new IMenuListener(){
             private static final long serialVersionUID = 1L;
 
+            @SuppressWarnings({"unchecked", "unused"})
             @Override
             public void menuAboutToShow( IMenuManager manager ) {
                 IStructuredSelection selection = (IStructuredSelection) devicesTableViewer.getSelection();
                 Object firstElement = selection.getFirstElement();
                 if (firstElement instanceof GpapUsers) {
+                    List<GpapUsers> usersList = selection.toList();
+
                     GpapUsers selectedUser = (GpapUsers) firstElement;
                     manager.add(new Action("Zoom to data", null){
                         @Override
                         public void run() {
-                            String notesLayer = getLayerName(selectedUser, NOTES);
-                            String logsLayer = getLayerName(selectedUser, LOGS);
+                            List<String> layerNames = new ArrayList<>();
+                            for( GpapUsers gpapUsers : usersList ) {
+                                String notesLayer = getLayerName(gpapUsers, NOTES);
+                                String logsLayer = getLayerName(gpapUsers, LOGS);
+                                layerNames.add(notesLayer);
+                                layerNames.add(logsLayer);
+                            }
 
-                            String script = mapBrowser.getZoomToLayer(notesLayer);
-                            script += mapBrowser.getZoomToLayer(logsLayer);
+                            String script = mapBrowser.getZoomToLayers(layerNames.toArray(new String[0]));
                             mapBrowser.runScript(script);
                         }
                     });
