@@ -23,12 +23,9 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.window.Window;
-import org.eclipse.rap.rwt.widgets.DialogCallback;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.browser.ProgressListener;
@@ -49,7 +46,6 @@ import org.eclipse.swt.widgets.ToolItem;
 import com.hydrologis.gss.GssContext;
 import com.hydrologis.gss.GssDbProvider;
 import com.hydrologis.gss.GssSession;
-import com.hydrologis.gss.entrypoints.settings.WebUsersUIHandler;
 import com.hydrologis.gss.map.GssMapBrowser;
 import com.hydrologis.gss.server.database.DatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
@@ -69,7 +65,6 @@ import eu.hydrologis.stage.libs.map.IMapObserver;
 import eu.hydrologis.stage.libs.providers.data.SpatialDbDataProvider;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
 import eu.hydrologis.stage.libs.utils.StageUtils;
-import eu.hydrologis.stage.libs.utilsrap.MessageDialogUtil;
 
 /**
  * @author Andrea Antonello (www.hydrologis.com)
@@ -155,8 +150,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         final ToolItem devicesItem = new ToolItem(toolsToolBar, SWT.CHECK);
         devicesItem.setImage(ImageCache.getInstance().getImage(display, ImageCache.GROUP));
         devicesItem.setWidth(300);
-        devicesItem.setText("      Devices      ");
-        devicesItem.setToolTipText("Toggle the devices view to add and remove data to visualize.");
+        devicesItem.setText("      Surveyors      ");
+        devicesItem.setToolTipText("Toggle the surveyors view to add and remove data to visualize.");
         devicesItem.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
@@ -168,8 +163,20 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                 GssSession.setDevicesVisible(devicesItem.getSelection());
             }
         });
-
         GssGuiUtilities.addToolBarSeparator(toolsToolBar);
+        final ToolItem zoomToAllItem = new ToolItem(toolsToolBar, SWT.PUSH);
+        zoomToAllItem.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.ZOOM_TO_ALL));
+        zoomToAllItem.setWidth(300);
+        zoomToAllItem.setText("Zoom to all");
+        zoomToAllItem.setToolTipText("Zoom to all teh current data.");
+        zoomToAllItem.addSelectionListener(new SelectionAdapter(){
+            @Override
+            public void widgetSelected( SelectionEvent e ) {
+                mapBrowser.zoomToAll();
+            }
+        });
+        
+        
         GssGuiUtilities.addVerticalFiller(vertToolbarComposite);
         GssGuiUtilities.addHorizontalFiller(horizToolbarComposite);
         GssGuiUtilities.addAdminTools(vertToolbarComposite, this, isAdmin);
@@ -226,7 +233,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         if (!GssSession.areDevicesVisible()) {
             mainSashComposite.setMaximizedControl(mapComposite);
         }else {
-            devicesItem.setSelection(true);
+            zoomToAllItem.setSelection(true);
         }
 
         GssGuiUtilities.addFooter(name, composite);
@@ -294,7 +301,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         devicesCombo.setLayoutData(devicesGD);
 
         devicesCombo.setItems(deviceNamesMap.keySet().toArray(new String[0]));
-        devicesCombo.setToolTipText("Select device to add");
+        devicesCombo.setToolTipText("Select surveyor to add");
 
         Composite tableComposite = new Composite(devicesViewerGroup, SWT.NONE);
         GridData tableCompositeGD = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -304,7 +311,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         devicesTableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
         devicesTableViewer.setContentProvider(DevicesTableContentProvider.getInstance());
 
-        TableColumn deviceColumn = createColumn(devicesTableViewer, "Device", 0);
+        TableColumn deviceColumn = createColumn(devicesTableViewer, "Surveyor", 0);
 
         TableColumnLayout layout = new TableColumnLayout();
         tableComposite.setLayout(layout);
@@ -318,7 +325,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         Button addButton = new Button(devicesViewerGroup, SWT.PUSH);
         addButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        addButton.setText("   +   ");
+        addButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.ADD));
+        addButton.setToolTipText("Add selected surveyor to the map.");
         addButton.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
@@ -337,7 +345,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         });
         Button addAllButton = new Button(devicesViewerGroup, SWT.PUSH);
         addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        addAllButton.setText("   +ALL   ");
+        addAllButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.ADDALL));
+        addAllButton.setToolTipText("Add all surveyors to the map.");
         addAllButton.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
@@ -356,7 +365,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         Button removeButton = new Button(devicesViewerGroup, SWT.PUSH);
         removeButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        removeButton.setText("   -   ");
+        removeButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display, eu.hydrologis.stage.libs.utils.ImageCache.DELETE));
+        removeButton.setToolTipText("Remove selected surveyors from map.");
         removeButton.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
@@ -435,7 +445,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             String notesGeoJson = notesProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
             if (notesGeoJson != null) {
                 notesGeoJson = notesGeoJson.replaceAll("'", "`");
-                notesScript += "addJsonMap('" + notesName + "','" + notesGeoJson + "',null);";
+                notesScript += "addJsonMapCheck('" + notesName + "','" + notesGeoJson + "',null, false);";
             }
             mapBrowser.runScript(notesScript);
 
@@ -447,7 +457,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             String logsGeoJson = logsProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
             if (logsGeoJson != null) {
                 // logsGeoJson = logsGeoJson.replaceAll("'", "`");
-                logsScript += "addJsonMap('" + logsName + "','" + logsGeoJson + "',null);";
+                logsScript += "addJsonMapCheck('" + logsName + "','" + logsGeoJson + "',null, false);";
             }
             mapBrowser.runScript(logsScript);
 
