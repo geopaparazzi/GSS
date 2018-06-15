@@ -3,6 +3,7 @@ package com.hydrologis.gss.map;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.Arrays;
 
 import javax.imageio.ImageIO;
@@ -13,10 +14,14 @@ import org.eclipse.swt.widgets.Composite;
 import org.geotools.geojson.geom.GeometryJSON;
 
 import com.hydrologis.gss.GssContext;
+import com.hydrologis.gss.GssDbProvider;
 import com.hydrologis.gss.entrypoints.MapviewerEntryPoint;
 import com.hydrologis.gss.server.database.DatabaseHandler;
+import com.hydrologis.gss.server.database.objects.GpsLogs;
+import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.j256.ormlite.dao.Dao;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 
@@ -33,25 +38,19 @@ public class GssMapBrowser extends LeafletMapBrowser implements ProgressListener
 
     private static final long serialVersionUID = 1L;
 
-    private String gpspointsStyle;
     private String notesIconJson;
     private String imagesIconJson;
+
+    private Dao<GpsLogsProperties, ? > logPropertiesDao;
+
+    private String defaultLineStyleJson;
 
     public GssMapBrowser( Composite parent, int style ) throws Exception {
         super(parent, style);
 
-        StringBuilder sb1 = new StringBuilder();
-        sb1.append("{ ");
-        sb1.append(q("color") + ": ").append(q("red")).append(",");
-        sb1.append(q("opacity") + ": ").append(q("1")).append(",");
-        sb1.append(q("weight") + ": ").append(q("1")).append(",");
-        sb1.append(q("fillColor") + ": ").append(q("black")).append(",");
-        sb1.append(q("fillOpacity") + ": ").append(q("1")).append(",");
-        sb1.append(q("radius") + ": ").append(q(7));
-        sb1.append(" }");
-        gpspointsStyle = sb1.toString();
-
-        String databasePath = GssContext.instance().getDbProvider().getDb().getDatabasePath();
+        GssDbProvider dbProvider = GssContext.instance().getDbProvider();
+        logPropertiesDao = dbProvider.getDatabaseHandler().getDao(GpsLogsProperties.class);
+        String databasePath = dbProvider.getDb().getDatabasePath();
         File dbFile = new File(databasePath);
 
         String notesTableName = DatabaseHandler.getTableName(Notes.class);
@@ -80,7 +79,15 @@ public class GssMapBrowser extends LeafletMapBrowser implements ProgressListener
                     .append(height).append("]}");
             imagesIconJson = sb.toString();
         }
-
+        
+        StringBuilder defaultLineStileBuilder = new StringBuilder();
+        defaultLineStileBuilder.append("{ ");
+        defaultLineStileBuilder.append(q("color") + ": ").append(q("red")).append(",");
+        defaultLineStileBuilder.append(q("opacity") + ": ").append(q("1")).append(",");
+        defaultLineStileBuilder.append(q("width") + ": ").append(q("3"));
+        defaultLineStileBuilder.append(" }");
+        defaultLineStyleJson = defaultLineStileBuilder.toString();
+        
         setExtraBlock(true);
     }
 
@@ -105,8 +112,31 @@ public class GssMapBrowser extends LeafletMapBrowser implements ProgressListener
             @Override
             public Object function( Object[] arguments ) {
                 if (arguments != null) {
-                    // called only for gpspoints
-                    return gpspointsStyle;
+                    String layerName = arguments[0].toString();
+                    if (layerName.startsWith(MapviewerEntryPoint.LOGS)) {
+                        long logId = Long.parseLong(arguments[1].toString());
+
+                        try {
+                            GpsLogsProperties props = logPropertiesDao.queryBuilder().where()
+                                    .eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, new GpsLogs(logId)).queryForFirst();
+                            
+                            String color = props.color;
+                            float width = props.width;
+                            StringBuilder lineStileBuilder = new StringBuilder();
+                            lineStileBuilder.append("{ ");
+                            lineStileBuilder.append(q("color") + ": ").append(q(color)).append(",");
+                            lineStileBuilder.append(q("opacity") + ": ").append(q("1")).append(",");
+                            lineStileBuilder.append(q("width") + ": ").append(q(width));
+                            lineStileBuilder.append(" }");
+                            return lineStileBuilder.toString();
+                            
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                        return defaultLineStyleJson;
+                    }
+
                 }
                 return null;
             }

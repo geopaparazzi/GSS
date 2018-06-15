@@ -90,7 +90,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
     public static final String ID = "com.hydrologis.gss.entrypoints.MapviewerEntryPoint";
 
     private static final String[] FIELDS_FOR_LOGS = new String[]{GpsLogs.NAME_FIELD_NAME, GpsLogs.STARTTS_FIELD_NAME,
-            GpsLogs.ENDTS_FIELD_NAME};
+            GpsLogs.ENDTS_FIELD_NAME, GpsLogs.ID_FIELD_NAME};
     private static final String[] FIELDS_FOR_NOTES = new String[]{Notes.TEXT_FIELD_NAME, Notes.ALTIM_FIELD_NAME,
             Notes.TIMESTAMP_FIELD_NAME};
     private static final String[] FIELDS_FOR_IMAGES = new String[]{Images.IMAGEDATA_FIELD_NAME, Images.TIMESTAMP_FIELD_NAME,
@@ -492,7 +492,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             String logsGeoJson = logsProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
             if (logsGeoJson != null) {
                 // logsGeoJson = logsGeoJson.replaceAll("'", "`");
-                logsScript += "addJsonMapCheck('" + logsName + "','" + logsGeoJson + "',null, false);";
+                logsScript += "addJsonMapCheck('" + logsName + "','" + logsGeoJson + "','" + GpsLogs.ID_FIELD_NAME + "', false);";
             }
             mapBrowser.runScript(logsScript);
 
@@ -522,6 +522,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                 String layerName = getLayerName(name, NOTES);
                 script += mapBrowser.getRemoveDataLayer(layerName);
                 layerName = getLayerName(name, LOGS);
+                script += mapBrowser.getRemoveDataLayer(layerName);
+                layerName = getLayerName(name, IMAGES);
                 script += mapBrowser.getRemoveDataLayer(layerName);
             }
             mapBrowser.runScript(script);
@@ -589,6 +591,9 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                         Object[] infoPair = (Object[]) object;
                         if (infoPair.length == 2 && infoPair[0] != null && infoPair[1] != null) {
                             String[] nameAndValue = getNameAndValue(infoPair);
+                            if (nameAndValue == null) {
+                                continue;
+                            }
                             sb.append("<tr><td><b>");
                             sb.append(nameAndValue[0]);
                             sb.append("</b></td><td>");
@@ -628,7 +633,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                 }
             }
             if (imageDataId != -1) {
-                String title = name + " ( " + timestamp + " )" ;
+                String title = name + " ( " + timestamp + " )";
                 try {
                     Dao<ImageData, ? > imageDao = dbp.getDatabaseHandler().getDao(ImageData.class);
                     ImageData imageDataForQuery = new ImageData(imageDataId);
@@ -658,6 +663,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                 return new String[]{"Notes", infoPair[1].toString()};
             } else if (infoPair[0].equals(Notes.TIMESTAMP_FIELD_NAME)) {
                 return new String[]{"Timestamp", formatDate(infoPair[1])};
+            } else if (infoPair[0].equals(GpsLogs.ID_FIELD_NAME)) {
+                return null;
             }
         } catch (Exception e) {
             e.printStackTrace();
