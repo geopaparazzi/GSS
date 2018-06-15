@@ -106,7 +106,11 @@ public class MapsUIHandler {
 
         // MIDDLE PART
 
-        mapBrowser = new GssMapBrowser(middleComposite, SWT.BORDER);
+        try {
+            mapBrowser = new GssMapBrowser(middleComposite, SWT.BORDER);
+        } catch (Exception e2) {
+            e2.printStackTrace();
+        }
 
         Button removeButton = new Button(middleComposite, SWT.PUSH);
 

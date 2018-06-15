@@ -78,7 +78,7 @@ public class ProjectsImporter {
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap",
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap"};
 
-        String dbPath = "/home/hydrologis/TMP/GEOPAPSERVER/database.mv.db";
+        String dbPath = "/media/hydrologis/Samsung_T3/GSS/DATA/gss_database.mv.db";
         File dbFile = new File(dbPath);
         dbFile.delete();
 
@@ -290,7 +290,7 @@ public class ProjectsImporter {
                 byte[] imgBytes = rs.getBytes(i++);
                 byte[] thumbBytes = rs.getBytes(i++);
 
-                ImageData imgData = new ImageData(imgBytes, thumbBytes);
+                ImageData imgData = new ImageData(thumbBytes, imgBytes);
                 imageDataDao.create(imgData);
 
                 Notes note = null;

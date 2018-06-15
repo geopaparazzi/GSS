@@ -1,18 +1,28 @@
 package com.hydrologis.gss.map;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.StringWriter;
 import java.util.Arrays;
+
+import javax.imageio.ImageIO;
 
 import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.widgets.Composite;
 import org.geotools.geojson.geom.GeometryJSON;
 
+import com.hydrologis.gss.GssContext;
+import com.hydrologis.gss.entrypoints.MapviewerEntryPoint;
+import com.hydrologis.gss.server.database.DatabaseHandler;
+import com.hydrologis.gss.server.database.objects.Images;
+import com.hydrologis.gss.server.database.objects.Notes;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 
 import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.map.LeafletMapBrowser;
+import eu.hydrologis.stage.libs.utils.ResourcesHandler;
 
 /**
  * A browser widget dedicated to map interactions.
@@ -24,20 +34,52 @@ public class GssMapBrowser extends LeafletMapBrowser implements ProgressListener
     private static final long serialVersionUID = 1L;
 
     private String gpspointsStyle;
+    private String notesIconJson;
+    private String imagesIconJson;
 
-    public GssMapBrowser( Composite parent, int style ) {
+    public GssMapBrowser( Composite parent, int style ) throws Exception {
         super(parent, style);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("{ ");
-        sb.append(q("color") + ": ").append(q("red")).append(",");
-        sb.append(q("opacity") + ": ").append(q("1")).append(",");
-        sb.append(q("weight") + ": ").append(q("1")).append(",");
-        sb.append(q("fillColor") + ": ").append(q("black")).append(",");
-        sb.append(q("fillOpacity") + ": ").append(q("1")).append(",");
-        sb.append(q("radius") + ": ").append(q(7));
-        sb.append(" }");
-        gpspointsStyle = sb.toString();
+        StringBuilder sb1 = new StringBuilder();
+        sb1.append("{ ");
+        sb1.append(q("color") + ": ").append(q("red")).append(",");
+        sb1.append(q("opacity") + ": ").append(q("1")).append(",");
+        sb1.append(q("weight") + ": ").append(q("1")).append(",");
+        sb1.append(q("fillColor") + ": ").append(q("black")).append(",");
+        sb1.append(q("fillOpacity") + ": ").append(q("1")).append(",");
+        sb1.append(q("radius") + ": ").append(q(7));
+        sb1.append(" }");
+        gpspointsStyle = sb1.toString();
+
+        String databasePath = GssContext.instance().getDbProvider().getDb().getDatabasePath();
+        File dbFile = new File(databasePath);
+
+        String notesTableName = DatabaseHandler.getTableName(Notes.class);
+        File notesIconFile = new File(dbFile.getParentFile(), notesTableName + ".png");
+        if (notesIconFile.exists()) {
+            String resourceName = ResourcesHandler.registerFileByName(notesIconFile);
+            BufferedImage iconImage = ImageIO.read(notesIconFile);
+            int width = iconImage.getWidth();
+            int height = iconImage.getHeight();
+            String resourceUrl = ResourcesHandler.getImageUrl(resourceName);
+            StringBuffer sb = new StringBuffer();
+            sb.append("{ \"iconUrl\": \"").append(resourceUrl).append("\", \"iconSize\": [").append(width).append(",")
+                    .append(height).append("]}");
+            notesIconJson = sb.toString();
+        }
+        String imagesTableName = DatabaseHandler.getTableName(Images.class);
+        File imagesIconFile = new File(dbFile.getParentFile(), imagesTableName + ".png");
+        if (imagesIconFile.exists()) {
+            String resourceName = ResourcesHandler.registerFileByName(imagesIconFile);
+            BufferedImage iconImage = ImageIO.read(imagesIconFile);
+            int width = iconImage.getWidth();
+            int height = iconImage.getHeight();
+            String resourceUrl = ResourcesHandler.getImageUrl(resourceName);
+            StringBuffer sb = new StringBuffer();
+            sb.append("{ \"iconUrl\": \"").append(resourceUrl).append("\", \"iconSize\": [").append(width).append(",")
+                    .append(height).append("]}");
+            imagesIconJson = sb.toString();
+        }
 
         setExtraBlock(true);
     }
@@ -74,11 +116,17 @@ public class GssMapBrowser extends LeafletMapBrowser implements ProgressListener
             @Override
             public Object function( Object[] arguments ) {
                 if (arguments != null) {
+                    String layerName = arguments[0].toString();
+                    if (layerName.startsWith(MapviewerEntryPoint.NOTES)) {
+                        return notesIconJson;
+                    } else if (layerName.startsWith(MapviewerEntryPoint.IMAGES)) {
+                        return imagesIconJson;
+                    }
                     return null;
                 }
                 return null;
             }
-            
+
         };
     }
 

@@ -8,13 +8,16 @@
  */
 package com.hydrologis.gss.entrypoints;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
@@ -46,6 +49,9 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.hortonmachine.gears.utils.images.ImageUtilities;
+import org.joda.time.DateTime;
 
 import com.hydrologis.gss.GssContext;
 import com.hydrologis.gss.GssDbProvider;
@@ -54,6 +60,8 @@ import com.hydrologis.gss.map.GssMapBrowser;
 import com.hydrologis.gss.server.database.DatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
+import com.hydrologis.gss.server.database.objects.ImageData;
+import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
 import com.hydrologis.gss.utils.DevicesTableContentProvider;
 import com.hydrologis.gss.utils.GssGuiUtilities;
@@ -61,13 +69,17 @@ import com.hydrologis.gss.utils.GssLoginDialog;
 import com.hydrologis.gss.utils.GssMapsHandler;
 import com.hydrologis.gss.utils.GssUserPermissionsHandler;
 import com.hydrologis.gss.utils.ImageCache;
+import com.j256.ormlite.dao.Dao;
 
 import eu.hydrologis.stage.libs.entrypoints.StageEntryPoint;
 import eu.hydrologis.stage.libs.html.HtmlFeatureChooser;
+import eu.hydrologis.stage.libs.images.ImageDialog;
+import eu.hydrologis.stage.libs.images.ImageUtil;
 import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.map.IMapObserver;
 import eu.hydrologis.stage.libs.providers.data.SpatialDbDataProvider;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
+import eu.hydrologis.stage.libs.utils.ImageUtils;
 import eu.hydrologis.stage.libs.utils.StageUtils;
 
 /**
@@ -75,14 +87,17 @@ import eu.hydrologis.stage.libs.utils.StageUtils;
  */
 @SuppressWarnings("serial")
 public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver, ProgressListener {
+    public static final String ID = "com.hydrologis.gss.entrypoints.MapviewerEntryPoint";
 
     private static final String[] FIELDS_FOR_LOGS = new String[]{GpsLogs.NAME_FIELD_NAME, GpsLogs.STARTTS_FIELD_NAME,
             GpsLogs.ENDTS_FIELD_NAME};
-    private static final String[] FIELDS_FOR_NOTES = new String[]{Notes.TEXT_FIELD_NAME, Notes.ALTIM_FIELD_NAME};
-    private static final String NOTES = "Notes";
-    private static final String LOGS = "Gps Logs";
-
-    public static final String ID = "com.hydrologis.gss.entrypoints.MapviewerEntryPoint";
+    private static final String[] FIELDS_FOR_NOTES = new String[]{Notes.TEXT_FIELD_NAME, Notes.ALTIM_FIELD_NAME,
+            Notes.TIMESTAMP_FIELD_NAME};
+    private static final String[] FIELDS_FOR_IMAGES = new String[]{Images.IMAGEDATA_FIELD_NAME, Images.TIMESTAMP_FIELD_NAME,
+            Images.TEXT_FIELD_NAME};
+    public static final String NOTES = "Notes";
+    public static final String LOGS = "Gps Logs";
+    public static final String IMAGES = "Media";
 
     private static final long serialVersionUID = 1L;
 
@@ -217,33 +232,33 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         try {
             createDevicesCombo(devicesComposite);
+
+            mapComposite = new Composite(mainSashComposite, SWT.None);
+            GridLayout mapLayout = new GridLayout(1, true);
+            mapLayout.marginWidth = 0;
+            mapLayout.marginHeight = 0;
+            mapComposite.setLayout(mapLayout);
+            GridData mapGD = new GridData(GridData.FILL, GridData.FILL, true, true);
+            mapComposite.setLayoutData(mapGD);
+
+            mapBrowser = new GssMapBrowser(mapComposite, SWT.BORDER);
+            GridData mapBrowserGD = new GridData(SWT.FILL, SWT.FILL, true, true);
+            mapBrowser.setLayoutData(mapBrowserGD);
+            mapBrowser.addMapObserver(this);
+            mapBrowser.addProgressListener(this);
+            loadMapBrowser();
+
+            mainSashComposite.setWeights(new int[]{2, 8});
+            if (!GssSession.areDevicesVisible()) {
+                mainSashComposite.setMaximizedControl(mapComposite);
+            } else {
+                zoomToAllItem.setSelection(true);
+            }
+
+            GssGuiUtilities.addFooter(name, composite);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        mapComposite = new Composite(mainSashComposite, SWT.None);
-        GridLayout mapLayout = new GridLayout(1, true);
-        mapLayout.marginWidth = 0;
-        mapLayout.marginHeight = 0;
-        mapComposite.setLayout(mapLayout);
-        GridData mapGD = new GridData(GridData.FILL, GridData.FILL, true, true);
-        mapComposite.setLayoutData(mapGD);
-
-        mapBrowser = new GssMapBrowser(mapComposite, SWT.BORDER);
-        GridData mapBrowserGD = new GridData(SWT.FILL, SWT.FILL, true, true);
-        mapBrowser.setLayoutData(mapBrowserGD);
-        mapBrowser.addMapObserver(this);
-        mapBrowser.addProgressListener(this);
-        loadMapBrowser();
-
-        mainSashComposite.setWeights(new int[]{2, 8});
-        if (!GssSession.areDevicesVisible()) {
-            mainSashComposite.setMaximizedControl(mapComposite);
-        } else {
-            zoomToAllItem.setSelection(true);
-        }
-
-        GssGuiUtilities.addFooter(name, composite);
 
     }
 
@@ -340,6 +355,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                     if (!visibleDevices.contains(user)) {
                         visibleDevices.add(user);
                     }
+                    visibleDevices.removeIf(d -> d == null);
                     devicesTableViewer.setInput(visibleDevices);
                     addDeviceToMap(user);
                     addDevicesToSession();
@@ -480,6 +496,17 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             }
             mapBrowser.runScript(logsScript);
 
+            SpatialDbDataProvider imagesProv = new SpatialDbDataProvider(dbp.getDb(), getLayerName(user, IMAGES),
+                    DatabaseHandler.getTableName(Images.class), FIELDS_FOR_IMAGES);
+            String imagesName = imagesProv.getName();
+            String imagesScript = mapBrowser.getRemoveDataLayer(imagesName);
+            String imagesGeoJson = imagesProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
+            if (imagesGeoJson != null) {
+                // logsGeoJson = logsGeoJson.replaceAll("'", "`");
+                imagesScript += "addJsonMapCheck('" + imagesName + "','" + imagesGeoJson + "',null, false);";
+            }
+            mapBrowser.runScript(imagesScript);
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -546,45 +573,101 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
     @Override
     public void onClick( double lon, double lat, int zoomLevel ) {
-        System.out.println();
     }
 
     @Override
     public void layerFeatureClicked( double lon, double lat, String layerName, Object[] properties ) {
-        StringBuilder sb = new StringBuilder("<h2>" + layerName + "</h2>");
-        String LF = "<br />";
-        sb.append(LF);
-        sb.append("<table style='width:100%' border='1' cellpadding='5'>");
-        for( int i = 0; i < properties.length; i++ ) {
-            Object object = properties[i];
-            if (object != null) {
-                if (object instanceof Object[]) {
-                    Object[] infoPair = (Object[]) object;
-                    if (infoPair.length == 2 && infoPair[0] != null && infoPair[1] != null) {
-                        String[] nameAndValue = getNameAndValue(infoPair);
-                        sb.append("<tr><td><b>");
-                        sb.append(nameAndValue[0]);
-                        sb.append("</b></td><td>");
-                        sb.append(nameAndValue[1]).append("</td></tr>");// .append(LF);
+        if (layerName.startsWith(NOTES) || layerName.startsWith(LOGS)) {
+            StringBuilder sb = new StringBuilder("<h2>" + layerName + "</h2>");
+            String LF = "<br />";
+            sb.append(LF);
+            sb.append("<table style='width:100%' border='1' cellpadding='5'>");
+            for( int i = 0; i < properties.length; i++ ) {
+                Object object = properties[i];
+                if (object != null) {
+                    if (object instanceof Object[]) {
+                        Object[] infoPair = (Object[]) object;
+                        if (infoPair.length == 2 && infoPair[0] != null && infoPair[1] != null) {
+                            String[] nameAndValue = getNameAndValue(infoPair);
+                            sb.append("<tr><td><b>");
+                            sb.append(nameAndValue[0]);
+                            sb.append("</b></td><td>");
+                            sb.append(nameAndValue[1]).append("</td></tr>");// .append(LF);
+                        }
                     }
+
                 }
-
             }
-        }
-        sb.append("</table>");
-        try {
+            sb.append("</table>");
+            try {
+                String msg = sb.toString();
+                String openPopup = mapBrowser.getOpenPopup(lon, lat, msg);
+                mapBrowser.runScript(openPopup);
+            } catch (Exception e1) {
+                StageLogger.logError(this, e1);
+            }
+        } else if (layerName.startsWith(IMAGES)) {
+            long imageDataId = -1;
+            String timestamp = "";
+            String name = "";
 
-            String msg = sb.toString();
-            String openPopup = mapBrowser.getOpenPopup(lon, lat, msg);
-            mapBrowser.runScript(openPopup);
-        } catch (Exception e1) {
-            StageLogger.logError(this, e1);
+            for( int i = 0; i < properties.length; i++ ) {
+                Object object = properties[i];
+                if (object != null) {
+                    if (object instanceof Object[]) {
+                        Object[] infoPair = (Object[]) object;
+                        if (infoPair[0].toString().equalsIgnoreCase(Images.IMAGEDATA_FIELD_NAME)) {
+                            imageDataId = Long.parseLong(infoPair[1].toString());
+                        } else if (infoPair[0].toString().equalsIgnoreCase(Images.TIMESTAMP_FIELD_NAME)) {
+                            timestamp = formatDate(infoPair[1]);
+                        } else if (infoPair[0].toString().equalsIgnoreCase(Images.TEXT_FIELD_NAME)) {
+                            name = infoPair[1].toString();
+                        }
+                    }
+
+                }
+            }
+            if (imageDataId != -1) {
+                String title = name + " ( " + timestamp + " )" ;
+                try {
+                    Dao<ImageData, ? > imageDao = dbp.getDatabaseHandler().getDao(ImageData.class);
+                    ImageData imageDataForQuery = new ImageData(imageDataId);
+                    ImageData imageData = imageDao.queryForSameId(imageDataForQuery);
+                    BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageData.data));
+                    BufferedImage scaleImage = ImageUtilities.scaleImage(bufferedImage, 1000);
+                    ImageDialog imageDialog = new ImageDialog(parentShell, title, scaleImage);
+                    imageDialog.open();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
     private String[] getNameAndValue( Object[] infoPair ) {
+        try {
+            if (infoPair[0].equals(GpsLogs.STARTTS_FIELD_NAME)) {
+                return new String[]{"Start Timestamp", formatDate(infoPair[1])};
+            } else if (infoPair[0].equals(GpsLogs.ENDTS_FIELD_NAME)) {
+                return new String[]{"End Timestamp", formatDate(infoPair[1])};
+            } else if (infoPair[0].equals(GpsLogs.NAME_FIELD_NAME)) {
+                return new String[]{"Log Name", infoPair[1].toString()};
+            } else if (infoPair[0].equals(Notes.ALTIM_FIELD_NAME)) {
+                return new String[]{"Elevation", infoPair[1].toString()};
+            } else if (infoPair[0].equals(Notes.TEXT_FIELD_NAME)) {
+                return new String[]{"Notes", infoPair[1].toString()};
+            } else if (infoPair[0].equals(Notes.TIMESTAMP_FIELD_NAME)) {
+                return new String[]{"Timestamp", formatDate(infoPair[1])};
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return new String[]{infoPair[0].toString(), infoPair[1].toString()};
+    }
+
+    private String formatDate( Object dateLong ) {
+        return new DateTime(Long.parseLong(dateLong.toString())).toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS);
     }
 
     @Override

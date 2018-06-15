@@ -17,7 +17,6 @@ import com.hydrologis.gss.entrypoints.DashboardEntryPoint;
 import com.hydrologis.gss.entrypoints.MapviewerEntryPoint;
 import com.hydrologis.gss.entrypoints.SettingsEntryPoint;
 
-import eu.hydrologis.stage.libs.images.ImageDialog;
 import eu.hydrologis.stage.libs.utils.ImageCache;
 import eu.hydrologis.stage.libs.utils.StageUtils;
 
