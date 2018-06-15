@@ -17,6 +17,7 @@ import com.hydrologis.gss.entrypoints.DashboardEntryPoint;
 import com.hydrologis.gss.entrypoints.MapviewerEntryPoint;
 import com.hydrologis.gss.entrypoints.SettingsEntryPoint;
 
+import eu.hydrologis.stage.libs.images.ImageDialog;
 import eu.hydrologis.stage.libs.utils.ImageCache;
 import eu.hydrologis.stage.libs.utils.StageUtils;
 
@@ -180,12 +181,24 @@ public class GssGuiUtilities {
         toolBar.setLayoutData(toolBarGD);
         // addToolBarSeparator(toolBar);
 
-        final ToolItem mapViewerItem = new ToolItem(toolBar, SWT.PUSH);
-        mapViewerItem.setImage(ImageCache.getInstance().getImage(toolbarComposite.getDisplay(), ImageCache.DISCONNECT));
-        mapViewerItem.setWidth(150);
-        mapViewerItem.setText("Logout");
-        mapViewerItem.setToolTipText("Exit the application");
-        mapViewerItem.addSelectionListener(new SelectionAdapter(){
+        final ToolItem aboutItem = new ToolItem(toolBar, SWT.PUSH);
+        aboutItem.setImage(ImageCache.getInstance().getImage(toolbarComposite.getDisplay(), ImageCache.HELP));
+        aboutItem.setWidth(150);
+        aboutItem.setText("About");
+        aboutItem.setToolTipText("About this application.");
+        aboutItem.addSelectionListener(new SelectionAdapter(){
+            @Override
+            public void widgetSelected( SelectionEvent e ) {
+                AboutDialog aboutDialog = new AboutDialog(toolbarComposite.getShell(), "ABOUT");
+                aboutDialog.open();
+            }
+        });
+        final ToolItem logoutItem = new ToolItem(toolBar, SWT.PUSH);
+        logoutItem.setImage(ImageCache.getInstance().getImage(toolbarComposite.getDisplay(), ImageCache.DISCONNECT));
+        logoutItem.setWidth(150);
+        logoutItem.setText("Logout");
+        logoutItem.setToolTipText("Exit the application.");
+        logoutItem.addSelectionListener(new SelectionAdapter(){
             @Override
             public void widgetSelected( SelectionEvent e ) {
                 GssSession.clearSession();

@@ -20,9 +20,13 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.layout.TableColumnLayout;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
@@ -291,7 +295,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         Composite devicesViewerGroup = new Composite(parent, SWT.BORDER);
         GridData devicesViewerGroupGD = new GridData(SWT.FILL, SWT.FILL, true, true);
         devicesViewerGroup.setLayoutData(devicesViewerGroupGD);
-        GridLayout devicesViewerLayout = new GridLayout(3, true);
+        GridLayout devicesViewerLayout = new GridLayout(3, false);
         devicesViewerLayout.marginWidth = 15;
         devicesViewerLayout.marginHeight = 15;
         devicesViewerLayout.verticalSpacing = 15;
@@ -300,34 +304,12 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         devicesCombo = new Combo(devicesViewerGroup, SWT.DROP_DOWN | SWT.BORDER | SWT.READ_ONLY);
         GridData devicesGD = new GridData(SWT.FILL, SWT.FILL, true, false);
-        devicesGD.horizontalSpan = 3;
         devicesCombo.setLayoutData(devicesGD);
-
         devicesCombo.setItems(deviceNamesMap.keySet().toArray(new String[0]));
         devicesCombo.setToolTipText("Select surveyor to add");
 
-        Composite tableComposite = new Composite(devicesViewerGroup, SWT.NONE);
-        GridData tableCompositeGD = new GridData(SWT.FILL, SWT.FILL, true, true);
-        tableCompositeGD.horizontalSpan = 3;
-        tableComposite.setLayoutData(tableCompositeGD);
-
-        devicesTableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
-        devicesTableViewer.setContentProvider(DevicesTableContentProvider.getInstance());
-
-        TableColumn deviceColumn = createColumn(devicesTableViewer, "Surveyor", 0);
-
-        TableColumnLayout layout = new TableColumnLayout();
-        tableComposite.setLayout(layout);
-        layout.setColumnData(deviceColumn, new ColumnWeightData(100, true));
-
-        devicesTableViewer.getTable().setHeaderVisible(false);
-        devicesTableViewer.getTable().setLinesVisible(true);
-        GridData devicesTableGD = new GridData(SWT.FILL, SWT.FILL, true, true);
-        devicesTableGD.horizontalSpan = 3;
-        devicesTableViewer.getTable().setLayoutData(devicesTableGD);
-
         Button addButton = new Button(devicesViewerGroup, SWT.PUSH);
-        addButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        addButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
         addButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
                 eu.hydrologis.stage.libs.utils.ImageCache.ADD));
         addButton.setToolTipText("Add selected surveyor to the map.");
@@ -340,15 +322,12 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                     visibleDevices.add(user);
                 }
                 devicesTableViewer.setInput(visibleDevices);
-
                 addDeviceToMap(user);
                 addDevicesToSession();
-
             }
-
         });
         Button addAllButton = new Button(devicesViewerGroup, SWT.PUSH);
-        addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        addAllButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
         addAllButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
                 eu.hydrologis.stage.libs.utils.ImageCache.ADDALL));
         addAllButton.setToolTipText("Add all surveyors to the map.");
@@ -368,31 +347,37 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             }
         });
 
-        Button removeButton = new Button(devicesViewerGroup, SWT.PUSH);
-        removeButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        removeButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
-                eu.hydrologis.stage.libs.utils.ImageCache.DELETE));
-        removeButton.setToolTipText("Remove selected surveyors from map.");
-        removeButton.addSelectionListener(new SelectionAdapter(){
+        // TABLE
+        Composite tableComposite = new Composite(devicesViewerGroup, SWT.NONE);
+        GridData tableCompositeGD = new GridData(SWT.FILL, SWT.FILL, true, true);
+        tableCompositeGD.horizontalSpan = 3;
+        tableComposite.setLayoutData(tableCompositeGD);
+
+        devicesTableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
+        devicesTableViewer.setContentProvider(DevicesTableContentProvider.getInstance());
+
+        TableColumn deviceColumn = createColumn(devicesTableViewer, "Surveyor", 0);
+
+        TableColumnLayout layout = new TableColumnLayout();
+        tableComposite.setLayout(layout);
+        layout.setColumnData(deviceColumn, new ColumnWeightData(100, true));
+
+        devicesTableViewer.getTable().setHeaderVisible(false);
+        devicesTableViewer.getTable().setLinesVisible(true);
+        GridData devicesTableGD = new GridData(SWT.FILL, SWT.FILL, true, true);
+        devicesTableGD.horizontalSpan = 3;
+        devicesTableViewer.getTable().setLayoutData(devicesTableGD);
+        devicesTableViewer.addDoubleClickListener(new IDoubleClickListener(){
             @Override
-            public void widgetSelected( SelectionEvent e ) {
-                IStructuredSelection selection = (IStructuredSelection) devicesTableViewer.getSelection();
-                if (!selection.isEmpty()) {
-                    Iterator< ? > iterator = selection.iterator();
-                    List<String> namesToRemove = new ArrayList<>();
-                    while( iterator.hasNext() ) {
-                        Object object = iterator.next();
-                        if (object instanceof GpapUsers) {
-                            GpapUsers user = (GpapUsers) object;
-                            if (visibleDevices.contains(user)) {
-                                visibleDevices.remove(user);
-                                namesToRemove.add(getUserName(user));
-                            }
-                        }
-                    }
-                    devicesTableViewer.setInput(visibleDevices);
-                    removeDeviceFromMap(namesToRemove);
-                    addDevicesToSession();
+            public void doubleClick( DoubleClickEvent event ) {
+                IStructuredSelection selection = (IStructuredSelection) event.getSelection();
+                Object firstElement = selection.getFirstElement();
+                if (firstElement instanceof GpapUsers) {
+                    GpapUsers user = (GpapUsers) firstElement;
+                    String notesLayer = getLayerName(user, NOTES);
+                    String logsLayer = getLayerName(user, LOGS);
+                    String script = mapBrowser.getZoomToLayers(new String[]{notesLayer, logsLayer});
+                    mapBrowser.runScript(script);
                 }
             }
         });
@@ -407,12 +392,18 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             @Override
             public void menuAboutToShow( IMenuManager manager ) {
                 IStructuredSelection selection = (IStructuredSelection) devicesTableViewer.getSelection();
+                if (selection.isEmpty()) {
+                    return;
+                }
                 Object firstElement = selection.getFirstElement();
                 if (firstElement instanceof GpapUsers) {
                     List<GpapUsers> usersList = selection.toList();
 
                     GpapUsers selectedUser = (GpapUsers) firstElement;
-                    manager.add(new Action("Zoom to data", null){
+                    ImageDescriptor zoomID = null; // ImageDescriptor.createFromImageData(eu.hydrologis.stage.libs.utils.ImageCache
+                    // .getInstance().getImage(display,
+                    // eu.hydrologis.stage.libs.utils.ImageCache.ZOOM_TO_ALL).getImageData());
+                    manager.add(new Action("  Zoom to selected", zoomID){
                         @Override
                         public void run() {
                             List<String> layerNames = new ArrayList<>();
@@ -427,11 +418,27 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                             mapBrowser.runScript(script);
                         }
                     });
+                    manager.add(new Separator());
+                    ImageDescriptor removeID = null;// ImageDescriptor.createFromImage(eu.hydrologis.stage.libs.utils.ImageCache
+                    // .getInstance().getImage(display,
+                    // eu.hydrologis.stage.libs.utils.ImageCache.DELETE));
+                    manager.add(new Action("Remove selected", removeID){
+                        @Override
+                        public void run() {
+                            List<String> namesToRemove = new ArrayList<>();
+                            for( GpapUsers user : usersList ) {
+                                if (visibleDevices.contains(user)) {
+                                    visibleDevices.remove(user);
+                                    namesToRemove.add(getUserName(user));
+                                }
+                            }
+                            devicesTableViewer.setInput(visibleDevices);
+                            removeDeviceFromMap(namesToRemove);
+                            addDevicesToSession();
+                        }
+                    });
                 }
 
-                if (devicesTableViewer.getSelection() instanceof IStructuredSelection) {
-
-                }
             }
 
         });
