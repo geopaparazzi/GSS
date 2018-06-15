@@ -72,6 +72,9 @@ import eu.hydrologis.stage.libs.utils.StageUtils;
 @SuppressWarnings("serial")
 public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver, ProgressListener {
 
+    private static final String[] FIELDS_FOR_LOGS = new String[]{GpsLogs.NAME_FIELD_NAME, GpsLogs.STARTTS_FIELD_NAME,
+            GpsLogs.ENDTS_FIELD_NAME};
+    private static final String[] FIELDS_FOR_NOTES = new String[]{Notes.TEXT_FIELD_NAME, Notes.ALTIM_FIELD_NAME};
     private static final String NOTES = "Notes";
     private static final String LOGS = "Gps Logs";
 
@@ -449,7 +452,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         mapBrowser.runScript(mapBrowser.getStartUndefindedProgress("Loading device data..."));
         try {
             SpatialDbDataProvider notesProv = new SpatialDbDataProvider(dbp.getDb(), getLayerName(user, NOTES),
-                    DatabaseHandler.getTableName(Notes.class), new String[]{Notes.TEXT_FIELD_NAME, Notes.ALTIM_FIELD_NAME});
+                    DatabaseHandler.getTableName(Notes.class), FIELDS_FOR_NOTES);
             String notesName = notesProv.getName();
             String notesScript = mapBrowser.getRemoveDataLayer(notesName);
             String notesGeoJson = notesProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
@@ -460,8 +463,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             mapBrowser.runScript(notesScript);
 
             SpatialDbDataProvider logsProv = new SpatialDbDataProvider(dbp.getDb(), getLayerName(user, LOGS),
-                    DatabaseHandler.getTableName(GpsLogs.class),
-                    new String[]{GpsLogs.NAME_FIELD_NAME, GpsLogs.STARTTS_FIELD_NAME, GpsLogs.ENDTS_FIELD_NAME});
+                    DatabaseHandler.getTableName(GpsLogs.class), FIELDS_FOR_LOGS);
             String logsName = logsProv.getName();
             String logsScript = mapBrowser.getRemoveDataLayer(logsName);
             String logsGeoJson = logsProv.asGeoJson(Notes.GPAPUSER_FIELD_NAME + "=" + user.id);
@@ -537,10 +539,45 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
     @Override
     public void onClick( double lon, double lat, int zoomLevel ) {
+        System.out.println();
     }
 
     @Override
-    public void layerFeatureClicked( String layerName, Object[] properties ) {
+    public void layerFeatureClicked( double lon, double lat, String layerName, Object[] properties ) {
+        StringBuilder sb = new StringBuilder("<h2>" + layerName + "</h2>");
+        String LF = "<br />";
+        sb.append(LF);
+        sb.append("<table style='width:100%' border='1' cellpadding='5'>");
+        for( int i = 0; i < properties.length; i++ ) {
+            Object object = properties[i];
+            if (object != null) {
+                if (object instanceof Object[]) {
+                    Object[] infoPair = (Object[]) object;
+                    if (infoPair.length == 2 && infoPair[0] != null && infoPair[1] != null) {
+                        String[] nameAndValue = getNameAndValue(infoPair);
+                        sb.append("<tr><td><b>");
+                        sb.append(nameAndValue[0]);
+                        sb.append("</b></td><td>");
+                        sb.append(nameAndValue[1]).append("</td></tr>");// .append(LF);
+                    }
+                }
+
+            }
+        }
+        sb.append("</table>");
+        try {
+
+            String msg = sb.toString();
+            String openPopup = mapBrowser.getOpenPopup(lon, lat, msg);
+            mapBrowser.runScript(openPopup);
+        } catch (Exception e1) {
+            StageLogger.logError(this, e1);
+        }
+    }
+
+    private String[] getNameAndValue( Object[] infoPair ) {
+
+        return new String[]{infoPair[0].toString(), infoPair[1].toString()};
     }
 
     @Override
