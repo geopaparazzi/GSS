@@ -66,7 +66,6 @@ import com.hydrologis.gss.server.database.objects.Notes;
 import com.hydrologis.gss.utils.DevicesTableContentProvider;
 import com.hydrologis.gss.utils.GssGuiUtilities;
 import com.hydrologis.gss.utils.GssLoginDialog;
-import com.hydrologis.gss.utils.GssMapsHandler;
 import com.hydrologis.gss.utils.GssUserPermissionsHandler;
 import com.hydrologis.gss.utils.ImageCache;
 import com.j256.ormlite.dao.Dao;
@@ -74,12 +73,11 @@ import com.j256.ormlite.dao.Dao;
 import eu.hydrologis.stage.libs.entrypoints.StageEntryPoint;
 import eu.hydrologis.stage.libs.html.HtmlFeatureChooser;
 import eu.hydrologis.stage.libs.images.ImageDialog;
-import eu.hydrologis.stage.libs.images.ImageUtil;
 import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.map.IMapObserver;
+import eu.hydrologis.stage.libs.map.MapsHandler;
 import eu.hydrologis.stage.libs.providers.data.SpatialDbDataProvider;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
-import eu.hydrologis.stage.libs.utils.ImageUtils;
 import eu.hydrologis.stage.libs.utils.StageUtils;
 
 /**
@@ -283,17 +281,10 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             mapHtml = HtmlFeatureChooser.INSTANCE.addCursors(mapHtml);
             String replacement = "";
             try {
-                replacement += GssMapsHandler.INSTANCE.addSelectedMaps(mapBrowser);
+                replacement += MapsHandler.INSTANCE.addSelectedMaps(mapBrowser);
             } catch (SQLException e) {
                 StageLogger.logError(this, e);
             }
-
-            // replacement += mapBrowser.getAddTileLayer("pipes", "pipes",
-            // "./getpipetile?z={z}&x={x}&y={y}", 22, 22, "© Comune Roma", true, true);
-            // replacement += mapBrowser.getAddTileLayer("work", "work",
-            // "./getworktile?z={z}&x={x}&y={y}", 22, 22, "© Comune Roma", true, true);
-            // replacement += mapBrowser.getAddTileLayer("events", "events",
-            // "./geteventstile?z={z}&x={x}&y={y}", 22, 22, "© Comune Roma", true, true);
 
             mapHtml = mapBrowser.addLayersInHtml(mapHtml, replacement);
 

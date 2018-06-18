@@ -17,14 +17,16 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 
 import com.hydrologis.gss.entrypoints.settings.DevicesUIHandler;
-import com.hydrologis.gss.entrypoints.settings.MapsUIHandler;
 import com.hydrologis.gss.entrypoints.settings.OtherConfigsUIHandler;
-import com.hydrologis.gss.entrypoints.settings.WebUsersUIHandler;
 import com.hydrologis.gss.utils.GssGuiUtilities;
 import com.hydrologis.gss.utils.GssLoginDialog;
 import com.hydrologis.gss.utils.GssUserPermissionsHandler;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
 
 import eu.hydrologis.stage.libs.entrypoints.StageEntryPoint;
+import eu.hydrologis.stage.libs.entrypoints.fragments.MapsUIHandler;
+import eu.hydrologis.stage.libs.entrypoints.fragments.WebUsersUIHandler;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
 import eu.hydrologis.stage.libs.utils.StageUtils;
 
@@ -105,7 +107,11 @@ public class SettingsEntryPoint extends StageEntryPoint {
         DevicesUIHandler devicesUIHandler = new DevicesUIHandler();
         devicesUIHandler.buildGui(buttonsGroup, parametersComposite);
 
-        MapsUIHandler mapsUIHandler = new MapsUIHandler();
+        double centerX = 12.4853;
+        double centerY = 41.8685;
+        Envelope env = new Envelope(new Coordinate(centerX, centerY));
+        env.expandBy(0.1);
+        MapsUIHandler mapsUIHandler = new MapsUIHandler(env);
         mapsUIHandler.buildGui(buttonsGroup, parametersComposite);
 
         OtherConfigsUIHandler otherConfigsUIHandler = new OtherConfigsUIHandler();

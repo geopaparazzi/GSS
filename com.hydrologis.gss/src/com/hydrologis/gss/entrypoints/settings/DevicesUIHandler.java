@@ -1,11 +1,13 @@
 package com.hydrologis.gss.entrypoints.settings;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.AbstractColumnLayout;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -91,31 +93,26 @@ public class DevicesUIHandler {
         if (usersTableViewer != null)
             usersTableViewer.getControl().dispose();
 
-        Dao<GpapUsers, ? > usersDao = databaseHandler.getDao(GpapUsers.class);
-        List<GpapUsers> users = usersDao.queryForAll();
-
         usersTableViewer = new TableViewer(usersComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.SINGLE);
         usersTableViewer.setContentProvider(ArrayContentProvider.getInstance());
 
         TableViewerColumn column1 = createUserColumn(usersTableViewer, "Id", 0);
         TableViewerColumn column2 = createUserColumn(usersTableViewer, "Device id", 1);
         TableViewerColumn column3 = createUserColumn(usersTableViewer, "Name", 2);
-        TableViewerColumn column4 = createUserColumn(usersTableViewer, "Username", 3);
-        TableViewerColumn column5 = createUserColumn(usersTableViewer, "Contact", 4);
+        TableViewerColumn column4 = createUserColumn(usersTableViewer, "Contact", 3);
 
         AbstractColumnLayout layout = (AbstractColumnLayout) usersComposite.getLayout();
         layout.setColumnData(column1.getColumn(), new ColumnWeightData(5));
         layout.setColumnData(column2.getColumn(), new ColumnWeightData(25));
         layout.setColumnData(column3.getColumn(), new ColumnWeightData(30));
-        layout.setColumnData(column4.getColumn(), new ColumnWeightData(30));
-        layout.setColumnData(column5.getColumn(), new ColumnWeightData(10));
+        layout.setColumnData(column4.getColumn(), new ColumnWeightData(10));
 
         usersTableViewer.getTable().setHeaderVisible(true);
         usersTableViewer.getTable().setLinesVisible(true);
         GridData tableData = new GridData(SWT.FILL, SWT.FILL, true, true);
         usersTableViewer.getTable().setLayoutData(tableData);
 
-        usersTableViewer.setInput(users);
+        refreshTable();
 
         // add right click menu
         MenuManager manager = new MenuManager();
@@ -154,9 +151,11 @@ public class DevicesUIHandler {
                             @Override
                             public void run() {
                                 try {
-                                    // selectedUser.valid = selectedUser.valid == 1 ? 0 : 1;
-                                    // usersDao.update(selectedUser);
-                                    // createUsersTableViewer();
+                                    GpapUserEditDialog editor = new GpapUserEditDialog(parentShell, selectedUser);
+                                    int open = editor.open();
+                                    if (open == Dialog.OK) {
+                                        refreshTable();
+                                    }
                                 } catch (Exception e) {
                                     StageLogger.logError(this, e);
                                 }
@@ -170,6 +169,12 @@ public class DevicesUIHandler {
         manager.setRemoveAllWhenShown(true);
 
         usersComposite.layout();
+    }
+
+    private void refreshTable() throws SQLException {
+        Dao<GpapUsers, ? > usersDao = databaseHandler.getDao(GpapUsers.class);
+        List<GpapUsers> users = usersDao.queryForAll();
+        usersTableViewer.setInput(users);
     }
 
     private TableViewerColumn createUserColumn( TableViewer viewer, String name, int dataIndex ) {
@@ -200,8 +205,6 @@ public class DevicesUIHandler {
                 } else if (dataIndex == 2) {
                     return user.name;
                 } else if (dataIndex == 3) {
-                    return user.username;
-                } else if (dataIndex == 4) {
                     return user.contact;
                 }
             }
