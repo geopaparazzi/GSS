@@ -13,3 +13,7 @@ target
 *.iml
 *.tar.gz
 bin/
+/mobile/gssmobile/nbproject/private/
+/mobile/gssmobile/build/
+CodenameOne_SRC.zip
+
