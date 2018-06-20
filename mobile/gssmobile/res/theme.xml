@@ -12,6 +12,14 @@
         <val key="FloatingActionButton.sel#derive" value="FloatingActionButton" />
         <val key="FloatingActionButton.sel#transparency" value="255" />
         <val key="FloatingActionButton.transparency" value="255" />
+        <val key="ItemsListRow.bgColor" value="ffffff" />
+        <border key="ItemsListRow.border" type="line" millimeters="false" thickness="1.0" color="6135158" />
+        <val key="ItemsListRow.margin" value="0.0,0.0,0.0,0.0" />
+        <val key="ItemsListRow.padUnit" value="2,2,2,2" />
+        <val key="ItemsListRow.padding" value="2.0,2.0,2.0,2.0" />
+        <val key="ItemsListRow.transparency" value="0" />
+        <font key="ItemsListRowSmall.font" type="ttf" face="0" style="0" size="0" name="native:ItalicThin" family="native:ItalicThin" sizeSettings="3" actualSize="2.0" />
+        <val key="ItemsListRowSmall.textDecoration" value="0" />
         <val key="SideCommand.align" value="1" />
         <val key="SideCommand.bgColor" value="5d9d76" />
         <border key="SideCommand.border" type="empty" />

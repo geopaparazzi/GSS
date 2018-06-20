@@ -13,20 +13,37 @@ import com.codename1.ui.FontImage;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.io.Preferences;
+import com.codename1.ui.ButtonGroup;
+import com.codename1.ui.Component;
 import com.codename1.ui.Container;
 import com.codename1.ui.Display;
 import com.codename1.ui.Image;
+import com.codename1.ui.InfiniteContainer;
 import com.codename1.ui.Label;
+import com.codename1.ui.RadioButton;
+import com.codename1.ui.Tabs;
+import com.codename1.ui.layouts.BoxLayout;
+import com.codename1.ui.layouts.FlowLayout;
+import com.codename1.ui.layouts.LayeredLayout;
+import com.codename1.ui.plaf.DefaultLookAndFeel;
+import com.codename1.ui.plaf.Style;
 import com.codename1.ui.tree.Tree;
-import com.codename1.ui.tree.TreeModel;
 import com.hydrologis.cn1.libs.HyLog;
+import com.hydrologis.cn1.libs.TimeUtilities;
+import com.hydrologis.gssmobile.database.DaoGpsLogs;
 import com.hydrologis.gssmobile.database.DaoNotes;
+import com.hydrologis.gssmobile.database.GpsLog;
 import com.hydrologis.gssmobile.database.Notes;
 import com.hydrologis.gssmobile.utils.SyncData;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 public class GssMobile {
+
+    private static final char IMAGE_ICON = FontImage.MATERIAL_IMAGE;
+    private static final char LOGS_ICON = FontImage.MATERIAL_SHOW_CHART;
+    private static final char NOTE_ICON = FontImage.MATERIAL_NOTE;
+    private static final char FORM_NOTE_ICON = FontImage.MATERIAL_NOTE_ADD;
 
     private Form current;
     private Resources theme;
@@ -92,54 +109,36 @@ public class GssMobile {
             Database db = Display.getInstance().openOrCreate(sdcardFile);
             List<Notes> notesList = DaoNotes.getNotesList(db);
             syncData.type2ListMap.put(SyncData.NOTES, notesList);
+
+            Tabs t = new Tabs();
+//            t.setTabPlacement(Component.BOTTOM);
+            Style s = UIManager.getInstance().getComponentStyle("Button");
+            FontImage radioEmptyImage = FontImage.createMaterial(FontImage.MATERIAL_RADIO_BUTTON_UNCHECKED,
+                    s);
+            FontImage radioFullImage = FontImage.createMaterial(FontImage.MATERIAL_RADIO_BUTTON_CHECKED, s);
+            ((DefaultLookAndFeel) UIManager.getInstance().getLookAndFeel()).setRadioButtonImages(radioFullImage,
+                    radioEmptyImage, radioFullImage, radioEmptyImage);
+
+            Container notesContainer = getNotesContainer(db);
+            Container gpsLogsContainer = getGpsLogsContainer(db);
+            Container imagesContainer = new Container();
+            t.addTab("Notes", NOTE_ICON, 4, notesContainer);
+            t.addTab("Gps Logs", LOGS_ICON, 4, gpsLogsContainer);
+            t.addTab("Images", IMAGE_ICON, 4, imagesContainer);
+
+            mainForm.add(BorderLayout.CENTER, t);
+
+            FloatingActionButton fab = FloatingActionButton.createFAB(FontImage.MATERIAL_CLOUD_UPLOAD);
+            fab.bindFabToContainer(mainForm.getContentPane());
+            FloatingActionButton onlyNotesFab = fab.createSubFAB(NOTE_ICON, "Only Notes");
+            onlyNotesFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
+            FloatingActionButton loadAllFab = fab.createSubFAB(FontImage.MATERIAL_CLEAR_ALL, "Everything");
+            loadAllFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
+            mainForm.show();
+
         } catch (Exception ex) {
             HyLog.e(ex);
         }
-
-        // TREE
-        TreeModel tm = new TreeModel() {
-            @Override
-            public Vector getChildren(Object parent) {
-                if (parent == null) {
-                    return new Vector(syncData.rootsList);
-                } else if (parent instanceof String) {
-                    List<?> list = syncData.type2ListMap.get((String) parent);
-                    if (list != null) {
-                        return new Vector(list);
-                    }
-                }
-                return new Vector();
-            }
-
-            @Override
-            public boolean isLeaf(Object node) {
-                return node instanceof Notes;
-            }
-        };
-        Tree t = new Tree(tm) {
-            @Override
-            protected String childToDisplayLabel(Object child) {
-                if (child instanceof String) {
-                    return (String) child;
-                } else if (child instanceof Notes) {
-                    Notes note = (Notes) child;
-                    String label = note.id.get() + ") " + note.text.get();
-                    return label;
-                }
-                return " - nv - ";
-            }
-        };
-
-        mainForm.add(BorderLayout.CENTER, t);
-
-        FloatingActionButton fab = FloatingActionButton.createFAB(FontImage.MATERIAL_CLOUD_UPLOAD);
-        fab.bindFabToContainer(mainForm.getContentPane());
-        FloatingActionButton onlyNotesFab = fab.createSubFAB(FontImage.MATERIAL_NOTE, "Only Notes");
-        onlyNotesFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
-        FloatingActionButton loadAllFab = fab.createSubFAB(FontImage.MATERIAL_CLEAR_ALL, "Everything");
-        loadAllFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
-
-        mainForm.show();
     }
 
     public void stop() {
@@ -151,6 +150,84 @@ public class GssMobile {
     }
 
     public void destroy() {
+    }
+
+    private Container getNotesContainer(Database db) {
+        FontImage simpleIcon = FontImage.createMaterial(NOTE_ICON, "SimpleNote", 4);
+        FontImage formIcon = FontImage.createMaterial(FORM_NOTE_ICON, "ComplexNote", 4);
+        InfiniteContainer ic = new InfiniteContainer() {
+            @Override
+            public Component[] fetchComponents(int index, int amount) {
+
+                List<Notes> notesList = new ArrayList<>();
+                try {
+                    notesList = DaoNotes.getNotesList(db);
+                } catch (Exception ex) {
+                    HyLog.e(ex);
+                }
+
+                Container[] cmps = new Container[notesList.size()];
+                for (int iter = 0; iter < cmps.length; iter++) {
+                    Notes note = notesList.get(iter);
+
+                    String ts = TimeUtilities.toYYYYMMDDHHMMSS(note.timeStamp.get());
+                    Label name = new Label(note.text.get());
+                    Label tsLabel = new Label(ts);
+                    tsLabel.setUIID("ItemsListRowSmall");
+
+                    Label iconLabel = null;
+                    if (note.form.get() == null || note.form.get().length() == 0) {
+                        iconLabel = new Label(simpleIcon);
+                    } else {
+                        iconLabel = new Label(formIcon);
+                    }
+
+                    Container c = BoxLayout.encloseX(iconLabel, BoxLayout.encloseY(name, tsLabel));
+                    c.setUIID("ItemsListRow");
+                    cmps[iter] = c;
+                }
+                return cmps;
+            }
+        };
+
+        return ic;
+    }
+
+    private Container getGpsLogsContainer(Database db) {
+        FontImage logsIcon = FontImage.createMaterial(LOGS_ICON, "GpsLogs", 4);
+        InfiniteContainer ic = new InfiniteContainer() {
+            @Override
+            public Component[] fetchComponents(int index, int amount) {
+
+                List<GpsLog> logsList = new ArrayList<>();
+                try {
+                    logsList = DaoGpsLogs.getLogsList(db);
+                } catch (Exception ex) {
+                    HyLog.e(ex);
+                }
+
+                Container[] cmps = new Container[logsList.size()];
+                for (int iter = 0; iter < cmps.length; iter++) {
+                    GpsLog log = logsList.get(iter);
+
+                    String startts = TimeUtilities.toYYYYMMDDHHMMSS(log.startts.get());
+                    String endts = TimeUtilities.toYYYYMMDDHHMMSS(log.endts.get());
+
+                    Label name = new Label(log.name.get());
+                    Label tsLabel = new Label(startts + "  ->  " + endts);
+                    tsLabel.setUIID("ItemsListRowSmall");
+
+                    Label iconLabel = new Label(logsIcon);
+
+                    Container c = BoxLayout.encloseX(iconLabel, BoxLayout.encloseY(name, tsLabel));
+                    c.setUIID("ItemsListRow");
+                    cmps[iter] = c;
+                }
+                return cmps;
+            }
+        };
+
+        return ic;
     }
 
 }
