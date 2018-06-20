@@ -7,6 +7,7 @@ package com.hydrologis.cn1.libs;
 
 import com.codename1.io.File;
 import com.codename1.io.FileSystemStorage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +71,10 @@ public enum FileUtilities {
             rootTypes.add(rt);
         }
         return rootTypes;
+    }
+    
+    public String[] listFiles(String parent) throws IOException{
+        return fsStorage.listFiles(parent);
     }
 
 }

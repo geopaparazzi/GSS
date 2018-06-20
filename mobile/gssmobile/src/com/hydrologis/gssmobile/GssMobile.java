@@ -13,21 +13,18 @@ import com.codename1.ui.FontImage;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.io.Preferences;
-import com.codename1.ui.ButtonGroup;
+import com.codename1.ui.Button;
 import com.codename1.ui.Component;
+import com.codename1.ui.ComponentGroup;
 import com.codename1.ui.Container;
 import com.codename1.ui.Display;
 import com.codename1.ui.Image;
 import com.codename1.ui.InfiniteContainer;
 import com.codename1.ui.Label;
-import com.codename1.ui.RadioButton;
 import com.codename1.ui.Tabs;
 import com.codename1.ui.layouts.BoxLayout;
-import com.codename1.ui.layouts.FlowLayout;
-import com.codename1.ui.layouts.LayeredLayout;
-import com.codename1.ui.plaf.DefaultLookAndFeel;
-import com.codename1.ui.plaf.Style;
 import com.codename1.ui.tree.Tree;
+import com.hydrologis.cn1.libs.FileUtilities;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.TimeUtilities;
 import com.hydrologis.gssmobile.database.DaoGpsLogs;
@@ -36,7 +33,7 @@ import com.hydrologis.gssmobile.database.DaoNotes;
 import com.hydrologis.gssmobile.database.GssGpsLog;
 import com.hydrologis.gssmobile.database.GssImage;
 import com.hydrologis.gssmobile.database.GssNote;
-import com.hydrologis.gssmobile.utils.SyncData;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +48,10 @@ public class GssMobile {
     private Resources theme;
 
     private Form mainForm;
+    private InfiniteContainer notesContainer = null;
+    private InfiniteContainer gpsLogsContainer = null;
+    private InfiniteContainer imagesContainer = null;
+    private Database db = null;
 
     public void init(Object context) {
         // use two network threads instead of one
@@ -93,28 +94,36 @@ public class GssMobile {
         topBar.setUIID("SideCommand");
         toolbar.addComponentToSideMenu(topBar);
         toolbar.addMaterialCommandToSideMenu("Select Project", FontImage.MATERIAL_SETTINGS, e -> {
-            // TODO 
+            Dialog projectDialog = new Dialog("Select Geopaparazzi Project");
+            projectDialog.setLayout(new BorderLayout());
+
+            ComponentGroup cg = new ComponentGroup();
+            try {
+                String sdcard = FileUtilities.INSTANCE.getSdcard();
+                String[] listFiles = FileUtilities.INSTANCE.listFiles(sdcard);
+                addGpapProjects(listFiles, projectDialog, cg);
+                String dbPath = FileUtilities.INSTANCE.getSdcardFile("database");
+                listFiles = FileUtilities.INSTANCE.listFiles(dbPath);
+                addGpapProjects(listFiles, projectDialog, cg);
+
+            } catch (IOException ex) {
+                HyLog.e(ex);
+            }
+
+            projectDialog.add(BorderLayout.CENTER, cg);
+            projectDialog.show();
         });
 
         // TODO ask why it doesn't fill
         Label fillerLabel = new Label("", "sideMenuFillerLabel");
         toolbar.setComponentToSideMenuSouth(fillerLabel);
 
-        String lastDbPath = Preferences.get(GssUtilities.LAST_DB_PATH, "");
-        if (lastDbPath.trim().length() == 0) {
-            Dialog.show("No db chosen yet.", " Please use the side menu to choose it.", Dialog.TYPE_WARNING, null, "OK", null);
-        }
-
-        String sdcardFile = "geopaparazzi2.gpap"; //FileUtilities.INSTANCE.getSdcardFile("geopaparazzi.gpap");
         try {
-            Database db = Display.getInstance().openOrCreate(sdcardFile);
-            Preferences.set(GssUtilities.LAST_DB_PATH, sdcardFile);
-
             Tabs t = new Tabs();
             t.setTabPlacement(Component.TOP);
-            Container notesContainer = getNotesContainer(db);
-            Container gpsLogsContainer = getGpsLogsContainer(db);
-            Container imagesContainer = getImagesContainer(db);
+            notesContainer = getNotesContainer();
+            gpsLogsContainer = getGpsLogsContainer();
+            imagesContainer = getImagesContainer();
             t.addTab("Notes", NOTE_ICON, 4, notesContainer);
             t.addTab("Gps Logs", LOGS_ICON, 4, gpsLogsContainer);
             t.addTab("Images", IMAGES_ICON, 4, imagesContainer);
@@ -133,9 +142,43 @@ public class GssMobile {
             loadAllFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
             mainForm.show();
 
+            String lastDbPath = Preferences.get(GssUtilities.LAST_DB_PATH, "");
+            if (lastDbPath.trim().length() == 0) {
+                Dialog.show("No db chosen yet.", " Please use the side menu to choose it.", Dialog.TYPE_WARNING, null, "OK", null);
+            }
+
+            String sdcardFile = "geopaparazzi2.gpap"; //FileUtilities.INSTANCE.getSdcardFile("geopaparazzi.gpap");
+            refreshData(sdcardFile);
         } catch (Exception ex) {
             HyLog.e(ex);
         }
+    }
+
+    private void addGpapProjects(String[] listFiles, Dialog projectDialog, ComponentGroup cg) {
+        for (String file : listFiles) {
+            if (file.endsWith(".gpap")) {
+                final Button pButton = new Button(file);
+                pButton.addActionListener(ev -> {
+                    String dbName = pButton.getText();
+                    try {
+                        HyLog.p("Found: " + file);
+                        projectDialog.dispose();
+                        refreshData(dbName);
+                    } catch (IOException ex) {
+                        HyLog.e(ex);
+                    }
+                });
+                cg.add(pButton);
+            }
+        }
+    }
+
+    private void refreshData(String dbFile) throws IOException {
+        db = Display.getInstance().openOrCreate(dbFile);
+        Preferences.set(GssUtilities.LAST_DB_PATH, dbFile);
+        notesContainer.refresh();
+        gpsLogsContainer.refresh();
+        imagesContainer.refresh();
     }
 
     public void stop() {
@@ -149,21 +192,28 @@ public class GssMobile {
     public void destroy() {
     }
 
-    private Container getNotesContainer(Database db) {
+    private InfiniteContainer getNotesContainer() {
         FontImage simpleIcon = FontImage.createMaterial(NOTE_ICON, "SimpleNote", 4);
         FontImage formIcon = FontImage.createMaterial(FORM_NOTE_ICON, "ComplexNote", 4);
         InfiniteContainer ic = new InfiniteContainer() {
+            private boolean stop = false;
+
             @Override
             public Component[] fetchComponents(int index, int amount) {
-
+                if (stop) {
+                    return null;
+                }
                 List<GssNote> notesList = new ArrayList<>();
                 try {
-                    notesList = DaoNotes.getNotesList(db);
+                    if (db != null) {
+                        notesList = DaoNotes.getNotesList(db);
+                    }
                 } catch (Exception ex) {
                     HyLog.e(ex);
                 }
 
-                Container[] cmps = new Container[notesList.size()];
+                final int size = notesList.size();
+                Container[] cmps = new Container[size];
                 for (int iter = 0; iter < cmps.length; iter++) {
                     GssNote note = notesList.get(iter);
 
@@ -183,22 +233,37 @@ public class GssMobile {
                     c.setUIID("ItemsListRow");
                     cmps[iter] = c;
                 }
+                stop = true;
                 return cmps;
             }
+
+            @Override
+            public void refresh() {
+                stop = false;
+                super.refresh();
+            }
+
         };
 
         return ic;
     }
 
-    private Container getImagesContainer(Database db) {
+    private InfiniteContainer getImagesContainer() {
         FontImage imageIcon = FontImage.createMaterial(IMAGES_ICON, "Image", 4);
         InfiniteContainer ic = new InfiniteContainer() {
+            private boolean stop = false;
+
             @Override
             public Component[] fetchComponents(int index, int amount) {
+                if (stop) {
+                    return null;
+                }
 
                 List<GssImage> imagesList = new ArrayList<>();
                 try {
-                    imagesList = DaoImages.getImagesList(db);
+                    if (db != null) {
+                        imagesList = DaoImages.getImagesList(db);
+                    }
                 } catch (Exception ex) {
                     HyLog.e(ex);
                 }
@@ -218,22 +283,36 @@ public class GssMobile {
                     c.setUIID("ItemsListRow");
                     cmps[iter] = c;
                 }
+                stop = true;
                 return cmps;
+            }
+
+            @Override
+            public void refresh() {
+                stop = false;
+                super.refresh();
             }
         };
 
         return ic;
     }
 
-    private Container getGpsLogsContainer(Database db) {
+    private InfiniteContainer getGpsLogsContainer() {
         FontImage logsIcon = FontImage.createMaterial(LOGS_ICON, "GpsLogs", 4);
         InfiniteContainer ic = new InfiniteContainer() {
+            private boolean stop = false;
+
             @Override
             public Component[] fetchComponents(int index, int amount) {
+                if (stop) {
+                    return null;
+                }
 
                 List<GssGpsLog> logsList = new ArrayList<>();
                 try {
-                    logsList = DaoGpsLogs.getLogsList(db);
+                    if (db != null) {
+                        logsList = DaoGpsLogs.getLogsList(db);
+                    }
                 } catch (Exception ex) {
                     HyLog.e(ex);
                 }
@@ -255,7 +334,14 @@ public class GssMobile {
                     c.setUIID("ItemsListRow");
                     cmps[iter] = c;
                 }
+                stop = true;
                 return cmps;
+            }
+
+            @Override
+            public void refresh() {
+                stop = false;
+                super.refresh();
             }
         };
 
