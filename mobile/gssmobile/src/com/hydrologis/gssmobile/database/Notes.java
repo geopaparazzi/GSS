@@ -18,16 +18,6 @@ import com.codename1.properties.PropertyIndex;
  * @author Andrea Antonello (www.hydrologis.com)
  */
 public class Notes implements PropertyBusinessObject {
-//        sB.append(NotesTableFields.COLUMN_LON.getFieldName()).append(" REAL NOT NULL, ");
-//        sB.append(NotesTableFields.COLUMN_LAT.getFieldName()).append(" REAL NOT NULL,");
-//        sB.append(NotesTableFields.COLUMN_ALTIM.getFieldName()).append(" REAL NOT NULL,");
-//        sB.append(NotesTableFields.COLUMN_TS.getFieldName()).append(" DATE NOT NULL,");
-//        sB.append(NotesTableFields.COLUMN_DESCRIPTION.getFieldName()).append(" TEXT, ");
-//        sB.append(NotesTableFields.COLUMN_TEXT.getFieldName()).append(" TEXT NOT NULL, ");
-//        sB.append(NotesTableFields.COLUMN_FORM.getFieldName()).append(" CLOB, ");
-//        sB.append(NotesTableFields.COLUMN_STYLE.getFieldName()).append(" TEXT,");
-//        sB.append(NotesTableFields.COLUMN_ISDIRTY.getFieldName()).append(" INTEGER");    
-
     public final LongProperty<Notes> id = new LongProperty<>("_id");
     public final DoubleProperty< Notes> longitude = new DoubleProperty<>("lon");
     public final DoubleProperty< Notes> latitude = new DoubleProperty<>("lat");

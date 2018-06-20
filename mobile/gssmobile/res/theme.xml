@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<resource majorVersion="1" minorVersion="9" useXmlUI="false">
+    <image name="gss_launcher_icon.png" type="multi"  />
+    <theme name="Theme">
+        <val key="@includeNativeBool" value="true" />
+        <val key="FloatingActionButton.bgColor" value="FF9933" />
+        <val key="FloatingActionButton.press#bgColor" value="993300" />
+        <val key="FloatingActionButton.press#derive" value="FloatingActionButton" />
+        <val key="FloatingActionButton.press#transparency" value="255" />
+        <val key="FloatingActionButton.sel#bgColor" value="993300" />
+        <val key="FloatingActionButton.sel#derive" value="FloatingActionButton" />
+        <val key="FloatingActionButton.sel#transparency" value="255" />
+        <val key="FloatingActionButton.transparency" value="255" />
+        <val key="SideCommand.align" value="1" />
+        <val key="SideCommand.bgColor" value="5d9d76" />
+        <border key="SideCommand.border" type="empty" />
+        <val key="SideCommand.fgColor" value="ffffff" />
+        <font key="SideCommand.font" type="ttf" face="0" style="0" size="0" name="native:MainLight" family="native:MainLight" sizeSettings="3" actualSize="3.5" />
+        <val key="SideCommand.margin" value="0.0,1.0,0.0,0.0" />
+        <val key="SideCommand.padUnit" value="2,2,2,2" />
+        <val key="SideCommand.padding" value="3.0,3.0,3.0,3.0" />
+        <val key="SideCommand.press#bgColor" value="378756" />
+        <val key="SideCommand.press#derive" value="SideCommand" />
+        <val key="SideCommand.sel#bgColor" value="378756" />
+        <val key="SideCommand.sel#derive" value="SideCommand" />
+        <val key="SideCommand.textDecoration" value="0" />
+        <val key="SideCommand.transparency" value="255" />
+        <val key="SideNavigationPanel.bgColor" value="ffffff" />
+        <val key="SideNavigationPanel.transparency" value="255" />
+        <val key="SidemenuTagline.align" value="3" />
+        <val key="SidemenuTagline.fgColor" value="ffffff" />
+        <font key="SidemenuTagline.font" type="ttf" face="0" style="0" size="0" name="native:ItalicLight" family="native:ItalicLight" sizeSettings="3" actualSize="2.0" />
+        <val key="SidemenuTagline.marUnit" value="2,0,2,0" />
+        <val key="SidemenuTagline.margin" value="1.0,1.0,0.0,0.0" />
+        <val key="SidemenuTagline.textDecoration" value="0" />
+        <val key="Toolbar.bgColor" value="5d9d76" />
+        <border key="Toolbar.border" type="empty" />
+        <val key="Toolbar.transparency" value="255" />
+        <val key="sideMenuFillerLabel.bgColor" value="5d9d76" />
+        <border key="sideMenuFillerLabel.border" type="empty" />
+        <val key="sideMenuFillerLabel.margin" value="1.0,0.0,0.0,0.0" />
+        <val key="sideMenuFillerLabel.transparency" value="255" />
+    </theme>
+</resource>

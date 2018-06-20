@@ -15,14 +15,15 @@ import java.util.List;
  *
  * @author hydrologis
  */
-public class FileUtilities {
-
+public enum FileUtilities {
+    INSTANCE;
+    
     public static final String SDCARD = "SDCARD";
     public static final String FILE_PREFIX = "file://";
 
     final FileSystemStorage fsStorage;
 
-    public FileUtilities() {
+    private FileUtilities() {
         fsStorage = FileSystemStorage.getInstance();
     }
 
