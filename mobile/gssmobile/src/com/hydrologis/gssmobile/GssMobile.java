@@ -3,7 +3,6 @@ package com.hydrologis.gssmobile;
 import com.codename1.components.FloatingActionButton;
 import com.hydrologis.gssmobile.utils.GssUtilities;
 import static com.codename1.ui.CN.*;
-import com.codename1.components.SpanLabel;
 import com.codename1.components.ToastBar;
 import com.codename1.db.Database;
 import com.codename1.ui.Dialog;
@@ -13,7 +12,6 @@ import com.codename1.ui.util.Resources;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
-import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.io.Preferences;
 import com.codename1.ui.Container;
 import com.codename1.ui.Display;
@@ -21,12 +19,10 @@ import com.codename1.ui.Image;
 import com.codename1.ui.Label;
 import com.codename1.ui.tree.Tree;
 import com.codename1.ui.tree.TreeModel;
-import com.hydrologis.cn1.libs.FileUtilities;
+import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.gssmobile.database.DaoNotes;
 import com.hydrologis.gssmobile.database.Notes;
 import com.hydrologis.gssmobile.utils.SyncData;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
@@ -97,7 +93,7 @@ public class GssMobile {
             List<Notes> notesList = DaoNotes.getNotesList(db);
             syncData.type2ListMap.put(SyncData.NOTES, notesList);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            HyLog.e(ex);
         }
 
         // TREE
@@ -106,13 +102,13 @@ public class GssMobile {
             public Vector getChildren(Object parent) {
                 if (parent == null) {
                     return new Vector(syncData.rootsList);
-                } else {
-                    List<?> list = syncData.type2ListMap.get(parent);
+                } else if (parent instanceof String) {
+                    List<?> list = syncData.type2ListMap.get((String) parent);
                     if (list != null) {
                         return new Vector(list);
                     }
-                    return new Vector();
                 }
+                return new Vector();
             }
 
             @Override
@@ -144,13 +140,6 @@ public class GssMobile {
         loadAllFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
 
         mainForm.show();
-    }
-
-    private void showOKForm(String name) {
-        Form f = new Form("Thanks", BoxLayout.y());
-        f.add(new SpanLabel("Thanks " + name + " for your submission. You can press the back arrow and try again"));
-        f.getToolbar().setBackCommand("", e -> mainForm.showBack());
-        f.show();
     }
 
     public void stop() {

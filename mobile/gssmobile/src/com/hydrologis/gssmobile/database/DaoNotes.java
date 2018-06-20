@@ -55,11 +55,7 @@ public class DaoNotes {
 
             while (cursor.next()) {
                 Row row = cursor.getRow();
-//                 private final PropertyIndex idx = new PropertyIndex(this, "Notes", id, longitude, latitude,
-//            altitude, timeStamp, description, text, form, isDirty, style
-//    );
                 int i = 0;
-
                 Notes note = new Notes();
                 note.id.set(row.getLong(i++));
                 note.longitude.set(row.getDouble(i++));
@@ -121,8 +117,8 @@ public class DaoNotes {
          */
         COLUMN_STYLE("style", String.class);
 
-        private String fieldName;
-        private Class fieldClass;
+        private final String fieldName;
+        private final Class fieldClass;
 
         NotesTableFields(String fieldName, Class fieldClass) {
             this.fieldName = fieldName;
