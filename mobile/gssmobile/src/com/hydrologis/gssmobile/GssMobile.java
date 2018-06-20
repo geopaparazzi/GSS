@@ -46,6 +46,10 @@ public class GssMobile {
         // Enable Toolbar on all Forms by default
         Toolbar.setGlobalToolbar(true);
 
+        Tree.setNodeIcon(FontImage.createMaterial(FontImage.MATERIAL_NOTE, "Node", 2));
+        Tree.setFolderIcon(FontImage.createMaterial(FontImage.MATERIAL_KEYBOARD_ARROW_RIGHT, "Folder", 6));
+        Tree.setFolderOpenIcon(FontImage.createMaterial(FontImage.MATERIAL_KEYBOARD_ARROW_DOWN, "FolderOpen", 6));
+
         // Pro only feature
 //        Log.bindCrashProtection(true);
         addNetworkErrorListener(err -> {
@@ -123,13 +127,12 @@ public class GssMobile {
                     return (String) child;
                 } else if (child instanceof Notes) {
                     Notes note = (Notes) child;
-                    String label = note.id.get() + ")" + note.text.get();
+                    String label = note.id.get() + ") " + note.text.get();
                     return label;
                 }
                 return " - nv - ";
             }
         };
-        //t.setNodeIcon(FontImage.createMaterial(FontImage.MATERIAL_NAVIGATE_NEXT, "Node", 4));
 
         mainForm.add(BorderLayout.CENTER, t);
 
