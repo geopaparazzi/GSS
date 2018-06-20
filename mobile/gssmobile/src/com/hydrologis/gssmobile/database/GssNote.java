@@ -17,17 +17,17 @@ import com.codename1.properties.PropertyIndex;
  *
  * @author Andrea Antonello (www.hydrologis.com)
  */
-public class Notes implements PropertyBusinessObject {
-    public final LongProperty<Notes> id = new LongProperty<>("_id");
-    public final DoubleProperty< Notes> longitude = new DoubleProperty<>("lon");
-    public final DoubleProperty< Notes> latitude = new DoubleProperty<>("lat");
-    public final DoubleProperty< Notes> altitude = new DoubleProperty<>("altim");
-    public final LongProperty<Notes> timeStamp = new LongProperty<>("ts");
-    public final Property<String, Notes> description = new Property<>("description");
-    public final Property<String, Notes> text = new Property<>("text");
-    public final Property<String, Notes> form = new Property<>("form");
-    public final IntProperty<Notes> isDirty = new IntProperty<>("isdirty");
-    public final Property<String, Notes> style = new Property<>("style");
+public class GssNote implements PropertyBusinessObject {
+    public final LongProperty<GssNote> id = new LongProperty<>("_id");
+    public final DoubleProperty< GssNote> longitude = new DoubleProperty<>("lon");
+    public final DoubleProperty< GssNote> latitude = new DoubleProperty<>("lat");
+    public final DoubleProperty< GssNote> altitude = new DoubleProperty<>("altim");
+    public final LongProperty<GssNote> timeStamp = new LongProperty<>("ts");
+    public final Property<String, GssNote> description = new Property<>("description");
+    public final Property<String, GssNote> text = new Property<>("text");
+    public final Property<String, GssNote> form = new Property<>("form");
+    public final IntProperty<GssNote> isDirty = new IntProperty<>("isdirty");
+    public final Property<String, GssNote> style = new Property<>("style");
 
     private final PropertyIndex idx = new PropertyIndex(this, "Notes", id, longitude, latitude,
             altitude, timeStamp, description, text, form, isDirty, style
@@ -48,7 +48,7 @@ public class Notes implements PropertyBusinessObject {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        return idx.equals(((Notes) obj).getPropertyIndex());
+        return idx.equals(((GssNote) obj).getPropertyIndex());
     }
 
 }

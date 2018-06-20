@@ -5,7 +5,7 @@
  */
 package com.hydrologis.gssmobile.utils;
 
-import com.hydrologis.gssmobile.database.Notes;
+import com.hydrologis.gssmobile.database.GssNote;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

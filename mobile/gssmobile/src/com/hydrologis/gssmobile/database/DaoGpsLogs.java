@@ -31,8 +31,8 @@ public class DaoGpsLogs {
      */
     public static final String TABLE_GPSLOG_PROPERTIES = "gpslogsproperties";
 
-    public static List<GpsLog> getLogsList(Database db) throws Exception {
-        List<GpsLog> logsList = new ArrayList<>();
+    public static List<GssGpsLog> getLogsList(Database db) throws Exception {
+        List<GssGpsLog> logsList = new ArrayList<>();
         String query = "select "
                 + //
                 GpsLogsTableFields.COLUMN_ID.getFieldName() + ","
@@ -53,7 +53,7 @@ public class DaoGpsLogs {
             while (cursor.next()) {
                 Row row = cursor.getRow();
                 int i = 0;
-                GpsLog log = new GpsLog();
+                GssGpsLog log = new GssGpsLog();
                 log.id.set(row.getLong(i++));
                 log.startts.set(row.getLong(i++));
                 log.endts.set(row.getLong(i++));

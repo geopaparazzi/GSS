@@ -31,16 +31,18 @@ import com.codename1.ui.tree.Tree;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.TimeUtilities;
 import com.hydrologis.gssmobile.database.DaoGpsLogs;
+import com.hydrologis.gssmobile.database.DaoImages;
 import com.hydrologis.gssmobile.database.DaoNotes;
-import com.hydrologis.gssmobile.database.GpsLog;
-import com.hydrologis.gssmobile.database.Notes;
+import com.hydrologis.gssmobile.database.GssGpsLog;
+import com.hydrologis.gssmobile.database.GssImage;
+import com.hydrologis.gssmobile.database.GssNote;
 import com.hydrologis.gssmobile.utils.SyncData;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GssMobile {
 
-    private static final char IMAGE_ICON = FontImage.MATERIAL_IMAGE;
+    private static final char IMAGES_ICON = FontImage.MATERIAL_IMAGE;
     private static final char LOGS_ICON = FontImage.MATERIAL_SHOW_CHART;
     private static final char NOTE_ICON = FontImage.MATERIAL_NOTE;
     private static final char FORM_NOTE_ICON = FontImage.MATERIAL_NOTE_ADD;
@@ -103,28 +105,19 @@ public class GssMobile {
             Dialog.show("No db chosen yet.", " Please use the side menu to choose it.", Dialog.TYPE_WARNING, null, "OK", null);
         }
 
-        SyncData syncData = new SyncData();
-        String sdcardFile = "geopaparazzi.gpap"; //FileUtilities.INSTANCE.getSdcardFile("geopaparazzi.gpap");
+        String sdcardFile = "geopaparazzi2.gpap"; //FileUtilities.INSTANCE.getSdcardFile("geopaparazzi.gpap");
         try {
             Database db = Display.getInstance().openOrCreate(sdcardFile);
-            List<Notes> notesList = DaoNotes.getNotesList(db);
-            syncData.type2ListMap.put(SyncData.NOTES, notesList);
+            Preferences.set(GssUtilities.LAST_DB_PATH, sdcardFile);
 
             Tabs t = new Tabs();
-//            t.setTabPlacement(Component.BOTTOM);
-            Style s = UIManager.getInstance().getComponentStyle("Button");
-            FontImage radioEmptyImage = FontImage.createMaterial(FontImage.MATERIAL_RADIO_BUTTON_UNCHECKED,
-                    s);
-            FontImage radioFullImage = FontImage.createMaterial(FontImage.MATERIAL_RADIO_BUTTON_CHECKED, s);
-            ((DefaultLookAndFeel) UIManager.getInstance().getLookAndFeel()).setRadioButtonImages(radioFullImage,
-                    radioEmptyImage, radioFullImage, radioEmptyImage);
-
+            t.setTabPlacement(Component.TOP);
             Container notesContainer = getNotesContainer(db);
             Container gpsLogsContainer = getGpsLogsContainer(db);
-            Container imagesContainer = new Container();
+            Container imagesContainer = getImagesContainer(db);
             t.addTab("Notes", NOTE_ICON, 4, notesContainer);
             t.addTab("Gps Logs", LOGS_ICON, 4, gpsLogsContainer);
-            t.addTab("Images", IMAGE_ICON, 4, imagesContainer);
+            t.addTab("Images", IMAGES_ICON, 4, imagesContainer);
 
             mainForm.add(BorderLayout.CENTER, t);
 
@@ -132,6 +125,10 @@ public class GssMobile {
             fab.bindFabToContainer(mainForm.getContentPane());
             FloatingActionButton onlyNotesFab = fab.createSubFAB(NOTE_ICON, "Only Notes");
             onlyNotesFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
+            FloatingActionButton onlyLogsFab = fab.createSubFAB(LOGS_ICON, "Only Gps Logs");
+            onlyLogsFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
+            FloatingActionButton onlyImagesFab = fab.createSubFAB(IMAGES_ICON, "Only Media");
+            onlyImagesFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
             FloatingActionButton loadAllFab = fab.createSubFAB(FontImage.MATERIAL_CLEAR_ALL, "Everything");
             loadAllFab.addActionListener(e -> ToastBar.showErrorMessage("Not yet here"));
             mainForm.show();
@@ -159,7 +156,7 @@ public class GssMobile {
             @Override
             public Component[] fetchComponents(int index, int amount) {
 
-                List<Notes> notesList = new ArrayList<>();
+                List<GssNote> notesList = new ArrayList<>();
                 try {
                     notesList = DaoNotes.getNotesList(db);
                 } catch (Exception ex) {
@@ -168,7 +165,7 @@ public class GssMobile {
 
                 Container[] cmps = new Container[notesList.size()];
                 for (int iter = 0; iter < cmps.length; iter++) {
-                    Notes note = notesList.get(iter);
+                    GssNote note = notesList.get(iter);
 
                     String ts = TimeUtilities.toYYYYMMDDHHMMSS(note.timeStamp.get());
                     Label name = new Label(note.text.get());
@@ -193,13 +190,48 @@ public class GssMobile {
         return ic;
     }
 
+    private Container getImagesContainer(Database db) {
+        FontImage imageIcon = FontImage.createMaterial(IMAGES_ICON, "Image", 4);
+        InfiniteContainer ic = new InfiniteContainer() {
+            @Override
+            public Component[] fetchComponents(int index, int amount) {
+
+                List<GssImage> imagesList = new ArrayList<>();
+                try {
+                    imagesList = DaoImages.getImagesList(db);
+                } catch (Exception ex) {
+                    HyLog.e(ex);
+                }
+
+                Container[] cmps = new Container[imagesList.size()];
+                for (int iter = 0; iter < cmps.length; iter++) {
+                    GssImage image = imagesList.get(iter);
+
+                    String ts = TimeUtilities.toYYYYMMDDHHMMSS(image.timeStamp.get());
+                    Label name = new Label(image.text.get());
+                    Label tsLabel = new Label(ts);
+                    tsLabel.setUIID("ItemsListRowSmall");
+
+                    Label iconLabel = new Label(imageIcon);
+
+                    Container c = BoxLayout.encloseX(iconLabel, BoxLayout.encloseY(name, tsLabel));
+                    c.setUIID("ItemsListRow");
+                    cmps[iter] = c;
+                }
+                return cmps;
+            }
+        };
+
+        return ic;
+    }
+
     private Container getGpsLogsContainer(Database db) {
         FontImage logsIcon = FontImage.createMaterial(LOGS_ICON, "GpsLogs", 4);
         InfiniteContainer ic = new InfiniteContainer() {
             @Override
             public Component[] fetchComponents(int index, int amount) {
 
-                List<GpsLog> logsList = new ArrayList<>();
+                List<GssGpsLog> logsList = new ArrayList<>();
                 try {
                     logsList = DaoGpsLogs.getLogsList(db);
                 } catch (Exception ex) {
@@ -208,7 +240,7 @@ public class GssMobile {
 
                 Container[] cmps = new Container[logsList.size()];
                 for (int iter = 0; iter < cmps.length; iter++) {
-                    GpsLog log = logsList.get(iter);
+                    GssGpsLog log = logsList.get(iter);
 
                     String startts = TimeUtilities.toYYYYMMDDHHMMSS(log.startts.get());
                     String endts = TimeUtilities.toYYYYMMDDHHMMSS(log.endts.get());

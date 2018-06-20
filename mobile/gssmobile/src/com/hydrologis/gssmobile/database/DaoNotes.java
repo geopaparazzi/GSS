@@ -23,7 +23,7 @@ public class DaoNotes {
      */
     public static final String TABLE_NOTES = "notes";
 
-    public static List<Notes> getNotesList(Database db) throws Exception {
+    public static List<GssNote> getNotesList(Database db) throws Exception {
 
         String query = "SELECT "
                 + //
@@ -48,7 +48,7 @@ public class DaoNotes {
                 NotesTableFields.COLUMN_STYLE.getFieldName()
                 + " FROM " + TABLE_NOTES + " where " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1;
 
-        List<Notes> notes = new ArrayList<>();
+        List<GssNote> notes = new ArrayList<>();
         Cursor cursor = null;
         try {
             cursor = db.executeQuery(query);
@@ -56,7 +56,7 @@ public class DaoNotes {
             while (cursor.next()) {
                 Row row = cursor.getRow();
                 int i = 0;
-                Notes note = new Notes();
+                GssNote note = new GssNote();
                 note.id.set(row.getLong(i++));
                 note.longitude.set(row.getDouble(i++));
                 note.latitude.set(row.getDouble(i++));

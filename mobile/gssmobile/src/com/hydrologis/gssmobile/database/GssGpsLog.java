@@ -16,13 +16,13 @@ import com.codename1.properties.PropertyIndex;
  *
  * @author Andrea Antonello (www.hydrologis.com)
  */
-public class GpsLog implements PropertyBusinessObject {
+public class GssGpsLog implements PropertyBusinessObject {
 
-    public final LongProperty<GpsLog> id = new LongProperty<>("_id");
-    public final Property<String, GpsLog> name = new Property<>("name");
-    public final LongProperty<GpsLog> startts = new LongProperty<>("startts");
-    public final LongProperty<GpsLog> endts = new LongProperty<>("endts");
-    public final IntProperty<GpsLog> isDirty = new IntProperty<>("isdirty");
+    public final LongProperty<GssGpsLog> id = new LongProperty<>("_id");
+    public final Property<String, GssGpsLog> name = new Property<>("name");
+    public final LongProperty<GssGpsLog> startts = new LongProperty<>("startts");
+    public final LongProperty<GssGpsLog> endts = new LongProperty<>("endts");
+    public final IntProperty<GssGpsLog> isDirty = new IntProperty<>("isdirty");
 
     private final PropertyIndex idx = new PropertyIndex(this, "GpsLogs", id, name, startts,
             endts, isDirty
@@ -43,7 +43,7 @@ public class GpsLog implements PropertyBusinessObject {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        return idx.equals(((GpsLog) obj).getPropertyIndex());
+        return idx.equals(((GssGpsLog) obj).getPropertyIndex());
     }
 
 }
