@@ -46,7 +46,7 @@ public class DaoImages {
                 ImageTableFields.COLUMN_IMAGEDATA_ID.getFieldName() + ", "
                 + //
                 ImageTableFields.COLUMN_ISDIRTY.getFieldName()
-                + " FROM " + TABLE_IMAGES + " where " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1;
+                + " FROM " + TABLE_IMAGES + " where " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 + " order by " + ImageTableFields.COLUMN_TS.getFieldName();
 
         List<GssImage> notes = new ArrayList<>();
         Cursor cursor = null;

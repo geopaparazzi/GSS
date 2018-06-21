@@ -46,7 +46,7 @@ public class DaoNotes {
                 NotesTableFields.COLUMN_ISDIRTY.getFieldName() + ", "
                 + //
                 NotesTableFields.COLUMN_STYLE.getFieldName()
-                + " FROM " + TABLE_NOTES + " where " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1;
+                + " FROM " + TABLE_NOTES + " where " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 + " order by " +  NotesTableFields.COLUMN_TS.getFieldName();
 
         List<GssNote> notes = new ArrayList<>();
         Cursor cursor = null;

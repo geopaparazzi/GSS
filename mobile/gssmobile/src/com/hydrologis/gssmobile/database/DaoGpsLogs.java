@@ -45,7 +45,7 @@ public class DaoGpsLogs {
                 + //
                 GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName()
                 + //
-                " from " + TABLE_GPSLOGS + " where " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=" + 1;; //
+                " from " + TABLE_GPSLOGS + " where " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=" + 1 + " order by " + GpsLogsTableFields.COLUMN_LOG_STARTTS.getFieldName();
 
         Cursor cursor = null;
         try {

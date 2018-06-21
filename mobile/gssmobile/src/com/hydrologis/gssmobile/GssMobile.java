@@ -13,6 +13,7 @@ import com.codename1.ui.FontImage;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.io.Preferences;
+import com.codename1.io.Util;
 import com.codename1.ui.Button;
 import com.codename1.ui.Component;
 import com.codename1.ui.ComponentGroup;
@@ -67,7 +68,8 @@ public class GssMobile {
         Tree.setFolderOpenIcon(FontImage.createMaterial(FontImage.MATERIAL_KEYBOARD_ARROW_DOWN, "FolderOpen", 6));
 
         // Pro only feature
-//        Log.bindCrashProtection(true);
+        HyLog.bindCrashProtection(true);
+
         addNetworkErrorListener(err -> {
             // prevent the event from propagating
             err.consume();
@@ -100,9 +102,18 @@ public class GssMobile {
             ComponentGroup cg = new ComponentGroup();
             try {
                 String sdcard = FileUtilities.INSTANCE.getSdcard();
+                HyLog.p("sdcard: " + sdcard);
                 String[] listFiles = FileUtilities.INSTANCE.listFiles(sdcard);
+                if (listFiles != null) {
+                    HyLog.p("listFiles size: " + listFiles.length);
+                    for (String listFile : listFiles) {
+                        HyLog.p("-> " + listFile);
+                    }
+                }
+
                 addGpapProjects(listFiles, projectDialog, cg);
                 String dbPath = FileUtilities.INSTANCE.getSdcardFile("database");
+                HyLog.p("database path from sdcard: " + dbPath);
                 listFiles = FileUtilities.INSTANCE.listFiles(dbPath);
                 addGpapProjects(listFiles, projectDialog, cg);
 
@@ -174,6 +185,9 @@ public class GssMobile {
     }
 
     private void refreshData(String dbFile) throws IOException {
+        if (db != null) {
+            Util.cleanup(db);
+        }
         db = Display.getInstance().openOrCreate(dbFile);
         Preferences.set(GssUtilities.LAST_DB_PATH, dbFile);
         notesContainer.refresh();
@@ -187,6 +201,7 @@ public class GssMobile {
             ((Dialog) current).dispose();
             current = getCurrentForm();
         }
+        HyLog.sendLog();
     }
 
     public void destroy() {

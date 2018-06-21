@@ -18,7 +18,7 @@ import java.util.List;
  */
 public enum FileUtilities {
     INSTANCE;
-    
+
     public static final String SDCARD = "SDCARD";
     public static final String FILE_PREFIX = "file://";
 
@@ -28,24 +28,29 @@ public enum FileUtilities {
         fsStorage = FileSystemStorage.getInstance();
     }
 
+    private boolean isCustomPathSupported() {
+        return false; // to be changed with Database.isCustomPathSupported() when it is ready
+    }
+
     public String getSdcardFile(String file) {
-        String sdcard = fsStorage.toNativePath(getSdcard());
-        File f = new File(FILE_PREFIX + sdcard + File.separator + file);
-        if (!f.exists()) {
+        String sdcard = getSdcard();
+        String sep = getFileSeparator(sdcard);
+        String f = sdcard + sep + file;
+        if (!new File(f).exists()) {
             return file;
         } else {
-            return f.getAbsolutePath();
+            return f;
         }
     }
 
     public String getSdcard() {
         List<String> rootTypes = getRootTypes();
         int indexOfSdcard = rootTypes.indexOf(SDCARD);
-        if (indexOfSdcard != -1) {
-            return getRoots().get(indexOfSdcard);
-        } else {
-            return getRoots().get(0);
+        if (indexOfSdcard == -1) {
+            indexOfSdcard = 0;
         }
+        String path = getRoots().get(indexOfSdcard);
+        return FILE_PREFIX + fsStorage.toNativePath(path);
     }
 
     public List<String> getRoots() {
@@ -72,9 +77,30 @@ public enum FileUtilities {
         }
         return rootTypes;
     }
-    
-    public String[] listFiles(String parent) throws IOException{
-        return fsStorage.listFiles(parent);
+
+    public String[] listFiles(String parent) throws IOException {
+        String sep = getFileSeparator(parent);
+
+        final String[] listFiles = fsStorage.listFiles(parent);
+        if (isCustomPathSupported()) {
+            String[] newList = new String[listFiles.length];
+            for (int i = 0; i < newList.length; i++) {
+                String newFile = parent + sep + listFiles[i];
+                newList[i] = newFile;
+            }
+            return newList;
+        } else {
+            return listFiles;
+        }
+
+    }
+
+    private String getFileSeparator(String parent) {
+        String sep = File.separator;
+        if (parent.endsWith(File.separator)) {
+            sep = "";
+        }
+        return sep;
     }
 
 }
