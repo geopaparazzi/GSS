@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import javax.sql.DataSource;
 
@@ -26,6 +27,7 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.DataSourceConnectionSource;
 import com.j256.ormlite.jdbc.JdbcSingleConnectionSource;
+import com.j256.ormlite.misc.TransactionManager;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.UpdateBuilder;
 import com.j256.ormlite.support.ConnectionSource;
@@ -120,6 +122,10 @@ public class DatabaseHandler implements AutoCloseable, IDbVisitor {
     }
 
     public void populateForDemo() throws SQLException {
+    }
+    
+    public <T> void callInTransaction(Callable<T> callable) throws SQLException {
+        TransactionManager.callInTransaction(connectionSource, callable);
     }
 
     /**

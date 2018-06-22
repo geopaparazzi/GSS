@@ -92,7 +92,6 @@ public enum FileUtilities {
         } else {
             return listFiles;
         }
-
     }
 
     private String getFileSeparator(String parent) {
@@ -101,6 +100,10 @@ public enum FileUtilities {
             sep = "";
         }
         return sep;
+    }
+    
+    public String toNativePath(String path){
+        return fsStorage.toNativePath(path);
     }
 
 }

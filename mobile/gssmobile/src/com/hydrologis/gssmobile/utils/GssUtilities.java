@@ -12,5 +12,6 @@ package com.hydrologis.gssmobile.utils;
 public class GssUtilities {
 
     public static String LAST_DB_PATH = "GSS_LAST_DB_PATH";
+    public static String SERVER_URL = "GSS_SERVER_URL";
 
 }

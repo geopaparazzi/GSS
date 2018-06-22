@@ -39,8 +39,8 @@
             class="com.hydrologis.gss.servlets.DownloadDataServlet">
       </servlet>
       <servlet
-            alias="/uploaddata"
-            class="com.hydrologis.gss.servlets.UploadDataServlet">
+            alias="/upload"
+            class="com.hydrologis.gss.servlets.UploadServlet">
       </servlet>
             <servlet
             alias="/getworktile"

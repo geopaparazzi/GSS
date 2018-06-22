@@ -5,45 +5,79 @@
  */
 package com.hydrologis.gssmobile.database;
 
-import com.codename1.properties.IntProperty;
-import com.codename1.properties.LongProperty;
-import com.codename1.properties.Property;
-import com.codename1.properties.PropertyBusinessObject;
-import com.codename1.properties.PropertyIndex;
+import com.codename1.io.Externalizable;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The gps log class.
  *
  * @author Andrea Antonello (www.hydrologis.com)
  */
-public class GssGpsLog implements PropertyBusinessObject {
+public class GssGpsLog implements Externalizable {
 
-    public final LongProperty<GssGpsLog> id = new LongProperty<>("_id");
-    public final Property<String, GssGpsLog> name = new Property<>("name");
-    public final LongProperty<GssGpsLog> startts = new LongProperty<>("startts");
-    public final LongProperty<GssGpsLog> endts = new LongProperty<>("endts");
-    public final IntProperty<GssGpsLog> isDirty = new IntProperty<>("isdirty");
+    public static final String OBJID = "gpslog";
+    public static final int VERSION = 1;
 
-    private final PropertyIndex idx = new PropertyIndex(this, "GpsLogs", id, name, startts,
-            endts, isDirty
-    );
+    public long id;
+    public String name;
+    public long startts;
+    public long endts;
+    public long isDirty;
+    public String color;
+    public float width;
+    public List<GssGpsLogPoint> points = new ArrayList<>();
 
     @Override
-    public PropertyIndex getPropertyIndex() {
-        return idx;
+    public int getVersion() {
+        return VERSION;
     }
 
     @Override
-    public int hashCode() {
-        return idx.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (getClass() != obj.getClass()) {
-            return false;
+    public void externalize(DataOutputStream out) throws IOException {
+        out.writeLong(id);
+        out.writeUTF(name);
+        out.writeLong(startts);
+        out.writeLong(endts);
+        out.writeUTF(color);
+        out.writeFloat(width);
+        out.writeInt(points.size());
+        for (GssGpsLogPoint point : points) {
+            out.writeDouble(point.longitude);
+            out.writeDouble(point.latitude);
+            out.writeDouble(point.altimetry);
+            out.writeLong(point.ts);
         }
-        return idx.equals(((GssGpsLog) obj).getPropertyIndex());
+    }
+
+    @Override
+    public void internalize(int version, DataInputStream in) throws IOException {
+        if (version != VERSION) {
+            throw new IllegalArgumentException("Wrong version: " + version + " vs " + VERSION);
+        }
+        id = in.readLong();
+        name = in.readUTF();
+        startts = in.readLong();
+        endts = in.readLong();
+        color = in.readUTF();
+        width = in.readFloat();
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            GssGpsLogPoint p = new GssGpsLogPoint();
+            p.longitude = in.readDouble();
+            p.latitude = in.readDouble();
+            p.altimetry = in.readDouble();
+            p.ts = in.readLong();
+            points.add(p);
+        }
+    }
+
+    @Override
+    public String getObjectId() {
+        return OBJID;
     }
 
 }

@@ -31,7 +31,7 @@ public class DaoGpsLogs {
      */
     public static final String TABLE_GPSLOG_PROPERTIES = "gpslogsproperties";
 
-    public static List<GssGpsLog> getLogsList(Database db) throws Exception {
+    public static List<GssGpsLog> getLogsList(Database db, boolean withLogData) throws Exception {
         List<GssGpsLog> logsList = new ArrayList<>();
         String query = "select "
                 + //
@@ -47,22 +47,87 @@ public class DaoGpsLogs {
                 + //
                 " from " + TABLE_GPSLOGS + " where " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=" + 1 + " order by " + GpsLogsTableFields.COLUMN_LOG_STARTTS.getFieldName();
 
-        Cursor cursor = null;
+        Cursor cursorLog = null;
         try {
-            cursor = db.executeQuery(query);
-            while (cursor.next()) {
-                Row row = cursor.getRow();
+            cursorLog = db.executeQuery(query);
+            while (cursorLog.next()) {
+                Row row = cursorLog.getRow();
                 int i = 0;
                 GssGpsLog log = new GssGpsLog();
-                log.id.set(row.getLong(i++));
-                log.startts.set(row.getLong(i++));
-                log.endts.set(row.getLong(i++));
-                log.name.set(row.getString(i++));
-                log.isDirty.set(row.getInteger(i++));
+                log.id = row.getLong(i++);
+                log.startts = row.getLong(i++);
+                log.endts = row.getLong(i++);
+                log.name = row.getString(i++);
+                log.isDirty = row.getInteger(i++);
                 logsList.add(log);
+
+                if (withLogData) {
+                    String queryData = "select "
+                            + //
+                            GpsLogsDataTableFields.COLUMN_DATA_LAT.getFieldName() + ","
+                            + //
+                            GpsLogsDataTableFields.COLUMN_DATA_LON.getFieldName() + ","
+                            + //
+                            GpsLogsDataTableFields.COLUMN_DATA_ALTIM.getFieldName() + ","
+                            + //
+                            GpsLogsDataTableFields.COLUMN_DATA_TS.getFieldName()
+                            + //
+                            " from " + TABLE_GPSLOG_DATA + " where "
+                            + //
+                            GpsLogsDataTableFields.COLUMN_LOGID.getFieldName() + " = " + log.id + " order by "
+                            + GpsLogsDataTableFields.COLUMN_DATA_TS.getFieldName();
+
+                    Cursor cursorLogData = null;
+                    try {
+                        cursorLogData = db.executeQuery(queryData);
+                        while (cursorLogData.next()) {
+                            Row dataRow = cursorLogData.getRow();
+                            int j = 0;
+
+                            double lat = dataRow.getDouble(j++);
+                            double lon = dataRow.getDouble(j++);
+                            double altim = dataRow.getDouble(j++);
+                            long ts = dataRow.getLong(j++);
+
+                            GssGpsLogPoint gPoint = new GssGpsLogPoint();
+                            gPoint.longitude = lon;
+                            gPoint.latitude = lat;
+                            gPoint.altimetry = altim;
+                            gPoint.ts = ts;
+                            log.points.add(gPoint);
+                        }
+                    } finally {
+                        Util.cleanup(cursorLogData);
+                    }
+
+                    String queryProps = "select "
+                            + //
+                            GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_COLOR.getFieldName() + ","
+                            + //
+                            GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_WIDTH.getFieldName() + " from "
+                            + //
+                            TABLE_GPSLOG_PROPERTIES + " where " + GpsLogsPropertiesTableFields.COLUMN_LOGID.getFieldName() + "=" + log.id;
+
+                    Cursor cursorLogProps = null;
+                    try {
+                        cursorLogProps = db.executeQuery(queryProps);
+                        while (cursorLogProps.next()) {
+                            Row propsRow = cursorLogProps.getRow();
+                            int j = 0;
+
+                            String color = propsRow.getString(j++);
+                            float width = propsRow.getFloat(j++);
+                            log.color = color;
+                            log.width = width;
+                        }
+                    } finally {
+                        Util.cleanup(cursorLogProps);
+                    }
+
+                }
             }
         } finally {
-            Util.cleanup(cursor);
+            Util.cleanup(cursorLog);
         }
 
         return logsList;

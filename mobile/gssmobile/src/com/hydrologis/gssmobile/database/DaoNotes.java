@@ -46,7 +46,7 @@ public class DaoNotes {
                 NotesTableFields.COLUMN_ISDIRTY.getFieldName() + ", "
                 + //
                 NotesTableFields.COLUMN_STYLE.getFieldName()
-                + " FROM " + TABLE_NOTES + " where " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 + " order by " +  NotesTableFields.COLUMN_TS.getFieldName();
+                + " FROM " + TABLE_NOTES + " where " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 + " order by " + NotesTableFields.COLUMN_TS.getFieldName();
 
         List<GssNote> notes = new ArrayList<>();
         Cursor cursor = null;
@@ -57,16 +57,16 @@ public class DaoNotes {
                 Row row = cursor.getRow();
                 int i = 0;
                 GssNote note = new GssNote();
-                note.id.set(row.getLong(i++));
-                note.longitude.set(row.getDouble(i++));
-                note.latitude.set(row.getDouble(i++));
-                note.altitude.set(row.getDouble(i++));
-                note.timeStamp.set(row.getLong(i++));
-                note.description.set(row.getString(i++));
-                note.text.set(row.getString(i++));
-                note.form.set(row.getString(i++));
-                note.isDirty.set(row.getInteger(i++));
-                note.style.set(row.getString(i++));
+                note.id = row.getLong(i++);
+                note.longitude = row.getDouble(i++);
+                note.latitude = row.getDouble(i++);
+                note.altitude = row.getDouble(i++);
+                note.timeStamp = row.getLong(i++);
+                note.description = row.getString(i++);
+                note.text = row.getString(i++);
+                note.form = row.getString(i++);
+                note.isDirty = row.getInteger(i++);
+                note.style = row.getString(i++);
                 notes.add(note);
             }
         } finally {

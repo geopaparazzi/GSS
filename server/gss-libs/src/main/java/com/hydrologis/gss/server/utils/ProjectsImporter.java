@@ -223,42 +223,6 @@ public class ProjectsImporter {
 
     }
 
-    // private void checkImages( GpapUsers user, IHMConnection gpapConnection, long gpapNoteId, long
-    // newNoteId,
-    // Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao, String formString ) throws
-    // Exception {
-    // JSONObject sectionObject = new JSONObject(formString);
-    // String sectionName = sectionObject.getString("sectionname");
-    // sectionName = sectionName.replaceAll("\\s+", "_");
-    // List<String> formNames4Section = Utilities.getFormNames4Section(sectionObject);
-    //
-    // LinkedHashMap<String, String> valuesMap = new LinkedHashMap<>();
-    // LinkedHashMap<String, String> typesMap = new LinkedHashMap<>();
-    // GeopaparazziUtilities.extractValues(sectionObject, formNames4Section, valuesMap, typesMap);
-    //
-    // Set<Entry<String, String>> entrySet = valuesMap.entrySet();
-    //
-    // for( Entry<String, String> entry : entrySet ) {
-    // String key = entry.getKey();
-    // String type = typesMap.get(key);
-    // if (isMedia(type)) {
-    // String value = entry.getValue();
-    // // extract images to media folder
-    // String[] imageSplit = value.split(OmsGeopaparazziProject3To4Converter.IMAGE_ID_SEPARATOR);
-    // for( String image : imageSplit ) {
-    // image = image.trim();
-    // if (image.length() == 0)
-    // continue;
-    // long imageId = Long.parseLong(image);
-    //
-    // insertImageById(user, gpapConnection, gpapNoteId, newNoteId, imagesDao, imageDataDao,
-    // imageId);
-    //
-    // }
-    // }
-    // }
-    // }
-
     private void insertImage( GpapUsers user, IHMConnection gpapConnection, Long gpapNoteId, Long newNoteId,
             Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao ) throws Exception {
 
