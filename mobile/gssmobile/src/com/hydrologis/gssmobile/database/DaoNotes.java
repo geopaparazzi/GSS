@@ -43,8 +43,6 @@ public class DaoNotes {
                 + //
                 NotesTableFields.COLUMN_FORM.getFieldName() + ", "
                 + //
-                NotesTableFields.COLUMN_ISDIRTY.getFieldName() + ", "
-                + //
                 NotesTableFields.COLUMN_STYLE.getFieldName()
                 + " FROM " + TABLE_NOTES + " where " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 + " order by " + NotesTableFields.COLUMN_TS.getFieldName();
 
@@ -65,7 +63,6 @@ public class DaoNotes {
                 note.description = row.getString(i++);
                 note.text = row.getString(i++);
                 note.form = row.getString(i++);
-                note.isDirty = row.getInteger(i++);
                 note.style = row.getString(i++);
                 notes.add(note);
             }

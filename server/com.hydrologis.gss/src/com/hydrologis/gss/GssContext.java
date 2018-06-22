@@ -14,6 +14,7 @@ import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.hortonmachine.dbs.compat.EDb;
 
+import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.workspace.StageWorkspace;
 
 public class GssContext {
@@ -65,7 +66,8 @@ public class GssContext {
     public File getDatabaseFile() throws IOException {
         Optional<File> globalDataFolder = StageWorkspace.getInstance().getGlobalDataFolder();
         if (globalDataFolder.isPresent()) {
-            File[] databaseFiles = globalDataFolder.get().listFiles(new FilenameFilter(){
+            File dataFolderFile = globalDataFolder.get();
+            File[] databaseFiles = dataFolderFile.listFiles(new FilenameFilter(){
                 @Override
                 public boolean accept( File dir, String name ) {
                     return name.startsWith(DB_PREFIX)
@@ -75,6 +77,11 @@ public class GssContext {
             if (databaseFiles != null && databaseFiles.length == 1) {
                 return databaseFiles[0];
             }
+            
+            // create a new database
+            StageLogger.logInfo(this, "No database present in folder, creating one.");
+            File dbFile = new File(dataFolderFile, "gss_database.mv.db");
+            return dbFile;
         }
         throw new IOException("Can't find main database file in: " + globalDataFolder.get().getAbsolutePath());
     }

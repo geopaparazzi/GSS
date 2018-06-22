@@ -21,7 +21,6 @@ public class GssNote implements Externalizable {
     public String description = "";
     public String text = "";
     public String form = "";
-    public int isDirty;
     public String style = "";
 
     @Override

@@ -2,12 +2,10 @@ package com.hydrologis.gssmobile;
 
 import com.codename1.components.FloatingActionButton;
 import com.codename1.components.SliderBridge;
-import com.codename1.components.SpanLabel;
 import com.hydrologis.gssmobile.utils.GssUtilities;
 import static com.codename1.ui.CN.*;
-import com.codename1.components.ToastBar;
 import com.codename1.db.Database;
-import com.codename1.io.Externalizable;
+import com.codename1.io.JSONParser;
 import com.codename1.io.MultipartRequest;
 import com.codename1.io.NetworkManager;
 import com.codename1.ui.Dialog;
@@ -20,7 +18,6 @@ import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.io.Preferences;
 import com.codename1.io.Util;
 import com.codename1.ui.Button;
-import com.codename1.ui.Command;
 import com.codename1.ui.Component;
 import com.codename1.ui.ComponentGroup;
 import com.codename1.ui.Container;
@@ -30,16 +27,10 @@ import com.codename1.ui.InfiniteContainer;
 import com.codename1.ui.Label;
 import com.codename1.ui.Slider;
 import com.codename1.ui.Tabs;
-import com.codename1.ui.TextComponent;
-import com.codename1.ui.TextField;
 import com.codename1.ui.layouts.BoxLayout;
-import com.codename1.ui.layouts.TextModeLayout;
-import com.codename1.ui.plaf.Border;
-import com.codename1.ui.plaf.Style;
 import com.codename1.ui.tree.Tree;
-import com.codename1.ui.validation.LengthConstraint;
-import com.codename1.ui.validation.Validator;
 import com.codename1.util.Base64;
+import com.codename1.util.regex.StringReader;
 import com.hydrologis.cn1.libs.FileUtilities;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.HyUtilities;
@@ -55,10 +46,14 @@ import com.hydrologis.gssmobile.utils.UdidDialog;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class GssMobile {
+
+    private static final String MASTER_GSS_PASSWORD = "gss_Master_Survey_Forever_2018";
 
     private static final char IMAGES_ICON = FontImage.MATERIAL_IMAGE;
     private static final char LOGS_ICON = FontImage.MATERIAL_SHOW_CHART;
@@ -223,10 +218,7 @@ public class GssMobile {
                 return;
             }
 
-            // tODO handle pwd
-            String password = "testpwd";
-
-            String authCode = HyUtilities.getUdid() + ":" + password;
+            String authCode = HyUtilities.getUdid() + ":" + MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
             MultipartRequest mpr = new MultipartRequest();
             mpr.setUrl(serverUrl);
@@ -256,15 +248,47 @@ public class GssMobile {
                 mpr.addData(GssGpsLog.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
                 oneAdded = true;
             }
+            if (doMedia) {
+                List<GssImage> imagesList = DaoImages.getImagesList(db, true);
+                int count = 1;
+                for (GssImage gssImage : imagesList) {
+                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                    DataOutputStream out = new DataOutputStream(bout);
+                    gssImage.externalize(out);
+                    byte[] bytes = bout.toByteArray();
+                    mpr.addData(GssImage.OBJID + (count++), bytes, HyUtilities.MIMETYPE_BYTEARRAY);
+                    oneAdded = true;
+                }
 
-            SliderBridge.bindProgress(mpr, progressSlider);
-            NetworkManager.getInstance().addToQueueAndWait(mpr);
+            }
 
-            if (mpr.getResponseCode() == 200) {
-                byte[] responseData = mpr.getResponseData();
+            if (oneAdded) {
+                SliderBridge.bindProgress(mpr, progressSlider);
+                NetworkManager.getInstance().addToQueueAndWait(mpr);
+
+                if (mpr.getResponseCode() == 200) {
+                    byte[] responseData = mpr.getResponseData();
+                    String msg = new String(responseData);
+                    JSONParser parser = new JSONParser();
+                    Map<String, Object> responseMap = parser.parseJSON(new StringReader(msg));
+                    Object statusCode = responseMap.get("code");
+                    if (statusCode instanceof Number) {
+                        int status = ((Number) statusCode).intValue();
+                        if (status == 200) {
+                            HyUtilities.showInfoDialog(responseMap.get("message").toString());
+                        } else {
+                            String responseErrorMessage = mpr.getResponseErrorMessage();
+                            HyLog.p(responseErrorMessage);
+                            HyUtilities.showErrorDialog(responseMap.get("trace").toString());
+                        }
+                    }
+                } else {
+                    String responseErrorMessage = mpr.getResponseErrorMessage();
+                    HyUtilities.showErrorDialog(responseErrorMessage);
+                }
+
             } else {
-                String responseErrorMessage = mpr.getResponseErrorMessage();
-                HyUtilities.showErrorDialog(responseErrorMessage);
+                HyUtilities.showInfoDialog("No data to upload.");
             }
         } catch (Exception exception) {
             HyLog.e(exception);
@@ -392,7 +416,7 @@ public class GssMobile {
                 List<GssImage> imagesList = new ArrayList<>();
                 try {
                     if (db != null) {
-                        imagesList = DaoImages.getImagesList(db);
+                        imagesList = DaoImages.getImagesList(db, false);
                     }
                 } catch (Exception ex) {
                     HyLog.e(ex);
@@ -402,8 +426,8 @@ public class GssMobile {
                 for (int iter = 0; iter < cmps.length; iter++) {
                     GssImage image = imagesList.get(iter);
 
-                    String ts = TimeUtilities.toYYYYMMDDHHMMSS(image.timeStamp.get());
-                    Label name = new Label(image.text.get());
+                    String ts = TimeUtilities.toYYYYMMDDHHMMSS(image.timeStamp);
+                    Label name = new Label(image.text);
                     Label tsLabel = new Label(ts);
                     tsLabel.setUIID("ItemsListRowSmall");
 

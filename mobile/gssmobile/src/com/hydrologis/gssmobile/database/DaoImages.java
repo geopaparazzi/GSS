@@ -22,56 +22,78 @@ public class DaoImages {
      * Image table name.
      */
     public static final String TABLE_IMAGES = "images";
+    /**
+     * Image data table name.
+     */
+    public static final String TABLE_IMAGE_DATA = "imagedata";
 
-    public static List<GssImage> getImagesList(Database db) throws Exception {
+    public static List<GssImage> getImagesList(Database db, boolean withData) throws Exception {
 
-        String query = "SELECT "
-                + //
-                ImageTableFields.COLUMN_ID.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_LON.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_LAT.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_ALTIM.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_TS.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_AZIM.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_TEXT.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_NOTE_ID.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_IMAGEDATA_ID.getFieldName() + ", "
-                + //
-                ImageTableFields.COLUMN_ISDIRTY.getFieldName()
-                + " FROM " + TABLE_IMAGES + " where " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 + " order by " + ImageTableFields.COLUMN_TS.getFieldName();
+        final String imgLonFN = ImageTableFields.COLUMN_LON.getFieldName();
+        final String imgLatFN = ImageTableFields.COLUMN_LAT.getFieldName();
+        final String imgAltimFN = ImageTableFields.COLUMN_ALTIM.getFieldName();
+        final String imgTsFN = ImageTableFields.COLUMN_TS.getFieldName();
+        final String imgAzimFN = ImageTableFields.COLUMN_AZIM.getFieldName();
+        final String imgTextFN = ImageTableFields.COLUMN_TEXT.getFieldName();
+        final String imgNoteidFN = ImageTableFields.COLUMN_NOTE_ID.getFieldName();
+        final String imgImagedataidFN = ImageTableFields.COLUMN_IMAGEDATA_ID.getFieldName();
+        final String imgdImadedataidFN = ImageDataTableFields.COLUMN_ID.getFieldName();
+        final String imgdImadedataDataFN = ImageDataTableFields.COLUMN_IMAGE.getFieldName();
+        final String imgdImadedataThumbFN = ImageDataTableFields.COLUMN_THUMBNAIL.getFieldName();
 
-        List<GssImage> notes = new ArrayList<>();
+        String query = "select "
+                + //
+                imgLonFN + ","
+                + //
+                imgLatFN + ","
+                + //
+                imgAltimFN + ","
+                + //
+                imgTsFN + ","
+                + //
+                imgAzimFN + ","
+                + //
+                imgTextFN + ","
+                + //
+                imgNoteidFN + ","
+                + //
+                imgdImadedataDataFN + ","
+                + //
+                imgdImadedataThumbFN
+                + //
+                " from " + TABLE_IMAGES + " i, " + TABLE_IMAGE_DATA + " id  where "
+                + //
+                "i." + imgImagedataidFN + "=" + "id." + imgdImadedataidFN //
+                + " and " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 + " order by " + imgTsFN;
+
+        List<GssImage> images = new ArrayList<>();
         Cursor cursor = null;
+
         try {
             cursor = db.executeQuery(query);
             while (cursor.next()) {
                 Row row = cursor.getRow();
                 int i = 0;
                 GssImage image = new GssImage();
-                image.id.set(row.getLong(i++));
-                image.longitude.set(row.getDouble(i++));
-                image.latitude.set(row.getDouble(i++));
-                image.altitude.set(row.getDouble(i++));
-                image.timeStamp.set(row.getLong(i++));
-                image.azimuth.set(row.getDouble(i++));
-                image.text.set(row.getString(i++));
-                image.noteId.set(row.getLong(i++));
-                image.imageDataId.set(row.getLong(i++));
-                image.isDirty.set(row.getInteger(i++));
-                notes.add(image);
+                image.longitude = row.getDouble(i++);
+                image.latitude = row.getDouble(i++);
+                image.altitude = row.getDouble(i++);
+                image.timeStamp = row.getLong(i++);
+                image.azimuth = row.getDouble(i++);
+                image.text = row.getString(i++);
+                image.noteId = row.getLong(i++);
+                images.add(image);
+
+                if (withData) {
+                    image.data = row.getBlob(i++);
+                    image.dataThumb = row.getBlob(i++);
+                }
+
             }
         } finally {
             Util.cleanup(cursor);
         }
-        return notes;
+        return images;
     }
 
     public static enum ImageTableFields {

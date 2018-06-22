@@ -17,6 +17,8 @@ import com.codename1.ui.FontImage;
 public class HyUtilities {
 
     public static FontImage ERR_IMAGE = FontImage.createMaterial(FontImage.MATERIAL_ERROR, "Error", 4);
+    public static FontImage INFO_IMAGE = FontImage.createMaterial(FontImage.MATERIAL_INFO, "Info", 4);
+    
     public static final String OK = "OK";
 
     public static String CUSTOM_UDID = "GSS_CUSTOM_UDID";
@@ -35,6 +37,9 @@ public class HyUtilities {
 
     public static void showErrorDialog(String msg) {
         Dialog.show("ERROR", msg, Dialog.TYPE_ERROR, ERR_IMAGE, OK, null);
+    }
+    public static void showInfoDialog(String msg) {
+        Dialog.show("INFO", msg, Dialog.TYPE_INFO, INFO_IMAGE, OK, null);
     }
 
 }

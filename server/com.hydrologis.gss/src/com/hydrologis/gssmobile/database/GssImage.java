@@ -5,7 +5,6 @@
  */
 package com.hydrologis.gssmobile.database;
 
-import com.codename1.io.Externalizable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class GssImage implements Externalizable {
     }
 
     @Override
-    public void externalize(DataOutputStream out) throws IOException {
+    public void externalize( DataOutputStream out ) throws IOException {
         out.writeLong(id);
         out.writeDouble(longitude);
         out.writeDouble(latitude);
@@ -54,7 +53,7 @@ public class GssImage implements Externalizable {
     }
 
     @Override
-    public void internalize(int version, DataInputStream in) throws IOException {
+    public void internalize( int version, DataInputStream in ) throws IOException {
         if (version != VERSION) {
             throw new IllegalArgumentException("Wrong version: " + version + " vs " + VERSION);
         }

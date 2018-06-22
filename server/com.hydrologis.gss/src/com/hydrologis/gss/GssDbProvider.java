@@ -39,12 +39,17 @@ public class GssDbProvider {
                 throw new IllegalArgumentException("Can't understand db file: " + databaseFile);
             }
 
-            String exists = "non existing";
-            if (databaseFile.exists()) {
-                exists = "existing";
-            }
             String dburl = databaseFile.getAbsolutePath();
-            StageLogger.logDebug(this, "Connecting to " + exists + " database: " + dburl);
+            boolean dbExistedAlready = databaseFile.exists();
+            if (!dbExistedAlready) {
+                StageLogger.logDebug(this, "Create database (wasn't existing): " + dburl);
+                try (ASpatialDb tmpDb = dbToUse.getSpatialDb()) {
+                    // db.setCredentials(USERNAME, PWD);
+                    tmpDb.open(dburl);
+                }
+            } else {
+                StageLogger.logDebug(this, "Connecting to database: " + dburl);
+            }
 
             if (dbToUse == EDb.H2GIS) {
                 if (server == null) {
@@ -61,6 +66,10 @@ public class GssDbProvider {
             db.open(dburl);
 
             databaseHandler = DatabaseHandler.instance(db);
+
+            if (!dbExistedAlready) {
+                databaseHandler.createTables();
+            }
         } catch (Exception e1) {
             StageLogger.logError(this, e1);
         }

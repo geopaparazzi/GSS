@@ -324,6 +324,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
             public void widgetSelected( SelectionEvent e ) {
                 String selected = devicesCombo.getText();
                 GpapUsers user = deviceNamesMap.get(selected);
+                visibleDevices.removeIf(d -> d == null);
                 if (!visibleDevices.contains(user)) {
                     visibleDevices.add(user);
                 }

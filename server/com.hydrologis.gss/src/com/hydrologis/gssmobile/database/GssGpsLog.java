@@ -5,7 +5,6 @@
  */
 package com.hydrologis.gssmobile.database;
 
-import com.codename1.io.Externalizable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
