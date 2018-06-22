@@ -5,6 +5,7 @@
  */
 package com.hydrologis.cn1.libs;
 
+import com.codename1.db.Database;
 import com.codename1.io.File;
 import com.codename1.io.FileSystemStorage;
 import java.io.IOException;
@@ -29,7 +30,7 @@ public enum FileUtilities {
     }
 
     private boolean isCustomPathSupported() {
-        return false; // to be changed with Database.isCustomPathSupported() when it is ready
+        return Database.isCustomPathSupported();
     }
 
     public String getSdcardFile(String file) {
@@ -101,9 +102,43 @@ public enum FileUtilities {
         }
         return sep;
     }
-    
-    public String toNativePath(String path){
+
+    public String toNativePath(String path) {
         return fsStorage.toNativePath(path);
+    }
+
+    /**
+     * Find the files by a given extension.
+     *
+     * <p>
+     * <b>NOTE: this right now goes down only one level</b></p>
+     *
+     * @param parent the parent path.
+     * @param ext the extension.
+     * @return the list of files found.
+     * @throws IOException
+     */
+    public List<String> findFilesByExtension(String parent, String ext) throws IOException {
+        List<String> files = new ArrayList<>();
+        if (parent == null) {
+            parent = getSdcard();
+        }
+        String[] listFiles = listFiles(parent);
+        for (String file : listFiles) {
+            if (new File(file).isDirectory()) {
+                String[] filesInFolders = listFiles(file);
+                for (String fileInFolder : filesInFolders) {
+                    if (!new File(fileInFolder).isDirectory() && fileInFolder.endsWith(ext)) {
+                        files.add(fileInFolder);
+                    }
+                }
+            } else {
+                if (file.endsWith(ext)) {
+                    files.add(file);
+                }
+            }
+        }
+        return files;
     }
 
 }

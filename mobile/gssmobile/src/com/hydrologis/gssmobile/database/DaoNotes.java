@@ -9,6 +9,7 @@ import com.codename1.db.Cursor;
 import com.codename1.db.Database;
 import com.codename1.db.Row;
 import com.codename1.io.Util;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +71,11 @@ public class DaoNotes {
             Util.cleanup(cursor);
         }
         return notes;
+    }
+
+    public static void clearDirty(Database db) throws IOException {
+        String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=0";
+        db.execute(update);
     }
 
     public static enum NotesTableFields {

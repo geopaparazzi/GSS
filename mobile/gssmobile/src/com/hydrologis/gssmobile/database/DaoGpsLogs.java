@@ -9,6 +9,7 @@ import com.codename1.db.Cursor;
 import com.codename1.db.Database;
 import com.codename1.db.Row;
 import com.codename1.io.Util;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +42,7 @@ public class DaoGpsLogs {
                 + //
                 GpsLogsTableFields.COLUMN_LOG_ENDTS.getFieldName() + ","
                 + //
-                GpsLogsTableFields.COLUMN_LOG_TEXT.getFieldName() 
+                GpsLogsTableFields.COLUMN_LOG_TEXT.getFieldName()
                 + //
                 " from " + TABLE_GPSLOGS + " where " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=" + 1 + " order by " + GpsLogsTableFields.COLUMN_LOG_STARTTS.getFieldName();
 
@@ -128,6 +129,11 @@ public class DaoGpsLogs {
         }
 
         return logsList;
+    }
+
+    public static void clearDirty(Database db) throws IOException {
+        String update = "update " + TABLE_GPSLOGS + " set " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=0";
+        db.execute(update);
     }
 
     public static enum GpsLogsTableFields {
