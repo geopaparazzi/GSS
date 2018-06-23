@@ -77,6 +77,11 @@ public class DaoNotes {
         String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=0";
         db.execute(update);
     }
+    
+    public static void makeDirty(Database db) throws IOException {
+        String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=1";
+        db.execute(update);
+    }
 
     public static enum NotesTableFields {
         /**

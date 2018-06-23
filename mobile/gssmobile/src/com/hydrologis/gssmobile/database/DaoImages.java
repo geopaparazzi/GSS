@@ -101,6 +101,11 @@ public class DaoImages {
         String update = "update " + TABLE_IMAGES + " set " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=0";
         db.execute(update);
     }
+    
+    public static void makeDirty(Database db) throws IOException {
+        String update = "update " + TABLE_IMAGES + " set " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=1";
+        db.execute(update);
+    }
 
     public static enum ImageTableFields {
         /**
