@@ -72,6 +72,7 @@ public class GssMobile {
     private InfiniteContainer imagesContainer = null;
     private Database db = null;
     private Slider progressSlider;
+    private Label loadedDbLabel;
 
     public void init(Object context) {
         // use two network threads instead of one
@@ -114,7 +115,7 @@ public class GssMobile {
         topBar.add(BorderLayout.SOUTH, new Label("Geopaparazzi Survey Server Sync", "SidemenuTagline"));
         topBar.setUIID("SideCommand");
         toolbar.addComponentToSideMenu(topBar);
-        toolbar.addMaterialCommandToSideMenu("Select Project", FontImage.MATERIAL_SETTINGS, e -> {
+        toolbar.addMaterialCommandToSideMenu("Select Project", FontImage.MATERIAL_ASSIGNMENT, e -> {
             boolean useNativeBrowser = Preferences.get(GssUtilities.NATIVE_BROWSER_USE, false);
             if (FileChooser.isAvailable() && useNativeBrowser) {
                 FileChooser.showOpenDialog(".gpap", e2 -> {
@@ -173,13 +174,20 @@ public class GssMobile {
         toolbar.addMaterialCommandToSideMenu("Settings", FontImage.MATERIAL_SETTINGS, e -> {
             SettingsDialog settingsDialog = new SettingsDialog(db);
             settingsDialog.show();
-            
+
             refreshContainers();
+        });
+        toolbar.addMaterialCommandToSideMenu("Send debug log", FontImage.MATERIAL_SEND, e -> {
+            HyLog.sendLog();
         });
 
         // TODO ask why it doesn't fill
-        Label fillerLabel = new Label("", "sideMenuFillerLabel");
-        toolbar.setComponentToSideMenuSouth(fillerLabel);
+        Container sideMenuSouthContainer = new Container(new BorderLayout(), "sideMenuFillerContainer");
+        loadedDbLabel = new Label("", "sideMenuFillerLabel");
+        loadedDbLabel.setAutoSizeMode(true);
+        sideMenuSouthContainer.add(BorderLayout.SOUTH, loadedDbLabel);
+
+        toolbar.setComponentToSideMenuSouth(sideMenuSouthContainer);
 
         try {
             Tabs t = new Tabs();
@@ -209,11 +217,11 @@ public class GssMobile {
             mainForm.show();
 
             String lastDbPath = Preferences.get(GssUtilities.LAST_DB_PATH, "");
+            HyLog.p("Db found in preferences: " + lastDbPath);
             final boolean dbExists = Database.exists(lastDbPath);
             if (lastDbPath.trim().length() == 0 || !dbExists) {
                 Dialog.show("No db chosen yet.", " Please use the side menu to choose it.", Dialog.TYPE_WARNING, null, "OK", null);
             } else if (dbExists) {
-                ToastBar.showInfoMessage("Loading database: " + new File(lastDbPath).getName());
                 refreshData(lastDbPath);
             }
         } catch (Exception ex) {
@@ -337,6 +345,10 @@ public class GssMobile {
         if (db != null) {
             Util.cleanup(db);
         }
+        final String dbName = new File(dbFile).getName();
+        ToastBar.showInfoMessage("Loading database: " + dbName);
+        loadedDbLabel.setText("Database: " + dbName);
+
         HyLog.p("Open database: " + dbFile + " that exists: " + Database.exists(dbFile));
         db = Display.getInstance().openOrCreate(dbFile);
         Preferences.set(GssUtilities.LAST_DB_PATH, dbFile);
@@ -355,7 +367,6 @@ public class GssMobile {
             ((Dialog) current).dispose();
             current = getCurrentForm();
         }
-        HyLog.sendLog();
     }
 
     public void destroy() {

@@ -15,6 +15,7 @@ public class GssUtilities {
     public static String SERVER_URL = "GSS_SERVER_URL";
     public static String NATIVE_BROWSER_USE = "GSS_NATIVE_BROWSER_USE";
     public static float ICON_SIZE = 4;
+    public static float BIG_ICON_SIZE = 8;
     public static String YES = "Yes";
     public static String NO = "No";
 

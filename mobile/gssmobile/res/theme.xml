@@ -42,12 +42,25 @@
         <val key="SidemenuTagline.marUnit" value="2,0,2,0" />
         <val key="SidemenuTagline.margin" value="1.0,1.0,0.0,0.0" />
         <val key="SidemenuTagline.textDecoration" value="0" />
+        <val key="Tab.bgColor" value="5d9d76" />
+        <border key="Tab.border" type="empty" />
+        <val key="Tab.fgColor" value="000000" />
+        <val key="Tab.press#bgColor" value="378756" />
+        <border key="Tab.press#border" type="empty" />
+        <val key="Tab.press#fgColor" value="ffffff" />
+        <val key="Tab.press#transparency" value="255" />
+        <val key="Tab.sel#bgColor" value="378756" />
+        <val key="Tab.sel#transparency" value="255" />
+        <val key="Tab.transparency" value="255" />
         <val key="Toolbar.bgColor" value="5d9d76" />
         <border key="Toolbar.border" type="empty" />
         <val key="Toolbar.transparency" value="255" />
         <val key="sideMenuFillerLabel.bgColor" value="5d9d76" />
         <border key="sideMenuFillerLabel.border" type="empty" />
+        <val key="sideMenuFillerLabel.fgColor" value="ffffff" />
         <val key="sideMenuFillerLabel.margin" value="1.0,0.0,0.0,0.0" />
+        <val key="sideMenuFillerLabel.padUnit" value="2,2,2,2" />
+        <val key="sideMenuFillerLabel.padding" value="3.0,3.0,3.0,3.0" />
         <val key="sideMenuFillerLabel.transparency" value="255" />
     </theme>
 </resource>

@@ -11,9 +11,13 @@ import com.codename1.db.Database;
 import com.codename1.ext.filechooser.FileChooser;
 import com.codename1.io.Preferences;
 import com.codename1.ui.Button;
+import com.codename1.ui.CheckBox;
+import com.codename1.ui.ComponentGroup;
+import com.codename1.ui.Container;
 import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Label;
+import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.plaf.Style;
 import com.hydrologis.cn1.libs.HyLog;
@@ -29,36 +33,31 @@ import java.io.IOException;
  */
 public class SettingsDialog extends Dialog {
 
+    private Container nativeBrowserContainer = null;
+
     public SettingsDialog(final Database db) {
 
         super("Settings");
 
         setLayout(BoxLayout.y());
 
-        SpanLabel fileBrowserLabel = new SpanLabel("Use native file browser");
-        OnOffSwitch fileBrowserSwitch = new OnOffSwitch();
-        add(fileBrowserLabel);
-        add(fileBrowserSwitch);
         if (FileChooser.isAvailable()) {
-            boolean useNativeBrowser = Preferences.get(GssUtilities.NATIVE_BROWSER_USE, false);
-            fileBrowserSwitch.setValue(useNativeBrowser);
-            fileBrowserSwitch.setNoTextMode(true);
-            fileBrowserSwitch.addActionListener(e -> {
-                Preferences.set(GssUtilities.NATIVE_BROWSER_USE, fileBrowserSwitch.isValue());
-            });
-        } else {
-            fileBrowserSwitch.setValue(false);
-            fileBrowserSwitch.setEnabled(false);
-        }
-        Label grayLabel = new Label();
-        grayLabel.setShowEvenIfBlank(true);
-        grayLabel.getUnselectedStyle().setBgColor(0xcccccc);
-        grayLabel.getUnselectedStyle().setPadding(1, 1, 1, 1);
-        grayLabel.getUnselectedStyle().setPaddingUnit(Style.UNIT_TYPE_PIXELS);
-        add(grayLabel);
+            CheckBox fileBrowserSwitch = CheckBox.createToggle(FontImage.createMaterial(FontImage.MATERIAL_FOLDER, "native_browse", GssUtilities.BIG_ICON_SIZE));
 
-        SpanLabel resetDirtyLabel = new SpanLabel("Reset the database to dirty status?\n(Warning, this will result in all the data being reloaded.)");
-        Button resetDirtyButton = new Button(FontImage.createMaterial(FontImage.MATERIAL_SETTINGS_BACKUP_RESTORE, "restore_dirty", GssUtilities.ICON_SIZE));
+            boolean useNativeBrowser = Preferences.get(GssUtilities.NATIVE_BROWSER_USE, false);
+            fileBrowserSwitch.setSelected(useNativeBrowser);
+            fileBrowserSwitch.addActionListener(e -> {
+                Preferences.set(GssUtilities.NATIVE_BROWSER_USE, fileBrowserSwitch.isSelected());
+            });
+
+            SpanLabel browserLabel = new SpanLabel("Use native file browser instead of triggering a simple project lookup on the first 2 folder levels.");
+            
+            nativeBrowserContainer = new Container(new BorderLayout());
+            nativeBrowserContainer.add(BorderLayout.WEST, fileBrowserSwitch);
+            nativeBrowserContainer.add(BorderLayout.CENTER, browserLabel);
+        }
+
+        Button resetDirtyButton = new Button(FontImage.createMaterial(FontImage.MATERIAL_SETTINGS_BACKUP_RESTORE, "restore_dirty", GssUtilities.BIG_ICON_SIZE));
         resetDirtyButton.addActionListener(e -> {
             if (Dialog.show("Are you sure?", "This can't be undone!", GssUtilities.YES, GssUtilities.NO)) {
                 try {
@@ -72,12 +71,13 @@ public class SettingsDialog extends Dialog {
                 }
             }
         });
-
-        add(resetDirtyLabel);
-        add(resetDirtyButton);
+        SpanLabel resetDirtyLabel = new SpanLabel("Reset the database to dirty status?\n(Warning, this will result in all the data being reloaded.)");
+        Container resetDirtyContainer = new Container(new BorderLayout());
+        resetDirtyContainer.add(BorderLayout.WEST, resetDirtyButton);
+        resetDirtyContainer.add(BorderLayout.CENTER, resetDirtyLabel);
 
         SpanLabel resetCleanLabel = new SpanLabel("Update the database to clean status?\n(Warning, this will result in no data to be loaded.)");
-        Button resetCleanButton = new Button(FontImage.createMaterial(FontImage.MATERIAL_CLEAR_ALL, "restore_clean", GssUtilities.ICON_SIZE));
+        Button resetCleanButton = new Button(FontImage.createMaterial(FontImage.MATERIAL_CLEAR_ALL, "restore_clean", GssUtilities.BIG_ICON_SIZE));
         resetCleanButton.addActionListener(e -> {
             if (Dialog.show("Are you sure?", "This can't be undone!", GssUtilities.YES, GssUtilities.NO)) {
                 try {
@@ -92,8 +92,18 @@ public class SettingsDialog extends Dialog {
             }
         });
 
-        add(resetCleanLabel);
-        add(resetCleanButton);
+        Container resetCleanContainer = new Container(new BorderLayout());
+        resetCleanContainer.add(BorderLayout.WEST, resetCleanButton);
+        resetCleanContainer.add(BorderLayout.CENTER, resetCleanLabel);
+
+        ComponentGroup group = null;
+        if (nativeBrowserContainer == null) {
+            group = ComponentGroup.enclose(resetDirtyContainer, resetCleanContainer);
+        } else {
+            group = ComponentGroup.enclose(nativeBrowserContainer, resetDirtyContainer, resetCleanContainer);
+        }
+
+        add(group);
 
         setDisposeWhenPointerOutOfBounds(true);
 
