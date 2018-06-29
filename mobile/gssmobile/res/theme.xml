@@ -55,9 +55,13 @@
         <val key="Toolbar.bgColor" value="5d9d76" />
         <border key="Toolbar.border" type="empty" />
         <val key="Toolbar.transparency" value="255" />
-        <val key="sideMenuFillerLabel.bgColor" value="5d9d76" />
+        <val key="sideMenuFillerContainer.bgColor" value="ffffff" />
+        <border key="sideMenuFillerContainer.border" type="empty" />
+        <val key="sideMenuFillerContainer.fgColor" value="ffffff" />
+        <val key="sideMenuFillerContainer.transparency" value="255" />
+        <val key="sideMenuFillerLabel.bgColor" value="ffffff" />
         <border key="sideMenuFillerLabel.border" type="empty" />
-        <val key="sideMenuFillerLabel.fgColor" value="ffffff" />
+        <val key="sideMenuFillerLabel.fgColor" value="5d9d76" />
         <val key="sideMenuFillerLabel.margin" value="1.0,0.0,0.0,0.0" />
         <val key="sideMenuFillerLabel.padUnit" value="2,2,2,2" />
         <val key="sideMenuFillerLabel.padding" value="3.0,3.0,3.0,3.0" />

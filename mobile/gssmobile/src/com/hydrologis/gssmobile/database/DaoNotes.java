@@ -9,6 +9,7 @@ import com.codename1.db.Cursor;
 import com.codename1.db.Database;
 import com.codename1.db.Row;
 import com.codename1.io.Util;
+import com.hydrologis.cn1.libs.HyLog;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ public class DaoNotes {
      */
     public static final String TABLE_NOTES = "notes";
 
-    public static List<GssNote> getNotesList(Database db) throws Exception {
+    public static List<GssNote> getAllNotesList(Database db) throws Exception {
 
         String query = "SELECT "
                 + //
@@ -50,6 +51,61 @@ public class DaoNotes {
         List<GssNote> notes = new ArrayList<>();
         Cursor cursor = null;
         try {
+            HyLog.p(query);
+            cursor = db.executeQuery(query);
+
+            while (cursor.next()) {
+                Row row = cursor.getRow();
+                int i = 0;
+                GssNote note = new GssNote();
+                note.id = row.getLong(i++);
+                note.longitude = row.getDouble(i++);
+                note.latitude = row.getDouble(i++);
+                note.altitude = row.getDouble(i++);
+                note.timeStamp = row.getLong(i++);
+                note.description = row.getString(i++);
+                note.text = row.getString(i++);
+                note.form = row.getString(i++);
+                note.style = row.getString(i++);
+                notes.add(note);
+            }
+        } finally {
+            Util.cleanup(cursor);
+        }
+        return notes;
+    }
+    
+    public static List<GssNote> getFormNotesList(Database db) throws Exception {
+
+        String query = "SELECT "
+                + //
+                NotesTableFields.COLUMN_ID.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_LON.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_LAT.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_ALTIM.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_TS.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_DESCRIPTION.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_TEXT.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_FORM.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_STYLE.getFieldName()
+                + " FROM " + TABLE_NOTES //
+                + " where "
+                + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 //
+                + " and " + NotesTableFields.COLUMN_FORM.getFieldName() + "<>''" //
+                + " order by " + NotesTableFields.COLUMN_TS.getFieldName();
+
+        List<GssNote> notes = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            HyLog.p(query);
             cursor = db.executeQuery(query);
 
             while (cursor.next()) {
@@ -73,11 +129,62 @@ public class DaoNotes {
         return notes;
     }
 
+    public static List<GssNote> getSimpleNotesList(Database db) throws Exception {
+
+        String query = "SELECT "
+                + //
+                NotesTableFields.COLUMN_ID.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_LON.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_LAT.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_ALTIM.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_TS.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_DESCRIPTION.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_TEXT.getFieldName() + ", "
+                + //
+                NotesTableFields.COLUMN_STYLE.getFieldName()
+                + " FROM " + TABLE_NOTES //
+                + " where "
+                + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=" + 1 //
+                + " and " + NotesTableFields.COLUMN_FORM.getFieldName() + "=''" //
+                + " order by " + NotesTableFields.COLUMN_TS.getFieldName();
+
+        List<GssNote> notes = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            HyLog.p(query);
+            cursor = db.executeQuery(query);
+
+            while (cursor.next()) {
+                Row row = cursor.getRow();
+                int i = 0;
+                GssNote note = new GssNote();
+                note.id = row.getLong(i++);
+                note.longitude = row.getDouble(i++);
+                note.latitude = row.getDouble(i++);
+                note.altitude = row.getDouble(i++);
+                note.timeStamp = row.getLong(i++);
+                note.description = row.getString(i++);
+                note.text = row.getString(i++);
+                note.style = row.getString(i++);
+                notes.add(note);
+            }
+        } finally {
+            Util.cleanup(cursor);
+        }
+        return notes;
+    }
+
     public static void clearDirty(Database db) throws IOException {
         String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=0";
         db.execute(update);
     }
-    
+
     public static void makeDirty(Database db) throws IOException {
         String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=1";
         db.execute(update);

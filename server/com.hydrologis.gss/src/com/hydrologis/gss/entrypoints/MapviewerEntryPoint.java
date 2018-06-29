@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -116,8 +117,8 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
     private List<GpapUsers> visibleDevices = new ArrayList<>();
 
     private GssDbProvider dbp;
-    private List<GpapUsers> allDevices;
-    private Map<String, GpapUsers> deviceNamesMap;
+    private List<GpapUsers> allDevices = new ArrayList<>();
+    private Map<String, GpapUsers> deviceNamesMap = new HashMap<>();
 
     @Override
     protected void createPage( final Composite parent ) {
@@ -139,12 +140,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
         dbp = GssContext.instance().getDbProvider();
         databaseHandler = dbp.getDatabaseHandler();
-        try {
-            allDevices = databaseHandler.getDao(GpapUsers.class).queryForAll();
-        } catch (SQLException e1) {
-            e1.printStackTrace();
-        }
-        deviceNamesMap = allDevices.stream().collect(Collectors.toMap(gu -> getUserName(gu), Function.identity()));
+        reloadDevices();
 
         final Composite composite = new Composite(parent, SWT.NONE);
         composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -260,6 +256,17 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
 
     }
 
+    private void reloadDevices() {
+        try {
+            allDevices.clear();
+            allDevices.addAll(databaseHandler.getDao(GpapUsers.class).queryForAll());
+            deviceNamesMap.clear();
+            deviceNamesMap.putAll(allDevices.stream().collect(Collectors.toMap(gu -> getUserName(gu), Function.identity())));
+        } catch (SQLException e1) {
+            StageLogger.logError(this, e1);
+        }
+    }
+
     @Override
     public void completed( ProgressEvent event ) {
         String[] loadedGpapUsers = GssSession.getLoadedGpapUsers();
@@ -301,7 +308,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
         Composite devicesViewerGroup = new Composite(parent, SWT.BORDER);
         GridData devicesViewerGroupGD = new GridData(SWT.FILL, SWT.FILL, true, true);
         devicesViewerGroup.setLayoutData(devicesViewerGroupGD);
-        GridLayout devicesViewerLayout = new GridLayout(3, false);
+        GridLayout devicesViewerLayout = new GridLayout(4, false);
         devicesViewerLayout.marginWidth = 15;
         devicesViewerLayout.marginHeight = 15;
         devicesViewerLayout.verticalSpacing = 15;
@@ -354,11 +361,23 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                 }
             }
         });
+        Button refreshButton = new Button(devicesViewerGroup, SWT.PUSH);
+        refreshButton.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false));
+        refreshButton.setImage(eu.hydrologis.stage.libs.utils.ImageCache.getInstance().getImage(display,
+                eu.hydrologis.stage.libs.utils.ImageCache.REFRESH));
+        refreshButton.setToolTipText("Reload the surveyors list.");
+        refreshButton.addSelectionListener(new SelectionAdapter(){
+            @Override
+            public void widgetSelected( SelectionEvent e ) {
+                reloadDevices();
+                devicesCombo.setItems(deviceNamesMap.keySet().toArray(new String[0]));
+            }
+        });
 
         // TABLE
         Composite tableComposite = new Composite(devicesViewerGroup, SWT.NONE);
         GridData tableCompositeGD = new GridData(SWT.FILL, SWT.FILL, true, true);
-        tableCompositeGD.horizontalSpan = 3;
+        tableCompositeGD.horizontalSpan = 4;
         tableComposite.setLayoutData(tableCompositeGD);
 
         devicesTableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
@@ -411,7 +430,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                     ImageDescriptor zoomID = null; // ImageDescriptor.createFromImageData(eu.hydrologis.stage.libs.utils.ImageCache
                     // .getInstance().getImage(display,
                     // eu.hydrologis.stage.libs.utils.ImageCache.ZOOM_TO_ALL).getImageData());
-                    manager.add(new Action("  Zoom to selected", zoomID){
+                    manager.add(new Action("Zoom to selected", zoomID){
                         @Override
                         public void run() {
                             List<String> layerNames = new ArrayList<>();
@@ -426,7 +445,22 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
                             mapBrowser.runScript(script);
                         }
                     });
+
+                    ImageDescriptor reloadID = null; // ImageDescriptor.createFromImageData(eu.hydrologis.stage.libs.utils.ImageCache
+                    // .getInstance().getImage(display,
+                    // eu.hydrologis.stage.libs.utils.ImageCache.ZOOM_TO_ALL).getImageData());
+                    manager.add(new Action("Reload data", reloadID){
+                        @Override
+                        public void run() {
+                            List<String> layerNames = new ArrayList<>();
+                            removeDeviceFromMap(layerNames);
+                            for( GpapUsers gpapUsers : usersList ) {
+                                addDeviceToMap(gpapUsers);
+                            }
+                        }
+                    });
                     manager.add(new Separator());
+
                     ImageDescriptor removeID = null;// ImageDescriptor.createFromImage(eu.hydrologis.stage.libs.utils.ImageCache
                     // .getInstance().getImage(display,
                     // eu.hydrologis.stage.libs.utils.ImageCache.DELETE));
@@ -526,7 +560,7 @@ public class MapviewerEntryPoint extends StageEntryPoint implements IMapObserver
     }
 
     private String getLayerName( GpapUsers user, String postFix ) {
-        return postFix + ": " + user.deviceId;
+        return postFix + ": " + user.name;
     }
     private String getLayerName( String comboString, String postFix ) {
         return postFix + ": " + comboString;

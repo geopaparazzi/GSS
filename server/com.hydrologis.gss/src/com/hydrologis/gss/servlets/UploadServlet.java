@@ -112,7 +112,6 @@ public class UploadServlet extends HttpServlet {
                         String name = item.getName();
                         if (name.equals(GssNote.OBJID)) {
                             DataInputStream dis = new DataInputStream(item.getInputStream());
-                            List<Notes> serverNotes = new ArrayList<>();
                             while( dis.available() > 0 ) {
                                 GssNote note = new GssNote();
                                 note.internalize(GssNote.VERSION, dis);
@@ -120,11 +119,10 @@ public class UploadServlet extends HttpServlet {
                                 Point point = gf.createPoint(new Coordinate(note.longitude, note.latitude));
                                 Notes serverNote = new Notes(point, note.altitude, note.timeStamp, note.description, note.text,
                                         note.form, note.style, _gpapUser);
+                                notesDao.create(serverNote);
                                 deviceNoteId2serverNoteId.put(note.id, serverNote.id);
-                                serverNotes.add(serverNote);
                                 notesLogsImagesCounts[0] += 1;
                             }
-                            notesDao.create(serverNotes);
                         } else if (name.equals(GssGpsLog.OBJID)) {
                             DataInputStream dis = new DataInputStream(item.getInputStream());
 
