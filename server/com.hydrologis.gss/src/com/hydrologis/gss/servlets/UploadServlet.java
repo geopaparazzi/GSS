@@ -3,19 +3,15 @@ package com.hydrologis.gss.servlets;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -48,13 +44,11 @@ import eu.hydrologis.stage.libs.utils.NetworkUtilities;
 import eu.hydrologis.stage.libs.workspace.StageWorkspace;
 
 /**
- * Download servlet.
+ * Upload servlet.
  * 
  * @author Andrea Antonello (www.hydrologis.com)
  *
  */
-// @MultipartConfig(location="/tmp/upload", fileSizeThreshold=1024*1024, maxFileSize=1024*1024*50)
-// @WebServlet(urlPatterns={"/upload"}, name="upload")
 public class UploadServlet extends HttpServlet {
     private static final String TAG = UploadServlet.class.getSimpleName();
     private static final String NO_PERMISSION = "No permission! Contact your system administrator.";
@@ -67,8 +61,6 @@ public class UploadServlet extends HttpServlet {
         String ipAddress = "unknown";
         String deviceId = "unknown";
         try {
-            // Collection<Part> parts = request.getParts();
-
             String authHeader = request.getHeader("Authorization");
             String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
             if (userPwd == null || !userPwd[1].equals("gss_Master_Survey_Forever_2018")) {

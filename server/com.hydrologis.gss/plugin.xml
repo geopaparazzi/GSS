@@ -31,48 +31,8 @@
          <extension
          point="org.eclipse.equinox.http.registry.servlets">
       <servlet
-            alias="/downloadadmin"
-            class="com.hydrologis.gss.servlets.DownloadAdminServlet">
-      </servlet>
-      <servlet
-            alias="/downloaddata"
-            class="com.hydrologis.gss.servlets.DownloadDataServlet">
-      </servlet>
-      <servlet
             alias="/upload"
             class="com.hydrologis.gss.servlets.UploadServlet">
-      </servlet>
-            <servlet
-            alias="/getworktile"
-            class="com.hydrologis.gss.servlets.WorkTilesGeneratorServlet">
-      </servlet>
-      <servlet
-            alias="/rwt-resources/org.eclipse.swt.browser/getworktile"
-            class="com.hydrologis.gss.servlets.WorkTilesGeneratorServlet">
-      </servlet>
-      <servlet
-            alias="/getpipetile"
-            class="com.hydrologis.gss.servlets.PipesTilesGeneratorServlet">
-      </servlet>
-      <servlet
-            alias="/rwt-resources/org.eclipse.swt.browser/getpipetile"
-            class="com.hydrologis.gss.servlets.PipesTilesGeneratorServlet">
-      </servlet>
-      <servlet
-            alias="/geteventstile"
-            class="com.hydrologis.gss.servlets.EventsTilesGeneratorServlet">
-      </servlet>
-      <servlet
-            alias="/rwt-resources/org.eclipse.swt.browser/geteventstile"
-            class="com.hydrologis.gss.servlets.EventsTilesGeneratorServlet">
-      </servlet>
-            <servlet
-            alias="/getgpstile"
-            class="com.hydrologis.gss.servlets.GpspointsTilesGeneratorServlet">
-      </servlet>
-      <servlet
-            alias="/rwt-resources/org.eclipse.swt.browser/getgpstile"
-            class="com.hydrologis.gss.servlets.GpspointsTilesGeneratorServlet">
       </servlet>
    </extension>
 

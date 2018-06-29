@@ -215,6 +215,8 @@ public class GssMobile {
             loadAllFab.addActionListener(e -> upload(true, true, true));
 
             progressSlider = new Slider();
+            progressSlider.setUIID("uploadProgressSlider");
+
             mainForm.add(BorderLayout.SOUTH, progressSlider);
             mainForm.show();
 

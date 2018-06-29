@@ -74,7 +74,7 @@ public class DaoNotes {
         }
         return notes;
     }
-    
+
     public static List<GssNote> getFormNotesList(Database db) throws Exception {
 
         String query = "SELECT "
@@ -182,12 +182,16 @@ public class DaoNotes {
 
     public static void clearDirty(Database db) throws IOException {
         String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=0";
-        db.execute(update);
+        if (db != null) {
+            db.execute(update);
+        }
     }
 
     public static void makeDirty(Database db) throws IOException {
         String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=1";
-        db.execute(update);
+        if (db != null) {
+            db.execute(update);
+        }
     }
 
     public static enum NotesTableFields {
