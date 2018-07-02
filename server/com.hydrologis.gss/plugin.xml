@@ -39,14 +39,14 @@
    
    
 <extension
-               id="sensit_product"
+               id="gss_product"
                point="org.eclipse.core.runtime.products">
             <product
-                  application="com.hydrologis.gss.GssApplication4Export"
+                  application="com.hydrologis.gss.com.hydrologis.gss.GssApplication4Export"
                   name="Geopaparazzi Survey Server">
                <property
                      name="appName"
-                     value="Sensit Server">
+                     value="Geopaparazzi Survey Server">
                </property>
             </product>
          </extension>

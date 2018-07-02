@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Geopaparazzi Survey Server" uid="com.hydrologis.gss" id="com.hydrologis.gss.sensit_product" application="com.hydrologis.gss.com.hydrologis.gss.GssApplication4Export" version="1.0.0.qualifier" useFeatures="false" includeLaunchers="true">
+<product name="Geopaparazzi Survey Server" uid="com.hydrologis.gss" id="com.hydrologis.gss.gss_product" application="com.hydrologis.gss.com.hydrologis.gss.GssApplication4Export" version="0.1.0" useFeatures="false" includeLaunchers="true">
 
 
    <configIni use="default">
@@ -37,6 +37,7 @@
       <plugin id="javax.xml"/>
       <plugin id="org.apache.commons.fileupload"/>
       <plugin id="org.apache.commons.io"/>
+      <plugin id="org.apache.felix.gogo.command"/>
       <plugin id="org.apache.felix.gogo.runtime"/>
       <plugin id="org.apache.felix.gogo.shell"/>
       <plugin id="org.apache.felix.scr"/>
@@ -72,8 +73,11 @@
       <plugin id="org.eclipse.rap.jface.databinding"/>
       <plugin id="org.eclipse.rap.rwt"/>
       <plugin id="org.eclipse.rap.rwt.osgi"/>
+      <plugin id="org.eclipse.rap.rwt.testfixture"/>
       <plugin id="org.eclipse.rap.ui"/>
       <plugin id="org.eclipse.rap.ui.workbench"/>
+      <plugin id="org.hamcrest.core"/>
+      <plugin id="org.junit"/>
    </plugins>
 
 
