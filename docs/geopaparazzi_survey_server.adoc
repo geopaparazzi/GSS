@@ -1,0 +1,324 @@
+= Geopaparazzi Survey Server
+HydroloGIS S.r.l.
+v0.1.0, 2017-07-02
+:doctype: article
+:description: A description
+:encoding: utf-8
+:lang: en
+:toc: left
+:toclevels: 4
+:numbered:
+:experimental:
+:reproducible:
+:icons: font
+:listing-caption: Listing
+:sectnums:
+:mdash: &#8212;
+:language: asciidoc
+ifdef::backend-pdf[]
+:title-logo-image: image:logo.png[align=center]
+:source-highlighter: rouge
+//:rouge-style: github
+//:source-highlighter: pygments
+//:pygments-style: tango
+endif::[]
+:stem:
+
+<<<
+
+== The Geopaparazzi Survey Server
+
+The Geopaparazzi Survey Server (GSS) is a web application that allows http://www.geopaparazzi.eu[geopaparazzi]
+users to synchronize their project data with a central server.
+
+Its companion is an Android app named **Geopaparazzi Survey Server Sync** (GSSS) availabel on google play.
+The app can connect to geopaparazzi projects and synchronize the data contained using the unique device ID to
+upload the data to the server.
+
+Any device that connects to the server with its ID, will be accepted and if not available, the new id is 
+automatically inserted in the central db.
+
+The applications are available as Free and Open Source software. The server is available under EPL v2.0, while the 
+mobile app is available under GPL v3.0.
+
+== The server
+
+=== Installation
+
+The GSS server available as docker image from the https://hub.docker.com/r/moovida/gss/[docker hub]. As such
+it works only on linux systems that have docker installed. Describing the installation of docker goes beyond this
+documentation. Many tutorials are available in the net to install docker.
+
+.GSS on hub.docker.com.
+image::images/01_hub.png[scaledwidth=70%, width=70%]
+
+To install the docker image just open a terminal and type in from shell:
+
+[source,bash]
+----
+docker pull moovida/gss:v0.1.0
+----
+
+This will download the server image and install it on your machine.
+
+The installation process should reveal something similar to the following:
+
+.GSS installation process.
+image::images/02_install.png[scaledwidth=70%, width=70%]
+
+
+[NOTE]
+====
+And once finished, the image should be visible with the command:
+[source,bash]
+----
+docker images
+----
+====
+
+=== Preparing the data folder
+
+To run GSS you need to prepare the data folder for the server, which will contain 
+the database (if it doesn't exist, it is created from scratch), some styling 
+components and optional mapsforge *.map files for local tiles generation.
+
+Also, the folder will contain the configuration file for the server, **gss.properties**.
+
+Let's assume the data folder is named TESTGSS, then the folder structure needs contain at least 
+the following:
+
+----
+TESTGSS/
+|-- DATA    <-- folder
+|   |-- images.png
+|   `-- notes.png
+|-- WORKSPACE    <-- folder
+`-- gss.properties
+----
+
+Where **images.png** and **notes.png** are the images that will be used in the map view to style
+geopaparazzi notes and media notes.
+
+The file gss.properties instead has to contain the references to the DATA and WORKSPACE path. In our 
+testcase the properties file will contain:
+
+----
+stage.workspace=/media/hydrologis/Samsung_T3/TESTGSS/WORKSPACE/
+stage.datafolder=/media/hydrologis/Samsung_T3/TESTGSS/DATA
+----
+
+Adapt it to you your needs.
+
+=== Run the server
+
+To run the GSS server, it is necessary to define a few things:
+
+* the path to the data folder
+* the port that needs to be used
+* the docker image to use
+
+Assuming we want to run the application on the data folder defined before and on port 8080,
+the command to run the application is:
+
+[source,bash]
+----
+docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -p 8080:8080 moovida/gss:v0.1.0
+----
+
+Open your favorite browser and enter the url:
+
+----
+http://localhost:8080
+----
+
+You should get the following login screen:
+
+
+.The GSS login screen.
+image::images/03_login.png[scaledwidth=70%, width=70%]
+
+This already means that you are ready to rumble!
+
+You can login with:
+
+* user: god
+* password: god
+
+Which already tells us that the user has quite some admin rights.
+
+Once logged in, the dashboard view is shown.
+
+=== GSS Views
+
+The GSS views are organized as follows:
+
+The upper toolbar contains, starting from left, the GSS icon, then tools 
+that are dedicated to the currently opened view and at the very right 
+the about and logout buttons.
+
+The left toolbar contains at the top the buttons to switch between availabel views
+and at the bottom the settings button.
+
+==== The dashboard
+
+The dashboard view shows a simple chart listing the amount of information for each device.
+
+If no data are available, as in our inizial case, the folloing will be shown:
+
+
+.The dashboard.
+image::images/04_dashboard.png[scaledwidth=70%, width=70%]
+
+==== The mapview
+
+From the mapview it is possible to access the Surveyor list from the first button in the top 
+toolbar.  
+
+.The mapview with the surveyors list.
+image::images/05_mapview.png[scaledwidth=70%, width=70%]
+
+In the combobox the currently available surveyors are listed. To add the data of a 
+surveyor to the map, select the surveyor and push the add button at the right of the combobox.
+
+Then double-click on the added surveyor. The map will be zoomed to the data of the surveyor.
+
+.The mapview zoomed on the data of a surveyor.
+image::images/06_surveyor.png[scaledwidth=70%, width=70%]
+
+If data are uploaded while on the map view, one can either reload the view by refreshing the page
+or use the button to refresh the surveyors list.
+
+The data of a surveyor can be reloaded using the contect manu on the surveyors list. It can be accessed 
+through right-click:
+
+.The menu on the surveyors table.
+image::images/07_surveyor_menu.png[scaledwidth=40%, width=40%]
+
+From the same menu it is also possible to zoom to the data of a surveyor or remove the data 
+of a surveyor from the map.
+
+The data can be queried by clicking on them. Simple information is shown as described below.
+
+In the case of notes, the main note text, the elevation and the timestamp are shown. Note that 
+or notes that have forms, the complex form is not visualized in the information box.
+
+.Notes.
+image::images/08_notes.png[scaledwidth=40%, width=40%]
+
+For GPS logs the name of the log and the start and end timestamp are shown.
+
+.Gps Logs.
+image::images/09_logs.png[scaledwidth=40%, width=40%]
+
+For media notes it is possible to visualize the images, by clicking on the image icon.
+
+.Media notes.
+image::images/10_media.png[scaledwidth=70%, width=70%]
+
+==== The Settings View
+
+In the settings view it is possible to:
+
+* Create web users and groups. There are two levels of users: admins and normal users.
+  
+.Web users configuration.
+image::images/11_users.png[scaledwidth=70%, width=70%]
+
+* Configure surveyors. New devices that connect and upload are automatically added.
+  The name of the surveyor by default is the id of the device. This can be changed 
+  by right-clicking on the surveyor.
+
+.Surveyor configuration.
+image::images/12_surveyors.png[scaledwidth=70%, width=70%]
+
+* Configure background maps. Several map services can be added to the background 
+  maps that can then be selected in the mapview. 
+
+.The background maps configuration.
+image::images/13_maps.png[scaledwidth=70%, width=70%]
+
+* In the 'other configurations' part, it is possible to define to which pages
+  the normal user has access to.
+
+.Other configurations.
+image::images/14_other_configs.png[scaledwidth=70%, width=70%]
+
+WARNING: Many of the available map services need a license key to be accessed 
+and/or have particular requirements to be used. Make sure that you have the 
+rights to use the maps you select.
+
+
+== The mobile app, GSSS
+
+The GSSS can be installed from the https://play.google.com/store/apps/details?id=com.hydrologis.gssmobile[play store].
+
+.GSSS on play store.
+image::images/16_mobile_install.png[scaledwidth=70%, width=70%]
+
+Once installed and launched it will complain about the fact that no project database has been chosen yet:
+
+.First start of GSSS.
+image::images/16_mobile_start.png[scaledwidth=30%, width=30%]
+
+In the side menu it is possible to access several features.
+
+.The main menu.
+image::images/17_mobile_menu.png[scaledwidth=30%, width=30%]
+
+The first thing to do is to check if the device has an own unique device id. If it
+has one, the following screen will be shown:
+
+.The device id.
+image::images/17_mobile_menu_id.png[scaledwidth=30%, width=30%]
+
+This is also the id that the server part uses as device identifier.
+
+If no id is available, the user will be prompted to insert one.
+
+To be able to connect to the GSS server, the url of the server needs to be inserted. 
+The url has to end with **upload**:
+
+.The upload URL of the server.
+image::images/17_mobile_menu_url.png[scaledwidth=30%, width=30%]
+
+From the side menu it is also possible to access some basic settings:
+
+1. possibility to choose between the system navite filechooser to select 
+   the geopaparazzi project to load for sync.
+2. the possibility to reset the connected database to be in a complete 
+   dirty state. After that the database will upload everything as if it never
+   had done before.
+3. the possibility to reset the database to a clean state. After that 
+   no data are synchronized. Only new data surveyed in geopaparazzi
+   will be uploaded again.
+
+.The settings dialog.
+image::images/18_mobile_settings.png[scaledwidth=30%, width=30%]
+
+Once the app is configured, it is possible to load a project (first entry
+of the menu). A filechooser of dialog will open to select the database to
+synchronize. Once loaded the list of notes, gps log and media notes 
+are shown in the tabbed view:
+
+.The content of the database that can be synchronized.
+image::images/19_mobile_load.png[scaledwidth=30%, width=30%]
+
+Also, at the bottom of the main menu, the path and name of the database are shown:
+
+.The path and name of the connected database.
+image::images/19_mobile_menu_loaded.png[scaledwidth=30%, width=30%]
+
+To synchronize, the floating action button at the bottom right part can 
+be used. It is possible to synchronize everything or just a part.
+
+.The action button that allows to upload notes, logs, media or everything.
+image::images/20_mobile_syncfab.png[scaledwidth=30%, width=30%]
+
+Once the button is pushed, the app connects to the GSS server and sends 
+the selected data to the server. At the end 
+
+.The dialog of a successful sync.
+image::images/21_mobile_syncdone.png[scaledwidth=30%, width=30%]
+
+
+
