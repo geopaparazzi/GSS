@@ -49,7 +49,7 @@ public class DaoGpsLogs {
 
         Cursor cursorLog = null;
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursorLog = db.executeQuery(query);
             while (cursorLog.next()) {
                 Row row = cursorLog.getRow();
@@ -111,7 +111,7 @@ public class DaoGpsLogs {
 
                     Cursor cursorLogProps = null;
                     try {
-                        HyLog.p(queryProps);
+                        //HyLog.p(queryProps);
                         cursorLogProps = db.executeQuery(queryProps);
                         while (cursorLogProps.next()) {
                             Row propsRow = cursorLogProps.getRow();

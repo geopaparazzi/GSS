@@ -51,7 +51,7 @@ public class DaoNotes {
         List<GssNote> notes = new ArrayList<>();
         Cursor cursor = null;
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursor = db.executeQuery(query);
 
             while (cursor.next()) {
@@ -105,7 +105,7 @@ public class DaoNotes {
         List<GssNote> notes = new ArrayList<>();
         Cursor cursor = null;
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursor = db.executeQuery(query);
 
             while (cursor.next()) {
@@ -157,7 +157,7 @@ public class DaoNotes {
         List<GssNote> notes = new ArrayList<>();
         Cursor cursor = null;
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursor = db.executeQuery(query);
 
             while (cursor.next()) {

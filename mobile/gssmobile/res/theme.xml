@@ -64,7 +64,7 @@
         <val key="sideMenuFillerLabel.fgColor" value="5d9d76" />
         <val key="sideMenuFillerLabel.margin" value="1.0,0.0,0.0,0.0" />
         <val key="sideMenuFillerLabel.padUnit" value="2,2,2,2" />
-        <val key="sideMenuFillerLabel.padding" value="3.0,3.0,3.0,3.0" />
+        <val key="sideMenuFillerLabel.padding" value="1.0,1.0,1.0,1.0" />
         <val key="sideMenuFillerLabel.transparency" value="255" />
         <val key="uploadProgressSlider.bgColor" value="5d9d76" />
         <border key="uploadProgressSlider.border" type="empty" />

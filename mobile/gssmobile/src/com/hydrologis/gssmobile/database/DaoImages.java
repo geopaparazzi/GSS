@@ -68,7 +68,7 @@ public class DaoImages {
         Cursor cursor = null;
 
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursor = db.executeQuery(query);
             while (cursor.next()) {
                 Row row = cursor.getRow();
@@ -133,7 +133,7 @@ public class DaoImages {
         Cursor cursor = null;
 
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursor = db.executeQuery(query);
             while (cursor.next()) {
                 Row row = cursor.getRow();
@@ -198,7 +198,7 @@ public class DaoImages {
         Cursor cursor = null;
 
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursor = db.executeQuery(query);
             while (cursor.next()) {
                 Row row = cursor.getRow();
@@ -234,7 +234,7 @@ public class DaoImages {
 
         Cursor cursor = null;
         try {
-            HyLog.p(query);
+            //HyLog.p(query);
             cursor = db.executeQuery(query);
             while (cursor.next()) {
                 Row row = cursor.getRow();

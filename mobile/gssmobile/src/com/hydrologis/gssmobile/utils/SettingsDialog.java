@@ -44,7 +44,7 @@ public class SettingsDialog extends Dialog {
         if (FileChooser.isAvailable()) {
             CheckBox fileBrowserSwitch = CheckBox.createToggle(FontImage.createMaterial(FontImage.MATERIAL_FOLDER, "native_browse", GssUtilities.BIG_ICON_SIZE));
 
-            boolean useNativeBrowser = Preferences.get(GssUtilities.NATIVE_BROWSER_USE, false);
+            boolean useNativeBrowser = Preferences.get(GssUtilities.NATIVE_BROWSER_USE, true);
             fileBrowserSwitch.setSelected(useNativeBrowser);
             fileBrowserSwitch.addActionListener(e -> {
                 Preferences.set(GssUtilities.NATIVE_BROWSER_USE, fileBrowserSwitch.isSelected());
