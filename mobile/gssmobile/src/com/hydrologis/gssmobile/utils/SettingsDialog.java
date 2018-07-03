@@ -5,21 +5,15 @@
  */
 package com.hydrologis.gssmobile.utils;
 
-import com.codename1.components.OnOffSwitch;
 import com.codename1.components.SpanLabel;
 import com.codename1.db.Database;
-import com.codename1.ext.filechooser.FileChooser;
-import com.codename1.io.Preferences;
 import com.codename1.ui.Button;
-import com.codename1.ui.CheckBox;
 import com.codename1.ui.ComponentGroup;
 import com.codename1.ui.Container;
 import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
-import com.codename1.ui.Label;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
-import com.codename1.ui.plaf.Style;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.HyUtilities;
 import com.hydrologis.gssmobile.database.DaoGpsLogs;
@@ -41,22 +35,21 @@ public class SettingsDialog extends Dialog {
 
         setLayout(BoxLayout.y());
 
-        if (FileChooser.isAvailable()) {
-            CheckBox fileBrowserSwitch = CheckBox.createToggle(FontImage.createMaterial(FontImage.MATERIAL_FOLDER, "native_browse", GssUtilities.BIG_ICON_SIZE));
-
-            boolean useNativeBrowser = Preferences.get(GssUtilities.NATIVE_BROWSER_USE, true);
-            fileBrowserSwitch.setSelected(useNativeBrowser);
-            fileBrowserSwitch.addActionListener(e -> {
-                Preferences.set(GssUtilities.NATIVE_BROWSER_USE, fileBrowserSwitch.isSelected());
-            });
-
-            SpanLabel browserLabel = new SpanLabel("Use native file browser instead of triggering a simple project lookup on the first 2 folder levels.");
-            
-            nativeBrowserContainer = new Container(new BorderLayout());
-            nativeBrowserContainer.add(BorderLayout.WEST, fileBrowserSwitch);
-            nativeBrowserContainer.add(BorderLayout.CENTER, browserLabel);
-        }
-
+//        if (FileChooser.isAvailable()) {
+//            CheckBox fileBrowserSwitch = CheckBox.createToggle(FontImage.createMaterial(FontImage.MATERIAL_FOLDER, "native_browse", GssUtilities.BIG_ICON_SIZE));
+//
+//            boolean useNativeBrowser = Preferences.get(GssUtilities.NATIVE_BROWSER_USE, true);
+//            fileBrowserSwitch.setSelected(useNativeBrowser);
+//            fileBrowserSwitch.addActionListener(e -> {
+//                Preferences.set(GssUtilities.NATIVE_BROWSER_USE, fileBrowserSwitch.isSelected());
+//            });
+//
+//            SpanLabel browserLabel = new SpanLabel("Use native file browser instead of triggering a simple project lookup on the first 2 folder levels.");
+//            
+//            nativeBrowserContainer = new Container(new BorderLayout());
+//            nativeBrowserContainer.add(BorderLayout.WEST, fileBrowserSwitch);
+//            nativeBrowserContainer.add(BorderLayout.CENTER, browserLabel);
+//        }
         Button resetDirtyButton = new Button(FontImage.createMaterial(FontImage.MATERIAL_SETTINGS_BACKUP_RESTORE, "restore_dirty", GssUtilities.BIG_ICON_SIZE));
         resetDirtyButton.addActionListener(e -> {
             if (Dialog.show("Are you sure?", "This can't be undone!", GssUtilities.YES, GssUtilities.NO)) {
