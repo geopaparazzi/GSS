@@ -1,6 +1,6 @@
-= Geopaparazzi Survey Server
+= The Geopaparazzi Survey Server
 HydroloGIS S.r.l.
-v0.1.0, 2017-07-02
+v1.01, 2017-07-03
 :doctype: article
 :description: A description
 :encoding: utf-8
@@ -26,12 +26,15 @@ endif::[]
 
 <<<
 
-== The Geopaparazzi Survey Server
+== The Geopaparazzi Survey Server & Friends
+
+image::logo.png[scaledwidth=30%, width=30%]
 
 The Geopaparazzi Survey Server (GSS) is a web application that allows http://www.geopaparazzi.eu[geopaparazzi]
 users to synchronize their project data with a central server.
 
-Its companion is an Android app named **Geopaparazzi Survey Server Sync** (GSSS) availabel on google play.
+Its companion is an Android app named **Geopaparazzi Survey Server Sync** (GSSS) 
+https://play.google.com/store/apps/details?id=com.hydrologis.gssmobile[available on google play].
 The app can connect to geopaparazzi projects and synchronize the data contained using the unique device ID to
 upload the data to the server.
 
@@ -203,12 +206,12 @@ In the case of notes, the main note text, the elevation and the timestamp are sh
 or notes that have forms, the complex form is not visualized in the information box.
 
 .Notes.
-image::images/08_notes.png[scaledwidth=40%, width=40%]
+image::images/08_notes.png[scaledwidth=25%, width=25%]
 
 For GPS logs the name of the log and the start and end timestamp are shown.
 
 .Gps Logs.
-image::images/09_logs.png[scaledwidth=40%, width=40%]
+image::images/09_logs.png[scaledwidth=30%, width=30%]
 
 For media notes it is possible to visualize the images, by clicking on the image icon.
 
@@ -283,12 +286,10 @@ image::images/17_mobile_menu_url.png[scaledwidth=30%, width=30%]
 
 From the side menu it is also possible to access some basic settings:
 
-1. possibility to choose between the system navite filechooser to select 
-   the geopaparazzi project to load for sync.
-2. the possibility to reset the connected database to be in a complete 
+1. the possibility to reset the connected database to be in a complete 
    dirty state. After that the database will upload everything as if it never
    had done before.
-3. the possibility to reset the database to a clean state. After that 
+2. the possibility to reset the database to a clean state. After that 
    no data are synchronized. Only new data surveyed in geopaparazzi
    will be uploaded again.
 

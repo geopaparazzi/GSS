@@ -114,8 +114,9 @@ public class GssMobile {
             boolean checkPermissions = nativeUtils.checkPemissions(HyNativeUtils.PERMISSION_WRITE_EXTERNAL_STORAGE, "This is required modify data on disk.");
             HyLog.p("Check disk write permission: " + checkPermissions);
             if (!checkPermissions) {
-                HyUtilities.showErrorDialog("It is not possible to continue without allowing write access");
-                return;
+                callSerially(() -> {
+                    HyUtilities.showErrorDialog("It is not possible to continue without allowing write access");
+                });
             }
         } else {
             HyLog.p("Native Utils check disk write permission not supported.");
@@ -242,7 +243,9 @@ public class GssMobile {
             HyLog.p("Db found in preferences: " + lastDbPath);
             final boolean dbExists = Database.exists(lastDbPath);
             if (lastDbPath.trim().length() == 0 || !dbExists) {
-                Dialog.show("No db chosen yet.", " Please use the side menu to choose it.", Dialog.TYPE_WARNING, null, "OK", null);
+                callSerially(() -> {
+                    Dialog.show("No db chosen yet.", " Please use the side menu to choose it.", Dialog.TYPE_WARNING, null, "OK", null);
+                });
             } else if (dbExists) {
                 refreshData(lastDbPath);
             }

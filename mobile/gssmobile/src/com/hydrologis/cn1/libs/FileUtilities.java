@@ -83,7 +83,7 @@ public enum FileUtilities {
         String sep = getFileSeparator(parent);
 
         final String[] listFiles = fsStorage.listFiles(parent);
-        if (isCustomPathSupported()) {
+        if (isCustomPathSupported() && listFiles != null) {
             String[] newList = new String[listFiles.length];
             for (int i = 0; i < newList.length; i++) {
                 String newFile = parent + sep + listFiles[i];
