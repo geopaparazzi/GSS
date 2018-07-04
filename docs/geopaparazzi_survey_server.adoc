@@ -1,6 +1,6 @@
 = The Geopaparazzi Survey Server
 HydroloGIS S.r.l.
-v1.01, 2017-07-03
+v1.02, 2017-07-03
 :doctype: article
 :description: A description
 :encoding: utf-8
@@ -59,7 +59,7 @@ To install the docker image just open a terminal and type in from shell:
 
 [source,bash]
 ----
-docker pull moovida/gss:v0.1.0
+docker pull moovida/gss:v1.02
 ----
 
 This will download the server image and install it on your machine.
@@ -81,36 +81,27 @@ docker images
 
 === Preparing the data folder
 
-To run GSS you need to prepare the data folder for the server, which will contain 
+To run GSS you can prepare the data folder for the server, which will contain 
 the database (if it doesn't exist, it is created from scratch), some styling 
 components and optional mapsforge *.map files for local tiles generation.
 
-Also, the folder will contain the configuration file for the server, **gss.properties**.
+NOTE: You can just start with an empty folder, which will be filled with the bare minimum necessary 
+to run GSS.
 
-Let's assume the data folder is named TESTGSS, then the folder structure needs contain at least 
-the following:
+Let's assume you are a heavy lifter and want to do things on your own, and that the data folder 
+is named TESTGSS, then the folder structure needs contain at least the following:
 
 ----
 TESTGSS/
 |-- DATA    <-- folder
 |   |-- images.png
 |   `-- notes.png
-|-- WORKSPACE    <-- folder
-`-- gss.properties
+`-- WORKSPACE    <-- folder
 ----
 
 Where **images.png** and **notes.png** are the images that will be used in the map view to style
 geopaparazzi notes and media notes.
 
-The file gss.properties instead has to contain the references to the DATA and WORKSPACE path. In our 
-testcase the properties file will contain:
-
-----
-stage.workspace=/media/hydrologis/Samsung_T3/TESTGSS/WORKSPACE/
-stage.datafolder=/media/hydrologis/Samsung_T3/TESTGSS/DATA
-----
-
-Adapt it to you your needs.
 
 === Run the server
 
@@ -125,7 +116,7 @@ the command to run the application is:
 
 [source,bash]
 ----
-docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -p 8080:8080 moovida/gss:v0.1.0
+docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -p 8080:8080 moovida/gss:v1.02
 ----
 
 Open your favorite browser and enter the url:

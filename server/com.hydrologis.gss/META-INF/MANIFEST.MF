@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Geopaparazzi Survey Server
 Bundle-SymbolicName: com.hydrologis.gss;singleton:=true
-Bundle-Version: 0.1.0
+Bundle-Version: 1.02
 Bundle-Vendor: HydroloGIS S.r.l.
 Require-Bundle: org.eclipse.rap.rwt,
  org.eclipse.rap.jface,

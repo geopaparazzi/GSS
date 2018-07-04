@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Geopaparazzi Survey Server" uid="com.hydrologis.gss" id="com.hydrologis.gss.gss_product" application="com.hydrologis.gss.com.hydrologis.gss.GssApplication4Export" version="0.1.0" useFeatures="false" includeLaunchers="true">
-
+<product name="Geopaparazzi Survey Server" uid="com.hydrologis.gss" id="com.hydrologis.gss.gss_product" application="com.hydrologis.gss.com.hydrologis.gss.GssApplication4Export" version="1.02" useFeatures="false" includeLaunchers="true">
 
    <configIni use="default">
       <linux>/eu.hydrologis.stage.feature/container/configuration/config.ini</linux>
@@ -15,18 +14,15 @@
 
    <windowImages/>
 
-
    <launcher name="server">
       <win useIco="false">
          <bmp/>
       </win>
    </launcher>
 
-
    <vm>
       <linux include="true">org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8</linux>
    </vm>
-
 
    <plugins>
       <plugin id="com.hydrologis.gss"/>
