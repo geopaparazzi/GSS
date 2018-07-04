@@ -37,3 +37,4 @@ Import-Package: javax.imageio,
 Bundle-ClassPath: .,
  libs/gss-libs-1.0-SNAPSHOT.jar
 Bundle-ActivationPolicy: lazy
+Bundle-Activator: com.hydrologis.gss.GssActivator
