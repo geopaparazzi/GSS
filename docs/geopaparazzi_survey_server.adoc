@@ -182,7 +182,7 @@ image::images/06_surveyor.png[scaledwidth=70%, width=70%]
 If data are uploaded while on the map view, one can either reload the view by refreshing the page
 or use the button to refresh the surveyors list.
 
-The data of a surveyor can be reloaded using the contect manu on the surveyors list. It can be accessed 
+The data of a surveyor can be reloaded using the context menu on the surveyors list. It can be accessed 
 through right-click:
 
 .The menu on the surveyors table.

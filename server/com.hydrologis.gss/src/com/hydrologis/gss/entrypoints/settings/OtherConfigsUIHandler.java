@@ -33,7 +33,7 @@ import com.hydrologis.gss.utils.GssGuiUtilities;
 import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
 import eu.hydrologis.stage.libs.registry.Settings;
-import eu.hydrologis.stage.libs.utilsrap.MessageDialogUtil;
+import eu.hydrologis.stage.libs.utils.MessageDialogUtil;
 
 @SuppressWarnings("serial")
 public class OtherConfigsUIHandler {

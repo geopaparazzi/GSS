@@ -37,13 +37,13 @@ import com.hydrologis.gss.utils.GssLoginDialog;
 import com.hydrologis.gss.utils.GssUserPermissionsHandler;
 import com.j256.ormlite.dao.Dao;
 
-import eu.hydrologis.stage.libs.charts.IDoubleClickListener;
 import eu.hydrologis.stage.libs.charts.MultiBarChartBrowser;
 import eu.hydrologis.stage.libs.charts.MultiBarChartData;
 import eu.hydrologis.stage.libs.entrypoints.StageEntryPoint;
 import eu.hydrologis.stage.libs.html.HtmlFeatureChooser;
 import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
+import eu.hydrologis.stage.libs.utils.IDoubleClickListener;
 import eu.hydrologis.stage.libs.utils.StageUtils;
 
 /**

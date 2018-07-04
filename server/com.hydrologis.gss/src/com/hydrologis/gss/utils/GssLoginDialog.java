@@ -28,7 +28,7 @@ import com.hydrologis.gss.GssSession;
 import eu.hydrologis.stage.libs.log.StageLogger;
 import eu.hydrologis.stage.libs.registry.RegistryHandler;
 import eu.hydrologis.stage.libs.registry.User;
-import eu.hydrologis.stage.libs.utilsrap.MessageDialogUtil;
+import eu.hydrologis.stage.libs.utils.MessageDialogUtil;
 import eu.hydrologis.stage.libs.workspace.LoginChecker;
 import eu.hydrologis.stage.libs.workspace.StageWorkspace;
 
