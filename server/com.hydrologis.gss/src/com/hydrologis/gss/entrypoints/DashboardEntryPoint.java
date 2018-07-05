@@ -175,8 +175,8 @@ public class DashboardEntryPoint extends StageEntryPoint implements IDoubleClick
 
             MultiBarChartData workProgressCd = multiworkProgressChartData();
             multiworkProgressBrowser = new MultiBarChartBrowser(workProgressGroup, SWT.BORDER);
-            multiworkProgressBrowser.setBarChartData(workProgressCd);
-            multiworkProgressBrowser.setBarColor("#88c58a");
+            multiworkProgressBrowser.setChartData(workProgressCd);
+            multiworkProgressBrowser.setColor("#88c58a");
             multiworkProgressBrowser.setyAxisFormat(INTEGER_AXIS_FORMAT);
             String multichartHtml = multiworkProgressBrowser.getChartHtml();
             multichartHtml = HtmlFeatureChooser.INSTANCE.addDebugging(multichartHtml);
