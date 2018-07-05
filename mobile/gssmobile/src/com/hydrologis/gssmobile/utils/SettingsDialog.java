@@ -14,6 +14,7 @@ import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
+import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.HyUtilities;
 import com.hydrologis.gssmobile.database.DaoGpsLogs;
@@ -60,7 +61,7 @@ public class SettingsDialog extends Dialog {
                     dispose();
                 } catch (IOException ex) {
                     HyLog.e(ex);
-                    HyUtilities.showErrorDialog(ex.getMessage());
+                    HyDialogs.showErrorDialog(ex.getMessage());
                 }
             }
         });
@@ -80,7 +81,7 @@ public class SettingsDialog extends Dialog {
                     dispose();
                 } catch (IOException ex) {
                     HyLog.e(ex);
-                    HyUtilities.showErrorDialog(ex.getMessage());
+                    HyDialogs.showErrorDialog(ex.getMessage());
                 }
             }
         });

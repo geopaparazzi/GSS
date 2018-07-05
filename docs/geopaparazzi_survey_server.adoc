@@ -313,4 +313,12 @@ the selected data to the server. At the end
 image::images/21_mobile_syncdone.png[scaledwidth=30%, width=30%]
 
 
+=== Troubleshooting
+
+If you experience issues or problems of any kind, you can use the **send debug log**
+button to send some debug information about the error to the developers. This will help them
+to solve the issue and create a new release.
+
+.The send log button.
+image::images/22_send_log.png[scaledwidth=30%, width=30%]
 

@@ -35,6 +35,7 @@ import com.codename1.ui.tree.Tree;
 import com.codename1.util.Base64;
 import com.codename1.util.regex.StringReader;
 import com.hydrologis.cn1.libs.FileUtilities;
+import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.HyNativeUtils;
 import com.hydrologis.cn1.libs.HyUtilities;
@@ -115,7 +116,7 @@ public class GssMobile {
             HyLog.p("Check disk write permission: " + checkPermissions);
             if (!checkPermissions) {
                 callSerially(() -> {
-                    HyUtilities.showErrorDialog("It is not possible to continue without allowing write access");
+                    HyDialogs.showErrorDialog("It is not possible to continue without allowing write access");
                 });
             }
         } else {
@@ -179,7 +180,7 @@ public class GssMobile {
                 String newUdid = insertUdidDialog.getUdid();
                 Preferences.set(HyUtilities.CUSTOM_UDID, newUdid);
             } else {
-                Dialog.show("Unique device id", "UDID: " + udid, Dialog.TYPE_INFO, null, "OK", null);
+                HyDialogs.showInfoDialog("Unique device id", "UDID: " + udid);
             }
         });
         toolbar.addMaterialCommandToSideMenu("Server URL", FontImage.MATERIAL_CLOUD_CIRCLE, e -> {
@@ -190,10 +191,14 @@ public class GssMobile {
             Preferences.set(GssUtilities.SERVER_URL, serverUrl);
         });
         toolbar.addMaterialCommandToSideMenu("Settings", FontImage.MATERIAL_SETTINGS, e -> {
-            SettingsDialog settingsDialog = new SettingsDialog(db);
-            settingsDialog.show();
+            if (db == null) {
 
-            refreshContainers();
+            } else {
+                SettingsDialog settingsDialog = new SettingsDialog(db);
+                settingsDialog.show();
+
+                refreshContainers();
+            }
         });
         toolbar.addMaterialCommandToSideMenu("Send debug log", FontImage.MATERIAL_SEND, e -> {
             HyLog.sendLog();
@@ -244,7 +249,7 @@ public class GssMobile {
             final boolean dbExists = Database.exists(lastDbPath);
             if (lastDbPath.trim().length() == 0 || !dbExists) {
                 callSerially(() -> {
-                    Dialog.show("No db chosen yet.", " Please use the side menu to choose it.", Dialog.TYPE_WARNING, null, "OK", null);
+                    HyDialogs.showWarningDialog("No db chosen yet.", " Please use the side menu to choose it.");
                 });
             } else if (dbExists) {
                 refreshData(lastDbPath);
@@ -257,13 +262,13 @@ public class GssMobile {
     private void upload(boolean doNotes, boolean doLogs, boolean doMedia) {
         try {
             if (db == null) {
-                HyUtilities.showErrorDialog("No database connected.");
+                HyDialogs.showErrorDialog("No database connected.");
                 return;
             }
 
             String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
             if (serverUrl.trim().length() == 0) {
-                HyUtilities.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
+                HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
                 return;
             }
             int count = 1;
@@ -354,13 +359,13 @@ public class GssMobile {
             }
 
             if (didSend) {
-                HyUtilities.showInfoDialog("Data uploaded");//responseMap.get("message").toString());
+                HyDialogs.showInfoDialog("Data uploaded");//responseMap.get("message").toString());
                 clearDirtyData(doNotes, doLogs, doMedia);
                 refreshContainers();
             }
 
             if (!oneAdded) {
-                HyUtilities.showInfoDialog("No data to upload.");
+                HyDialogs.showInfoDialog("No data to upload.");
             }
         } catch (Exception exception) {
             HyLog.e(exception);
@@ -383,14 +388,14 @@ public class GssMobile {
                 if (status != 200) {
                     String responseErrorMessage = mpr.getResponseErrorMessage();
                     HyLog.p(responseErrorMessage);
-                    HyUtilities.showErrorDialog(responseMap.get("trace").toString());
+                    HyDialogs.showErrorDialog(responseMap.get("trace").toString());
                     return false;
                 }
             }
             return true;
         } else {
             String responseErrorMessage = mpr.getResponseErrorMessage();
-            HyUtilities.showErrorDialog(responseErrorMessage);
+            HyDialogs.showErrorDialog(responseErrorMessage);
             return false;
         }
     }
@@ -438,9 +443,9 @@ public class GssMobile {
             HyLog.e(e);
             String errMsg = e.getMessage();
             if (errMsg.toLowerCase().contains("in read/write mode")) {
-                HyUtilities.showInfoDialog("An error occurred while opening: " + dbPath + " It is inside a supported folder?");
+                HyDialogs.showInfoDialog("An error occurred while opening: " + dbPath + " It is inside a supported folder?");
             } else {
-                HyUtilities.showErrorDialog("An error occurred while opening the selected database: " + errMsg);
+                HyDialogs.showErrorDialog("An error occurred while opening the selected database: " + errMsg);
             }
             return;
         }

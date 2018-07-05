@@ -18,6 +18,7 @@ import com.codename1.ui.plaf.Style;
 import com.codename1.ui.validation.Constraint;
 import com.codename1.ui.validation.LengthConstraint;
 import com.codename1.ui.validation.Validator;
+import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyUtilities;
 
 /**
@@ -55,7 +56,7 @@ public class ServerUrlDialog extends Dialog {
         grayLabel.getUnselectedStyle().setPaddingUnit(Style.UNIT_TYPE_PIXELS);
         add(grayLabel);
 
-        Button ok = new Button(new Command(HyUtilities.OK));
+        Button ok = new Button(new Command(HyDialogs.OK));
         ok.getAllStyles().setBorder(Border.createEmpty());
         ok.getAllStyles().setFgColor(0);
         add(ok);

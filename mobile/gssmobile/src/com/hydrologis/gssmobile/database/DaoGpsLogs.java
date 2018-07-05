@@ -136,13 +136,17 @@ public class DaoGpsLogs {
     }
 
     public static void clearDirty(Database db) throws IOException {
-        String update = "update " + TABLE_GPSLOGS + " set " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=0";
-        db.execute(update);
+        if (db != null) {
+            String update = "update " + TABLE_GPSLOGS + " set " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=0";
+            db.execute(update);
+        }
     }
-    
+
     public static void makeDirty(Database db) throws IOException {
-        String update = "update " + TABLE_GPSLOGS + " set " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=1";
-        db.execute(update);
+        if (db != null) {
+            String update = "update " + TABLE_GPSLOGS + " set " + GpsLogsTableFields.COLUMN_LOG_ISDIRTY.getFieldName() + "=1";
+            db.execute(update);
+        }
     }
 
     public static enum GpsLogsTableFields {
