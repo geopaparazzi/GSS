@@ -180,16 +180,33 @@ public class DaoNotes {
         return notes;
     }
 
-    public static void clearDirty(Database db) throws IOException {
+    public static void clearDirtyComplex(Database db) throws IOException {
         if (db != null) {
             String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=0";
             db.execute(update);
         }
     }
 
+    public static void clearDirtySimple(Database db) throws IOException {
+        if (db != null) {
+            String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=0 where "
+                    + NotesTableFields.COLUMN_FORM.getFieldName() + "=''";
+            db.execute(update);
+        }
+    }
+
+    public static void clearDirtyById(Database db, long noteId) throws IOException {
+        if (db != null) {
+            String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=0 where "
+                    + NotesTableFields.COLUMN_ID.getFieldName() + "=" + noteId;
+            db.execute(update);
+        }
+    }
+
     public static void makeDirty(Database db) throws IOException {
         if (db != null) {
-            String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=1";
+            String update = "update " + TABLE_NOTES + " set " + NotesTableFields.COLUMN_ISDIRTY.getFieldName() + "=1 where "
+                    + NotesTableFields.COLUMN_FORM.getFieldName() + "<>''";
             db.execute(update);
         }
     }

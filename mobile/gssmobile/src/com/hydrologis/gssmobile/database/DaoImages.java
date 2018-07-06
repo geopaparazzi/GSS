@@ -321,6 +321,22 @@ public class DaoImages {
         }
     }
 
+    public static void clearDirtyByNoteId(Database db, long noteId) throws IOException {
+        if (db != null) {
+            String update = "update " + TABLE_IMAGES + " set " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=0 where "
+                    + ImageTableFields.COLUMN_NOTE_ID.getFieldName() + "=" + noteId;
+            db.execute(update);
+        }
+    }
+
+    public static void clearDirtyById(Database db, long id) throws IOException {
+        if (db != null) {
+            String update = "update " + TABLE_IMAGES + " set " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=0 where "
+                    + ImageTableFields.COLUMN_ID.getFieldName() + "=" + id;
+            db.execute(update);
+        }
+    }
+
     public static void makeDirty(Database db) throws IOException {
         if (db != null) {
             String update = "update " + TABLE_IMAGES + " set " + ImageTableFields.COLUMN_ISDIRTY.getFieldName() + "=1";

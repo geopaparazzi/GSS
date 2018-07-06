@@ -75,7 +75,8 @@ public class SettingsDialog extends Dialog {
         resetCleanButton.addActionListener(e -> {
             if (Dialog.show("Are you sure?", "This can't be undone!", GssUtilities.YES, GssUtilities.NO)) {
                 try {
-                    DaoNotes.clearDirty(db);
+                    DaoNotes.clearDirtySimple(db);
+                    DaoNotes.clearDirtyComplex(db);
                     DaoGpsLogs.clearDirty(db);
                     DaoImages.clearDirty(db);
                     dispose();

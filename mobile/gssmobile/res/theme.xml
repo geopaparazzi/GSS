@@ -69,6 +69,16 @@
         <val key="sideMenuFillerLabel.padUnit" value="2,2,2,2" />
         <val key="sideMenuFillerLabel.padding" value="1.0,1.0,1.0,1.0" />
         <val key="sideMenuFillerLabel.transparency" value="255" />
+        <val key="uploadInfiniteProgress.align" value="3" />
+        <val key="uploadInfiniteProgress.fgColor" value="5d9d76" />
+        <val key="uploadInfiniteProgress.marUnit" value="2,2,2,2" />
+        <val key="uploadInfiniteProgress.margin" value="3.0,3.0,0.0,0.0" />
+        <val key="uploadProgressErrorLabel.derive" value="uploadProgressLabel" />
+        <val key="uploadProgressErrorLabel.fgColor" value="cc0000" />
+        <border key="uploadProgressLabel.border" type="empty" />
+        <val key="uploadProgressLabel.fgColor" value="378756" />
+        <val key="uploadProgressLabel.padUnit" value="2,2,2,2" />
+        <val key="uploadProgressLabel.padding" value="1.0,1.0,1.0,1.0" />
         <val key="uploadProgressSlider.bgColor" value="5d9d76" />
         <border key="uploadProgressSlider.border" type="empty" />
         <val key="uploadProgressSlider.derive" value="Slider" />
