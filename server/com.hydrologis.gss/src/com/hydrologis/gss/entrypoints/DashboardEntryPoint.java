@@ -164,8 +164,7 @@ public class DashboardEntryPoint extends StageEntryPoint implements IDoubleClick
             marginsLayout.marginLeft = 20;
             marginsLayout.marginRight = 60;
             marginsComposite.setLayout(marginsLayout);
-            
-            
+
             workProgressGroup = new Group(marginsComposite, parentShell.getStyle());
             GridData workProgressGD = new GridData(GridData.FILL, GridData.FILL, true, true);
             workProgressGroup.setLayoutData(workProgressGD);
@@ -276,9 +275,9 @@ public class DashboardEntryPoint extends StageEntryPoint implements IDoubleClick
             String deviceId = deviceIdMap.get(deviceIdInternal);
             int[] values = entry.getValue();
 
-            for( int i = 0; i < 3; i++ ) {
-                bd.categories.get(i).add(deviceId);
-                bd.values.get(i).add(values[i]);
+            for( int i = 1; i < 4; i++ ) {
+                bd.categories.get(i - 1).add(deviceId);
+                bd.values.get(i - 1).add(values[i]);
             }
         }
         return bd;

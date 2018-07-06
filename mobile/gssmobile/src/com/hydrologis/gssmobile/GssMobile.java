@@ -1,6 +1,7 @@
 package com.hydrologis.gssmobile;
 
 import com.codename1.components.FloatingActionButton;
+import com.codename1.components.InfiniteProgress;
 import com.codename1.components.SliderBridge;
 import com.codename1.components.ToastBar;
 import com.hydrologis.gssmobile.utils.GssUtilities;
@@ -73,7 +74,6 @@ public class GssMobile {
     private InfiniteContainer gpsLogsContainer = null;
     private InfiniteContainer imagesContainer = null;
     private Database db = null;
-    private Slider progressSlider;
     private Label loadedDbLabel;
     private Label loadedDbParentLabel;
 
@@ -238,10 +238,6 @@ public class GssMobile {
             FloatingActionButton loadAllFab = fab.createSubFAB(FontImage.MATERIAL_CLEAR_ALL, "Everything");
             loadAllFab.addActionListener(e -> upload(true, true, true));
 
-            progressSlider = new Slider();
-            progressSlider.setUIID("uploadProgressSlider");
-
-            mainForm.add(BorderLayout.SOUTH, progressSlider);
             mainForm.show();
 
             String lastDbPath = Preferences.get(GssUtilities.LAST_DB_PATH, "");
@@ -259,124 +255,139 @@ public class GssMobile {
         }
     }
 
-    private void upload(boolean doNotes, boolean doLogs, boolean doMedia) {
-        try {
-            if (db == null) {
-                HyDialogs.showErrorDialog("No database connected.");
-                return;
-            }
+    private void uploadWithProgress(boolean doNotes, boolean doLogs, boolean doMedia) {
 
-            String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
-            if (serverUrl.trim().length() == 0) {
-                HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
-                return;
-            }
-            int count = 1;
-            String authCode = HyUtilities.getUdid() + ":" + MASTER_GSS_PASSWORD;
-            String authHeader = "Basic " + Base64.encode(authCode.getBytes());
-            boolean didSend = false;
-            boolean oneAdded = false;
-            if (doNotes || doLogs) {
-                MultipartRequest mpr = new MultipartRequest();
-                mpr.setUrl(serverUrl);
-                mpr.addRequestHeader("Authorization", authHeader);
-                if (doNotes) {
-                    // simple notes
-                    List<GssNote> notesList = DaoNotes.getSimpleNotesList(db);
-                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    DataOutputStream out = new DataOutputStream(bout);
-                    for (GssNote gssNote : notesList) {
-                        gssNote.externalize(out);
-                    }
-                    byte[] bytes = bout.toByteArray();
-                    mpr.addData(GssNote.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
-                    oneAdded = true;
-                }
-                if (doLogs) {
-                    List<GssGpsLog> logsList = DaoGpsLogs.getLogsList(db, true);
-                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    DataOutputStream out = new DataOutputStream(bout);
-                    for (GssGpsLog gssLog : logsList) {
-                        gssLog.externalize(out);
-                    }
-                    byte[] bytes = bout.toByteArray();
-                    mpr.addData(GssGpsLog.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
-                    oneAdded = true;
-                }
-                if (oneAdded) {
-                    didSend = sendRequest(mpr);
-                }
-            }
-            if (!didSend) {
-                return;
-            }
-            // NOW FORMS WITH IMAGES
-            if (doNotes) {
-                List<GssNote> notesList = DaoNotes.getFormNotesList(db);
-                for (GssNote gssNote : notesList) {
+        invokeAndBlock(() -> {
+            upload(doNotes, doLogs, doMedia);
+        });
+
+    }
+
+    private void upload(boolean doNotes, boolean doLogs, boolean doMedia) {
+
+        if (db == null) {
+            HyDialogs.showErrorDialog("No database connected.");
+            return;
+        }
+
+        String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
+        if (serverUrl.trim().length() == 0) {
+            HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
+            return;
+        }
+
+        Dialog ip = new InfiniteProgress().showInfiniteBlocking();
+        invokeAndBlock(() -> {
+            try {
+                int count = 1;
+                String authCode = HyUtilities.getUdid() + ":" + MASTER_GSS_PASSWORD;
+                String authHeader = "Basic " + Base64.encode(authCode.getBytes());
+                boolean didSend = false;
+                boolean oneAdded = false;
+                if (doNotes || doLogs) {
                     MultipartRequest mpr = new MultipartRequest();
                     mpr.setUrl(serverUrl);
                     mpr.addRequestHeader("Authorization", authHeader);
-                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    DataOutputStream out = new DataOutputStream(bout);
-                    gssNote.externalize(out);
-                    byte[] bytes = bout.toByteArray();
-                    mpr.addData(GssNote.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
-
-                    List<GssImage> imagesForNote = DaoImages.getImagesListForNoteId(db, gssNote.id, true);
-                    for (GssImage gssImage : imagesForNote) {
-                        ByteArrayOutputStream bout1 = new ByteArrayOutputStream();
-                        DataOutputStream out1 = new DataOutputStream(bout1);
-                        gssImage.externalize(out1);
-                        byte[] bytes1 = bout1.toByteArray();
-                        mpr.addData(GssImage.OBJID + (count++), bytes1, HyUtilities.MIMETYPE_BYTEARRAY);
-                    }
-                    didSend = sendRequest(mpr);
-                    if (!didSend) {
-                        break;
-                    } else {
+                    if (doNotes) {
+                        // simple notes
+                        List<GssNote> notesList = DaoNotes.getSimpleNotesList(db);
+                        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                        DataOutputStream out = new DataOutputStream(bout);
+                        for (GssNote gssNote : notesList) {
+                            gssNote.externalize(out);
+                        }
+                        byte[] bytes = bout.toByteArray();
+                        mpr.addData(GssNote.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
                         oneAdded = true;
                     }
+                    if (doLogs) {
+                        List<GssGpsLog> logsList = DaoGpsLogs.getLogsList(db, true);
+                        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                        DataOutputStream out = new DataOutputStream(bout);
+                        for (GssGpsLog gssLog : logsList) {
+                            gssLog.externalize(out);
+                        }
+                        byte[] bytes = bout.toByteArray();
+                        mpr.addData(GssGpsLog.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
+                        oneAdded = true;
+                    }
+                    if (oneAdded) {
+                        didSend = sendRequest(mpr);
+                    }
                 }
+                if (didSend) {
+                    // NOW FORMS WITH IMAGES
+                    if (doNotes) {
+                        List<GssNote> notesList = DaoNotes.getFormNotesList(db);
+                        for (GssNote gssNote : notesList) {
+                            MultipartRequest mpr = new MultipartRequest();
+                            mpr.setUrl(serverUrl);
+                            mpr.addRequestHeader("Authorization", authHeader);
+                            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                            DataOutputStream out = new DataOutputStream(bout);
+                            gssNote.externalize(out);
+                            byte[] bytes = bout.toByteArray();
+                            mpr.addData(GssNote.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
 
-            }
-            // DO IMAGES
-            if (doMedia) {
-                List<GssImage> imagesList = DaoImages.getLonelyImagesList(db, true);
-                for (GssImage gssImage : imagesList) {
-                    MultipartRequest mpr = new MultipartRequest();
-                    mpr.setUrl(serverUrl);
-                    mpr.addRequestHeader("Authorization", authHeader);
-                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-                    DataOutputStream out = new DataOutputStream(bout);
-                    gssImage.externalize(out);
-                    byte[] bytes = bout.toByteArray();
-                    mpr.addData(GssImage.OBJID + (count++), bytes, HyUtilities.MIMETYPE_BYTEARRAY);
-                    oneAdded = true;
-                    didSend = sendRequest(mpr);
+                            List<GssImage> imagesForNote = DaoImages.getImagesListForNoteId(db, gssNote.id, true);
+                            for (GssImage gssImage : imagesForNote) {
+                                ByteArrayOutputStream bout1 = new ByteArrayOutputStream();
+                                DataOutputStream out1 = new DataOutputStream(bout1);
+                                gssImage.externalize(out1);
+                                byte[] bytes1 = bout1.toByteArray();
+                                mpr.addData(GssImage.OBJID + (count++), bytes1, HyUtilities.MIMETYPE_BYTEARRAY);
+                            }
+                            didSend = sendRequest(mpr);
+                            if (!didSend) {
+                                break;
+                            } else {
+                                oneAdded = true;
+                            }
+                        }
+
+                    }
+                    // DO IMAGES
+                    if (doMedia) {
+                        List<GssImage> imagesList = DaoImages.getLonelyImagesList(db, true);
+                        for (GssImage gssImage : imagesList) {
+                            MultipartRequest mpr = new MultipartRequest();
+                            mpr.setUrl(serverUrl);
+                            mpr.addRequestHeader("Authorization", authHeader);
+                            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                            DataOutputStream out = new DataOutputStream(bout);
+                            gssImage.externalize(out);
+                            byte[] bytes = bout.toByteArray();
+                            mpr.addData(GssImage.OBJID + (count++), bytes, HyUtilities.MIMETYPE_BYTEARRAY);
+                            oneAdded = true;
+                            didSend = sendRequest(mpr);
+                        }
+
+                    }
                 }
+                boolean _didSend = didSend;
+                boolean _oneAdded = oneAdded;
+                callSerially(() -> {
+                    ip.dispose();
+                    if (_didSend) {
+                        HyDialogs.showInfoDialog("Data uploaded");//responseMap.get("message").toString());
+                        clearDirtyData(doNotes, doLogs, doMedia);
+                        refreshContainers();
+                    }
 
-            }
+                    if (!_oneAdded) {
+                        HyDialogs.showInfoDialog("No data to upload.");
+                    }
+                });
 
-            if (didSend) {
-                HyDialogs.showInfoDialog("Data uploaded");//responseMap.get("message").toString());
-                clearDirtyData(doNotes, doLogs, doMedia);
-                refreshContainers();
+            } catch (Exception exception) {
+                HyLog.e(exception);
             }
-
-            if (!oneAdded) {
-                HyDialogs.showInfoDialog("No data to upload.");
-            }
-        } catch (Exception exception) {
-            HyLog.e(exception);
-        }
+        });
 
     }
 
     private boolean sendRequest(MultipartRequest mpr) throws IOException {
-        SliderBridge.bindProgress(mpr, progressSlider);
         NetworkManager.getInstance().addToQueueAndWait(mpr);
-
         if (mpr.getResponseCode() == 200) {
             byte[] responseData = mpr.getResponseData();
             String msg = new String(responseData);
