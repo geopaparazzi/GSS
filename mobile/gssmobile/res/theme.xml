@@ -4,6 +4,8 @@
     <image name="gss_launcher_icon.png" type="multi"  />
     <theme name="Theme">
         <val key="@includeNativeBool" value="true" />
+        <val key="Button.fgColor" value="000000" />
+        <val key="DialogTitle.fgColor" value="378756" />
         <val key="FloatingActionButton.bgColor" value="FF9933" />
         <val key="FloatingActionButton.press#bgColor" value="993300" />
         <val key="FloatingActionButton.press#derive" value="FloatingActionButton" />
@@ -12,6 +14,7 @@
         <val key="FloatingActionButton.sel#derive" value="FloatingActionButton" />
         <val key="FloatingActionButton.sel#transparency" value="255" />
         <val key="FloatingActionButton.transparency" value="255" />
+        <val key="FloatingActionText.fgColor" value="993300" />
         <val key="ItemsListRow.bgColor" value="ffffff" />
         <border key="ItemsListRow.border" type="line" millimeters="false" thickness="1.0" color="6135158" />
         <val key="ItemsListRow.margin" value="0.0,0.0,0.0,0.0" />
