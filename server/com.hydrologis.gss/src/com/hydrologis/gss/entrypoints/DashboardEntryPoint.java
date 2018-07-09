@@ -268,7 +268,7 @@ public class DashboardEntryPoint extends StageEntryPoint implements IDoubleClick
         bd.values.add(new ArrayList<Number>());
 
         Map<Long, String> deviceIdMap = dbp.getDatabaseHandler().getDao(GpapUsers.class).queryForAll().stream()
-                .collect(Collectors.toMap(gp -> gp.id, gp -> gp.deviceId));
+                .collect(Collectors.toMap(gp -> gp.id, gp -> gp.name));
 
         for( Entry<Long, int[]> entry : statsPerDevice.entrySet() ) {
             Long deviceIdInternal = entry.getKey();
