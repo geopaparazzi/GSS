@@ -13,7 +13,6 @@ Require-Bundle: org.eclipse.rap.rwt,
  org.eclipse.rap.fileupload,
  eu.hydrologis.stage.libs
 Service-Component: OSGI-INF/contribution.xml
-Eclipse-RegisterBuddy: com.gasleaksensors.libs
 Import-Package: javax.imageio,
  javax.imageio.event,
  javax.imageio.metadata,

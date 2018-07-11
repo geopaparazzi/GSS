@@ -1,6 +1,7 @@
 = The Geopaparazzi Survey Server
 HydroloGIS S.r.l.
-v1.02, 2017-07-03
+v1.03, 2018-07-09
+:gss_version: v1.03
 :doctype: article
 :description: A description
 :encoding: utf-8
@@ -57,14 +58,14 @@ image::images/01_hub.png[scaledwidth=70%, width=70%]
 
 To install the docker image just open a terminal and type in from shell:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-docker pull moovida/gss:v1.02
+docker pull moovida/gss:{gss_version}
 ----
 
 This will download the server image and install it on your machine.
 
-The installation process should reveal something similar to the following:
+The installation process should reveal something similar to the following (the version number will most probably be different):
 
 .GSS installation process.
 image::images/02_install.png[scaledwidth=70%, width=70%]
@@ -114,9 +115,9 @@ To run the GSS server, it is necessary to define a few things:
 Assuming we want to run the application on the data folder defined before and on port 8080,
 the command to run the application is:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -p 8080:8080 moovida/gss:v1.02
+docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -p 8080:8080 moovida/gss:{gss_version}
 ----
 
 Open your favorite browser and enter the url:

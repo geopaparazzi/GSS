@@ -68,7 +68,7 @@ import eu.hydrologis.stage.libs.workspace.StageWorkspace;
  * @author Andrea Antonello (www.hydrologis.com)
  */
 public class LogViewEntryPoint extends StageEntryPoint {
-    public static final String ID = "com.gasleaksensors.server.app.entrypoints.LogViewEntryPoint";
+    public static final String ID = "com.hydrologis.gss.entrypoints.LogViewEntryPoint";
 
     private static final long serialVersionUID = 1L;
 
