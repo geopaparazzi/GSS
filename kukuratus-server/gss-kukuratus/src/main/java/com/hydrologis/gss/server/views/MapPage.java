@@ -172,10 +172,19 @@ public class MapPage extends VerticalLayout implements View {
 
         Button reloadSurveyorsListBtn = new Button(VaadinIcons.FILE_REFRESH);
         reloadSurveyorsListBtn.setDescription("Reload the surveyors list.");
-        reloadSurveyorsListBtn.addClickListener(e->{
-           reloadDevices();
-           surveyorsGrid.setItems(allDevices);
-           reloadSavedSurveyors();
+        reloadSurveyorsListBtn.addClickListener(e -> {
+            reloadDevices();
+
+            String[] loadedGpapUsers = GssSession.getLoadedGpapUsers();
+            surveyorsGrid.setItems(allDevices);
+            if (loadedGpapUsers != null) {
+                GpapUsers[] loaded = new GpapUsers[loadedGpapUsers.length];
+                for( int i = 0; i < loaded.length; i++ ) {
+                    GpapUsers users = deviceNamesMap.get(loadedGpapUsers[i]);
+                    loaded[i] = users;
+                }
+                surveyorsGrid.asMultiSelect().select(loaded);
+            }
         });
         CssLayout btnLayout = new CssLayout(reloadBtn, zoomToBtn, reloadSurveyorsListBtn);
         btnLayout.addStyleName(ValoTheme.LAYOUT_COMPONENT_GROUP);
