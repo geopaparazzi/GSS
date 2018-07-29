@@ -120,7 +120,7 @@ public class ProjectsImporter {
 
                 System.out.println("Importing db: " + dummyDeviceId);
 
-                GpapUsers user = new GpapUsers(dummyDeviceId, dummyDeviceId, null, null, null);
+                GpapUsers user = new GpapUsers(dummyDeviceId, dummyDeviceId, null, null);
                 gpapUsersDao.create(user);
 
                 try (SqliteDb gpapDb = new SqliteDb()) {

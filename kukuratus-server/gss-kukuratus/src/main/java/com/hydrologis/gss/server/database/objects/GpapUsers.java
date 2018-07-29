@@ -21,7 +21,6 @@ public class GpapUsers {
     public static final String ID_FIELD_NAME = "id";
     public static final String DEVICE_FIELD_NAME = "deviceid";
     public static final String NAME_FIELD_NAME = "name";
-    public static final String USERNAME_FIELD_NAME = "username";
     public static final String PASSWORD_FIELD_NAME = "password";
     public static final String CONTACT_FIELD_NAME = "contact";
 
@@ -36,9 +35,6 @@ public class GpapUsers {
     @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
     public String name;
 
-    @DatabaseField(columnName = USERNAME_FIELD_NAME, canBeNull = true)
-    public String username;
-
     @DatabaseField(columnName = PASSWORD_FIELD_NAME, canBeNull = true)
     public String password;
 
@@ -52,11 +48,50 @@ public class GpapUsers {
         this.id = id;
     }
 
-    public GpapUsers( String deviceId, String name, String username, String password, String contact ) {
+    public GpapUsers( String deviceId, String name, String password, String contact ) {
         this.deviceId = deviceId;
         this.name = name;
-        this.username = username;
         this.password = password;
+        this.contact = contact;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId( long id ) {
+        this.id = id;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId( String deviceId ) {
+        this.deviceId = deviceId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName( String name ) {
+        this.name = name;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword( String password ) {
+        this.password = password;
+    }
+
+    public String getContact() {
+        return contact;
+    }
+
+    public void setContact( String contact ) {
         this.contact = contact;
     }
 

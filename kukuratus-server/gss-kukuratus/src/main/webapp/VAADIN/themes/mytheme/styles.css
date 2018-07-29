@@ -16124,3 +16124,7 @@ div.v-layout.v-horizontal.v-widget {
 	text-align: center;
 	vertical-align: middle;
 }
+
+.mytheme .layout-border {
+	border: 1px solid gray;
+}

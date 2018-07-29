@@ -25,7 +25,7 @@ import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 
 public enum GssDbProvider {
     INSTANCE;
-    
+
     private static final String DB_PREFIX = "gss_database";
     public static final String USERNAME = "gss";
     public static final String PWD = "gss";
@@ -33,10 +33,11 @@ public enum GssDbProvider {
     private ASpatialDb db;
     private File databaseFile;
 
+    private static boolean doServer = false;
     private static Server server;
     private DatabaseHandler databaseHandler;
 
-    private synchronized void init() {
+    public synchronized void init() {
         if (db != null) {
             return;
         }
@@ -65,7 +66,7 @@ public enum GssDbProvider {
                 KukuratusLogger.logDebug(this, "Connecting to database: " + dburl);
             }
 
-            if (dbToUse == EDb.H2GIS) {
+            if (doServer && dbToUse == EDb.H2GIS) {
                 if (server == null) {
                     server = H2GisServer.startTcpServerMode("9092", false, null, true,
                             databaseFile.getParentFile().getAbsolutePath());
@@ -89,7 +90,7 @@ public enum GssDbProvider {
         }
 
     }
-    
+
     public File getDatabaseFile() throws IOException {
         Optional<File> globalDataFolder = KukuratusWorkspace.getInstance().getGlobalDataFolder();
         if (globalDataFolder.isPresent()) {
@@ -104,7 +105,7 @@ public enum GssDbProvider {
             if (databaseFiles != null && databaseFiles.length == 1) {
                 return databaseFiles[0];
             }
-            
+
             // create a new database
             KukuratusLogger.logInfo(this, "No database present in folder, creating one.");
             File dbFile = new File(dataFolderFile, "gss_database.mv.db");
@@ -114,13 +115,24 @@ public enum GssDbProvider {
     }
 
     public ASpatialDb getDb() {
-        init();
         return db;
     }
 
-    public DatabaseHandler getDatabaseHandler() {
-        init();
-        return databaseHandler;
+    public Optional<DatabaseHandler> getDatabaseHandler() {
+        return Optional.ofNullable(databaseHandler);
+    }
+
+    public void close() {
+        try {
+            if (doServer && server != null && server.isRunning(true)) {
+                server.shutdown();
+            }
+            if (databaseHandler != null) {
+                databaseHandler.close();
+            }
+        } catch (Exception e) {
+            KukuratusLogger.logError(this, e);
+        }
     }
 
 }

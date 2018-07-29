@@ -32,7 +32,7 @@ public class DashboardPage extends VerticalLayout implements View {
     @Override
     public void enter( ViewChangeEvent event ) {
 
-        dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler();
+        dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler().get();
         try {
             long surveyorsCount = dbHandler.getDao(GpapUsers.class).countOf();
             long notesCount = dbHandler.getDao(Notes.class).countOf();

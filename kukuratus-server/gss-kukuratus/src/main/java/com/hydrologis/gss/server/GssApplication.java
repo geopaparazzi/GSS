@@ -1,6 +1,7 @@
 package com.hydrologis.gss.server;
 
 import com.hydrologis.gss.server.views.DashboardPage;
+import com.hydrologis.gss.server.views.MapChooserView;
 import com.hydrologis.gss.server.views.MapPage;
 import com.hydrologis.gss.server.views.SettingsView;
 import com.hydrologis.gss.server.views.SurveyorsView;
@@ -13,6 +14,7 @@ import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinService;
+import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 
@@ -33,33 +35,31 @@ public class GssApplication extends UI {
     protected void init( VaadinRequest request ) {
         KukuratusLibs.init();
 
-//        if (AuthService.isAuthenticated()) {
-//            String contextPath = request.getContextPath();
-//            System.out.println("CONTEXT PATH: " + contextPath);
-//            setContent(new MapComponent());
+        VaadinSession.getCurrent().setAttribute(AuthService.USERNAME_ATTRIBUTE, "god");
+        if (AuthService.INSTANCE.isAuthenticated()) {
 
-        MenuConfig menuConfig = new MenuConfig();
-        menuConfig.withDesignItem(DesignItem.getWhiteDesign());
-        menuConfig.withBreadcrumbs(false);
+            MenuConfig menuConfig = new MenuConfig();
+            menuConfig.withDesignItem(DesignItem.getWhiteDesign());
+            menuConfig.withBreadcrumbs(false);
 
-        VerticalLayout naviRootContent = new VerticalLayout();
-        naviRootContent.setSizeFull();
-        hybridMenu = HybridMenu.get().withNaviContent(naviRootContent)//
-                .withConfig(menuConfig)//
-                .build();
+            VerticalLayout naviRootContent = new VerticalLayout();
+            naviRootContent.setSizeFull();
+            hybridMenu = HybridMenu.get().withNaviContent(naviRootContent)//
+                    .withConfig(menuConfig)//
+                    .build();
 
-        buildTopOnlyMenu();
-        buildLeftMenu();
+            buildTopOnlyMenu();
+            buildLeftMenu();
 
-        // default page
-        UI.getCurrent().getNavigator().setErrorView(DashboardPage.class);
+            // default page
+            UI.getCurrent().getNavigator().setErrorView(DashboardPage.class);
 
-        hybridMenu.setSizeFull();
-        setContent(hybridMenu);
+            hybridMenu.setSizeFull();
+            setContent(hybridMenu);
 
-//        } else {
-//            setContent(new LoginPage());
-//        }
+        } else {
+            setContent(new LoginPage());
+        }
 
     }
 
@@ -94,11 +94,13 @@ public class GssApplication extends UI {
         settingsList.add(
                 HMButton.get().withCaption("Surveyors").withIcon(VaadinIcons.SPECIALIST).withNavigateTo(SurveyorsView.class));
         settingsList.add(HMButton.get().withCaption("Web Users").withIcon(VaadinIcons.GROUP).withNavigateTo(WebUsersView.class));
+        settingsList.add(
+                HMButton.get().withCaption("Map Chooser").withIcon(VaadinIcons.MAP_MARKER).withNavigateTo(MapChooserView.class));
         settingsList
                 .add(HMButton.get().withCaption("Other Settings").withIcon(VaadinIcons.COG).withNavigateTo(SettingsView.class));
 
         leftMenu.add(HMButton.get().withCaption("Logout").withIcon(VaadinIcons.EXIT_O).withClickListener(e -> {
-            AuthService.logout();
+            AuthService.INSTANCE.logout();
         }));
 
     }
