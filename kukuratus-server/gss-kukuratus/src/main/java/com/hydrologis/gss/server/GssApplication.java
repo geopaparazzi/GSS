@@ -9,6 +9,7 @@ import com.hydrologis.gss.server.views.WebUsersView;
 import com.hydrologis.kukuratus.libs.KukuratusLibs;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.auth.LoginPage;
+import com.hydrologis.kukuratus.libs.utils.log.LogView;
 import com.vaadin.annotations.Theme;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.ThemeResource;
@@ -81,8 +82,10 @@ public class GssApplication extends UI {
         System.out.println(basepath);
 //        FileResource resource = new FileResource(new File(basepath + "/WEB-INF/images/logo.png"));
 
-        leftMenu.add(HMLabel.get()// .withCaption("<b>Geopaparazzi<br/>Survey<br/>Server</b>")
-                .withIcon(new ThemeResource("images/logo.png")));
+        HMLabel logoLabel = HMLabel.get()// .withCaption("<b>Geopaparazzi<br/>Survey<br/>Server</b>")
+                .withIcon(new ThemeResource("images/logo.png"));
+        logoLabel.setHeight(100f, Unit.PIXELS);
+        leftMenu.add(logoLabel);
 
 //        HMButton dashBoardButton = 
         leftMenu.add(HMButton.get().withCaption("Dashboard").withIcon(VaadinIcons.DASHBOARD).withNavigateTo(DashboardPage.class));
@@ -98,6 +101,8 @@ public class GssApplication extends UI {
                 HMButton.get().withCaption("Map Chooser").withIcon(VaadinIcons.MAP_MARKER).withNavigateTo(MapChooserView.class));
         settingsList
                 .add(HMButton.get().withCaption("Other Settings").withIcon(VaadinIcons.COG).withNavigateTo(SettingsView.class));
+
+        leftMenu.add(HMButton.get().withCaption("Log View").withIcon(VaadinIcons.CLIPBOARD_PULSE).withNavigateTo(LogView.class));
 
         leftMenu.add(HMButton.get().withCaption("Logout").withIcon(VaadinIcons.EXIT_O).withClickListener(e -> {
             AuthService.INSTANCE.logout();

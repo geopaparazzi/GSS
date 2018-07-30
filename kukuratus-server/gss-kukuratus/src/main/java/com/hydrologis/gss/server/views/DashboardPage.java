@@ -13,7 +13,7 @@ import com.byteowls.vaadin.chartjs.data.BarDataset;
 import com.byteowls.vaadin.chartjs.data.Data;
 import com.byteowls.vaadin.chartjs.options.Position;
 import com.hydrologis.gss.server.GssDbProvider;
-import com.hydrologis.gss.server.database.DatabaseHandler;
+import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.Images;
@@ -27,7 +27,7 @@ import com.vaadin.ui.VerticalLayout;
 
 public class DashboardPage extends VerticalLayout implements View {
     private static final long serialVersionUID = 1L;
-    private DatabaseHandler dbHandler;
+    private GssDatabaseHandler dbHandler;
 
     @Override
     public void enter( ViewChangeEvent event ) {
@@ -46,14 +46,15 @@ public class DashboardPage extends VerticalLayout implements View {
             HorizontalLayout numbers = new HorizontalLayout(surveyLabel, logsLabel, notesLabel, imageslabel);
 
             ChartJs chart = createChart();
-            chart.setStyleName("dashboard-labels-border", true);
+//            chart.setStyleName("dashboard-labels-border", true);
 
             addComponents(numbers, chart);
             setExpandRatio(numbers, 1);
-            setExpandRatio(chart, 3);
+            setExpandRatio(chart, 4);
 
             numbers.setSizeFull();
             chart.setSizeFull();
+//            setSizeFull();
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -63,7 +64,7 @@ public class DashboardPage extends VerticalLayout implements View {
     private Label getLabel( String string, long count ) {
         Label label = new Label("<h1>" + string + "<b>" + count + "</b></h1>");
         label.setContentMode(com.vaadin.shared.ui.ContentMode.HTML);
-        label.setStyleName("dashboard-labels-border");
+//        label.setStyleName("dashboard-labels-border", true);
         label.setSizeFull();
         return label;
     }
@@ -120,7 +121,11 @@ public class DashboardPage extends VerticalLayout implements View {
         data.addDataset(new BarDataset().type().label("Gps Logs").backgroundColor("rgba(0,0,225,0.5)").borderColor("white")
                 .borderWidth(2)).and();
 
-        config.options().responsive(true).title().display(true).position(Position.LEFT).text("Stats per Surveyor").and().done();
+        config.options().responsive(true)//
+                .title().display(true)//
+                .position(Position.LEFT).text("Stats per Surveyor")//
+                .and()
+                .done();
 
         List<Double> notesList = new ArrayList<>();
         List<Double> imagesList = new ArrayList<>();
@@ -131,7 +136,7 @@ public class DashboardPage extends VerticalLayout implements View {
             imagesList.add((double) values[2]);
             logsList.add((double) values[3]);
         }
-        
+
         BarDataset notesDs = (BarDataset) config.data().getDatasetAtIndex(0);
         notesDs.dataAsList(notesList);
         BarDataset imagesDs = (BarDataset) config.data().getDatasetAtIndex(1);

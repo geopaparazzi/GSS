@@ -6,6 +6,8 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,14 +24,14 @@ import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.LMarker;
 import org.vaadin.addon.leaflet.LPolyline;
 import org.vaadin.addon.leaflet.LTileLayer;
-import org.vaadin.addon.leaflet.LeafletClickEvent;
-import org.vaadin.addon.leaflet.LeafletClickListener;
+import org.vaadin.addon.leaflet.LeafletMoveEndEvent;
+import org.vaadin.addon.leaflet.LeafletMoveEndListener;
 import org.vaadin.addon.leaflet.shared.Bounds;
 import org.vaadin.addon.leaflet.shared.Point;
 
 import com.hydrologis.gss.server.GssDbProvider;
 import com.hydrologis.gss.server.GssSession;
-import com.hydrologis.gss.server.database.DatabaseHandler;
+import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
@@ -47,12 +49,12 @@ import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FileResource;
-import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
-import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.VerticalLayout;
@@ -63,19 +65,6 @@ public class MapPage extends VerticalLayout implements View {
     private static final long serialVersionUID = 1L;
 
     private LMap leafletMap;
-    private LeafletClickListener listener = new LeafletClickListener(){
-
-        @Override
-        public void onClick( LeafletClickEvent event ) {
-            if (event.getPoint() != null) {
-                Notification.show(String.format("Clicked %s @ %.4f,%.4f", event.getConnector().getClass().getSimpleName(),
-                        event.getPoint().getLat(), event.getPoint().getLon()));
-
-            } else {
-                Notification.show(String.format("Clicked %s", event.getConnector().getClass().getSimpleName()));
-            }
-        }
-    };
 
     private HorizontalSplitPanel mainSplitPanel;
     private VerticalLayout surveyorsLayout;
@@ -86,7 +75,7 @@ public class MapPage extends VerticalLayout implements View {
 
     private Button zoomToBtn;
 
-    private HashMap<String, List<LLayerGroup>> user4LoadedLayersMap = new HashMap<>();
+    private HashMap<String, LLayerGroup> userId4LoadedLayersMap = new HashMap<>();
 
     private Grid<GpapUsers> surveyorsGrid;
 
@@ -107,11 +96,13 @@ public class MapPage extends VerticalLayout implements View {
 
         mainSplitPanel = new HorizontalSplitPanel();
         mainSplitPanel.setSizeFull();
-        mainSplitPanel.setSplitPosition(30, Unit.PERCENTAGE);
+        mainSplitPanel.setSplitPosition(20, Unit.PERCENTAGE);
 
         createSurveyorsGrid();
+        surveyorsLayout.setStyleName("layout-border", true);
         mainSplitPanel.setFirstComponent(surveyorsLayout);
         createMap();
+        leafletMap.setStyleName("layout-border", true);
         mainSplitPanel.setSecondComponent(leafletMap);
 
         leafletMap.setSizeFull();
@@ -138,10 +129,18 @@ public class MapPage extends VerticalLayout implements View {
 
     private void createSurveyorsGrid() {
         surveyorsLayout = new VerticalLayout();
-//        surveyorsLayout.setStyleName("layout-border", true);
 
         reloadBtn = new Button(VaadinIcons.REFRESH);
         reloadBtn.setDescription("Refresh surveyors data.");
+        reloadBtn.addClickListener(e -> {
+            Set<GpapUsers> selectedUsers = surveyorsGrid.getSelectedItems();
+            if (selectedUsers.size() == 0) {
+                return;
+            }
+            surveyorsGrid.asMultiSelect().updateSelection(new HashSet<>(), selectedUsers);
+            surveyorsGrid.asMultiSelect().updateSelection(selectedUsers, new HashSet<>());
+        });
+
         zoomToBtn = new Button(VaadinIcons.SEARCH);
         zoomToBtn.setDescription("Zoom to the whole extend of the surveyor.");
         zoomToBtn.addClickListener(e -> {
@@ -149,13 +148,12 @@ public class MapPage extends VerticalLayout implements View {
             if (selectedUsers.size() == 0) {
                 return;
             }
+
             Envelope envelope = new Envelope();
             for( GpapUsers user : selectedUsers ) {
-                List<LLayerGroup> layersList = user4LoadedLayersMap.get(user.name);
-                for( LLayerGroup lLayerGroup : layersList ) {
-                    Envelope env = lLayerGroup.getGeometry().getEnvelopeInternal();
-                    envelope.expandToInclude(env);
-                }
+                LLayerGroup layersGroup = userId4LoadedLayersMap.get(user.deviceId);
+                Envelope env = layersGroup.getGeometry().getEnvelopeInternal();
+                envelope.expandToInclude(env);
             }
 
             Bounds bounds = new Bounds();
@@ -203,28 +201,37 @@ public class MapPage extends VerticalLayout implements View {
             String[] userNames = selectedUsers.stream().map(u -> u.getName()).collect(Collectors.toList()).toArray(new String[0]);
             GssSession.setLoadedGpapUsers(userNames);
 
-            DatabaseHandler dbh = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+            GssDatabaseHandler dbh = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+
+            // first remove layers
+            List<Component> toRemove = new ArrayList<>();
+            Iterator<Component> iterator = leafletMap.iterator();
+            while( iterator.hasNext() ) {
+                Component component = iterator.next();
+                toRemove.add(component);
+            }
+            toRemove.forEach(comp -> {
+                if (comp instanceof LLayerGroup) {
+                    LLayerGroup layer = (LLayerGroup) comp;
+                    leafletMap.removeComponent(layer);
+                }
+            });
             try {
                 Dao<Notes, ? > notesDao = dbh.getDao(Notes.class);
                 Dao<Images, ? > imagesDao = dbh.getDao(Images.class);
                 Dao<GpsLogs, ? > logsDao = dbh.getDao(GpsLogs.class);
                 Dao<GpsLogsProperties, ? > logsPropertiesDao = dbh.getDao(GpsLogsProperties.class);
+
                 for( GpapUsers user : selectedUsers ) {
-                    // remove maps of user
-                    List<LLayerGroup> layersList = user4LoadedLayersMap.get(user.name);
-                    if (layersList == null) {
-                        layersList = new ArrayList<>();
-                        user4LoadedLayersMap.put(user.name, layersList);
-                    }
-                    for( LLayerGroup layer : layersList ) {
-                        leafletMap.removeComponent(layer);
-                    }
-                    layersList.clear();
+                    LLayerGroup layersGroup = new LLayerGroup();
 
-                    addLogs(logsDao, logsPropertiesDao, user, layersList);
-                    addNotes(notesDao, user, layersList);
-                    addImages(dbh, imagesDao, user, layersList);
+                    addLogs(logsDao, logsPropertiesDao, user, layersGroup);
+                    addNotes(notesDao, user, layersGroup);
+                    addImages(dbh, imagesDao, user, layersGroup);
 
+                    leafletMap.addOverlay(layersGroup, user.name);
+
+                    userId4LoadedLayersMap.put(user.deviceId, layersGroup);
                 }
             } catch (SQLException e1) {
                 e1.printStackTrace();
@@ -240,10 +247,9 @@ public class MapPage extends VerticalLayout implements View {
     }
 
     private void addLogs( Dao<GpsLogs, ? > logsDao, Dao<GpsLogsProperties, ? > logsPropertiesDao, GpapUsers user,
-            List<LLayerGroup> layersList ) throws SQLException {
+            LLayerGroup layer ) throws SQLException {
         List<GpsLogs> gpsLogs = logsDao.queryBuilder().where().eq(GpsLogs.GPAPUSER_FIELD_NAME, user).query();
         if (gpsLogs.size() > 0) {
-            LLayerGroup logsGroup = new LLayerGroup();
             for( GpsLogs log : gpsLogs ) {
                 GpsLogsProperties props = logsPropertiesDao.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, log)
                         .queryForFirst();
@@ -253,18 +259,15 @@ public class MapPage extends VerticalLayout implements View {
                 leafletPolyline.setWeight((int) props.width);
                 leafletPolyline.setPopup(getLogsHtml(log));
 
-                logsGroup.addComponent(leafletPolyline);
+                layer.addComponent(leafletPolyline);
             }
-            leafletMap.addOverlay(logsGroup, user.name + ": Gps Logs");
-            layersList.add(logsGroup);
         }
     }
 
-    private void addImages( DatabaseHandler dbh, Dao<Images, ? > imagesDao, GpapUsers user, List<LLayerGroup> layersList )
+    private void addImages( GssDatabaseHandler dbh, Dao<Images, ? > imagesDao, GpapUsers user, LLayerGroup layer )
             throws SQLException {
         List<Images> imagesList = imagesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user).query();
         if (imagesList.size() > 0) {
-            LLayerGroup imagesGroup = new LLayerGroup();
             for( Images image : imagesList ) {
                 LMarker leafletMarker = new LMarker(image.the_geom);
                 leafletMarker.setIcon(imagesResource);
@@ -288,24 +291,21 @@ public class MapPage extends VerticalLayout implements View {
                             BufferedImage scaleImage = ImageUtilities.scaleImage(bufferedImage, 1000);
 
                             ImageSource imageSource = new ImageSource(scaleImage, title);
-                            imageSource.openPopup();
+                            imageSource.openAsWindow();
 
                         }
                     } catch (Exception e1) {
                         e1.printStackTrace();
                     }
                 });
-                imagesGroup.addComponent(leafletMarker);
+                layer.addComponent(leafletMarker);
             }
-            leafletMap.addOverlay(imagesGroup, user.name + ": Images");
-            layersList.add(imagesGroup);
         }
     }
 
-    private void addNotes( Dao<Notes, ? > notesDao, GpapUsers user, List<LLayerGroup> layersList ) throws SQLException {
+    private void addNotes( Dao<Notes, ? > notesDao, GpapUsers user, LLayerGroup layer ) throws SQLException {
         List<Notes> notesList = notesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user).query();
         if (notesList.size() > 0) {
-            LLayerGroup notesGroup = new LLayerGroup();
             for( Notes note : notesList ) {
                 LMarker leafletMarker = new LMarker(note.the_geom);
                 leafletMarker.setIcon(notesResource);
@@ -317,10 +317,8 @@ public class MapPage extends VerticalLayout implements View {
                 leafletMarker.setPopup(getNotesHtml(note));
                 leafletMarker.setPopupAnchor(new Point(iconSize / 2, iconSize / 2));
 
-                notesGroup.addComponent(leafletMarker);
+                layer.addComponent(leafletMarker);
             }
-            leafletMap.addOverlay(notesGroup, user.name + ": Notes");
-            layersList.add(notesGroup);
         }
     }
 
@@ -364,9 +362,14 @@ public class MapPage extends VerticalLayout implements View {
 
     private void createMap() {
         leafletMap = new LMap();
-        leafletMap.setCenter(41.8919, 12.5113);
-        leafletMap.setZoomLevel(15);
 
+        double[] lastMapPosition = GssSession.getLastMapPosition();
+        if (lastMapPosition != null) {
+            leafletMap.setView(lastMapPosition[1], lastMapPosition[0], lastMapPosition[2]);
+        } else {
+            leafletMap.setCenter(41.8919, 12.5113);
+            leafletMap.setZoomLevel(15);
+        }
         List<String> selectedTileSourcesNames = RegistryHandler.INSTANCE
                 .getSelectedTileSourcesNames(AuthService.INSTANCE.getAuthenticatedUsername());
         for( String name : selectedTileSourcesNames ) {
@@ -386,6 +389,17 @@ public class MapPage extends VerticalLayout implements View {
             }
             leafletMap.addBaseLayer(tmpLayer, name);
         }
+
+        leafletMap.addMoveEndListener(new LeafletMoveEndListener(){
+            @Override
+            public void onMoveEnd( LeafletMoveEndEvent event ) {
+                Point center = event.getCenter();
+                Double lat = center.getLat();
+                Double lon = center.getLon();
+                double zoomLevel = event.getZoomLevel();
+                GssSession.setLastMapPosition(new double[]{lon, lat, zoomLevel});
+            }
+        });
 
     }
 

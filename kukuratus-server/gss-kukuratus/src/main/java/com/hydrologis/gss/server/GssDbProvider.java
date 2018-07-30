@@ -19,7 +19,7 @@ import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
 import org.hortonmachine.dbs.h2gis.H2GisServer;
 
-import com.hydrologis.gss.server.database.DatabaseHandler;
+import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 
@@ -33,9 +33,9 @@ public enum GssDbProvider {
     private ASpatialDb db;
     private File databaseFile;
 
-    private static boolean doServer = false;
+    private static boolean doServer = true;
     private static Server server;
-    private DatabaseHandler databaseHandler;
+    private GssDatabaseHandler databaseHandler;
 
     public synchronized void init() {
         if (db != null) {
@@ -80,7 +80,7 @@ public enum GssDbProvider {
             // db.setCredentials(USERNAME, PWD);
             db.open(dburl);
 
-            databaseHandler = DatabaseHandler.instance(db);
+            databaseHandler = GssDatabaseHandler.instance(db);
 
             if (!dbExistedAlready) {
                 databaseHandler.createTables();
@@ -118,7 +118,7 @@ public enum GssDbProvider {
         return db;
     }
 
-    public Optional<DatabaseHandler> getDatabaseHandler() {
+    public Optional<GssDatabaseHandler> getDatabaseHandler() {
         return Optional.ofNullable(databaseHandler);
     }
 

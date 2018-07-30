@@ -10,8 +10,8 @@
 package com.hydrologis.gss.server.database.objects;
 import java.util.Date;
 
-import com.hydrologis.gss.server.database.ISpatialTable;
-import com.hydrologis.gss.server.database.ormlite.PointTypeH2GIS;
+import com.hydrologis.kukuratus.libs.database.ISpatialTable;
+import com.hydrologis.kukuratus.libs.database.ormlite.PointTypeH2GIS;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;

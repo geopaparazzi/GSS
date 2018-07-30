@@ -35,7 +35,7 @@ import org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.NotesTa
 import org.hortonmachine.gears.utils.files.FileUtilities;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
 
-import com.hydrologis.gss.server.database.DatabaseHandler;
+import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.GpsLogsData;
@@ -101,7 +101,7 @@ public class ProjectsImporter {
                 db.initSpatialMetadata(null);
             }
 
-            DatabaseHandler dbHandler = DatabaseHandler.instance(db);
+            GssDatabaseHandler dbHandler = GssDatabaseHandler.instance(db);
 
             dbHandler.createTables();
             dbHandler.populateWithDefaults();

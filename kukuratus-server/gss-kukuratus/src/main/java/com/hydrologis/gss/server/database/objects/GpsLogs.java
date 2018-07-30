@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: EPL-2.0
  ******************************************************************************/
 package com.hydrologis.gss.server.database.objects;
-import com.hydrologis.gss.server.database.ISpatialTable;
-import com.hydrologis.gss.server.database.ormlite.LineStringTypeH2GIS;
+import com.hydrologis.kukuratus.libs.database.ISpatialTable;
+import com.hydrologis.kukuratus.libs.database.ormlite.LineStringTypeH2GIS;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import com.vividsolutions.jts.geom.LineString;
