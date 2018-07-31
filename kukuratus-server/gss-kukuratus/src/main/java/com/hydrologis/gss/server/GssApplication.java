@@ -36,6 +36,7 @@ public class GssApplication extends UI {
     protected void init( VaadinRequest request ) {
         KukuratusLibs.init();
 
+        // FIXME remove this
         VaadinSession.getCurrent().setAttribute(AuthService.USERNAME_ATTRIBUTE, "god");
         if (AuthService.INSTANCE.isAuthenticated()) {
 
@@ -77,19 +78,11 @@ public class GssApplication extends UI {
     private void buildLeftMenu() {
         LeftMenu leftMenu = hybridMenu.getLeftMenu();
 
-        // Find the application directory
-        String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-        System.out.println(basepath);
-//        FileResource resource = new FileResource(new File(basepath + "/WEB-INF/images/logo.png"));
-
-        HMLabel logoLabel = HMLabel.get()// .withCaption("<b>Geopaparazzi<br/>Survey<br/>Server</b>")
-                .withIcon(new ThemeResource("images/logo.png"));
-        logoLabel.setHeight(100f, Unit.PIXELS);
+        HMLabel logoLabel = HMLabel.get().withIcon(new ThemeResource("images/logo.png"));
+        logoLabel.setHeight(200f, Unit.PIXELS);
         leftMenu.add(logoLabel);
 
-//        HMButton dashBoardButton = 
         leftMenu.add(HMButton.get().withCaption("Dashboard").withIcon(VaadinIcons.DASHBOARD).withNavigateTo(DashboardPage.class));
-//        hybridMenu.getBreadCrumbs().setRoot(dashBoardButton);
 
         leftMenu.add(HMButton.get().withCaption("Map View").withIcon(VaadinIcons.MAP_MARKER).withNavigateTo(MapPage.class));
 

@@ -21,8 +21,11 @@ import com.hydrologis.gss.server.database.objects.Notes;
 import com.j256.ormlite.dao.Dao;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.server.ExternalResource;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Link;
 import com.vaadin.ui.VerticalLayout;
 
 public class DashboardPage extends VerticalLayout implements View {
@@ -35,26 +38,47 @@ public class DashboardPage extends VerticalLayout implements View {
         dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler().get();
         try {
             long surveyorsCount = dbHandler.getDao(GpapUsers.class).countOf();
-            long notesCount = dbHandler.getDao(Notes.class).countOf();
-            long logsCount = dbHandler.getDao(GpsLogs.class).countOf();
-            long mediaCount = dbHandler.getDao(Images.class).countOf();
+            if (surveyorsCount == 0) {
 
-            Label surveyLabel = getLabel("Surveyors: ", surveyorsCount);
-            Label logsLabel = getLabel("GPS Logs: ", logsCount);
-            Label notesLabel = getLabel("Notes: ", notesCount);
-            Label imageslabel = getLabel("Media: ", mediaCount);
-            HorizontalLayout numbers = new HorizontalLayout(surveyLabel, logsLabel, notesLabel, imageslabel);
+                VerticalLayout layout = new VerticalLayout();
+                Label noSurveyorsLabel = new Label("<h1><b>No surveyor data available yet!</b></h1><br/>");
+                noSurveyorsLabel.setContentMode(com.vaadin.shared.ui.ContentMode.HTML);
+                noSurveyorsLabel.setWidth(null);
+                layout.addComponent(noSurveyorsLabel);
+                Link appLink = new Link("You might want to get the Android app to upload some data!",
+                        new ExternalResource("https://play.google.com/store/apps/details?id=com.hydrologis.gssmobile"));
+                appLink.setDescription("Geopaparazzi Survey Server Sync");
+                appLink.setWidth(null);
+                layout.addComponent(appLink);
+                layout.setWidth(null);
+                layout.setComponentAlignment(noSurveyorsLabel, Alignment.MIDDLE_CENTER);
+                layout.setComponentAlignment(appLink, Alignment.MIDDLE_CENTER);
+                
+                addComponent(layout);
+                setSizeFull();
+                setComponentAlignment(layout, Alignment.MIDDLE_CENTER);
+            } else {
+                long notesCount = dbHandler.getDao(Notes.class).countOf();
+                long logsCount = dbHandler.getDao(GpsLogs.class).countOf();
+                long mediaCount = dbHandler.getDao(Images.class).countOf();
 
-            ChartJs chart = createChart();
+                Label surveyLabel = getLabel("Surveyors: ", surveyorsCount);
+                Label logsLabel = getLabel("GPS Logs: ", logsCount);
+                Label notesLabel = getLabel("Notes: ", notesCount);
+                Label imageslabel = getLabel("Media: ", mediaCount);
+                HorizontalLayout numbers = new HorizontalLayout(surveyLabel, logsLabel, notesLabel, imageslabel);
+
+                ChartJs chart = createChart();
 //            chart.setStyleName("dashboard-labels-border", true);
 
-            addComponents(numbers, chart);
-            setExpandRatio(numbers, 1);
-            setExpandRatio(chart, 4);
+                addComponents(numbers, chart);
+                setExpandRatio(numbers, 1);
+                setExpandRatio(chart, 4);
 
-            numbers.setSizeFull();
-            chart.setSizeFull();
+                numbers.setSizeFull();
+                chart.setSizeFull();
 //            setSizeFull();
+            }
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -124,8 +148,7 @@ public class DashboardPage extends VerticalLayout implements View {
         config.options().responsive(true)//
                 .title().display(true)//
                 .position(Position.LEFT).text("Stats per Surveyor")//
-                .and()
-                .done();
+                .and().done();
 
         List<Double> notesList = new ArrayList<>();
         List<Double> imagesList = new ArrayList<>();
