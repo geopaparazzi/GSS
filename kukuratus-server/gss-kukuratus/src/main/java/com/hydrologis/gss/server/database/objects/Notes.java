@@ -32,9 +32,8 @@ public class Notes implements ISpatialTable {
     public static final String FORM_FIELD_NAME = "form";
     public static final String STYLE_FIELD_NAME = "style";
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid";
-    
-    public static final String notesFKColumnDefinition = "long references notes(id) on delete cascade";
 
+    public static final String notesFKColumnDefinition = "long references notes(id) on delete cascade";
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
@@ -54,7 +53,7 @@ public class Notes implements ISpatialTable {
     @DatabaseField(columnName = TEXT_FIELD_NAME, canBeNull = false)
     public String text;
 
-    @DatabaseField(columnName = FORM_FIELD_NAME, canBeNull = true, dataType=DataType.LONG_STRING)
+    @DatabaseField(columnName = FORM_FIELD_NAME, canBeNull = true, dataType = DataType.LONG_STRING)
     public String form;
 
     @DatabaseField(columnName = STYLE_FIELD_NAME, canBeNull = true)
@@ -94,6 +93,78 @@ public class Notes implements ISpatialTable {
         this.text = text;
         this.form = form;
         this.style = style;
+        this.gpapUser = gpapUser;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId( long id ) {
+        this.id = id;
+    }
+
+    public Point getThe_geom() {
+        return the_geom;
+    }
+
+    public void setThe_geom( Point the_geom ) {
+        this.the_geom = the_geom;
+    }
+
+    public double getAltimetry() {
+        return altimetry;
+    }
+
+    public void setAltimetry( double altimetry ) {
+        this.altimetry = altimetry;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp( long timestamp ) {
+        this.timestamp = timestamp;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription( String description ) {
+        this.description = description;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText( String text ) {
+        this.text = text;
+    }
+
+    public String getForm() {
+        return form;
+    }
+
+    public void setForm( String form ) {
+        this.form = form;
+    }
+
+    public String getStyle() {
+        return style;
+    }
+
+    public void setStyle( String style ) {
+        this.style = style;
+    }
+
+    public GpapUsers getGpapUser() {
+        return gpapUser;
+    }
+
+    public void setGpapUser( GpapUsers gpapUser ) {
         this.gpapUser = gpapUser;
     }
 

@@ -137,8 +137,10 @@ public class MapPage extends VerticalLayout implements View {
             if (selectedUsers.size() == 0) {
                 return;
             }
-            surveyorsGrid.asMultiSelect().updateSelection(new HashSet<>(), selectedUsers);
-            surveyorsGrid.asMultiSelect().updateSelection(selectedUsers, new HashSet<>());
+            HashSet<GpapUsers> selected = new HashSet<>();
+            selected.addAll(selectedUsers);
+            surveyorsGrid.asMultiSelect().updateSelection(new HashSet<>(), selected);
+            surveyorsGrid.asMultiSelect().updateSelection(selected, new HashSet<>());
         });
 
         zoomToBtn = new Button(VaadinIcons.SEARCH);

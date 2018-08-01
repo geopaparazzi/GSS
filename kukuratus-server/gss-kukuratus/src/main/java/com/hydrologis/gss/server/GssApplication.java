@@ -2,8 +2,10 @@ package com.hydrologis.gss.server;
 
 import com.hydrologis.gss.server.views.AboutView;
 import com.hydrologis.gss.server.views.DashboardPage;
+import com.hydrologis.gss.server.views.KmzExportView;
 import com.hydrologis.gss.server.views.MapChooserView;
 import com.hydrologis.gss.server.views.MapPage;
+import com.hydrologis.gss.server.views.PdfExportView;
 import com.hydrologis.gss.server.views.SurveyorsView;
 import com.hydrologis.gss.server.views.WebUsersView;
 import com.hydrologis.kukuratus.libs.KukuratusLibs;
@@ -14,9 +16,11 @@ import com.hydrologis.kukuratus.libs.registry.User;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.log.LogView;
 import com.vaadin.annotations.Theme;
+import com.vaadin.annotations.Title;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServletService;
 import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Image;
@@ -31,6 +35,7 @@ import kaesdingeling.hybridmenu.components.LeftMenu;
 import kaesdingeling.hybridmenu.data.MenuConfig;
 import kaesdingeling.hybridmenu.design.DesignItem;
 
+@Title("Geopaparazzi Survey Server")
 @Theme("mytheme")
 public class GssApplication extends UI {
     private static final long serialVersionUID = 1L;
@@ -40,9 +45,9 @@ public class GssApplication extends UI {
     @Override
     protected void init( VaadinRequest request ) {
         KukuratusLibs.init();
-
+        
         // FIXME remove this
-//        VaadinSession.getCurrent().setAttribute(AuthService.USERNAME_ATTRIBUTE, "god");
+        VaadinSession.getCurrent().setAttribute(AuthService.USERNAME_ATTRIBUTE, "god");
         if (AuthService.INSTANCE.isAuthenticated()) {
 
             authenticatedUsername = AuthService.INSTANCE.getAuthenticatedUsername();
@@ -120,6 +125,11 @@ public class GssApplication extends UI {
         }
         settingsList.add(
                 HMButton.get().withCaption("Map Chooser").withIcon(VaadinIcons.MAP_MARKER).withNavigateTo(MapChooserView.class));
+
+        HMSubMenu exportsList = leftMenu.add(HMSubMenu.get().withCaption("Export").withIcon(VaadinIcons.CLOUD_DOWNLOAD));
+        exportsList.add(HMButton.get().withCaption("PDF").withIcon(VaadinIcons.FILE_TEXT_O).withNavigateTo(PdfExportView.class));
+        exportsList.add(HMButton.get().withCaption("KMZ").withIcon(VaadinIcons.GLOBE).withNavigateTo(KmzExportView.class));
+
         if (isAdmin) {
 //            settingsList.add(
 //                    HMButton.get().withCaption("Other Settings").withIcon(VaadinIcons.COG).withNavigateTo(SettingsView.class));

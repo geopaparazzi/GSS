@@ -13,6 +13,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -51,6 +52,8 @@ public class UploadServlet extends HttpServlet {
 
     @Override
     protected void doPost( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        session.setMaxInactiveInterval(60 * 10);
 
         Logger logDb = KukuratusWorkspace.getInstance().getLogDb();
         String ipAddress = "unknown";
