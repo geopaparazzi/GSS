@@ -10,14 +10,7 @@ import com.hydrologis.kukuratus.libs.registry.Authorization;
 import com.hydrologis.kukuratus.libs.registry.Group;
 import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
 import com.hydrologis.kukuratus.libs.registry.User;
-import com.vaadin.data.BeanValidationBinder;
 import com.vaadin.data.Binder;
-import com.vaadin.data.ValidationResult;
-import com.vaadin.data.Validator;
-import com.vaadin.data.ValueContext;
-import com.vaadin.data.validator.AbstractValidator;
-import com.vaadin.data.validator.RegexpValidator;
-import com.vaadin.data.validator.StringLengthValidator;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
@@ -125,9 +118,9 @@ public class WebUsersView extends HorizontalLayout implements View {
 
         usersGrid.setColumns();
         usersGrid.addColumn(User::getId).setCaption("User Id").setExpandRatio(1);
-        usersGrid.addColumn(User::getUniqueName).setCaption("Unique Name").setExpandRatio(5)
+        usersGrid.addColumn(User::getUniqueName).setCaption("Unique Name").setExpandRatio(3)
                 .setEditorBinding(binder.forField(new TextField()).bind(User::getUniqueName, User::setUniqueName));
-        usersGrid.addColumn(User::getPwd).setCaption("Password").setExpandRatio(5)
+        usersGrid.addColumn(User::getPwd).setCaption("Password").setExpandRatio(3)
                 .setRenderer(user -> "**********", new TextRenderer())
                 .setEditorBinding(binder.forField(new TextField()).bind(User::getPwd, User::setPwd));
         usersGrid.addColumn(User::getGroup).setCaption("Group").setExpandRatio(4)
@@ -361,7 +354,7 @@ public class WebUsersView extends HorizontalLayout implements View {
                         Notification.show("The password is mandatory.", Type.ERROR_MESSAGE);
                         return;
                     }
-                    if (user.getGroup() == null ) {
+                    if (user.getGroup() == null) {
                         Notification.show("The group is mandatory.", Type.ERROR_MESSAGE);
                         return;
                     }
@@ -369,6 +362,8 @@ public class WebUsersView extends HorizontalLayout implements View {
                     if (sameNameUser != null) {
                         Notification.show("A user with the same unique name exists already.", Type.ERROR_MESSAGE);
                     } else {
+                        // hash pwd
+                        user.setPwd(RegistryHandler.hashPwd(user.getPwd()));
                         RegistryHandler.INSTANCE.addUser(user);
                         close();
                         refreshUsers();
