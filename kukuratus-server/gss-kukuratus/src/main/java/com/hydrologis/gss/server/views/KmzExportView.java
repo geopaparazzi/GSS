@@ -14,6 +14,7 @@ import org.joda.time.DateTime;
 import com.hydrologis.gss.server.GssDbProvider;
 import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
+import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
@@ -110,6 +111,7 @@ public class KmzExportView extends VerticalLayout implements View {
         Dao<Notes, ? > notesDAO = dbHandler.getDao(Notes.class);
         Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
         Dao<ImageData, ? > imageDataDAO = dbHandler.getDao(ImageData.class);
+        Dao<GpsLogs, ? > logsDAO = dbHandler.getDao(GpsLogs.class);
 
         Notification.show("Report generation started", "You'll be notified once the report is ready.",
                 Notification.Type.TRAY_NOTIFICATION);
@@ -117,7 +119,11 @@ public class KmzExportView extends VerticalLayout implements View {
 
         new Thread(() -> {
             try {
+                List<KmlRepresenter> kmlList = new ArrayList<>();
                 List<Notes> notesList = notesDAO.queryBuilder().where().in(Notes.GPAPUSER_FIELD_NAME, devices).query();
+                kmlList.addAll(notesList);
+                List<GpsLogs> logsList = logsDAO.queryBuilder().where().in(Notes.GPAPUSER_FIELD_NAME, devices).query();
+                kmlList.addAll(logsList);
 
                 File tmpFolder = KukuratusWorkspace.getInstance().getTmpFolder().get();
                 File outFile = new File(tmpFolder,
@@ -146,7 +152,7 @@ public class KmzExportView extends VerticalLayout implements View {
                         }
                     }
                 };
-                exporter.export(notesList.stream().map(n -> (KmlRepresenter) n).collect(Collectors.toList()));
+                exporter.export(kmlList);
 
                 FileInputStream fileInputStream = new FileInputStream(outFile);
 

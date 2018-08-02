@@ -8,10 +8,18 @@
  * SPDX-License-Identifier: EPL-2.0
  ******************************************************************************/
 package com.hydrologis.gss.server.database.objects;
+import java.util.Collections;
+import java.util.List;
+
+import com.hydrologis.gss.server.GssDbProvider;
 import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.hydrologis.kukuratus.libs.database.ormlite.LineStringTypeH2GIS;
+import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
+import com.hydrologis.kukuratus.libs.utils.export.KmlRepresenter;
+import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.LineString;
 
 /**
@@ -20,7 +28,8 @@ import com.vividsolutions.jts.geom.LineString;
  * @author Andrea Antonello (www.hydrologis.com)
  */
 @DatabaseTable(tableName = "gpslogs")
-public class GpsLogs implements ISpatialTable {
+public class GpsLogs implements ISpatialTable, KmlRepresenter {
+    private static final long serialVersionUID = 1L;
     public static final String ID_FIELD_NAME = "id";
     public static final String NAME_FIELD_NAME = "name";
     public static final String STARTTS_FIELD_NAME = "startts";
@@ -63,4 +72,59 @@ public class GpsLogs implements ISpatialTable {
         the_geom.setSRID(ISpatialTable.SRID);
     }
 
+    public String toKmlString() {
+        String hexColor = "#FF0000";
+        float width = 3;
+        try {
+            Dao<GpsLogsProperties, ? > logPropDAO = GssDbProvider.INSTANCE.getDatabaseHandler().get()
+                    .getDao(GpsLogsProperties.class);
+
+            GpsLogsProperties props = logPropDAO.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, this)
+                    .queryForFirst();
+            hexColor = props.color;
+            if (!hexColor.startsWith("#")) {
+                hexColor = "#FF0000";
+            }
+            width = props.width;
+        } catch (Exception e) {
+            KukuratusLogger.logError(this, e);
+        }
+
+        String name = makeXmlSafe(this.name);
+        StringBuilder sB = new StringBuilder();
+        sB.append("<Placemark>\n");
+        sB.append("<name>" + name + "</name>\n");
+        sB.append("<visibility>1</visibility>\n");
+        sB.append("<LineString>\n");
+        sB.append("<tessellate>1</tessellate>\n");
+        sB.append("<coordinates>\n");
+        Coordinate[] coords = the_geom.getCoordinates();
+        for( int i = 0; i < coords.length; i++ ) {
+            double lon = coords[i].x;
+            double lat = coords[i].y;
+            sB.append(lon).append(",").append(lat).append(",1 \n");
+        }
+        sB.append("</coordinates>\n");
+        sB.append("</LineString>\n");
+        sB.append("<Style>\n");
+        sB.append("<LineStyle>\n");
+
+        String aabbggrr = "#FF" + new StringBuilder(hexColor.substring(1)).reverse().toString();
+        sB.append("<color>").append(aabbggrr).append("</color>\n");
+        sB.append("<width>").append(width).append("</width>\n");
+        sB.append("</LineStyle>\n");
+        sB.append("</Style>\n");
+        sB.append("</Placemark>\n");
+
+        return sB.toString();
+    }
+
+    public boolean hasImages() {
+        return false;
+    }
+
+    @Override
+    public List<String> getImageIds() {
+        return Collections.emptyList();
+    }
 }
