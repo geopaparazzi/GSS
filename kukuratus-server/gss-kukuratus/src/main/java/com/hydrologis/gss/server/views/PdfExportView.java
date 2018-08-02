@@ -1,5 +1,6 @@
 package com.hydrologis.gss.server.views;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -7,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.joda.time.DateTime;
 
 import com.hydrologis.gss.server.GssDbProvider;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
@@ -15,11 +18,16 @@ import com.j256.ormlite.dao.Dao;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.server.FileDownloader;
+import com.vaadin.server.StreamResource;
 import com.vaadin.shared.ui.ContentMode;
+import com.vaadin.ui.Button;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.MenuBar;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.Panel;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
@@ -33,8 +41,10 @@ import ar.com.fdvs.dj.domain.builders.FastReportBuilder;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.export.HtmlExporter;
+import net.sf.jasperreports.engine.export.JRPdfExporter;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleHtmlExporterOutput;
+import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 
 public class PdfExportView extends VerticalLayout implements View {
     private static final long serialVersionUID = 1L;
@@ -42,12 +52,14 @@ public class PdfExportView extends VerticalLayout implements View {
     private HorizontalLayout header = new HorizontalLayout();
     private Panel panel = new Panel();
 
+    private MenuBar.MenuItem reportsMenuItem;
+
     @Override
     public void enter( ViewChangeEvent event ) {
         MenuBar menuBar = new MenuBar();
         menuBar.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
 
-        MenuBar.MenuItem reportsMenuItem = menuBar.addItem("Surveyors", VaadinIcons.SPECIALIST, null);
+        reportsMenuItem = menuBar.addItem("Surveyors", VaadinIcons.SPECIALIST, null);
 
         try {
             Dao<GpapUsers, ? > usersDAO = GssDbProvider.INSTANCE.getDatabaseHandler().get().getDao(GpapUsers.class);
@@ -62,7 +74,7 @@ public class PdfExportView extends VerticalLayout implements View {
             panel.setSizeFull();
             VerticalLayout vLayout = new VerticalLayout(header);
             vLayout.addComponentsAndExpand(panel);
-
+            vLayout.setSizeFull();
             addComponent(vLayout);
         } catch (SQLException e) {
             // TODO Auto-generated catch block
@@ -80,6 +92,7 @@ public class PdfExportView extends VerticalLayout implements View {
             b.setUseFullPageWidth(true);
 //                .setPrintBackgroundOnOddRows(true)
             b.setTitle("Notes");
+            
 
             b.addColumn(ColumnBuilder.getNew().setColumnProperty("altimetry", Double.class).setTitle("Elevation")
                     .setTextFormatter(new DecimalFormat("0.0")).build());
@@ -99,8 +112,42 @@ public class PdfExportView extends VerticalLayout implements View {
                 outputStream.flush();
                 Label htmlLabel = new Label("", ContentMode.HTML);
                 htmlLabel.setValue(outputStream.toString("UTF-8"));
+                htmlLabel.setSizeFull();
+                VerticalLayout vl = new VerticalLayout(htmlLabel);
+                vl.setSizeFull();
+                panel.setContent(vl);
 
-                panel.setContent(new VerticalLayout(htmlLabel));
+                Notification.show("Report generation started", "You'll be notified once the report is ready.",
+                        Notification.Type.TRAY_NOTIFICATION);
+                reportsMenuItem.setEnabled(false);
+
+                new Thread(() -> {
+                    try {
+                        JRPdfExporter pdfExporter = new JRPdfExporter();
+                        pdfExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(outputStream));
+                        pdfExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+                        pdfExporter.exportReport();
+                        outputStream.flush();
+                        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+                        getUI().access(() -> {
+                            Button button = new Button("Download PDF", VaadinIcons.DOWNLOAD_ALT);
+                            button.addStyleName(ValoTheme.BUTTON_PRIMARY);
+                            header.addComponent(button);
+
+                            FileDownloader downloader = new FileDownloader(new StreamResource(() -> {
+                                header.removeComponent(button);
+                                reportsMenuItem.setEnabled(true);
+                                return inputStream;
+                            }, "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact)
+                                    + ".pdf"));
+                            downloader.extend(button);
+
+                            Notification.show("PDF ready for download", Notification.Type.TRAY_NOTIFICATION);
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }).start();
 
 //
 //            DaoImages daoImages = new DaoImages();

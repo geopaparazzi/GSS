@@ -15,6 +15,7 @@ import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
 import com.hydrologis.kukuratus.libs.registry.User;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.log.LogView;
+import com.vaadin.annotations.Push;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
 import com.vaadin.icons.VaadinIcons;
@@ -36,6 +37,7 @@ import kaesdingeling.hybridmenu.data.MenuConfig;
 import kaesdingeling.hybridmenu.design.DesignItem;
 
 @Title("Geopaparazzi Survey Server")
+@Push
 @Theme("mytheme")
 public class GssApplication extends UI {
     private static final long serialVersionUID = 1L;

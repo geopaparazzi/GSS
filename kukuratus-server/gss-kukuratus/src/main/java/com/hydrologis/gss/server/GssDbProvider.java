@@ -26,6 +26,8 @@ import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 public enum GssDbProvider {
     INSTANCE;
 
+    private static final String TCP_LOCALHOST = "tcp://localhost:9092";
+    private static final String TCP_PASSWORD = null;
     private static final String DB_PREFIX = "gss_database";
     public static final String USERNAME = "gss";
     public static final String PWD = "gss";
@@ -36,6 +38,7 @@ public enum GssDbProvider {
     private static boolean doServer = true;
     private static Server server;
     private GssDatabaseHandler databaseHandler;
+    private String dburl;
 
     public synchronized void init() {
         if (db != null) {
@@ -54,7 +57,7 @@ public enum GssDbProvider {
                 throw new IllegalArgumentException("Can't understand db file: " + databaseFile);
             }
 
-            String dburl = databaseFile.getAbsolutePath();
+            dburl = databaseFile.getAbsolutePath();
             boolean dbExistedAlready = databaseFile.exists();
             if (!dbExistedAlready) {
                 KukuratusLogger.logDebug(this, "Create database (wasn't existing): " + dburl);
@@ -68,11 +71,11 @@ public enum GssDbProvider {
 
             if (doServer && dbToUse == EDb.H2GIS) {
                 if (server == null) {
-                    server = H2GisServer.startTcpServerMode("9092", false, null, true,
+                    server = H2GisServer.startTcpServerMode("9092", false, TCP_PASSWORD, true,
                             databaseFile.getParentFile().getAbsolutePath());
                 }
                 if (server.isRunning(false)) {
-                    dburl = "tcp://localhost:9092/" + databaseFile.getAbsolutePath();
+                    dburl = TCP_LOCALHOST + "/" + databaseFile.getAbsolutePath();
                 }
             }
 
@@ -125,7 +128,8 @@ public enum GssDbProvider {
     public void close() {
         try {
             if (doServer && server != null && server.isRunning(true)) {
-                server.shutdown();
+                Server.shutdownTcpServer(TCP_LOCALHOST, TCP_PASSWORD, true, false);
+                server.stop();
             }
             if (databaseHandler != null) {
                 databaseHandler.close();
