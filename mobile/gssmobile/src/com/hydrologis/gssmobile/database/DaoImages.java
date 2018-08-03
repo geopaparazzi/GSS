@@ -97,6 +97,7 @@ public class DaoImages {
 
     public static List<GssImage> getLonelyImagesList(Database db, boolean withData) throws Exception {
 
+        final String imgIdFN = ImageTableFields.COLUMN_ID.getFieldName();
         final String imgLonFN = ImageTableFields.COLUMN_LON.getFieldName();
         final String imgLatFN = ImageTableFields.COLUMN_LAT.getFieldName();
         final String imgAltimFN = ImageTableFields.COLUMN_ALTIM.getFieldName();
@@ -107,6 +108,8 @@ public class DaoImages {
         final String imgImagedataidFN = ImageTableFields.COLUMN_IMAGEDATA_ID.getFieldName();
 
         String query = "select "
+                + //
+                imgIdFN + ","
                 + //
                 imgLonFN + ","
                 + //
@@ -139,6 +142,7 @@ public class DaoImages {
                 Row row = cursor.getRow();
                 int i = 0;
                 GssImage image = new GssImage();
+                image.id = row.getLong(i++);
                 image.longitude = row.getDouble(i++);
                 image.latitude = row.getDouble(i++);
                 image.altitude = row.getDouble(i++);

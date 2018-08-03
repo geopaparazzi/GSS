@@ -150,6 +150,7 @@ public class UploadServlet extends HttpServlet {
                     /*
                      * now handle images
                      */
+                    System.out.println("IMAGES!!!!!!!!!!!!!!");
                     for( FileItem item : items ) {
                         String name = item.getName();
                         if (name.startsWith(GssImage.OBJID)) {
@@ -170,6 +171,7 @@ public class UploadServlet extends HttpServlet {
                                     imgData, _gpapUser);
                             imagesDao.create(img);
                             notesLogsImagesCounts[2] += 1;
+                            System.out.println("->IMAGE DONE");
                         }
                     }
 

@@ -12,6 +12,9 @@ import com.byteowls.vaadin.chartjs.config.BarChartConfig;
 import com.byteowls.vaadin.chartjs.data.BarDataset;
 import com.byteowls.vaadin.chartjs.data.Data;
 import com.byteowls.vaadin.chartjs.options.Position;
+import com.byteowls.vaadin.chartjs.options.scale.Axis;
+import com.byteowls.vaadin.chartjs.options.scale.CategoryScale;
+import com.byteowls.vaadin.chartjs.options.scale.LinearScale;
 import com.hydrologis.gss.server.GssDbProvider;
 import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
@@ -54,7 +57,7 @@ public class DashboardPage extends VerticalLayout implements View {
                 layout.setWidth(null);
                 layout.setComponentAlignment(noSurveyorsLabel, Alignment.MIDDLE_CENTER);
                 layout.setComponentAlignment(appLink, Alignment.MIDDLE_CENTER);
-                
+
                 addComponent(layout);
                 setSizeFull();
                 setComponentAlignment(layout, Alignment.MIDDLE_CENTER);
@@ -146,10 +149,14 @@ public class DashboardPage extends VerticalLayout implements View {
         data.addDataset(new BarDataset().type().label("Gps Logs").backgroundColor("rgba(0,0,225,0.5)").borderColor("white")
                 .borderWidth(2)).and();
 
+        LinearScale linearScale = new LinearScale();
+        linearScale.ticks().beginAtZero(true);
         config.options().responsive(true)//
                 .title().display(true)//
                 .position(Position.LEFT).text("Stats per Surveyor")//
-                .and().done();
+                .and().scales().add(Axis.X, new CategoryScale().position(Position.BOTTOM))
+                .add(Axis.Y, linearScale.position(Position.LEFT)).and()
+                .done();
 
         List<Double> notesList = new ArrayList<>();
         List<Double> imagesList = new ArrayList<>();

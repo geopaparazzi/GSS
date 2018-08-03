@@ -49,7 +49,7 @@ public class HyUploadProgressForm extends Form {
 
         infiniteProgress = new InfiniteProgress();
         infiniteProgress.setUIID("uploadInfiniteProgress");
-        
+
         add(BorderLayout.centerCenter(infiniteProgress));
     }
 
@@ -94,6 +94,10 @@ public class HyUploadProgressForm extends Form {
 
         if (mpr.getResponseCode() == 200) {
             byte[] responseData = mpr.getResponseData();
+            if (responseData == null || responseData.length == 0) {
+                HyLog.p("No response message from client.");
+                return false;
+            }
             String msg = new String(responseData);
             JSONParser parser = new JSONParser();
             Map<String, Object> responseMap = parser.parseJSON(new StringReader(msg));
