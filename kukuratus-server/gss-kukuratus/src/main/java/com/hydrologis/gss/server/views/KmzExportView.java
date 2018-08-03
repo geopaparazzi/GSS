@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.hortonmachine.gears.libs.modules.HMConstants;
 import org.joda.time.DateTime;

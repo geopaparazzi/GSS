@@ -9,7 +9,6 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.database.objects;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -37,6 +36,7 @@ import com.vividsolutions.jts.geom.Point;
  */
 @DatabaseTable(tableName = "notes")
 public class Notes implements ISpatialTable, KmlRepresenter {
+    private static final long serialVersionUID = 1L;
     public static final String ID_FIELD_NAME = "id";
     public static final String ALTIM_FIELD_NAME = "altim";
     public static final String TIMESTAMP_FIELD_NAME = "ts";
@@ -45,8 +45,6 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     public static final String FORM_FIELD_NAME = "form";
     public static final String STYLE_FIELD_NAME = "style";
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid";
-
-    public static final String IMAGES_SEPARATOR = ";";
 
     public static final String notesFKColumnDefinition = "long references notes(id) on delete cascade";
 
@@ -235,7 +233,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
                         if (value.trim().length() == 0) {
                             continue;
                         }
-                        String[] imageIdsSplit = value.split(IMAGES_SEPARATOR);
+                        String[] imageIdsSplit = value.split(Utilities.IMAGES_SEPARATOR);
                         for( String imageId : imageIdsSplit ) {
 
                             Images image = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
@@ -266,7 +264,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
                         if (value.trim().length() == 0) {
                             continue;
                         }
-                        String[] imageIdsSplit = value.split(IMAGES_SEPARATOR);
+                        String[] imageIdsSplit = value.split(Utilities.IMAGES_SEPARATOR);
                         for( String imageId : imageIdsSplit ) {
                             Images image = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
                             String imgName = image.text;

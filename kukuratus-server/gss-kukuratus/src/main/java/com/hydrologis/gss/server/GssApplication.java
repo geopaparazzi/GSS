@@ -27,6 +27,7 @@ import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.themes.ValoTheme;
 
 import kaesdingeling.hybridmenu.HybridMenu;
 import kaesdingeling.hybridmenu.components.HMButton;
@@ -47,7 +48,7 @@ public class GssApplication extends UI {
     @Override
     protected void init( VaadinRequest request ) {
         KukuratusLibs.init();
-        
+
         // FIXME remove this
         VaadinSession.getCurrent().setAttribute(AuthService.USERNAME_ATTRIBUTE, "god");
         if (AuthService.INSTANCE.isAuthenticated()) {
@@ -111,7 +112,7 @@ public class GssApplication extends UI {
         LeftMenu leftMenu = hybridMenu.getLeftMenu();
 
         HMLabel logoLabel = HMLabel.get().withIcon(new ThemeResource("images/logo.png"));
-        logoLabel.setHeight(200f, Unit.PIXELS);
+//        logoLabel.setStyleName("mytheme-v-icon", true);
         leftMenu.add(logoLabel);
 
         leftMenu.add(HMButton.get().withCaption("Dashboard").withIcon(VaadinIcons.DASHBOARD).withNavigateTo(DashboardPage.class));
