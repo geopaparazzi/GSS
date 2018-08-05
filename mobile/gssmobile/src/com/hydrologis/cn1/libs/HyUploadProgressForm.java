@@ -17,9 +17,10 @@ import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
-import com.codename1.ui.plaf.Border;
 import com.codename1.util.regex.StringReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Map;
 
 /**
@@ -53,7 +54,7 @@ public class HyUploadProgressForm extends Form {
         add(BorderLayout.centerCenter(infiniteProgress));
     }
 
-    public boolean upload(String processName, MultipartRequest mpr) throws IOException {
+    public void upload(String processName, MultipartRequest mpr) {
         Label progressLabel = new Label("", "uploadProgressLabel");
         add(new Label("Started upload: " + processName, "uploadProgressLabel"));
         add(progressLabel);
@@ -61,6 +62,7 @@ public class HyUploadProgressForm extends Form {
             private int currentLength = -1;
             private boolean finished = false;
 
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 NetworkEvent e = (NetworkEvent) evt;
                 if (currentLength == -1) {
@@ -90,40 +92,7 @@ public class HyUploadProgressForm extends Form {
                 }
             }
         });
-        NetworkManager.getInstance().addToQueueAndWait(mpr);
-
-        if (mpr.getResponseCode() == 200) {
-            byte[] responseData = mpr.getResponseData();
-            if (responseData == null || responseData.length == 0) {
-                HyLog.p("No response message from client.");
-                return false;
-            }
-            String msg = new String(responseData);
-            JSONParser parser = new JSONParser();
-            Map<String, Object> responseMap = parser.parseJSON(new StringReader(msg));
-            Object statusCode = responseMap.get("code");
-            if (statusCode instanceof Number) {
-                int status = ((Number) statusCode).intValue();
-                if (status != 200) {
-                    String responseErrorMessage = mpr.getResponseErrorMessage();
-                    HyLog.p(responseErrorMessage);
-                    add(new Label(responseMap.get("trace").toString(), "uploadProgressErrorLabel"));
-                    return false;
-                }
-            }
-            final Label label = new Label("Done", "uploadProgressLabel");
-            add(label);
-            revalidate();
-            scrollComponentToVisible(label);
-            return true;
-        } else {
-            String responseErrorMessage = mpr.getResponseErrorMessage();
-            final Label label = new Label(responseErrorMessage, "uploadProgressErrorLabel");
-            add(label);
-            revalidate();
-            scrollComponentToVisible(label);
-            return false;
-        }
+        NetworkManager.getInstance().addToQueue(mpr);
     }
 
     public void onCancel() {

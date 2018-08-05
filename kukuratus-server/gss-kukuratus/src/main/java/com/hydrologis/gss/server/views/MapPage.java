@@ -123,7 +123,8 @@ public class MapPage extends VerticalLayout implements View {
                 GpapUsers users = deviceNamesMap.get(loadedGpapUsers[i]);
                 loaded[i] = users;
             }
-            surveyorsGrid.asMultiSelect().select(loaded);
+            if (loaded.length > 0)
+                surveyorsGrid.asMultiSelect().select(loaded);
         }
     }
 

@@ -6,6 +6,7 @@ import com.hydrologis.gssmobile.utils.GssUtilities;
 import static com.codename1.ui.CN.*;
 import com.codename1.db.Database;
 import com.codename1.io.File;
+import com.codename1.io.JSONParser;
 import com.codename1.io.MultipartRequest;
 import com.codename1.ui.Dialog;
 import com.codename1.ui.Form;
@@ -48,8 +49,12 @@ import com.hydrologis.gssmobile.utils.UdidDialog;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class GssMobile {
 
@@ -70,6 +75,10 @@ public class GssMobile {
     private Database db = null;
     private Label loadedDbLabel;
     private Label loadedDbParentLabel;
+    private HyUploadProgressForm up;
+    private LinkedList<MultipartRequest> requestsList;
+    private int runninCount = 0;
+    private int totalCount = 0;
 
     public void init(Object context) {
         // use two network threads instead of one
@@ -260,19 +269,28 @@ public class GssMobile {
             HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
             return;
         }
-        HyUploadProgressForm up = new HyUploadProgressForm(getCurrentForm(), "Upload data...", false);
+
+        up = new HyUploadProgressForm(getCurrentForm(), "Upload data...", false);
         callSerially(() -> {
             up.show();
+
+            final Label label = new Label("Gathering data...", "uploadProgressLabel");
+            addProgressLabelAndRefresh(label);
         });
 
+        /*
+         * gather data
+         */
+        requestsList = new LinkedList<>();
+        runninCount = 1;
         try {
             int count = 1;
+            int index = 0;
             String authCode = HyUtilities.getUdid() + ":" + MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
-            boolean didSend = false;
-            boolean oneAdded = false;
             if (doNotes || doLogs) {
-                MultipartRequest mpr = new MultipartRequest();
+                boolean oneAdded = false;
+                MultipartRequest mpr = getMpr(index, db, -1);
                 mpr.setUrl(serverUrl);
                 mpr.addRequestHeader("Authorization", authHeader);
                 if (doNotes) {
@@ -299,21 +317,17 @@ public class GssMobile {
                     mpr.addData(GssGpsLog.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
                 }
                 if (oneAdded) {
-                    didSend = up.upload("simple notes and logs", mpr);
-                    if (didSend) {
-                        DaoNotes.clearDirtySimple(db);
-                        DaoGpsLogs.clearDirty(db);
-                    }
+                    requestsList.add(mpr);
                 }
             }
 
             // NOW FORMS WITH IMAGES
             if (doNotes) {
+                index = 1;
                 List<GssNote> notesList = DaoNotes.getFormNotesList(db);
                 int size = notesList.size();
-                int cnCount = 1;
                 for (GssNote gssNote : notesList) {
-                    MultipartRequest mpr = new MultipartRequest();
+                    MultipartRequest mpr = getMpr(index, db, gssNote.id);
                     mpr.setUrl(serverUrl);
                     mpr.addRequestHeader("Authorization", authHeader);
                     ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -330,25 +344,17 @@ public class GssMobile {
                         byte[] bytes1 = bout1.toByteArray();
                         mpr.addData(GssImage.OBJID + (count++), bytes1, HyUtilities.MIMETYPE_BYTEARRAY);
                     }
-                    didSend = up.upload("complex notes: " + cnCount + " of " + size, mpr);
-                    cnCount++;
-                    if (!didSend) {
-                        break;
-                    } else {
-                        DaoNotes.clearDirtyById(db, gssNote.id);
-                        DaoImages.clearDirtyByNoteId(db, gssNote.id);
-                        oneAdded = true;
-                    }
+                    requestsList.add(mpr);
                 }
 
             }
             // DO IMAGES
             if (doMedia) {
+                index = 2;
                 List<GssImage> imagesList = DaoImages.getLonelyImagesList(db, true);
                 int size = imagesList.size();
-                int cnCount = 1;
                 for (GssImage gssImage : imagesList) {
-                    MultipartRequest mpr = new MultipartRequest();
+                    MultipartRequest mpr = getMpr(index, db, gssImage.id);
                     mpr.setUrl(serverUrl);
                     mpr.addRequestHeader("Authorization", authHeader);
                     ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -356,27 +362,19 @@ public class GssMobile {
                     gssImage.externalize(out);
                     byte[] bytes = bout.toByteArray();
                     mpr.addData(GssImage.OBJID + (count++), bytes, HyUtilities.MIMETYPE_BYTEARRAY);
-                    oneAdded = true;
-                    didSend = up.upload("images: " + cnCount + " of " + size, mpr);
-                    cnCount++;
-                    if (didSend) {
-                        DaoImages.clearDirtyById(db, gssImage.id);
-                    } else {
-                        break;
-                    }
+                    requestsList.add(mpr);
                 }
             }
 
-            up.dismiss();
-            if (didSend) {
-                HyDialogs.showInfoDialog("Data uploaded");//responseMap.get("message").toString());
-                mainForm.show();
-                refreshContainers();
-            }
-
-            if (!oneAdded) {
-                HyDialogs.showInfoDialog("No data to upload.");
-                mainForm.show();
+            if (requestsList.isEmpty()) {
+                HyDialogs.showWarningDialog("No data to upload.");
+            } else {
+                totalCount = requestsList.size();
+                callSerially(() -> {
+                    final Label label = new Label("Starting data upload...", "uploadProgressLabel");
+                    addProgressLabelAndRefresh(label);
+                    runNextInList();
+                });
             }
 
         } catch (Exception exception) {
@@ -614,4 +612,72 @@ public class GssMobile {
         return ic;
     }
 
+    private MultipartRequest getMpr(final int index, Database db, long itemId) {
+        return new MultipartRequest() {
+            @Override
+            protected void readResponse(InputStream input) throws IOException {
+                JSONParser jp = new JSONParser();
+                Map<String, Object> responseMap = jp.parseJSON(new InputStreamReader(input, "UTF-8"));
+                Object statusCode = responseMap.get("code");
+                if (statusCode instanceof Number) {
+                    int status = ((Number) statusCode).intValue();
+                    HyLog.p("Response status code: " + status);
+                    if (status != 200) {
+                        callSerially(() -> {
+                            final Label label = new Label(responseMap.get("trace").toString(), "uploadProgressErrorLabel");
+                            addProgressLabelAndRefresh(label);
+                        });
+                        return;
+                    }
+                }
+                callSerially(() -> {
+                    try {
+                        final Label label = new Label("Done", "uploadProgressLabel");
+                        addProgressLabelAndRefresh(label);
+
+                        switch (index) {
+                            case 0:
+                                DaoNotes.clearDirtySimple(db);
+                                DaoGpsLogs.clearDirty(db);
+                                break;
+                            case 1:
+                                DaoNotes.clearDirtyById(db, itemId);
+                                DaoImages.clearDirtyByNoteId(db, itemId);
+                                break;
+                            case 2:
+                                DaoImages.clearDirtyById(db, itemId);
+                                break;
+                            default:
+                                break;
+                        }
+
+                        runNextInList();
+                    } catch (IOException ex) {
+                        HyLog.e(ex);
+                    }
+                });
+            }
+
+        };
+    }
+
+    private void runNextInList() {
+        if (!requestsList.isEmpty()) {
+            MultipartRequest mpr = requestsList.pop();
+            up.upload("Uploading chunk " + runninCount + " of " + totalCount, mpr);
+            runninCount++;
+        } else {
+            HyDialogs.showInfoDialog("Data uploaded");
+            up.dismiss();
+            mainForm.show();
+            refreshContainers();
+        }
+
+    }
+
+    private synchronized void addProgressLabelAndRefresh(final Label label) {
+        up.add(label);
+        up.revalidate();
+        up.scrollComponentToVisible(label);
+    }
 }

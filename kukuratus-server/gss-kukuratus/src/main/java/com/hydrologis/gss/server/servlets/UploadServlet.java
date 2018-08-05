@@ -2,18 +2,22 @@ package com.hydrologis.gss.server.servlets;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -36,6 +40,7 @@ import com.hydrologis.gssmobile.database.GssGpsLogPoint;
 import com.hydrologis.gssmobile.database.GssImage;
 import com.hydrologis.gssmobile.database.GssNote;
 import com.hydrologis.kukuratus.libs.servlets.Status;
+import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.NetworkUtilities;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
@@ -45,10 +50,14 @@ import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 
 @WebServlet(urlPatterns = "/upload")
+//@MultipartConfig(fileSizeThreshold = 2 * 1024 * 1024 * 100, // 20 MB
+//        maxFileSize = 1024 * 1024 * 150, // 50 MB
+//        maxRequestSize = 1024 * 1024 * 200) // 100 MB
 public class UploadServlet extends HttpServlet {
     private static final String TAG = UploadServlet.class.getSimpleName();
     private static final String NO_PERMISSION = "No permission! Contact your system administrator.";
     private static final long serialVersionUID = 1L;
+    private static boolean DEBUG = true;
 
     @Override
     protected void doPost( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -74,6 +83,9 @@ public class UploadServlet extends HttpServlet {
                 gpapUser = new GpapUsers(deviceId, deviceId, null, null);
                 usersDao.create(gpapUser);
             }
+
+            debug("Upload connection from : " + gpapUser.name);
+
             GeometryFactory gf = GeometryUtilities.gf();
             GpapUsers _gpapUser = gpapUser;
 
@@ -91,6 +103,13 @@ public class UploadServlet extends HttpServlet {
             dbHandler.callInTransaction(new Callable<Void>(){
                 @Override
                 public Void call() throws Exception {
+//                    Collection<Part> parts = request.getParts();
+//                    Part data = parts.iterator().next();
+//                    String partName = data.getName();
+//                    try (InputStream is = data.getInputStream()) {
+//                        // store or do something with the input stream
+//                    }
+
                     ServletFileUpload sfu = new ServletFileUpload(new DiskFileItemFactory());
 
                     HashMap<Long, Long> deviceNoteId2serverNoteId = new HashMap<>();
@@ -109,9 +128,11 @@ public class UploadServlet extends HttpServlet {
                                 Point point = gf.createPoint(new Coordinate(note.longitude, note.latitude));
                                 Notes serverNote = new Notes(point, note.altitude, note.timeStamp, note.description, note.text,
                                         note.form, note.style, _gpapUser);
+
                                 notesDao.create(serverNote);
                                 deviceNoteId2serverNoteId.put(note.id, serverNote.id);
                                 notesLogsImagesCounts[0] += 1;
+                                debug("Uploaded note: " + serverNote.text);
                             }
                         } else if (name.equals(GssGpsLog.OBJID)) {
                             DataInputStream dis = new DataInputStream(item.getInputStream());
@@ -144,13 +165,14 @@ public class UploadServlet extends HttpServlet {
                             logsDao.create(logs);
                             logsDataDao.create(logsData);
                             logsPropsDao.create(logsProps);
+                            debug("Uploaded Logs: " + logs.size());
+
                         }
                     }
 
                     /*
                      * now handle images
                      */
-                    System.out.println("IMAGES!!!!!!!!!!!!!!");
                     for( FileItem item : items ) {
                         String name = item.getName();
                         if (name.startsWith(GssImage.OBJID)) {
@@ -171,7 +193,12 @@ public class UploadServlet extends HttpServlet {
                                     imgData, _gpapUser);
                             imagesDao.create(img);
                             notesLogsImagesCounts[2] += 1;
-                            System.out.println("->IMAGE DONE");
+
+                            String str = "";
+                            if (tmpNote != null) {
+                                str = " for note: " + tmpNote.id;
+                            }
+                            debug("Uploaded image: " + image.text + str);
                         }
                     }
 
@@ -182,12 +209,14 @@ public class UploadServlet extends HttpServlet {
             logDb.insert(EMessageType.ACCESS, TAG,
                     "Upload connection from '" + deviceId + "' at ip:" + ipAddress + " completed properly.");
             StringBuilder sb = new StringBuilder();
-            sb.append("Data properly inserted in the server.\n");
-            sb.append("Notes: " + notesLogsImagesCounts[0] + "\n");
+            sb.append("Data properly inserted in the server.");
+            sb.append("\nNotes: " + notesLogsImagesCounts[0] + "\n");
             sb.append("Gps Logs: " + notesLogsImagesCounts[1] + "\n");
             sb.append("Images: " + notesLogsImagesCounts[2]);
 
-            Status okStatus = new Status(Status.CODE_200_OK, sb.toString());
+            String message = sb.toString();
+            debug("SENDING RESPONSE MESSAGE: " + message);
+            Status okStatus = new Status(Status.CODE_200_OK, message);
             okStatus.sendTo(response);
         } catch (Exception ex) {
             try {
@@ -201,6 +230,12 @@ public class UploadServlet extends HttpServlet {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void debug( String msg ) {
+        if (DEBUG) {
+            KukuratusLogger.logDebug(this, msg);
         }
     }
 
