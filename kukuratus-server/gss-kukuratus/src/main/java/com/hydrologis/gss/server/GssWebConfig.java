@@ -1,9 +1,7 @@
 package com.hydrologis.gss.server;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
@@ -12,8 +10,6 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
 
-import org.hortonmachine.gears.utils.files.FileUtilities;
-
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.server.VaadinServlet;
@@ -21,7 +17,7 @@ import com.vaadin.server.VaadinServlet;
 public class GssWebConfig {
 
     @WebServlet("/*")
-    @VaadinServletConfiguration(ui = GssApplication.class, productionMode = false)
+    @VaadinServletConfiguration(ui = GssApplication.class, productionMode = true)
     public static class WebappVaadinServlet extends VaadinServlet {
     }
 

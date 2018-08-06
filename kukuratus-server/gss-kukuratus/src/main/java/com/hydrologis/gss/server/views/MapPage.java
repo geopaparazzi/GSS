@@ -318,7 +318,7 @@ public class MapPage extends VerticalLayout implements View {
 //                            leafletMarker.addClickListener(listener);
                 leafletMarker.setTitle(note.text);
                 leafletMarker.setPopup(getNotesHtml(note));
-                leafletMarker.setPopupAnchor(new Point(iconSize / 2, iconSize / 2));
+                leafletMarker.setPopupAnchor(new Point(-iconSize / 2, -iconSize / 2));
 
                 layer.addComponent(leafletMarker);
             }

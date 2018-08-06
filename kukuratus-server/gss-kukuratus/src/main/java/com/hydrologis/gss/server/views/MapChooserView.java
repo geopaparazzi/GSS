@@ -86,7 +86,7 @@ public class MapChooserView extends VerticalLayout implements View {
                 tmpLayer.setMaxZoom(Integer.parseInt(source.getMaxZoom()));
                 tmpLayer.setDetectRetina(true);
             }
-            leafletMap.addBaseLayer(tmpLayer, TMP_MAP);
+            leafletMap.addBaseLayer(tmpLayer, name);
         });
 
         add.addClickListener(e -> {
@@ -134,7 +134,7 @@ public class MapChooserView extends VerticalLayout implements View {
         tmpLayer.setAttributionString(EOnlineTileSources.Open_Street_Map_Standard.getAttribution());
         tmpLayer.setMaxZoom(Integer.parseInt(EOnlineTileSources.Open_Street_Map_Standard.getMaxZoom()));
         tmpLayer.setDetectRetina(true);
-        leafletMap.addBaseLayer(tmpLayer, TMP_MAP);
+        leafletMap.addBaseLayer(tmpLayer, EOnlineTileSources.Open_Street_Map_Standard.name());
 
         addComponent(hLayout);
         addComponent(leafletMap);

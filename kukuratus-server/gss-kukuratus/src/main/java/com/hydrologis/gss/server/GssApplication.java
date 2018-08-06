@@ -21,13 +21,11 @@ import com.vaadin.annotations.Title;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
-import com.vaadin.server.VaadinServletService;
 import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.themes.ValoTheme;
 
 import kaesdingeling.hybridmenu.HybridMenu;
 import kaesdingeling.hybridmenu.components.HMButton;
@@ -50,7 +48,7 @@ public class GssApplication extends UI {
         KukuratusLibs.init();
 
         // FIXME remove this
-        VaadinSession.getCurrent().setAttribute(AuthService.USERNAME_ATTRIBUTE, "god");
+//        VaadinSession.getCurrent().setAttribute(AuthService.USERNAME_ATTRIBUTE, "god");
         if (AuthService.INSTANCE.isAuthenticated()) {
 
             authenticatedUsername = AuthService.INSTANCE.getAuthenticatedUsername();
