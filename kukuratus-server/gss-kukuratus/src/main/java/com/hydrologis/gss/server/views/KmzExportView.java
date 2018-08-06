@@ -10,13 +10,14 @@ import java.util.Set;
 import org.hortonmachine.gears.libs.modules.HMConstants;
 import org.joda.time.DateTime;
 
-import com.hydrologis.gss.server.GssDbProvider;
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
+import com.hydrologis.kukuratus.libs.spi.ExportPage;
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.export.KmlRepresenter;
 import com.hydrologis.kukuratus.libs.utils.export.KmzExport;
@@ -29,6 +30,7 @@ import com.vaadin.server.FileDownloader;
 import com.vaadin.server.StreamResource;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.GridLayout;
@@ -38,7 +40,7 @@ import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
-public class KmzExportView extends VerticalLayout implements View {
+public class KmzExportView extends VerticalLayout implements View, ExportPage {
     private static final long serialVersionUID = 1L;
     private Grid<GpapUsers> surveyorsGrid;
     private Button prepareBtn;
@@ -52,7 +54,7 @@ public class KmzExportView extends VerticalLayout implements View {
 
         List<GpapUsers> devices = new ArrayList<>();
         try {
-            devices = GssDbProvider.INSTANCE.getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll();
+            devices = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll();
         } catch (SQLException e1) {
             KukuratusLogger.logError(this, e1);
             Notification.show("An error occurred.", Type.ERROR_MESSAGE);
@@ -106,7 +108,7 @@ public class KmzExportView extends VerticalLayout implements View {
     private void prepareData() throws Exception {
         Set<GpapUsers> devices = surveyorsGrid.asMultiSelect().getSelectedItems();
 
-        GssDatabaseHandler dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
         Dao<Notes, ? > notesDAO = dbHandler.getDao(Notes.class);
         Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
         Dao<ImageData, ? > imageDataDAO = dbHandler.getDao(ImageData.class);
@@ -176,5 +178,36 @@ public class KmzExportView extends VerticalLayout implements View {
             }
         }).start();
 
+    }
+    
+    @Override
+    public VaadinIcons getIcon() {
+        return VaadinIcons.GLOBE;
+    }
+
+    @Override
+    public String getLabel() {
+        return "KMZ";
+    }
+
+    @Override
+    public int getOrder() {
+        return 2;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends View> Class<T> getNavigationViewClass() {
+        return (Class<T>) this.getClass();
+    }
+
+    @Override
+    public Component getComponent() {
+        return this;
+    }
+
+    @Override
+    public boolean onlyAdmin() {
+        return false;
     }
 }

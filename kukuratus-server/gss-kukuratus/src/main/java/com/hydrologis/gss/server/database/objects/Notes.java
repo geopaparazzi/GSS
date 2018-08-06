@@ -17,10 +17,10 @@ import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.hydrologis.gss.server.GssDbProvider;
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.hydrologis.kukuratus.libs.database.ormlite.PointTypeH2GIS;
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.export.KmlRepresenter;
 import com.j256.ormlite.dao.Dao;
@@ -184,7 +184,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     }
 
     public String toKmlString() throws Exception {
-        GssDatabaseHandler dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
         Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
 
         images = new ArrayList<>();

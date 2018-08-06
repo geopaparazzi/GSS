@@ -10,6 +10,7 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import javax.servlet.annotation.WebServlet;
 
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.server.VaadinServlet;
@@ -28,7 +29,7 @@ public class GssWebConfig {
         public void contextInitialized( ServletContextEvent sce ) {
             /// called when the system starts up and the servlet context is initialized
             try {
-                GssDbProvider.INSTANCE.init();
+                SpiHandler.INSTANCE.getDbProvider().init();
 
                 File dataFolder = KukuratusWorkspace.getInstance().getDataFolder(null).get();
                 File notesOutFile = new File(dataFolder, "notes.png");
@@ -50,7 +51,7 @@ public class GssWebConfig {
         @Override
         public void contextDestroyed( ServletContextEvent sce ) {
             try {
-                GssDbProvider.INSTANCE.close();
+                SpiHandler.INSTANCE.getDbProvider().close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

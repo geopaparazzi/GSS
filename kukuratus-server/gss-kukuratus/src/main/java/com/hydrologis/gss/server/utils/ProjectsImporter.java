@@ -16,6 +16,7 @@ import static org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +25,8 @@ import org.hortonmachine.dbs.compat.EDb;
 import org.hortonmachine.dbs.compat.IHMConnection;
 import org.hortonmachine.dbs.compat.IHMResultSet;
 import org.hortonmachine.dbs.compat.IHMStatement;
+import org.hortonmachine.dbs.h2gis.H2GisDb;
+import org.hortonmachine.dbs.spatialite.hm.SpatialiteDb;
 import org.hortonmachine.dbs.spatialite.hm.SqliteDb;
 import org.hortonmachine.gears.io.geopaparazzi.OmsGeopaparazzi4Converter;
 import org.hortonmachine.gears.io.geopaparazzi.geopap4.DaoGpsLog.GpsLog;
@@ -35,7 +38,6 @@ import org.hortonmachine.gears.io.geopaparazzi.geopap4.TableDescriptions.NotesTa
 import org.hortonmachine.gears.utils.files.FileUtilities;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
 
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.GpsLogsData;
@@ -43,6 +45,8 @@ import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
+import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.j256.ormlite.dao.Dao;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -78,6 +82,15 @@ public class ProjectsImporter {
     private static final String logPropColorFN = GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_COLOR.getFieldName();
     private static final String logPropWidthFN = GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_WIDTH.getFieldName();
 
+    private List<Class< ? >> tableClasses = Arrays.asList(//
+            GpapUsers.class, //
+            Notes.class, //
+            ImageData.class, //
+            Images.class, //
+            GpsLogs.class, //
+            GpsLogsData.class, //
+            GpsLogsProperties.class);
+
     public ProjectsImporter() throws Exception {
 
         String[] dbsToImport = {
@@ -101,9 +114,9 @@ public class ProjectsImporter {
                 db.initSpatialMetadata(null);
             }
 
-            GssDatabaseHandler dbHandler = GssDatabaseHandler.instance(db);
+            DatabaseHandler dbHandler = DatabaseHandler.instance(db);
 
-            dbHandler.createTables();
+            createTables(dbHandler);
             dbHandler.populateWithDefaults();
             dbHandler.populateForDemo();
 
@@ -143,6 +156,42 @@ public class ProjectsImporter {
 
             }
 
+        }
+    }
+
+    private void createTables( DatabaseHandler dbHandler ) throws Exception {
+        ASpatialDb db = dbHandler.getDb();
+        for( Class< ? > tClass : tableClasses ) {
+            System.out.println("Create if not exists: " + DatabaseHandler.getTableName(tClass));
+            dbHandler.createTableIfNotExists(tClass);
+            if (ISpatialTable.class.isAssignableFrom(tClass)) {
+                if (db instanceof H2GisDb) {
+                    H2GisDb h2gisDb = (H2GisDb) db;
+                    String tableName = DatabaseHandler.getTableName(tClass);
+                    h2gisDb.addSrid(tableName, DatabaseHandler.TABLES_EPSG, ISpatialTable.GEOM_FIELD_NAME);
+                    h2gisDb.createSpatialIndex(tableName, ISpatialTable.GEOM_FIELD_NAME);
+                } else if (db instanceof SpatialiteDb) {
+                    // SpatialiteDb spatialiteDb = (SpatialiteDb) db;
+                    String tableName = DatabaseHandler.getTableName(tClass);
+                    String geometryType = DatabaseHandler.getGeometryType(tClass);
+                    db.execOnConnection(conn -> {
+                        // SELECT RecoverGeometryColumn('pipespieces', 'the_geom', 4326,
+                        // 'LINESTRING', 'XY')
+                        String sql = "SELECT RecoverGeometryColumn('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "', "
+                                + DatabaseHandler.TABLES_EPSG + ", '" + geometryType + "', 'XY')";
+                        try (IHMStatement stmt = conn.createStatement()) {
+                            stmt.execute(sql);
+                        }
+                        // SELECT CreateSpatialIndex('pipespieces','the_geom');
+                        sql = "SELECT CreateSpatialIndex('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "')";
+                        try (IHMStatement stmt = conn.createStatement()) {
+                            stmt.execute(sql);
+                        }
+
+                        return null;
+                    });
+                }
+            }
         }
     }
 

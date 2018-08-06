@@ -13,15 +13,17 @@ import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.hydrologis.gss.server.GssDbProvider;
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
 import com.hydrologis.kukuratus.libs.registry.User;
+import com.hydrologis.kukuratus.libs.spi.DbProvider;
+import com.hydrologis.kukuratus.libs.spi.ExportPage;
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
@@ -43,9 +45,9 @@ import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FileDownloader;
 import com.vaadin.server.FileResource;
 import com.vaadin.server.StreamResource;
-import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinService;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.Embedded;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.MenuBar;
@@ -54,7 +56,7 @@ import com.vaadin.ui.Panel;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
-public class PdfExportView extends VerticalLayout implements View {
+public class PdfExportView extends VerticalLayout implements View, ExportPage {
     private static final long serialVersionUID = 1L;
 
     private HorizontalLayout header = new HorizontalLayout();
@@ -74,7 +76,8 @@ public class PdfExportView extends VerticalLayout implements View {
     public void enter( ViewChangeEvent event ) {
         try {
             authenticatedUsername = AuthService.INSTANCE.getAuthenticatedUsername();
-            GssDatabaseHandler dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+            DbProvider dbProvider = SpiHandler.INSTANCE.getDbProvider();
+            DatabaseHandler dbHandler = dbProvider.getDatabaseHandler().get();
             imagesDAO = dbHandler.getDao(Images.class);
             imageDataDAO = dbHandler.getDao(ImageData.class);
 
@@ -83,7 +86,7 @@ public class PdfExportView extends VerticalLayout implements View {
 
             reportsMenuItem = menuBar.addItem("Surveyors", VaadinIcons.SPECIALIST, null);
 
-            Dao<GpapUsers, ? > usersDAO = GssDbProvider.INSTANCE.getDatabaseHandler().get().getDao(GpapUsers.class);
+            Dao<GpapUsers, ? > usersDAO = dbProvider.getDatabaseHandler().get().getDao(GpapUsers.class);
             List<GpapUsers> users = usersDAO.queryForAll();
             reportsMenuItem.addItem("ALL", VaadinIcons.GROUP, i -> {
                 try {
@@ -123,7 +126,7 @@ public class PdfExportView extends VerticalLayout implements View {
 
     private void calcForUser( GpapUsers user ) throws Exception {
 
-        Dao<Notes, ? > notesDAO = GssDbProvider.INSTANCE.getDatabaseHandler().get().getDao(Notes.class);
+        Dao<Notes, ? > notesDAO = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get().getDao(Notes.class);
         List<Notes> allNotes;
         if (user == null) {
             allNotes = notesDAO.queryForAll();
@@ -436,4 +439,34 @@ public class PdfExportView extends VerticalLayout implements View {
         }
     }
 
+    @Override
+    public VaadinIcons getIcon() {
+        return VaadinIcons.FILE_TEXT_O;
+    }
+
+    @Override
+    public String getLabel() {
+        return "PDF";
+    }
+
+    @Override
+    public int getOrder() {
+        return 1;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends View> Class<T> getNavigationViewClass() {
+        return (Class<T>) this.getClass();
+    }
+
+    @Override
+    public Component getComponent() {
+        return this;
+    }
+
+    @Override
+    public boolean onlyAdmin() {
+        return false;
+    }
 }

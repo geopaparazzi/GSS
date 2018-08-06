@@ -15,18 +15,18 @@ import com.byteowls.vaadin.chartjs.options.Position;
 import com.byteowls.vaadin.chartjs.options.scale.Axis;
 import com.byteowls.vaadin.chartjs.options.scale.CategoryScale;
 import com.byteowls.vaadin.chartjs.options.scale.LinearScale;
-import com.hydrologis.gss.server.GssDbProvider;
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
+import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.j256.ormlite.dao.Dao;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
@@ -34,12 +34,12 @@ import com.vaadin.ui.VerticalLayout;
 
 public class DashboardPage extends VerticalLayout implements View {
     private static final long serialVersionUID = 1L;
-    private GssDatabaseHandler dbHandler;
+    private DatabaseHandler dbHandler;
 
     @Override
     public void enter( ViewChangeEvent event ) {
 
-        dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+        dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
         try {
             long surveyorsCount = dbHandler.getDao(GpapUsers.class).countOf();
             if (surveyorsCount == 0) {
@@ -73,7 +73,6 @@ public class DashboardPage extends VerticalLayout implements View {
                 HorizontalLayout numbers = new HorizontalLayout(surveyLabel, logsLabel, notesLabel, imageslabel);
 
                 ChartJs chart = createChart();
-//            chart.setStyleName("dashboard-labels-border", true);
 
                 addComponents(numbers, chart);
                 setExpandRatio(numbers, 1);
@@ -81,57 +80,19 @@ public class DashboardPage extends VerticalLayout implements View {
 
                 numbers.setSizeFull();
                 chart.setSizeFull();
-//            setSizeFull();
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            KukuratusLogger.logError(this, e);
         }
     }
 
     private Label getLabel( String string, long count ) {
         Label label = new Label("<h1>" + string + "<b>" + count + "</b></h1>");
         label.setContentMode(com.vaadin.shared.ui.ContentMode.HTML);
-//        label.setStyleName("dashboard-labels-border", true);
         label.setSizeFull();
         return label;
     }
 
-//    private ChartJs createChart() {
-//        BarChartConfig config = new BarChartConfig();
-//        config.data().labels("January", "February", "March", "April", "May", "June", "July")
-//                .addDataset(new BarDataset().type().label("Dataset 1").backgroundColor("rgba(151,187,205,0.5)")
-//                        .borderColor("white").borderWidth(2))
-//                .addDataset(new LineDataset().type().label("Dataset 2").backgroundColor("rgba(151,187,205,0.5)")
-//                        .borderColor("white").borderWidth(2))
-//                .addDataset(new BarDataset().type().label("Dataset 3").backgroundColor("rgba(220,220,220,0.5)")).and();
-//
-//        config.options().responsive(true).title().display(true).position(Position.LEFT).text("Chart.js Combo Bar Line Chart")
-//                .and().done();
-//
-//        List<String> labels = config.data().getLabels();
-//        for( Dataset< ? , ? > ds : config.data().getDatasets() ) {
-//            List<Double> data = new ArrayList<>();
-//            for( int i = 0; i < labels.size(); i++ ) {
-//                data.add((double) (Math.random() > 0.5 ? 1.0 : -1.0) * Math.round(Math.random() * 100));
-//            }
-//
-//            if (ds instanceof BarDataset) {
-//                BarDataset bds = (BarDataset) ds;
-//                bds.dataAsList(data);
-//            }
-//
-//            if (ds instanceof LineDataset) {
-//                LineDataset lds = (LineDataset) ds;
-//                lds.dataAsList(data);
-//            }
-//        }
-//
-//        ChartJs chart = new ChartJs(config);
-//        chart.setJsLoggingEnabled(true);
-//
-//        return chart;
-//    }
     private ChartJs createChart() throws Exception {
 
         LinkedHashMap<Long, int[]> stats = getStats();
@@ -155,8 +116,7 @@ public class DashboardPage extends VerticalLayout implements View {
                 .title().display(true)//
                 .position(Position.LEFT).text("Stats per Surveyor")//
                 .and().scales().add(Axis.X, new CategoryScale().position(Position.BOTTOM))
-                .add(Axis.Y, linearScale.position(Position.LEFT)).and()
-                .done();
+                .add(Axis.Y, linearScale.position(Position.LEFT)).and().done();
 
         List<Double> notesList = new ArrayList<>();
         List<Double> imagesList = new ArrayList<>();
@@ -180,36 +140,6 @@ public class DashboardPage extends VerticalLayout implements View {
 
         return chart;
     }
-
-//    private MultiBarChartData multiworkProgressChartData() throws Exception {
-//        LinkedHashMap<Long, int[]> statsPerDevice = getStats();
-//
-//        MultiBarChartData bd = new MultiBarChartData();
-//        bd.series.add("Notes");
-//        bd.series.add("Images");
-//        bd.series.add("Gps Logs");
-//        bd.categories.add(new ArrayList<String>());
-//        bd.categories.add(new ArrayList<String>());
-//        bd.categories.add(new ArrayList<String>());
-//        bd.values.add(new ArrayList<Number>());
-//        bd.values.add(new ArrayList<Number>());
-//        bd.values.add(new ArrayList<Number>());
-//
-//        Map<Long, String> deviceIdMap = dbp.getDatabaseHandler().getDao(GpapUsers.class).queryForAll().stream()
-//                .collect(Collectors.toMap(gp -> gp.id, gp -> gp.name));
-//
-//        for( Entry<Long, int[]> entry : statsPerDevice.entrySet() ) {
-//            Long deviceIdInternal = entry.getKey();
-//            String deviceId = deviceIdMap.get(deviceIdInternal);
-//            int[] values = entry.getValue();
-//
-//            for( int i = 1; i < 4; i++ ) {
-//                bd.categories.get(i - 1).add(deviceId);
-//                bd.values.get(i - 1).add(values[i]);
-//            }
-//        }
-//        return bd;
-//    }
 
     public LinkedHashMap<Long, int[]> getStats() throws Exception {
         String notesSql = "select g.id, count(n.GPAPUSERSID) from gpapusers g left join notes n on g.id=n.GPAPUSERSID group by g.id order by g.id";

@@ -12,19 +12,39 @@ package com.hydrologis.gss.server;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.h2.tools.Server;
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
+import org.hortonmachine.dbs.compat.IHMStatement;
+import org.hortonmachine.dbs.h2gis.H2GisDb;
 import org.hortonmachine.dbs.h2gis.H2GisServer;
+import org.hortonmachine.dbs.spatialite.hm.SpatialiteDb;
 
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
+import com.hydrologis.gss.server.database.objects.GpapUsers;
+import com.hydrologis.gss.server.database.objects.GpsLogs;
+import com.hydrologis.gss.server.database.objects.GpsLogsData;
+import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
+import com.hydrologis.gss.server.database.objects.ImageData;
+import com.hydrologis.gss.server.database.objects.Images;
+import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
+import com.hydrologis.kukuratus.libs.database.ISpatialTable;
+import com.hydrologis.kukuratus.libs.spi.DbProvider;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 
-public enum GssDbProvider {
-    INSTANCE;
+/**
+ * The db provider as loaded from the SPI. It has to be instanced and initialized only once.
+ * It has basically a singleton behavior.
+ * 
+ * 
+ * @author Antonello Andrea (www.hydrologis.com)
+ */
+public class GssDbProvider implements DbProvider {
 
     private static final String TCP_LOCALHOST = "tcp://localhost:9092";
     private static final String TCP_PASSWORD = null;
@@ -37,8 +57,17 @@ public enum GssDbProvider {
 
     private static boolean doServer = true;
     private static Server server;
-    private GssDatabaseHandler databaseHandler;
+    private DatabaseHandler databaseHandler;
     private String dburl;
+
+    private List<Class< ? >> tableClasses = Arrays.asList(//
+            GpapUsers.class, //
+            Notes.class, //
+            ImageData.class, //
+            Images.class, //
+            GpsLogs.class, //
+            GpsLogsData.class, //
+            GpsLogsProperties.class);
 
     public synchronized void init() {
         if (db != null) {
@@ -83,15 +112,49 @@ public enum GssDbProvider {
             // db.setCredentials(USERNAME, PWD);
             db.open(dburl);
 
-            databaseHandler = GssDatabaseHandler.instance(db);
+            databaseHandler = DatabaseHandler.instance(db);
 
             if (!dbExistedAlready) {
-                databaseHandler.createTables();
+                createTables(databaseHandler);
             }
         } catch (Exception e1) {
             KukuratusLogger.logError(this, e1);
         }
+    }
 
+    private void createTables( DatabaseHandler dbHandler ) throws Exception {
+        for( Class< ? > tClass : tableClasses ) {
+            System.out.println("Create if not exists: " + DatabaseHandler.getTableName(tClass));
+            dbHandler.createTableIfNotExists(tClass);
+            if (ISpatialTable.class.isAssignableFrom(tClass)) {
+                if (db instanceof H2GisDb) {
+                    H2GisDb h2gisDb = (H2GisDb) db;
+                    String tableName = DatabaseHandler.getTableName(tClass);
+                    h2gisDb.addSrid(tableName, DatabaseHandler.TABLES_EPSG, ISpatialTable.GEOM_FIELD_NAME);
+                    h2gisDb.createSpatialIndex(tableName, ISpatialTable.GEOM_FIELD_NAME);
+                } else if (db instanceof SpatialiteDb) {
+                    // SpatialiteDb spatialiteDb = (SpatialiteDb) db;
+                    String tableName = DatabaseHandler.getTableName(tClass);
+                    String geometryType = DatabaseHandler.getGeometryType(tClass);
+                    db.execOnConnection(conn -> {
+                        // SELECT RecoverGeometryColumn('pipespieces', 'the_geom', 4326,
+                        // 'LINESTRING', 'XY')
+                        String sql = "SELECT RecoverGeometryColumn('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "', "
+                                + DatabaseHandler.TABLES_EPSG + ", '" + geometryType + "', 'XY')";
+                        try (IHMStatement stmt = conn.createStatement()) {
+                            stmt.execute(sql);
+                        }
+                        // SELECT CreateSpatialIndex('pipespieces','the_geom');
+                        sql = "SELECT CreateSpatialIndex('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "')";
+                        try (IHMStatement stmt = conn.createStatement()) {
+                            stmt.execute(sql);
+                        }
+
+                        return null;
+                    });
+                }
+            }
+        }
     }
 
     public File getDatabaseFile() throws IOException {
@@ -121,7 +184,7 @@ public enum GssDbProvider {
         return db;
     }
 
-    public Optional<GssDatabaseHandler> getDatabaseHandler() {
+    public Optional<DatabaseHandler> getDatabaseHandler() {
         return Optional.ofNullable(databaseHandler);
     }
 

@@ -11,9 +11,9 @@ package com.hydrologis.gss.server.database.objects;
 import java.util.Collections;
 import java.util.List;
 
-import com.hydrologis.gss.server.GssDbProvider;
 import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.hydrologis.kukuratus.libs.database.ormlite.LineStringTypeH2GIS;
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.export.KmlRepresenter;
 import com.j256.ormlite.dao.Dao;
@@ -76,7 +76,7 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
         String hexColor = "#FF0000";
         float width = 3;
         try {
-            Dao<GpsLogsProperties, ? > logPropDAO = GssDbProvider.INSTANCE.getDatabaseHandler().get()
+            Dao<GpsLogsProperties, ? > logPropDAO = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get()
                     .getDao(GpsLogsProperties.class);
 
             GpsLogsProperties props = logPropDAO.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, this)

@@ -29,9 +29,7 @@ import org.vaadin.addon.leaflet.LeafletMoveEndListener;
 import org.vaadin.addon.leaflet.shared.Bounds;
 import org.vaadin.addon.leaflet.shared.Point;
 
-import com.hydrologis.gss.server.GssDbProvider;
 import com.hydrologis.gss.server.GssSession;
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
@@ -39,8 +37,10 @@ import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.maps.EOnlineTileSources;
 import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.ImageSource;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
@@ -54,9 +54,7 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
-import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.HorizontalSplitPanel;
-import com.vaadin.ui.Notification;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 import com.vividsolutions.jts.geom.Envelope;
@@ -204,7 +202,7 @@ public class MapPage extends VerticalLayout implements View {
             String[] userNames = selectedUsers.stream().map(u -> u.getName()).collect(Collectors.toList()).toArray(new String[0]);
             GssSession.setLoadedGpapUsers(userNames);
 
-            GssDatabaseHandler dbh = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+            DatabaseHandler dbh = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
 
             // first remove layers
             List<Component> toRemove = new ArrayList<>();
@@ -267,7 +265,7 @@ public class MapPage extends VerticalLayout implements View {
         }
     }
 
-    private void addImages( GssDatabaseHandler dbh, Dao<Images, ? > imagesDao, GpapUsers user, LLayerGroup layer )
+    private void addImages( DatabaseHandler dbh, Dao<Images, ? > imagesDao, GpapUsers user, LLayerGroup layer )
             throws SQLException {
         List<Images> imagesList = imagesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user).query();
         if (imagesList.size() > 0) {
@@ -355,7 +353,8 @@ public class MapPage extends VerticalLayout implements View {
     private void reloadDevices() {
         try {
             allDevices.clear();
-            allDevices.addAll(GssDbProvider.INSTANCE.getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll());
+            allDevices
+                    .addAll(SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll());
             deviceNamesMap.clear();
             deviceNamesMap.putAll(allDevices.stream().collect(Collectors.toMap(gu -> getUserName(gu), Function.identity())));
         } catch (SQLException e1) {

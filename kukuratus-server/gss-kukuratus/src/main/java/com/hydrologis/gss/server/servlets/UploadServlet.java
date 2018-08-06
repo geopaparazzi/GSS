@@ -2,22 +2,18 @@ package com.hydrologis.gss.server.servlets;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -26,8 +22,6 @@ import org.hortonmachine.dbs.log.EMessageType;
 import org.hortonmachine.dbs.log.Logger;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
 
-import com.hydrologis.gss.server.GssDbProvider;
-import com.hydrologis.gss.server.database.GssDatabaseHandler;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.GpsLogsData;
@@ -39,7 +33,9 @@ import com.hydrologis.gssmobile.database.GssGpsLog;
 import com.hydrologis.gssmobile.database.GssGpsLogPoint;
 import com.hydrologis.gssmobile.database.GssImage;
 import com.hydrologis.gssmobile.database.GssNote;
+import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.Status;
+import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.NetworkUtilities;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
@@ -75,7 +71,7 @@ public class UploadServlet extends HttpServlet {
             }
             deviceId = userPwd[0];
 
-            GssDatabaseHandler dbHandler = GssDbProvider.INSTANCE.getDatabaseHandler().get();
+            DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
             Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
             GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
             if (gpapUser == null) {
