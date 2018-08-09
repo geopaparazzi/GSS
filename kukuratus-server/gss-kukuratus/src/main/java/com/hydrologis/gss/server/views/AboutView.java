@@ -18,15 +18,18 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.views;
 
+import com.hydrologis.kukuratus.libs.spi.AboutPage;
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.ThemeResource;
 import com.vaadin.ui.Alignment;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.VerticalLayout;
 
-public class AboutView extends VerticalLayout implements View {
+public class AboutView extends VerticalLayout implements View , AboutPage{
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -57,5 +60,36 @@ public class AboutView extends VerticalLayout implements View {
 
         setComponentAlignment(layout, Alignment.MIDDLE_CENTER);
 
+    }
+    
+    @Override
+    public VaadinIcons getIcon() {
+        return VaadinIcons.INFO_CIRCLE_O;
+    }
+
+    @Override
+    public String getLabel() {
+        return "About";
+    }
+
+    @Override
+    public int getOrder() {
+        return 1;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends View> Class<T> getNavigationViewClass() {
+        return (Class<T>) this.getClass();
+    }
+
+    @Override
+    public Component getComponent() {
+        return this;
+    }
+
+    @Override
+    public boolean onlyAdmin() {
+        return false;
     }
 }

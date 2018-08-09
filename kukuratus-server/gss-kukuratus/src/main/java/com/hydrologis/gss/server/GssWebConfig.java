@@ -33,6 +33,7 @@ import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.server.VaadinServlet;
 
+@SuppressWarnings("serial")
 public class GssWebConfig {
 
     @WebServlet("/*")

@@ -50,11 +50,6 @@
 	</dependencyManagement>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.vaadin.addons</groupId>
-			<artifactId>hybridmenu</artifactId>
-			<version>3.0.9</version>
-		</dependency>
 
 		<dependency>
 			<groupId>com.byteowls</groupId>
@@ -63,22 +58,10 @@
 		</dependency>
 
 		<dependency>
-			<groupId>ar.com.fdvs</groupId>
-			<artifactId>DynamicJasper</artifactId>
-			<version>5.1.0</version>
+			<groupId>com.lowagie</groupId>
+			<artifactId>itext</artifactId>
+			<version>2.1.7</version>
 		</dependency>
-		<dependency>
-			<groupId>ar.com.fdvs</groupId>
-			<artifactId>DynamicJasper-core-fonts</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi-ooxml</artifactId>
-			<version>3.10-FINAL</version>
-		</dependency>
-
-
 		<dependency>
 			<groupId>com.hydrologis.kukuratus</groupId>
 			<artifactId>kukuratus-libs</artifactId>

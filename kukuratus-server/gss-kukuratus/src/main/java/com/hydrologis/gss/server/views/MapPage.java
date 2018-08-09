@@ -77,7 +77,7 @@ import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 import com.vividsolutions.jts.geom.Envelope;
 
-public class MapPage extends VerticalLayout implements View {
+public class MapPage extends VerticalLayout implements View, com.hydrologis.kukuratus.libs.spi.MapPage {
     private static final long serialVersionUID = 1L;
 
     private LMap leafletMap;
@@ -425,5 +425,36 @@ public class MapPage extends VerticalLayout implements View {
 
     private String getUserName( GpapUsers user ) {
         return user.name;
+    }
+    
+    @Override
+    public VaadinIcons getIcon() {
+        return VaadinIcons.MAP_MARKER;
+    }
+
+    @Override
+    public String getLabel() {
+        return "Map View";
+    }
+
+    @Override
+    public int getOrder() {
+        return 1;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends View> Class<T> getNavigationViewClass() {
+        return (Class<T>) this.getClass();
+    }
+
+    @Override
+    public Component getComponent() {
+        return this;
+    }
+
+    @Override
+    public boolean onlyAdmin() {
+        return false;
     }
 }

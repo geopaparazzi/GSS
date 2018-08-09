@@ -41,16 +41,18 @@ import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.j256.ormlite.dao.Dao;
+import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.ui.Alignment;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Link;
 import com.vaadin.ui.VerticalLayout;
 
-public class DashboardPage extends VerticalLayout implements View {
+public class DashboardPage extends VerticalLayout implements View, com.hydrologis.kukuratus.libs.spi.DashboardPage {
     private static final long serialVersionUID = 1L;
     private DatabaseHandler dbHandler;
 
@@ -207,5 +209,36 @@ public class DashboardPage extends VerticalLayout implements View {
         }).getResults();
 
         return devicesMap;
+    }
+
+    @Override
+    public VaadinIcons getIcon() {
+        return VaadinIcons.DASHBOARD;
+    }
+
+    @Override
+    public String getLabel() {
+        return "DashBoard";
+    }
+
+    @Override
+    public int getOrder() {
+        return 1;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T extends View> Class<T> getNavigationViewClass() {
+        return (Class<T>) this.getClass();
+    }
+
+    @Override
+    public Component getComponent() {
+        return this;
+    }
+
+    @Override
+    public boolean onlyAdmin() {
+        return false;
     }
 }
