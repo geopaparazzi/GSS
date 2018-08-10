@@ -85,7 +85,7 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
         String hexColor = "#FF0000";
         float width = 3;
         try {
-            Dao<GpsLogsProperties, ? > logPropDAO = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get()
+            Dao<GpsLogsProperties, ? > logPropDAO = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get()
                     .getDao(GpsLogsProperties.class);
 
             GpsLogsProperties props = logPropDAO.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, this)

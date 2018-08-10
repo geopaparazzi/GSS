@@ -59,7 +59,7 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
     @Override
     public void enter( ViewChangeEvent event ) {
 
-        dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
+        dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
         try {
             long surveyorsCount = dbHandler.getDao(GpapUsers.class).countOf();
             if (surveyorsCount == 0) {

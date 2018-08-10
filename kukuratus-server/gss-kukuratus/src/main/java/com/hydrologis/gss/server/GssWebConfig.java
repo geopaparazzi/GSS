@@ -48,7 +48,7 @@ public class GssWebConfig {
         public void contextInitialized( ServletContextEvent sce ) {
             /// called when the system starts up and the servlet context is initialized
             try {
-                SpiHandler.INSTANCE.getDbProvider().init();
+                SpiHandler.INSTANCE.getDbProviderSingleton().init();
 
                 File dataFolder = KukuratusWorkspace.getInstance().getDataFolder(null).get();
                 File notesOutFile = new File(dataFolder, "notes.png");
@@ -70,7 +70,7 @@ public class GssWebConfig {
         @Override
         public void contextDestroyed( ServletContextEvent sce ) {
             try {
-                SpiHandler.INSTANCE.getDbProvider().close();
+                SpiHandler.INSTANCE.getDbProviderSingleton().close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

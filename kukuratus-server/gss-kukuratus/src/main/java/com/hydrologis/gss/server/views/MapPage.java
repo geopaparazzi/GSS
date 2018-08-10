@@ -220,7 +220,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             String[] userNames = selectedUsers.stream().map(u -> u.getName()).collect(Collectors.toList()).toArray(new String[0]);
             GssSession.setLoadedGpapUsers(userNames);
 
-            DatabaseHandler dbh = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
+            DatabaseHandler dbh = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
 
             // first remove layers
             List<Component> toRemove = new ArrayList<>();
@@ -372,7 +372,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         try {
             allDevices.clear();
             allDevices
-                    .addAll(SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll());
+                    .addAll(SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll());
             deviceNamesMap.clear();
             deviceNamesMap.putAll(allDevices.stream().collect(Collectors.toMap(gu -> getUserName(gu), Function.identity())));
         } catch (SQLException e1) {

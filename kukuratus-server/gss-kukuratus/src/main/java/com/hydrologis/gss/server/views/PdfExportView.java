@@ -94,7 +94,7 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
     public void enter( ViewChangeEvent event ) {
         try {
             authenticatedUsername = AuthService.INSTANCE.getAuthenticatedUsername();
-            DbProvider dbProvider = SpiHandler.INSTANCE.getDbProvider();
+            DbProvider dbProvider = SpiHandler.INSTANCE.getDbProviderSingleton();
             DatabaseHandler dbHandler = dbProvider.getDatabaseHandler().get();
             imagesDAO = dbHandler.getDao(Images.class);
             imageDataDAO = dbHandler.getDao(ImageData.class);
@@ -144,7 +144,7 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
 
     private void calcForUser( GpapUsers user ) throws Exception {
 
-        Dao<Notes, ? > notesDAO = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get().getDao(Notes.class);
+        Dao<Notes, ? > notesDAO = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(Notes.class);
         List<Notes> allNotes;
         if (user == null) {
             allNotes = notesDAO.queryForAll();

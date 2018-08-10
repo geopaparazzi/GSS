@@ -78,7 +78,7 @@ public class GssDbProvider implements DbProvider {
             GpsLogsData.class, //
             GpsLogsProperties.class);
 
-    public synchronized void init() {
+    public synchronized void init(String... parameters) {
         if (db != null) {
             return;
         }

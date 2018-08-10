@@ -72,7 +72,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
 
         List<GpapUsers> devices = new ArrayList<>();
         try {
-            devices = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll();
+            devices = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll();
         } catch (SQLException e1) {
             KukuratusLogger.logError(this, e1);
             Notification.show("An error occurred.", Type.ERROR_MESSAGE);
@@ -126,7 +126,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
     private void prepareData() throws Exception {
         Set<GpapUsers> devices = surveyorsGrid.asMultiSelect().getSelectedItems();
 
-        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
+        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
         Dao<Notes, ? > notesDAO = dbHandler.getDao(Notes.class);
         Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
         Dao<ImageData, ? > imageDataDAO = dbHandler.getDao(ImageData.class);

@@ -89,7 +89,7 @@ public class UploadServlet extends HttpServlet {
             }
             deviceId = userPwd[0];
 
-            DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
+            DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
             Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
             GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
             if (gpapUser == null) {

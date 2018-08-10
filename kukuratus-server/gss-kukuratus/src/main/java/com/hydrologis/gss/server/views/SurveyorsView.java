@@ -70,7 +70,7 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
 
     private void save( GpapUsers user ) {
         try {
-            DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
+            DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
             Dao<GpapUsers, ? > dao = databaseHandler.getDao(GpapUsers.class);
             dao.update(user);
             refresh();
@@ -80,7 +80,7 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
     }
 
     private void refresh() {
-        DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
+        DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
         try {
             Dao<GpapUsers, ? > dao = databaseHandler.getDao(GpapUsers.class);
             List<GpapUsers> userList = dao.queryForAll();

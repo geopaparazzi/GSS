@@ -193,7 +193,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     }
 
     public String toKmlString() throws Exception {
-        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProvider().getDatabaseHandler().get();
+        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
         Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
 
         images = new ArrayList<>();
