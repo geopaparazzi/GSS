@@ -18,7 +18,7 @@
  ******************************************************************************/
 package com.hydrologis.gss.server;
 
-import com.hydrologis.kukuratus.libs.applications.KukuratusHybridMenuApplication;
+import com.hydrologis.kukuratus.libs.applications.KukuratusAppLayoutMenuApplication;
 import com.vaadin.annotations.Push;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Title;
@@ -27,6 +27,6 @@ import com.vaadin.annotations.Title;
 @Title("Geopaparazzi Survey Server")
 @Push
 @Theme("mytheme")
-public class GssApplication extends KukuratusHybridMenuApplication {
+public class GssApplication extends KukuratusAppLayoutMenuApplication {
 
 }

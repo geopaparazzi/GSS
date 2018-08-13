@@ -29,30 +29,42 @@
 // For more information, see: https://vaadin.com/book/-/page/themes.valo.html
 // Example variants can be copy/pasted from https://vaadin.com/wiki/-/wiki/Main/Valo+Examples
 
+// app layout begin
+//$al-bar-height: 64px;
+$al-bar-background-color: #5d9d76;
+//$al-bar-font-color: valo-font-color($al-bar-background-color);
+//$al-bar-shadow: 0px 2px 10px rgba(0, 0, 0, 0.5);
+//$al-bar-z-index: 10;
+//
+//$al-drawer-shadow: 2px 2px 20px rgba(0, 0, 0, 0.3);
+//$al-drawer-background-color: lighten($v-background-color, 5%);
+$al-drawer-submenu-background-color: rgba(valo-font-color($al-bar-background-color), 0.05);
+//$al-drawer-font-color: valo-font-color($al-drawer-background-color);
+//$al-drawer-persistent-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.15);
+//$al-drawer-width: 256px;
+//$al-drawer-small-width: 64px;
+//
+//$al-menu-button-badge-background-color: $v-focus-color;
+//$al-menu-button-badge-font-color: valo-font-color($v-focus-color, 1.0);
+//$al-menu-button-badge-border-radius: 5px;
+//$al-menu-disable-active-style: false;
+//$al-menu-submenu-max-height: 999px;
+//
+//// only used by material design
+//$al-menu-button-active-background-color: rgba(valo-font-color($al-drawer-background-color), 0.1); 
+//$al-menu-button-active-font-color: $v-focus-color; 
+//
+//// new variables
+//$al-menu-button-horizontal-padding: round($v-unit-size/2.4) + round($v-border-radius/3) !default;
+//$al-menu-button-height: 48px !default;
+//$al-menu-button-spacing: round($v-unit-size/3) !default;
+//$al-menu-section-padding: round($v-unit-size) !default;
+// app layout end
+
+
+
 @import "../valo/valo.scss";
-@import "../../addons/hybrid-menu/hybrid-menu.scss";
 
 @mixin mytheme {
   @include valo;
-  @include hybrid-menu;
-  
-
-  .dashboard-labels-border {
-    //border: 1px solid #5d9d76;
-    //border-radius: 15px;
-    padding: 10px;
-    fill: rgba(255,255,255,0.5);
-    text-align: center;
-    vertical-align: middle;
-  }
-  
-  .layout-border {
-  	border: 1px solid #d4d4d4;
-  }
-  
-  .hybridMenu .rootContent > .v-expand .v-slot-leftMenu .leftMenu .v-slot-HMLabel > div .v-caption .v-icon {
-	margin-right: 5px;
-	max-height: 200px;
-  }
-
 }
