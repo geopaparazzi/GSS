@@ -94,12 +94,14 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
 
                 ChartJs chart = createChart();
 
+                numbers.setWidth("90%");
+                chart.setWidth("90%");
                 addComponents(numbers, chart);
-                setExpandRatio(numbers, 1);
-                setExpandRatio(chart, 4);
+                setComponentAlignment(numbers, Alignment.TOP_CENTER);
+                setComponentAlignment(chart, Alignment.MIDDLE_CENTER);
+//                setExpandRatio(numbers, 1);
+//                setExpandRatio(chart, 3);
 
-                numbers.setSizeFull();
-                chart.setSizeFull();
             }
         } catch (Exception e) {
             KukuratusLogger.logError(this, e);
@@ -218,7 +220,7 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
 
     @Override
     public String getLabel() {
-        return "DashBoard";
+        return "Dashboard";
     }
 
     @Override
