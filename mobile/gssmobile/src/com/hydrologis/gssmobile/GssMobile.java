@@ -60,6 +60,8 @@ public class GssMobile {
 
     private static final String MASTER_GSS_PASSWORD = "gss_Master_Survey_Forever_2018";
 
+    private static final int MPR_TIMEOUT = 5 * 60 * 1000; // 5 minutes timeout
+
     private static final char IMAGES_ICON = FontImage.MATERIAL_IMAGE;
     private static final char LOGS_ICON = FontImage.MATERIAL_TIMELINE;
     private static final char NOTE_ICON = FontImage.MATERIAL_NOTE;
@@ -99,10 +101,12 @@ public class GssMobile {
         addNetworkErrorListener(err -> {
             // prevent the event from propagating
             err.consume();
-            if (err.getError() != null) {
-//                Log.e(err.getError());
+            final Exception error = err.getError();
+            if (error != null) {
+                HyLog.p(error.getMessage());
+                HyLog.e(error);
             }
-//            Log.sendLogAsync();
+            HyLog.sendLogAsync();
             Dialog.show("Connection Error", "There was a networking error in the connection to " + err.getConnectionRequest().getUrl(), "OK", null);
         });
     }
@@ -152,24 +156,19 @@ public class GssMobile {
 //                    }
 //                });
 //            } else {
-            Dialog projectDialog = new Dialog("Select Geopaparazzi Project");
-            projectDialog.setLayout(new BorderLayout());
 
+            Form projectForm = new Form("Select Geopaparazzi Project", BoxLayout.y());
             ComponentGroup cg = new ComponentGroup();
             try {
                 String sdcard = FileUtilities.INSTANCE.getSdcard();
                 HyLog.p("sdcard: " + sdcard);
-
                 List<String> gpapFiles = FileUtilities.INSTANCE.findFilesByExtension(sdcard, ".gpap");
-                addGpapProjects(gpapFiles, projectDialog, cg);
-
+                addGpapProjects(gpapFiles, cg);
             } catch (IOException ex) {
                 HyLog.e(ex);
             }
-
-            projectDialog.add(BorderLayout.CENTER, cg);
-            projectDialog.setDisposeWhenPointerOutOfBounds(true);
-            projectDialog.show();
+            projectForm.add(cg);
+            projectForm.show();
 //
 //            }
 
@@ -285,7 +284,14 @@ public class GssMobile {
         runninCount = 1;
         try {
             int count = 1;
-            int index = 0;
+            int index = 0; // 0 notes, 1 logs, 2 both
+            if (doNotes && doLogs) {
+                index = 2;
+            } else if (doNotes) {
+                index = 0;
+            } else {
+                index = 1;
+            }
             String authCode = HyUtilities.getUdid() + ":" + MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
             if (doNotes || doLogs) {
@@ -303,6 +309,7 @@ public class GssMobile {
                         oneAdded = true;
                     }
                     byte[] bytes = bout.toByteArray();
+//                    addProgressLabelAndRefresh(new Label("Found simple notes: " + notesList.size(), "uploadProgressLabel"));
                     mpr.addData(GssNote.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
                 }
                 if (doLogs) {
@@ -314,6 +321,7 @@ public class GssMobile {
                         oneAdded = true;
                     }
                     byte[] bytes = bout.toByteArray();
+//                    addProgressLabelAndRefresh(new Label("Found logs: " + logsList.size(), "uploadProgressLabel"));
                     mpr.addData(GssGpsLog.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
                 }
                 if (oneAdded) {
@@ -323,9 +331,9 @@ public class GssMobile {
 
             // NOW FORMS WITH IMAGES
             if (doNotes) {
-                index = 1;
+                index = 3;
                 List<GssNote> notesList = DaoNotes.getFormNotesList(db);
-                int size = notesList.size();
+//                addProgressLabelAndRefresh(new Label("Found forms: " + notesList.size(), "uploadProgressLabel"));
                 for (GssNote gssNote : notesList) {
                     MultipartRequest mpr = getMpr(index, db, gssNote.id);
                     mpr.setUrl(serverUrl);
@@ -337,7 +345,13 @@ public class GssMobile {
                     mpr.addData(GssNote.OBJID, bytes, HyUtilities.MIMETYPE_BYTEARRAY);
 
                     List<GssImage> imagesForNote = DaoImages.getImagesListForNoteId(db, gssNote.id, true);
+//                    addProgressLabelAndRefresh(new Label("Getting images for note: " + imagesForNote.size(), "uploadProgressLabel"));
                     for (GssImage gssImage : imagesForNote) {
+                        if (gssImage.data == null) {
+                            final Label label = new Label("Found image without data attached: " + gssImage.text, "uploadProgressErrorLabel");
+                            addProgressLabelAndRefresh(label);
+                            continue;
+                        }
                         ByteArrayOutputStream bout1 = new ByteArrayOutputStream();
                         DataOutputStream out1 = new DataOutputStream(bout1);
                         gssImage.externalize(out1);
@@ -350,10 +364,15 @@ public class GssMobile {
             }
             // DO IMAGES
             if (doMedia) {
-                index = 2;
+                index = 4;
                 List<GssImage> imagesList = DaoImages.getLonelyImagesList(db, true);
-                int size = imagesList.size();
+//                addProgressLabelAndRefresh(new Label("Found images: " + imagesList.size(), "uploadProgressLabel"));
                 for (GssImage gssImage : imagesList) {
+                    if (gssImage.data == null) {
+                        final Label label = new Label("Found image without data attached: " + gssImage.text, "uploadProgressErrorLabel");
+                        addProgressLabelAndRefresh(label);
+                        continue;
+                    }
                     MultipartRequest mpr = getMpr(index, db, gssImage.id);
                     mpr.setUrl(serverUrl);
                     mpr.addRequestHeader("Authorization", authHeader);
@@ -385,7 +404,7 @@ public class GssMobile {
 
     }
 
-    private void addGpapProjects(List<String> gpapFiles, Dialog projectDialog, ComponentGroup cg) {
+    private void addGpapProjects(List<String> gpapFiles, ComponentGroup cg) {
         for (String file : gpapFiles) {
             HyLog.p("Found: " + file);
             File gpapFile = new File(file);
@@ -394,8 +413,8 @@ public class GssMobile {
             pButton.addActionListener(ev -> {
                 String dbPath = pButton.getName();
                 try {
-                    projectDialog.dispose();
                     refreshData(dbPath);
+                    mainForm.show();
                 } catch (IOException ex) {
                     HyLog.e(ex);
                 }
@@ -416,14 +435,18 @@ public class GssMobile {
 
         try {
             db = Display.getInstance().openOrCreate(dbPath);
-            ToastBar.showInfoMessage("Loading database: " + dbName);
 
             if (parentPath.startsWith("file")) {
                 parentPath = parentPath.substring(7);
             }
-            loadedDbParentLabel.setText("Path: " + parentPath);
+
+            String _pPath = parentPath;
+
+            loadedDbParentLabel.setText("Path: " + _pPath);
             loadedDbParentLabel.setVisible(true);
             loadedDbLabel.setText("Name: " + dbName);
+
+            ToastBar.showInfoMessage("Loading database: " + dbName);
         } catch (Exception e) {
             HyLog.e(e);
             String errMsg = e.getMessage();
@@ -613,7 +636,7 @@ public class GssMobile {
     }
 
     private MultipartRequest getMpr(final int index, Database db, long itemId) {
-        return new MultipartRequest() {
+        MultipartRequest mpr = new MultipartRequest() {
             @Override
             protected void readResponse(InputStream input) throws IOException {
                 JSONParser jp = new JSONParser();
@@ -638,13 +661,19 @@ public class GssMobile {
                         switch (index) {
                             case 0:
                                 DaoNotes.clearDirtySimple(db);
-                                DaoGpsLogs.clearDirty(db);
                                 break;
                             case 1:
+                                DaoGpsLogs.clearDirty(db);
+                                break;
+                            case 2:
+                                DaoNotes.clearDirtySimple(db);
+                                DaoGpsLogs.clearDirty(db);
+                                break;
+                            case 3:
                                 DaoNotes.clearDirtyById(db, itemId);
                                 DaoImages.clearDirtyByNoteId(db, itemId);
                                 break;
-                            case 2:
+                            case 4:
                                 DaoImages.clearDirtyById(db, itemId);
                                 break;
                             default:
@@ -659,6 +688,8 @@ public class GssMobile {
             }
 
         };
+        mpr.setTimeout(MPR_TIMEOUT);
+        return mpr;
     }
 
     private void runNextInList() {

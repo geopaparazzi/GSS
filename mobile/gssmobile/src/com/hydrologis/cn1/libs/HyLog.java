@@ -12,6 +12,8 @@ import com.codename1.io.Log;
  * @author hydrologis
  */
 public class HyLog {
+    public static final boolean DO_DEBUG = false; // disable in production
+
 
     /**
      * Constant indicating the logging level Debug is the default and the lowest
@@ -36,9 +38,13 @@ public class HyLog {
      * level followed by info, warning and error
      */
     public static final int ERROR = 4;
-
+    
     public static void p(String message) {
         Log.p(message);
+    }
+    
+    public static void w(String message) {
+        Log.p(message, WARNING);
     }
 
     public static void e(Throwable t) {
@@ -54,6 +60,12 @@ public class HyLog {
      */
     public static void p(String text, int level) {
         Log.p(text, level);
+    }
+
+    public static void d(String text) {
+        if (DO_DEBUG) {
+            Log.p(text, WARNING);
+        }
     }
 
     /**

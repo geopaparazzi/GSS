@@ -233,48 +233,50 @@ public class DaoImages {
         final String imgdImadedataidFN = ImageDataTableFields.COLUMN_ID.getFieldName();
         final String imgdImadedataDataFN = ImageDataTableFields.COLUMN_IMAGE.getFieldName();
         final String imgdImadedataThumbFN = ImageDataTableFields.COLUMN_THUMBNAIL.getFieldName();
-        String query = "select " + imgdImadedataDataFN + ", " + imgdImadedataThumbFN + " from " + TABLE_IMAGE_DATA
-                + " where " + imgdImadedataidFN + "=" + imageDataId;
 
-        Cursor cursor = null;
-        try {
-            //HyLog.p(query);
-            cursor = db.executeQuery(query);
-            while (cursor.next()) {
-                Row row = cursor.getRow();
+        long blobSize = getBlobSize(imageDataId, db);
+        if (blobSize < MAXBLOBSIZE || blobSize < 0 /* try if no size available */) {
+            String query = "select " + imgdImadedataDataFN + ", " + imgdImadedataThumbFN + " from " + TABLE_IMAGE_DATA
+                    + " where " + imgdImadedataidFN + "=" + imageDataId;
+            try {
+                Cursor cursor = null;
                 try {
-                    byte[] thumbBytes = row.getBlob(1);
-                    image.dataThumb = thumbBytes;
-                    byte[] imageBytes = row.getBlob(0);
-                    image.data = imageBytes;
-                } catch (Exception ex) {
-                    if (ex.getMessage().contains("Couldn't read row")) {
-                        try {
-                            getImagePieces(imgdImadedataidFN, imageDataId, db, image);
-                        } catch (IOException ex1) {
-                            HyLog.e(ex1);
-                        }
+                    //HyLog.p(query);
+                    cursor = db.executeQuery(query);
+                    while (cursor.next()) {
+                        Row row = cursor.getRow();
+                        byte[] thumbBytes = row.getBlob(1);
+                        image.dataThumb = thumbBytes;
+                        byte[] imageBytes = row.getBlob(0);
+                        image.data = imageBytes;
                     }
+                } finally {
+                    Util.cleanup(cursor);
                 }
-
+            } catch (Exception ex) {
+                HyLog.e(ex);
             }
-        } finally {
-            Util.cleanup(cursor);
+        } else {
+            try {
+                getImagePieces(imageDataId, db, image, blobSize);
+            } catch (IOException ex1) {
+                HyLog.e(ex1);
+            }
         }
 
     }
 
-    private static void getImagePieces(final String imgdImadedataidFN, long imageDataId, Database db, GssImage image) throws IOException {
+    private static long getBlobSize(long imageDataId, Database db) throws IOException {
         String sizeQuery = "SELECT " + ImageDataTableFields.COLUMN_ID.getFieldName()
                 +//
                 ", length(" + ImageDataTableFields.COLUMN_IMAGE.getFieldName() + ") "
                 +//
                 "FROM " + TABLE_IMAGE_DATA
                 +//
-                " WHERE " + imgdImadedataidFN + "=" + imageDataId;
+                " WHERE " + ImageDataTableFields.COLUMN_ID.getFieldName() + "=" + imageDataId;
         //"length(" + ImageDataTableFields.COLUMN_IMAGE.getFieldName() + ") > 1000000";
         Cursor sizeCursor = null;
-        long blobSize = 0;
+        long blobSize = -1;
         try {
             sizeCursor = db.executeQuery(sizeQuery);
             if (sizeCursor.next()) {
@@ -284,37 +286,40 @@ public class DaoImages {
         } finally {
             Util.cleanup(sizeCursor);
         }
+//        if (HyLog.DO_DEBUG) {
+//            HyLog.d("Defined image blob size: " + blobSize + " vs max size: " + MAXBLOBSIZE);
+//        }
+        return blobSize;
+    }
 
+    private static void getImagePieces(long imageDataId, Database db, GssImage image, long blobSize) throws IOException {
         try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
-            int maxBlobSize = MAXBLOBSIZE;
-            if (blobSize > maxBlobSize) {
-                for (long i = 1; i <= blobSize; i = i + maxBlobSize) {
-                    long from = i;
-                    long size = maxBlobSize;
-                    if (from + size > blobSize) {
-                        size = blobSize - from + 1;
-                    }
-                    String tmpQuery = "SELECT " + ImageDataTableFields.COLUMN_THUMBNAIL.getFieldName() + ", substr(" + ImageDataTableFields.COLUMN_IMAGE.getFieldName()
-                            + "," + from + ", " + size + ") FROM " + TABLE_IMAGE_DATA + " WHERE " + imgdImadedataidFN + "=" + imageDataId;
-                    Cursor imageCunchCursor = null;
-                    try {
-                        imageCunchCursor = db.executeQuery(tmpQuery);
-                        if (imageCunchCursor.next()) {
-                            Row imgrow = imageCunchCursor.getRow();
-                            if (image.dataThumb == null) {
-                                byte[] thumbData = imgrow.getBlob(0);
-                                image.dataThumb = thumbData;
-                            }
-                            byte[] blobData = imgrow.getBlob(1);
-                            bout.write(blobData);
-                        }
-                    } finally {
-                        Util.cleanup(imageCunchCursor);
-                    }
+            for (long i = 1; i <= blobSize; i = i + MAXBLOBSIZE) {
+                long from = i;
+                long size = MAXBLOBSIZE;
+                if (from + size > blobSize) {
+                    size = blobSize - from + 1;
                 }
-                byte[] imageData = bout.toByteArray();
-                image.data = imageData;
+                String tmpQuery = "SELECT " + ImageDataTableFields.COLUMN_THUMBNAIL.getFieldName() + ", substr(" + ImageDataTableFields.COLUMN_IMAGE.getFieldName()
+                        + "," + from + ", " + size + ") FROM " + TABLE_IMAGE_DATA + " WHERE " + ImageDataTableFields.COLUMN_ID.getFieldName() + "=" + imageDataId;
+                Cursor imageCunchCursor = null;
+                try {
+                    imageCunchCursor = db.executeQuery(tmpQuery);
+                    if (imageCunchCursor.next()) {
+                        Row imgrow = imageCunchCursor.getRow();
+                        if (image.dataThumb == null) {
+                            byte[] thumbData = imgrow.getBlob(0);
+                            image.dataThumb = thumbData;
+                        }
+                        byte[] blobData = imgrow.getBlob(1);
+                        bout.write(blobData);
+                    }
+                } finally {
+                    Util.cleanup(imageCunchCursor);
+                }
             }
+            byte[] imageData = bout.toByteArray();
+            image.data = imageData;
         }
     }
 
