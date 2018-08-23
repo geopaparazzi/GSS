@@ -23,10 +23,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.hydrologis.kukuratus</groupId>
-	<artifactId>gss-server</artifactId>
+	<artifactId>gss</artifactId>
 	<packaging>war</packaging>
 	<version>2.10</version>
-	<name>gss-server</name>
+	<name>Geopaparazzi Survey Server</name>
 
 	<prerequisites>
 		<maven>3</maven>
