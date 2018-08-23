@@ -1,7 +1,7 @@
 = The Geopaparazzi Survey Server
 HydroloGIS S.r.l.
-v1.03, 2018-07-09
-:gss_version: v1.03
+v2.10, 2018-08-23
+:gss_version: v2.10
 :doctype: article
 :description: A description
 :encoding: utf-8
@@ -29,7 +29,7 @@ endif::[]
 
 == The Geopaparazzi Survey Server & Friends
 
-image::logo.png[scaledwidth=30%, width=30%]
+image::logo.png[scaledwidth=30%, width=30%, align="center"]
 
 The Geopaparazzi Survey Server (GSS) is a web application that allows http://www.geopaparazzi.eu[geopaparazzi]
 users to synchronize their project data with a central server.
@@ -54,7 +54,7 @@ it works only on linux systems that have docker installed. Describing the instal
 documentation. Many tutorials are available in the net to install docker.
 
 .GSS on hub.docker.com.
-image::images/01_hub.png[scaledwidth=70%, width=70%]
+image::images/01_hub.png[scaledwidth=70%, width=70%, align="center"]
 
 To install the docker image just open a terminal and type in from shell:
 
@@ -68,7 +68,7 @@ This will download the server image and install it on your machine.
 The installation process should reveal something similar to the following (the version number will most probably be different):
 
 .GSS installation process.
-image::images/02_install.png[scaledwidth=70%, width=70%]
+image::images/02_install.png[scaledwidth=70%, width=70%, align="center"]
 
 
 [NOTE]
@@ -130,7 +130,7 @@ You should get the following login screen:
 
 
 .The GSS login screen.
-image::images/03_login.png[scaledwidth=70%, width=70%]
+image::images/03_login.png[scaledwidth=100%, width=100%, align="center"]
 
 This already means that you are ready to rumble!
 
@@ -147,12 +147,21 @@ Once logged in, the dashboard view is shown.
 
 The GSS views are organized as follows:
 
-The upper toolbar contains, starting from left, the GSS icon, then tools 
-that are dedicated to the currently opened view and at the very right 
-the about and logout buttons.
+The upper toolbar features the menu button on the left, through which the side toolbar can be hidden. At the very right
+of the toolbar the currently logged user is shown.
 
-The left toolbar contains at the top the buttons to switch between availabel views
-and at the bottom the settings button.
+The left toolbar contains buttons to access the available views:
+
+* Dashboard
+* Map View
+* Settings
+  - Surveyors
+  - Web Users
+  - Map Chooser
+* Export
+  - PDF
+  - KMZ
+
 
 ==== The dashboard
 
@@ -160,37 +169,35 @@ The dashboard view shows a simple chart listing the amount of information for ea
 
 If no data are available, as in our inizial case, the folloing will be shown:
 
+.The empty dashboard.
+image::images/04_dashboard.png[scaledwidth=100%, width=100%, align="center"]
+
+If instead data are available, the dashboard will give some information about the work in progress:
 
 .The dashboard.
-image::images/04_dashboard.png[scaledwidth=70%, width=70%]
+image::images/04_dashboard2.png[scaledwidth=100%, width=100%, align="center"]
+
 
 ==== The mapview
 
-From the mapview it is possible to access the Surveyor list from the first button in the top 
-toolbar.  
+The mapview features the Surveyor list and a map panel.
 
 .The mapview with the surveyors list.
-image::images/05_mapview.png[scaledwidth=70%, width=70%]
+image::images/05_mapview.png[scaledwidth=100%, width=100%, align="center"]
 
-In the combobox the currently available surveyors are listed. To add the data of a 
-surveyor to the map, select the surveyor and push the add button at the right of the combobox.
-
-Then double-click on the added surveyor. The map will be zoomed to the data of the surveyor.
+The surveyor can be actived by selecting the checkbox in the table. Once the data of the 
+surveyor are loaded, through the zoom button on top of the table it is possible to zoom to 
+the surveyor's data extent.
 
 .The mapview zoomed on the data of a surveyor.
-image::images/06_surveyor.png[scaledwidth=70%, width=70%]
+image::images/06_surveyor.png[scaledwidth=100%, width=100%, align="center"]
 
 If data are uploaded while on the map view, one can either reload the view by refreshing the page
-or use the button to refresh the surveyors list.
+or:
 
-The data of a surveyor can be reloaded using the context menu on the surveyors list. It can be accessed 
-through right-click:
+* using the first button to reload the data of the currently loaded surveyor
+* using the last button to reload all the available surveyors
 
-.The menu on the surveyors table.
-image::images/07_surveyor_menu.png[scaledwidth=40%, width=40%]
-
-From the same menu it is also possible to zoom to the data of a surveyor or remove the data 
-of a surveyor from the map.
 
 The data can be queried by clicking on them. Simple information is shown as described below.
 
@@ -198,49 +205,57 @@ In the case of notes, the main note text, the elevation and the timestamp are sh
 or notes that have forms, the complex form is not visualized in the information box.
 
 .Notes.
-image::images/08_notes.png[scaledwidth=25%, width=25%]
+image::images/08_notes.png[scaledwidth=25%, width=25%, align="center"]
 
 For GPS logs the name of the log and the start and end timestamp are shown.
 
 .Gps Logs.
-image::images/09_logs.png[scaledwidth=30%, width=30%]
+image::images/09_logs.png[scaledwidth=30%, width=30%, align="center"]
 
 For media notes it is possible to visualize the images, by clicking on the image icon.
 
 .Media notes.
-image::images/10_media.png[scaledwidth=70%, width=70%]
+image::images/10_media.png[scaledwidth=70%, width=70%, align="center"]
 
-==== The Settings View
+==== The Settings Views
 
-In the settings view it is possible to:
+Selecting the proper action from the settings menu it is possible to:
+
+* Configure surveyors. New devices that connect and upload are automatically added.
+  The name of the surveyor by default is the id of the device. This can be changed 
+  by double-clicking on the surveyor.
+
+.Surveyor configuration.
+image::images/12_surveyors.png[scaledwidth=100%, width=100%, align="center"]
 
 * Create web users and groups. There are two levels of users: admins and normal users.
   
 .Web users configuration.
-image::images/11_users.png[scaledwidth=70%, width=70%]
-
-* Configure surveyors. New devices that connect and upload are automatically added.
-  The name of the surveyor by default is the id of the device. This can be changed 
-  by right-clicking on the surveyor.
-
-.Surveyor configuration.
-image::images/12_surveyors.png[scaledwidth=70%, width=70%]
+image::images/11_users.png[scaledwidth=100%, width=100%, align="center"]
 
 * Configure background maps. Several map services can be added to the background 
   maps that can then be selected in the mapview. 
 
 .The background maps configuration.
-image::images/13_maps.png[scaledwidth=70%, width=70%]
-
-* In the 'other configurations' part, it is possible to define to which pages
-  the normal user has access to.
-
-.Other configurations.
-image::images/14_other_configs.png[scaledwidth=70%, width=70%]
+image::images/13_maps.png[scaledwidth=100%, width=100%, align="center"]
 
 WARNING: Many of the available map services need a license key to be accessed 
 and/or have particular requirements to be used. Make sure that you have the 
 rights to use the maps you select.
+
+==== The Export Views
+
+Selecting the proper action from the export menu it is possible to:
+
+* Export the data of one or more surveyors as PDF:
+
+.The PDF export view
+image::images/14_export_pdf.png[scaledwidth=100%, width=100%, align="center"]
+
+* Export the data of one or more surveyors as KMZ:
+  
+.The KMZ export view
+image::images/15_export_kmz.png[scaledwidth=100%, width=100%, align="center"]
 
 
 == The mobile app, GSSS
