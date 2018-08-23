@@ -25,7 +25,7 @@
 	<groupId>com.hydrologis.kukuratus</groupId>
 	<artifactId>gss-server</artifactId>
 	<packaging>war</packaging>
-	<version>v2.00</version>
+	<version>v2.10</version>
 	<name>gss-server</name>
 
 	<prerequisites>
