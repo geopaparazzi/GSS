@@ -94,8 +94,9 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
 
                 ChartJs chart = createChart();
 
-                numbers.setWidth("90%");
-                chart.setWidth("90%");
+                numbers.setWidth("100%");
+                chart.setWidth("100%");
+                
                 addComponents(numbers, chart);
                 setComponentAlignment(numbers, Alignment.TOP_CENTER);
                 setComponentAlignment(chart, Alignment.MIDDLE_CENTER);

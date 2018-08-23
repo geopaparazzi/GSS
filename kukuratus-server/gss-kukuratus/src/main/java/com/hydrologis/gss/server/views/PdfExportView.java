@@ -18,10 +18,12 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.views;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
@@ -39,6 +41,7 @@ import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
 import com.hydrologis.kukuratus.libs.registry.User;
+import com.hydrologis.kukuratus.libs.reports.SimpleTablePdfReport;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
 import com.hydrologis.kukuratus.libs.spi.ExportPage;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
@@ -88,8 +91,6 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
 
     private String authenticatedUsername;
 
-    private File logoFile;
-
     @Override
     public void enter( ViewChangeEvent event ) {
         try {
@@ -133,10 +134,6 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
 
             setSizeFull();
 
-            // Find the application directory
-            String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-            FileResource resource = new FileResource(new File(basepath + "/WEB-INF/images/logo_login.png"));
-            logoFile = resource.getSourceFile();
         } catch (Exception e) {
             KukuratusLogger.logError(this, e);
         }
@@ -211,15 +208,24 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
         document.addAuthor("User: " + user.getName());
         document.addCreator("Geopaparazzi  Survey Server - http://www.geopaparazzi.eu");
 
-        if (!logoFile.exists())
-            logoFile = new File(
-                    "/home/hydrologis/development/geopaparazzi-survey-server/kukuratus-server/gss-kukuratus/src/main/resources/images/logo_login.png");
-        if (logoFile.exists()) {
+        InputStream is = SimpleTablePdfReport.class.getClassLoader().getResourceAsStream("/images/logo_login.png");
+        if (is != null) {
             try {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                int nRead;
+                byte[] data = new byte[1024];
+                while( (nRead = is.read(data, 0, data.length)) != -1 ) {
+                    buffer.write(data, 0, nRead);
+                }
+                buffer.flush();
+                byte[] byteArray = buffer.toByteArray();
+
                 addEmptyLine(document);
                 addEmptyLine(document);
                 addEmptyLine(document);
-                Image logo = Image.getInstance(logoFile.getAbsolutePath());
+                Image logo = Image.getInstance(byteArray);
+                logo.scalePercent(300 * 72f / 580);
+                logo.setAlignment(Image.MIDDLE);
                 document.add(logo);
                 addEmptyLine(document);
                 addEmptyLine(document);
@@ -227,7 +233,6 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
                 KukuratusLogger.logError(this, e);
             }
         } else {
-            System.err.println("Not using missing logo file: " + logoFile);
             addEmptyLine(document);
             addEmptyLine(document);
             addEmptyLine(document);
