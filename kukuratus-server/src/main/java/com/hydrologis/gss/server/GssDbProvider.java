@@ -186,7 +186,7 @@ public class GssDbProvider implements DbProvider {
             File dbFile = new File(dataFolderFile, "gss_database.mv.db");
             return dbFile;
         }
-        throw new IOException("Can't find main database file in: " + globalDataFolder.get().getAbsolutePath());
+        throw new IOException("Can't find main database file. Check your workspace startup configuration. ");
     }
 
     public ASpatialDb getDb() {
