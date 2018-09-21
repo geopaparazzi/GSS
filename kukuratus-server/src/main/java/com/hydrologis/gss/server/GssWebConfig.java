@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -50,7 +51,11 @@ public class GssWebConfig {
             try {
                 SpiHandler.INSTANCE.getDbProviderSingleton().init();
 
-                File dataFolder = KukuratusWorkspace.getInstance().getDataFolder(null).get();
+                Optional<File> globalDataFolder = KukuratusWorkspace.getInstance().getGlobalDataFolder();
+                if (!globalDataFolder.isPresent()) {
+                    throw new IllegalArgumentException("No global datafolder found.");
+                }
+                File dataFolder = globalDataFolder.get();
                 File notesOutFile = new File(dataFolder, "notes.png");
                 File imagesOutFile = new File(dataFolder, "images.png");
                 if (!notesOutFile.exists()) {
