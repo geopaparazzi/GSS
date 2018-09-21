@@ -18,31 +18,22 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.views;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.hydrologis.gss.server.GssWorkspace;
 import com.hydrologis.gss.server.utils.BaseMap;
 import com.hydrologis.gss.server.utils.Overlays;
 import com.hydrologis.gss.server.utils.Projects;
-import com.hydrologis.kukuratus.libs.KukuratusLibs;
 import com.hydrologis.kukuratus.libs.spi.DefaultPage;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.StreamVariable;
-import com.vaadin.server.StreamVariable.StreamingEndEvent;
-import com.vaadin.server.StreamVariable.StreamingErrorEvent;
-import com.vaadin.server.StreamVariable.StreamingProgressEvent;
-import com.vaadin.server.StreamVariable.StreamingStartEvent;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Component;
@@ -88,53 +79,64 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
 
         Label basemapsLabel = new Label("Basemaps");
         basemapsLayout.addComponent(basemapsLabel);
+        basemapsLayout.setComponentAlignment(basemapsLabel, Alignment.MIDDLE_CENTER);
 
         basemapsGrid = new Grid<>();
         basemapsGrid.setSelectionMode(SelectionMode.NONE);
         basemapsGrid.setHeaderVisible(false);
         basemapsGrid.setColumns();
-        basemapsGrid.addColumn(BaseMap::getMapName).setExpandRatio(2);
+        basemapsGrid.addColumn(BaseMap::getMapName);
         basemapsGrid.setSizeFull();
         basemapsLayout.addComponent(basemapsGrid);
+        basemapsLayout.setSizeFull();
 
+        basemapsLayout.setExpandRatio(basemapsLabel, 1);
+        basemapsLayout.setExpandRatio(basemapsGrid, 20);
         mainDataLayout.addComponent(basemapsLayout);
-        mainDataLayout.setExpandRatio(basemapsLayout, 1);
 
         // overlays
         VerticalLayout overlaysLayout = new VerticalLayout();
 
         Label overlaysLabel = new Label("Overlays");
         overlaysLayout.addComponent(overlaysLabel);
+        overlaysLabel.setSizeUndefined();
+        overlaysLayout.setComponentAlignment(overlaysLabel, Alignment.MIDDLE_CENTER);
 
         overlaysGrid = new Grid<>();
         overlaysGrid.setSelectionMode(SelectionMode.NONE);
         overlaysGrid.setHeaderVisible(false);
         overlaysGrid.setColumns();
-        overlaysGrid.addColumn(Overlays::getName).setExpandRatio(2);
+        overlaysGrid.addColumn(Overlays::getName);
         overlaysGrid.setSizeFull();
         overlaysLayout.addComponent(overlaysGrid);
+        overlaysLayout.setSizeFull();
+
+        overlaysLayout.setExpandRatio(overlaysLabel, 1);
+        overlaysLayout.setExpandRatio(overlaysGrid, 20);
 
         mainDataLayout.addComponent(overlaysLayout);
-        mainDataLayout.setExpandRatio(overlaysLayout, 1);
 
         // projects
         VerticalLayout projectsLayout = new VerticalLayout();
 
         Label projectsLabel = new Label("Projects");
         projectsLayout.addComponent(projectsLabel);
+        projectsLayout.setComponentAlignment(projectsLabel, Alignment.MIDDLE_CENTER);
 
         projectsGrid = new Grid<>();
         projectsGrid.setSelectionMode(SelectionMode.NONE);
         projectsGrid.setHeaderVisible(false);
         projectsGrid.setColumns();
-        projectsGrid.addColumn(Projects::getName).setExpandRatio(2);
+        projectsGrid.addColumn(Projects::getName);
         projectsGrid.setSizeFull();
         projectsLayout.addComponent(projectsGrid);
+        projectsLayout.setSizeFull();
+
+        projectsLayout.setExpandRatio(projectsLabel, 1);
+        projectsLayout.setExpandRatio(projectsGrid, 20);
 
         mainDataLayout.addComponent(projectsLayout);
-        mainDataLayout.setExpandRatio(projectsLayout, 1);
 
-        addComponent(mainDataLayout);
         mainDataLayout.setSizeFull();
 
         final Label infoLabel = new Label("<b>Drop data to upload here.</b>", ContentMode.HTML);
@@ -149,10 +151,17 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         progressBar.setVisible(false);
         dropPane.addComponent(progressBar);
 
-        addComponent(dropPane);
         dropPane.setWidth("40%");
         dropPane.setHeight("40%");
+
+        addComponent(mainDataLayout);
+        addComponent(dropPane);
+
+        setExpandRatio(mainDataLayout, 3);
+        setExpandRatio(dropPane, 1);
+
         setComponentAlignment(dropPane, Alignment.MIDDLE_CENTER);
+
         setSizeFull();
 
         refresh();
@@ -168,11 +177,11 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
                 final String fileName = html5File.getFileName();
 
                 File outputFile = null;
-                if (isBaseMap(fileName)) {
+                if (GssWorkspace.isBaseMap(fileName)) {
                     outputFile = new File(basemapsFolderFile, fileName);
-                } else if (isOverlay(fileName)) {
+                } else if (GssWorkspace.isOverlay(fileName)) {
                     outputFile = new File(overlayFolderFile, fileName);
-                } else if (isProject(fileName)) {
+                } else if (GssWorkspace.isProject(fileName)) {
                     outputFile = new File(projectsFolderFile, fileName);
                 } else {
                     Notification.show("File " + fileName + " will be ignored. Format not supported.",
@@ -240,55 +249,20 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
     private void refresh() {
         Optional<File> basemapsFolder = GssWorkspace.INSTANCE.getBasemapsFolder();
         basemapsFolder.ifPresent(folder -> {
-            File[] baseMaps = folder.listFiles(new FilenameFilter(){
-                @Override
-                public boolean accept( File dir, String name ) {
-                    return isBaseMap(name);
-                }
-            });
-
-            List<BaseMap> maps = Arrays.asList(baseMaps).stream().map(file -> {
-                BaseMap m = new BaseMap();
-                m.setMapName(file.getName());
-                return m;
-            }).collect(Collectors.toList());
+            List<BaseMap> maps = GssWorkspace.INSTANCE.getBasemaps();
             basemapsGrid.setItems(maps);
         });
 
         Optional<File> overlaysFolder = GssWorkspace.INSTANCE.getOverlaysFolder();
         overlaysFolder.ifPresent(folder -> {
-            File[] overlayMaps = folder.listFiles(new FilenameFilter(){
-                @Override
-                public boolean accept( File dir, String name ) {
-                    return isOverlay(name);
-                }
-
-            });
-
-            List<Overlays> maps = Arrays.asList(overlayMaps).stream().map(file -> {
-                Overlays m = new Overlays();
-                m.setName(file.getName());
-                return m;
-            }).collect(Collectors.toList());
+            List<Overlays> maps = GssWorkspace.INSTANCE.getOverlays();
             overlaysGrid.setItems(maps);
         });
 
         Optional<File> projectsFolder = GssWorkspace.INSTANCE.getProjectsFolder();
         projectsFolder.ifPresent(folder -> {
-            File[] overlayMaps = folder.listFiles(new FilenameFilter(){
-                @Override
-                public boolean accept( File dir, String name ) {
-                    return isProject(name);
-                }
-
-            });
-
-            List<Projects> maps = Arrays.asList(overlayMaps).stream().map(file -> {
-                Projects m = new Projects();
-                m.setName(file.getName());
-                return m;
-            }).collect(Collectors.toList());
-            projectsGrid.setItems(maps);
+            List<Projects> projects = GssWorkspace.INSTANCE.getProjects();
+            projectsGrid.setItems(projects);
         });
 
     }
@@ -322,18 +296,6 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
     @Override
     public boolean onlyAdmin() {
         return true;
-    }
-
-    private boolean isBaseMap( String name ) {
-        return name.toLowerCase().endsWith(".map") || name.toLowerCase().endsWith(".mbtiles");
-    }
-
-    private boolean isOverlay( String name ) {
-        return name.toLowerCase().endsWith(".sqlite");
-    }
-
-    private boolean isProject( String name ) {
-        return name.toLowerCase().endsWith(".gpap");
     }
 
 }
