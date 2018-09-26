@@ -33,6 +33,7 @@ import org.hortonmachine.dbs.h2gis.H2GisDb;
 import org.hortonmachine.dbs.h2gis.H2GisServer;
 import org.hortonmachine.dbs.spatialite.hm.SpatialiteDb;
 
+import com.hydrologis.gss.server.database.objects.Forms;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.GpsLogsData;
@@ -76,9 +77,10 @@ public class GssDbProvider implements DbProvider {
             Images.class, //
             GpsLogs.class, //
             GpsLogsData.class, //
-            GpsLogsProperties.class);
+            GpsLogsProperties.class, //
+            Forms.class);
 
-    public synchronized void init(String... parameters) {
+    public synchronized void init( String... parameters ) {
         if (db != null) {
             return;
         }
@@ -123,9 +125,9 @@ public class GssDbProvider implements DbProvider {
 
             databaseHandler = DatabaseHandler.instance(db);
 
-            if (!dbExistedAlready) {
-                createTables(databaseHandler);
-            }
+//            if (!dbExistedAlready) {
+            createTables(databaseHandler);
+//            }
         } catch (Exception e1) {
             KukuratusLogger.logError(this, e1);
         }

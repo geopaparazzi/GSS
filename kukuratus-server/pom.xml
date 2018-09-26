@@ -36,7 +36,7 @@
 		<vaadin.version>8.4.5</vaadin.version>
 		<vaadin.plugin.version>8.4.5</vaadin.plugin.version>
 
-		<kukuratus.libs.version>0.1.1-SNAPSHOT</kukuratus.libs.version>
+		<kukuratus.libs.version>0.1.1</kukuratus.libs.version>
 		<vleaflet.version>2.0.7</vleaflet.version>
 		<jetty.plugin.version>9.3.9.v20160517</jetty.plugin.version>
 
