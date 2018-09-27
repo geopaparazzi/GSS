@@ -17207,3 +17207,8 @@ div.v-layout.v-horizontal.v-widget {
 	width: 19px;
 	overflow: hidden;
 }
+
+.mytheme .big-icon .v-icon {
+	font-size: 200px;
+	color: #5d9d76;
+}

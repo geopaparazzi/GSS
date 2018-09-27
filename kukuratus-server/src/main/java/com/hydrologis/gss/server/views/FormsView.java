@@ -18,6 +18,13 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.views;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +38,7 @@ import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemDouble;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemDynamicText;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemInteger;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemLabel;
+import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemMap;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemOneToManyConnectedCombo;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemPicture;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemSketch;
@@ -53,10 +61,15 @@ import com.vaadin.event.selection.SingleSelectionListener;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.DateTimeField;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Image;
+import com.vaadin.ui.InlineDateField;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.MenuBar;
@@ -64,6 +77,7 @@ import com.vaadin.ui.MenuBar.MenuItem;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TabSheet.SelectedTabChangeEvent;
+import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 
@@ -205,47 +219,182 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     JSONObject jsonObject = formItems.getJSONObject(i);
                     if (jsonObject.has(Utilities.TAG_TYPE)) {
                         String type = jsonObject.getString(Utilities.TAG_TYPE).trim();
+
+                        String key = null;
+                        if (jsonObject.has(Utilities.TAG_KEY)) {
+                            key = jsonObject.getString(Utilities.TAG_KEY).trim();
+                        }
+                        String label = null;
+                        if (jsonObject.has(Utilities.TAG_LABEL)) {
+                            label = jsonObject.get(Utilities.TAG_LABEL).toString().trim();
+                        }
+                        if (label == null && key != null) {
+                            label = key;
+                        }
+                        String defaultValue = null;
+                        if (jsonObject.has(Utilities.TAG_VALUE)) {
+                            defaultValue = jsonObject.get(Utilities.TAG_VALUE).toString().trim();
+                        }
+                        if (defaultValue == null) {
+                            defaultValue = "";
+                        }
+                        Label mainLabel = new Label("<font color=\"#5d9d76\">" + label + "</font>", ContentMode.HTML);
+                        tab.addComponent(mainLabel);
                         switch( type ) {
+                        case ItemLabel.TYPE:
+                            String size = "20";
+                            if (jsonObject.has(Utilities.TAG_SIZE)) {
+                                size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
+                            }
+                            mainLabel.setValue("<font color=\"#5d9d76\" size=\"" + size + "\">" + defaultValue + "</font>");
+                            break;
+                        case ItemLabel.TYPE_WITHLINE:
+                            size = "20";
+                            if (jsonObject.has(Utilities.TAG_SIZE)) {
+                                size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
+                            }
+                            mainLabel
+                                    .setValue("<u><font color=\"#5d9d76\" size=\"" + size + "\">" + defaultValue + "</font></u>");
+                            break;
                         case ItemBoolean.TYPE:
-                            tab.addComponent(new Label(ItemBoolean.TYPE));
+                            CheckBox checkBox = new CheckBox();
+                            if (defaultValue != null && defaultValue.equals("true")) {
+                                checkBox.setValue(true);
+                            }
+                            tab.addComponent(checkBox);
                             break;
                         case ItemCombo.TYPE:
-                            tab.addComponent(new Label(ItemCombo.TYPE));
+                            String[] values = new String[0];
+                            if (jsonObject.has(Utilities.TAG_VALUES)) {
+                                JSONObject valuesObject = jsonObject.getJSONObject(Utilities.TAG_VALUES);
+                                if (valuesObject.has(Utilities.TAG_ITEMS)) {
+                                    JSONArray valuesArray = valuesObject.getJSONArray(Utilities.TAG_ITEMS);
+                                    values = new String[valuesArray.length()];
+                                    for( int j = 0; j < valuesArray.length(); j++ ) {
+                                        JSONObject itemObj = valuesArray.getJSONObject(j);
+                                        values[j] = itemObj.getString(Utilities.TAG_ITEM);
+                                    }
+                                }
+                            }
+
+                            ComboBox<String> comboBox = new ComboBox<>();
+                            comboBox.setItems(values);
+                            if (defaultValue != null) {
+                                comboBox.setSelectedItem(defaultValue);
+                            }
+                            tab.addComponent(comboBox);
+                            break;
+                        case ItemCombo.MULTI_TYPE:
+                            String[] multiValues = new String[0];
+                            if (jsonObject.has(Utilities.TAG_VALUES)) {
+                                JSONObject valuesObject = jsonObject.getJSONObject(Utilities.TAG_VALUES);
+                                if (valuesObject.has(Utilities.TAG_ITEMS)) {
+                                    JSONArray valuesArray = valuesObject.getJSONArray(Utilities.TAG_ITEMS);
+                                    multiValues = new String[valuesArray.length()];
+                                    for( int j = 0; j < valuesArray.length(); j++ ) {
+                                        JSONObject itemObj = valuesArray.getJSONObject(j);
+                                        multiValues[j] = itemObj.getString(Utilities.TAG_ITEM);
+                                    }
+                                }
+                            }
+
+                            ComboBox<String> multiComboBox = new ComboBox<>();
+                            multiComboBox.setItems(multiValues);
+                            if (defaultValue != null) {
+                                multiComboBox.setSelectedItem(defaultValue);
+                            }
+                            tab.addComponent(multiComboBox);
+                            break;
+                        case ItemDate.TYPE:
+                            InlineDateField date = new InlineDateField();
+                            if (defaultValue.length() == 0) {
+                                date.setValue(LocalDate.now());
+                            } else {
+                                try {
+                                    if (defaultValue.trim().length() > 0) {
+                                        DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
+                                        DateTimeFormatter formatter = b.appendPattern("yyyy-MM-dd").toFormatter();
+                                        date.setValue(LocalDate.parse(defaultValue, formatter));
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            tab.addComponent(date);
+                            break;
+                        case ItemTime.TYPE:
+                            DateTimeField time = new DateTimeField();
+                            if (defaultValue.length() == 0) {
+                                time.setValue(LocalDateTime.now());
+                                time.setDateFormat("HH:mm:ss");
+                            } else {
+                                try {
+                                    if (defaultValue.trim().length() > 0) {
+                                        DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
+                                        DateTimeFormatter formatter = b.appendPattern("HH:mm:ss").toFormatter();
+                                        time.setValue(LocalDateTime.parse(defaultValue, formatter));
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+
+                            tab.addComponent(time);
+                            break;
+                        case ItemInteger.TYPE:
+                            TextField integerField = new TextField();
+                            integerField.setValue(defaultValue);
+                            tab.addComponent(integerField);
+                            break;
+                        case ItemDouble.TYPE:
+                            TextField doubleField = new TextField();
+                            doubleField.setValue(defaultValue);
+                            tab.addComponent(doubleField);
+                            break;
+                        case ItemDynamicText.TYPE:
+                            String[] split = defaultValue.split(";");
+                            for( String string : split ) {
+                                TextField dynamicField = new TextField();
+                                dynamicField.setValue(string.trim());
+                                tab.addComponent(dynamicField);
+                            }
+                            Button addButton = new Button(VaadinIcons.PLUS_CIRCLE);
+                            addButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
+                            tab.addComponent(addButton);
+                            break;
+                        case ItemPicture.TYPE:
+                            Label pictureImage = new Label();
+                            pictureImage.setContentMode(ContentMode.HTML);
+                            pictureImage.setValue(VaadinIcons.PICTURE.getHtml());
+                            pictureImage.addStyleName("big-icon");
+                            tab.addComponent(pictureImage);
+                            break;
+                        case ItemSketch.TYPE:
+                            Label sketchImage = new Label();
+                            sketchImage.setContentMode(ContentMode.HTML);
+                            sketchImage.setValue(VaadinIcons.PAINTBRUSH.getHtml());
+                            sketchImage.addStyleName("big-icon");
+                            tab.addComponent(sketchImage);
+                            break;
+                        case ItemMap.TYPE:
+                            Label mapImage = new Label();
+                            mapImage.setContentMode(ContentMode.HTML);
+                            mapImage.setValue(VaadinIcons.MAP_MARKER.getHtml());
+                            mapImage.addStyleName("big-icon");
+                            tab.addComponent(mapImage);
+                            break;
+                        case ItemText.TYPE:
+                            TextField textField = new TextField();
+                            textField.setValue(defaultValue);
+                            tab.addComponent(textField);
                             break;
                         case ItemConnectedCombo.TYPE:
                             tab.addComponent(new Label(ItemConnectedCombo.TYPE));
                             break;
-                        case ItemDate.TYPE:
-                            tab.addComponent(new Label(ItemDate.TYPE));
-                            break;
-                        case ItemDouble.TYPE:
-                            tab.addComponent(new Label(ItemDouble.TYPE));
-                            break;
-                        case ItemDynamicText.TYPE:
-                            tab.addComponent(new Label(ItemDynamicText.TYPE));
-                            break;
-                        case ItemInteger.TYPE:
-                            tab.addComponent(new Label(ItemInteger.TYPE));
-                            break;
-                        case ItemLabel.TYPE:
-                            tab.addComponent(new Label(ItemLabel.TYPE));
-                            break;
                         case ItemOneToManyConnectedCombo.TYPE:
                             tab.addComponent(new Label(ItemOneToManyConnectedCombo.TYPE));
                             break;
-                        case ItemPicture.TYPE:
-                            tab.addComponent(new Label(ItemPicture.TYPE));
-                            break;
-                        case ItemSketch.TYPE:
-                            tab.addComponent(new Label(ItemSketch.TYPE));
-                            break;
-                        case ItemText.TYPE:
-                            tab.addComponent(new Label(ItemText.TYPE));
-                            break;
-                        case ItemTime.TYPE:
-                            tab.addComponent(new Label(ItemTime.TYPE));
-                            break;
-
                         default:
                             break;
                         }
