@@ -18,17 +18,21 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.views;
 
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 
+import org.hortonmachine.gears.io.geopaparazzi.forms.Section;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemBoolean;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemCombo;
@@ -48,6 +52,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hydrologis.gss.server.database.objects.Forms;
+import com.hydrologis.gss.server.utils.KukuratusWindows;
+import com.hydrologis.gss.server.utils.TextRunnable;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
@@ -61,7 +67,10 @@ import com.vaadin.event.selection.SingleSelectionListener;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.server.FileDownloader;
+import com.vaadin.server.StreamResource;
 import com.vaadin.shared.ui.ContentMode;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
@@ -73,12 +82,15 @@ import com.vaadin.ui.InlineDateField;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.MenuBar;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.MenuBar.MenuItem;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.TabSheet.SelectedTabChangeEvent;
+import com.vaadin.ui.TabSheet.Tab;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.Window;
 import com.vaadin.ui.themes.ValoTheme;
 
 @SuppressWarnings("serial")
@@ -92,6 +104,19 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
     private VerticalLayout formAndMenubarAreaLayout;
     private VerticalLayout formAreaLayout;
+
+    private TabSheet currentSelectedSectionTabSheet;
+    private Tab currentSelectedTab;
+
+    private ComboBox<Forms> tagsCombo;
+
+    private JSONObject curentSelectedSectionObject;
+
+    private String curentSelectedSectionName;
+
+    private MenuItem sectionsMenuItem;
+
+    private MenuItem sectionsSeparatorMenuItem;
 
     @Override
     public void enter( ViewChangeEvent event ) {
@@ -108,13 +133,14 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
             Button addTag = new Button("Add");
             addTag.setStyleName(ValoTheme.BUTTON_PRIMARY);
+            addTag.addClickListener(e -> addTag());
             Button deleteTag = new Button("Remove");
             deleteTag.setStyleName(ValoTheme.BUTTON_DANGER);
             deleteTag.setVisible(false);
+            deleteTag.addClickListener(e -> deleteTag());
 
-            ComboBox<Forms> tagsCombo = new ComboBox<>();
-            tagsCombo.setItems(formsList);
-            tagsCombo.setPlaceholder("No form selected");
+            tagsCombo = new ComboBox<>();
+            tagsCombo.setPlaceholder("No tags selected");
             tagsCombo.setItemCaptionGenerator(Forms::getName);
             tagsCombo.setEmptySelectionAllowed(false);
             tagsCombo.addSelectionListener(new SingleSelectionListener<Forms>(){
@@ -122,7 +148,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                 public void selectionChange( SingleSelectionEvent<Forms> event ) {
                     Optional<Forms> selectedForm = event.getFirstSelectedItem();
                     selectedForm.ifPresent(form -> {
-                        selectForm(form);
+                        currentSelectedTags = form;
+                        selectForm();
                         deleteTag.setVisible(true);
                     });
                 }
@@ -132,11 +159,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             addComponent(tagsLayout);
 
             formAndMenubarAreaLayout = new VerticalLayout();
-            Panel placeHolder = new Panel();
-            placeHolder.addStyleName(ValoTheme.PANEL_WELL);
-            placeHolder.setSizeFull();
-            formAndMenubarAreaLayout.addComponent(placeHolder);
-            addComponentsAndExpand(formAndMenubarAreaLayout);
+            resetTagsCombo(formsList);
 
             setSizeFull();
 
@@ -145,27 +168,106 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         }
     }
 
-    protected void selectForm( Forms form ) {
-        currentSelectedTags = form;
+    private void resetTagsCombo( List<Forms> formsList ) {
+        tagsCombo.setItems(formsList);
+        formAndMenubarAreaLayout.removeAllComponents();
+        Panel placeHolder = new Panel();
+        placeHolder.addStyleName(ValoTheme.PANEL_WELL);
+        placeHolder.setSizeFull();
+        formAndMenubarAreaLayout.addComponent(placeHolder);
+        addComponentsAndExpand(formAndMenubarAreaLayout);
+    }
 
-        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(form.form);
+    private void deleteTag() {
+        String message = "<font color=\"red\"><h3>Are you sure you want to delete tags: <b>" + currentSelectedTags.name
+                + "</b></h3></font>";
+        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){
+            public void run() {
+                try {
+                    QueryBuilder<Forms, ? > formsQB = formsDAO.queryBuilder();
+                    Forms formToDelete = formsQB.where().eq(Forms.NAME_FIELD_NAME, currentSelectedTags.name).queryForFirst();
+                    if (formToDelete == null) {
+                        getUI().access(() -> {
+                            KukuratusWindows.openWarningNotification("The selected form doesn't exist anymore.");
+                        });
+                        return;
+                    }
+
+                    formsDAO.delete(formToDelete);
+                    formsQB = formsDAO.queryBuilder();
+                    List<Forms> formsList = formsQB.where().eq(Forms.WEBUSER_FIELD_NAME, authenticatedUsername).query();
+                    getUI().access(() -> {
+                        resetTagsCombo(formsList);
+                    });
+
+                } catch (SQLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    private void addTag() {
+        String message = "<h3>Add a new tag definition. Enter a name for it!</h3>";
+        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+            @Override
+            public void runOnText( String newTagName ) {
+                newTagName = newTagName.trim();
+
+                try {
+                    QueryBuilder<Forms, ? > formsQB = formsDAO.queryBuilder();
+                    Forms forms = formsQB.where().eq(Forms.NAME_FIELD_NAME, newTagName).queryForFirst();
+                    if (forms != null) {
+                        getUI().access(() -> {
+                            KukuratusWindows.openWarningNotification("A form with that name already exists.");
+                        });
+                        return;
+                    }
+
+                    Forms newTag = new Forms(newTagName, "[]", authenticatedUsername);
+                    newTag = formsDAO.createIfNotExists(newTag);
+                    formsQB = formsDAO.queryBuilder();
+                    List<Forms> formsList = formsQB.where().eq(Forms.WEBUSER_FIELD_NAME, authenticatedUsername).query();
+                    Forms _newTag = newTag;
+                    getUI().access(() -> {
+                        resetTagsCombo(formsList);
+                        tagsCombo.setSelectedItem(_newTag);
+                    });
+
+                } catch (SQLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+            }
+        });
+    }
+
+    protected void selectForm() {
+        curentSelectedSectionName = null;
+        curentSelectedSectionObject = null;
+
+        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
 
         formAndMenubarAreaLayout.removeAllComponents();
 
         MenuBar menuBar = new MenuBar();
         menuBar.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
 
-        MenuItem sectionsItem = menuBar.addItem("Sections", VaadinIcons.TASKS, null);
+        sectionsMenuItem = menuBar.addItem("Sections", VaadinIcons.TASKS, null);
         sectionsMap.keySet().stream().forEach(sectionName -> {
-            sectionsItem.addItem(sectionName, VaadinIcons.FOLDER_OPEN, i -> {
-                loadSection(sectionsMap.get(sectionName));
+            sectionsMenuItem.addItem(sectionName, VaadinIcons.FOLDER_OPEN, i -> {
+                curentSelectedSectionName = sectionName;
+                curentSelectedSectionObject = sectionsMap.get(sectionName);
+                loadSection(curentSelectedSectionObject);
             });
         });
-        sectionsItem.addSeparator();
-        sectionsItem.addItem("add new", VaadinIcons.PLUS, i -> {
-            removeTab();
+        sectionsSeparatorMenuItem = sectionsMenuItem.addSeparator();
+        sectionsMenuItem.addItem("add new", VaadinIcons.PLUS, i -> {
+            addNewSection();
         });
-        sectionsItem.addItem("remove", VaadinIcons.MINUS, i -> {
+        sectionsMenuItem.addItem("remove selected", VaadinIcons.MINUS, i -> {
             removeSection();
         });
 
@@ -188,6 +290,11 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         formAndMenubarAreaLayout.addComponent(menuBar);
         formAreaLayout = new VerticalLayout();
         formAndMenubarAreaLayout.addComponentsAndExpand(formAreaLayout);
+
+        Panel placeHolder = new Panel();
+        placeHolder.addStyleName(ValoTheme.PANEL_WELL);
+        placeHolder.setSizeFull();
+        formAreaLayout.addComponentsAndExpand(placeHolder);
     }
 
     private void loadSection( JSONObject sectionObject ) {
@@ -198,19 +305,17 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
         List<String> formNames4Section = Utilities.getFormNames4Section(sectionObject);
 
-        TabSheet sectionTabs = new TabSheet();
-        sectionTabs.setHeight(100.0f, Unit.PERCENTAGE);
-        sectionTabs.addStyleName(ValoTheme.TABSHEET_FRAMED);
-        sectionTabs.addStyleName(ValoTheme.TABSHEET_PADDED_TABBAR);
-        sectionTabs.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener(){
+        currentSelectedSectionTabSheet = new TabSheet();
+        currentSelectedSectionTabSheet.setHeight(100.0f, Unit.PERCENTAGE);
+        currentSelectedSectionTabSheet.addStyleName(ValoTheme.TABSHEET_FRAMED);
+        currentSelectedSectionTabSheet.addStyleName(ValoTheme.TABSHEET_PADDED_TABBAR);
+        currentSelectedSectionTabSheet.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener(){
             public void selectedTabChange( SelectedTabChangeEvent event ) {
-                // Find the tabsheet
-                TabSheet tabsheet = event.getTabSheet();
+                currentSelectedSectionTabSheet = event.getTabSheet();
+                Layout tab = (Layout) currentSelectedSectionTabSheet.getSelectedTab();
 
-                // Find the tab (here we know it's a layout)
-                Layout tab = (Layout) tabsheet.getSelectedTab();
-
-                String formName = tabsheet.getTab(tab).getCaption();
+                currentSelectedTab = currentSelectedSectionTabSheet.getTab(tab);
+                String formName = currentSelectedTab.getCaption();
                 JSONObject formJson = Utilities.getForm4Name(formName, sectionObject);
                 tab.removeAllComponents();
 
@@ -306,15 +411,15 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                             tab.addComponent(multiComboBox);
                             break;
                         case ItemDate.TYPE:
-                            InlineDateField date = new InlineDateField();
+                            DateTimeField date = new DateTimeField();
                             if (defaultValue.length() == 0) {
-                                date.setValue(LocalDate.now());
+                                date.setValue(LocalDateTime.now());
                             } else {
                                 try {
                                     if (defaultValue.trim().length() > 0) {
                                         DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
                                         DateTimeFormatter formatter = b.appendPattern("yyyy-MM-dd").toFormatter();
-                                        date.setValue(LocalDate.parse(defaultValue, formatter));
+                                        date.setValue(LocalDateTime.parse(defaultValue, formatter));
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -420,18 +525,17 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         for( String name : formNames4Section ) {
             final VerticalLayout layout = new VerticalLayout();
             layout.setMargin(true);
-            sectionTabs.addTab(layout, name);
+            currentSelectedSectionTabSheet.addTab(layout, name);
         }
 
-        formAreaLayout.addComponentsAndExpand(sectionTabs);
-    }
-
-    private void removeWidget() {
-        // TODO Auto-generated method stub
-
+        formAreaLayout.addComponentsAndExpand(currentSelectedSectionTabSheet);
     }
 
     private void addNewWidget() {
+        // TODO Auto-generated method stub
+
+    }
+    private void removeWidget() {
         // TODO Auto-generated method stub
 
     }
@@ -440,14 +544,86 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         // TODO Auto-generated method stub
 
     }
-
-    private void removeSection() {
+    private void removeTab() {
         // TODO Auto-generated method stub
 
     }
 
-    private void removeTab() {
-        // TODO Auto-generated method stub
+    private void addNewSection() {
+        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
+        String message = "<h3>Add a new Section to Tag: <b>" + currentSelectedTags.name + "</b>. Enter a name for it!</h3>";
+        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+            @Override
+            public void runOnText( String newSectionName ) {
+                newSectionName = newSectionName.trim();
+
+                JSONObject sectionObj = sectionsMap.get(newSectionName);
+                if (sectionObj != null) {
+                    getUI().access(() -> {
+                        KukuratusWindows.openWarningNotification("A section with that name already exists.");
+                    });
+                    return;
+                }
+
+                Section newSection = new Section(newSectionName);
+
+                JSONObject sectionJson = new JSONObject(newSection.toString());
+                sectionsMap.put(newSectionName, sectionJson);
+
+                JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
+                String rootString = rootArray.toString(2);
+                currentSelectedTags.form = rootString;
+                try {
+                    formsDAO.update(currentSelectedTags);
+                    String _newSectionName = newSectionName;
+                    getUI().access(() -> {
+                        sectionsMenuItem.addItemBefore(_newSectionName, VaadinIcons.FOLDER_OPEN, i -> {
+                            curentSelectedSectionName = _newSectionName;
+                            curentSelectedSectionObject = sectionJson;
+                            loadSection(curentSelectedSectionObject);
+                        }, sectionsSeparatorMenuItem);
+                    });
+                } catch (SQLException e) {
+                    KukuratusWindows.openErrorNotification(e.getMessage());
+                    e.printStackTrace();
+                }
+
+            }
+
+        });
+
+    }
+    private void removeSection() {
+        if (curentSelectedSectionName == null) {
+            return;
+        }
+        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
+        String message = "<font color=\"red\"><h3>Are you sure you want to delete the Section: <b>" + curentSelectedSectionName
+                + "</b></h3></font>";
+        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){
+            public void run() {
+                JSONObject sectionObj = sectionsMap.remove(curentSelectedSectionName);
+                if (sectionObj == null) {
+                    getUI().access(() -> {
+                        KukuratusWindows.openWarningNotification("The selected section doesn't exist.");
+                    });
+                    return;
+                }
+
+                JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
+                String rootString = rootArray.toString(2);
+                currentSelectedTags.form = rootString;
+                try {
+                    formsDAO.update(currentSelectedTags);
+                    getUI().access(() -> {
+                        selectForm();
+                    });
+                } catch (SQLException e) {
+                    KukuratusWindows.openErrorNotification(e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        });
 
     }
 
