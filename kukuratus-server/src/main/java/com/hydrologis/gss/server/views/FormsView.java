@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 
+import org.hortonmachine.gears.io.geopaparazzi.forms.Form;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Section;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemBoolean;
@@ -105,8 +106,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     private VerticalLayout formAndMenubarAreaLayout;
     private VerticalLayout formAreaLayout;
 
-    private TabSheet currentSelectedSectionTabSheet;
-    private Tab currentSelectedTab;
+    private TabSheet currentSelectedFormsTabSheet;
+    private Tab currentSelectedFormTab;
 
     private ComboBox<Forms> tagsCombo;
 
@@ -117,6 +118,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     private MenuItem sectionsMenuItem;
 
     private MenuItem sectionsSeparatorMenuItem;
+
+    private MenuItem formsMenuItem;
 
     @Override
     public void enter( ViewChangeEvent event ) {
@@ -260,7 +263,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             sectionsMenuItem.addItem(sectionName, VaadinIcons.FOLDER_OPEN, i -> {
                 curentSelectedSectionName = sectionName;
                 curentSelectedSectionObject = sectionsMap.get(sectionName);
-                loadSection(curentSelectedSectionObject);
+                loadSection();
             });
         });
         sectionsSeparatorMenuItem = sectionsMenuItem.addSeparator();
@@ -271,12 +274,12 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             removeSection();
         });
 
-        MenuItem tabsItem = menuBar.addItem("Tabs", VaadinIcons.TABS, null);
-        tabsItem.addItem("add new", VaadinIcons.PLUS, i -> {
-            addNewTab();
+        formsMenuItem = menuBar.addItem("Forms", VaadinIcons.TABS, null);
+        formsMenuItem.addItem("add new", VaadinIcons.PLUS, i -> {
+            addNewForm();
         });
-        tabsItem.addItem("remove", VaadinIcons.MINUS, i -> {
-            removeTab();
+        formsMenuItem.addItem("remove selected", VaadinIcons.MINUS, i -> {
+            removeForm();
         });
 
         MenuItem widgetsItem = menuBar.addItem("Widgets", VaadinIcons.INPUT, null);
@@ -297,26 +300,26 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         formAreaLayout.addComponentsAndExpand(placeHolder);
     }
 
-    private void loadSection( JSONObject sectionObject ) {
+    private void loadSection() {
         if (formAreaLayout == null) {
             throw new RuntimeException();
         }
         formAreaLayout.removeAllComponents();
 
-        List<String> formNames4Section = Utilities.getFormNames4Section(sectionObject);
+        List<String> formNames4Section = Utilities.getFormNames4Section(curentSelectedSectionObject);
 
-        currentSelectedSectionTabSheet = new TabSheet();
-        currentSelectedSectionTabSheet.setHeight(100.0f, Unit.PERCENTAGE);
-        currentSelectedSectionTabSheet.addStyleName(ValoTheme.TABSHEET_FRAMED);
-        currentSelectedSectionTabSheet.addStyleName(ValoTheme.TABSHEET_PADDED_TABBAR);
-        currentSelectedSectionTabSheet.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener(){
+        currentSelectedFormsTabSheet = new TabSheet();
+        currentSelectedFormsTabSheet.setHeight(100.0f, Unit.PERCENTAGE);
+        currentSelectedFormsTabSheet.addStyleName(ValoTheme.TABSHEET_FRAMED);
+        currentSelectedFormsTabSheet.addStyleName(ValoTheme.TABSHEET_PADDED_TABBAR);
+        currentSelectedFormsTabSheet.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener(){
             public void selectedTabChange( SelectedTabChangeEvent event ) {
-                currentSelectedSectionTabSheet = event.getTabSheet();
-                Layout tab = (Layout) currentSelectedSectionTabSheet.getSelectedTab();
+                currentSelectedFormsTabSheet = event.getTabSheet();
+                Layout tab = (Layout) currentSelectedFormsTabSheet.getSelectedTab();
 
-                currentSelectedTab = currentSelectedSectionTabSheet.getTab(tab);
-                String formName = currentSelectedTab.getCaption();
-                JSONObject formJson = Utilities.getForm4Name(formName, sectionObject);
+                currentSelectedFormTab = currentSelectedFormsTabSheet.getTab(tab);
+                String formName = currentSelectedFormTab.getCaption();
+                JSONObject formJson = Utilities.getForm4Name(formName, curentSelectedSectionObject);
                 tab.removeAllComponents();
 
                 JSONArray formItems = Utilities.getFormItems(formJson);
@@ -525,10 +528,10 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         for( String name : formNames4Section ) {
             final VerticalLayout layout = new VerticalLayout();
             layout.setMargin(true);
-            currentSelectedSectionTabSheet.addTab(layout, name);
+            currentSelectedFormsTabSheet.addTab(layout, name);
         }
 
-        formAreaLayout.addComponentsAndExpand(currentSelectedSectionTabSheet);
+        formAreaLayout.addComponentsAndExpand(currentSelectedFormsTabSheet);
     }
 
     private void addNewWidget() {
@@ -540,12 +543,108 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
     }
 
-    private void addNewTab() {
-        // TODO Auto-generated method stub
+    private void addNewForm() {
+        if (curentSelectedSectionName == null) {
+            KukuratusWindows.openInfoNotification("No section selected.");
+            return;
+        }
+
+        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
+        JSONObject sectionObject = sectionsMap.get(curentSelectedSectionName);
+        List<String> formNames = Utilities.getFormNames4Section(sectionObject);
+
+        String message = "<h3>Add a new Form to the Section: <b>" + curentSelectedSectionName + "</b>. Enter a name for it!</h3>";
+        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+            @Override
+            public void runOnText( String newFormName ) {
+                newFormName = newFormName.trim();
+                if (formNames.contains(newFormName)) {
+                    getUI().access(() -> {
+                        KukuratusWindows.openWarningNotification("A form with that name already exists.");
+                    });
+                    return;
+                }
+
+                Form newForm = new Form(newFormName);
+
+                JSONObject formJson = new JSONObject(newForm.toString());
+                JSONArray formsArray = sectionObject.getJSONArray(Utilities.ATTR_FORMS);
+                formsArray.put(formJson);
+                
+                sectionsMap.put(curentSelectedSectionName, sectionObject);
+                curentSelectedSectionObject = sectionObject;
+                
+                JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
+                String rootString = rootArray.toString(2);
+                currentSelectedTags.form = rootString;
+                try {
+                    formsDAO.update(currentSelectedTags);
+                    String _newFormName = newFormName;
+                    getUI().access(() -> {
+                        final VerticalLayout layout = new VerticalLayout();
+                        layout.setMargin(true);
+                        Tab newTab = currentSelectedFormsTabSheet.addTab(layout, _newFormName);
+                        currentSelectedFormsTabSheet.setSelectedTab(newTab);
+                    });
+                } catch (SQLException e) {
+                    KukuratusWindows.openErrorNotification(e.getMessage());
+                    e.printStackTrace();
+                }
+
+            }
+
+        });
 
     }
-    private void removeTab() {
-        // TODO Auto-generated method stub
+    private void removeForm() {
+        if (curentSelectedSectionName == null) {
+            KukuratusWindows.openInfoNotification("No section selected.");
+            return;
+        }
+
+        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
+        JSONObject sectionObject = sectionsMap.get(curentSelectedSectionName);
+        List<String> formNames = Utilities.getFormNames4Section(sectionObject);
+
+        String message = "<h3>Add a new Form to the Section: <b>" + curentSelectedSectionName + "</b>. Enter a name for it!</h3>";
+        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+            @Override
+            public void runOnText( String newFormName ) {
+                newFormName = newFormName.trim();
+                if (formNames.contains(newFormName)) {
+                    getUI().access(() -> {
+                        KukuratusWindows.openWarningNotification("A form with that name already exists.");
+                    });
+                    return;
+                }
+
+                Form newForm = new Form(newFormName);
+
+                JSONObject formJson = new JSONObject(newForm.toString());
+                JSONArray formsArray = sectionObject.getJSONArray(Utilities.ATTR_FORMS);
+                formsArray.put(formJson);
+                
+                sectionsMap.put(curentSelectedSectionName, sectionObject);
+
+                JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
+                String rootString = rootArray.toString(2);
+                currentSelectedTags.form = rootString;
+                try {
+                    formsDAO.update(currentSelectedTags);
+                    String _newFormName = newFormName;
+                    getUI().access(() -> {
+                        final VerticalLayout layout = new VerticalLayout();
+                        layout.setMargin(true);
+                        currentSelectedFormsTabSheet.addTab(layout, _newFormName);
+                    });
+                } catch (SQLException e) {
+                    KukuratusWindows.openErrorNotification(e.getMessage());
+                    e.printStackTrace();
+                }
+
+            }
+
+        });
 
     }
 
@@ -580,7 +679,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                         sectionsMenuItem.addItemBefore(_newSectionName, VaadinIcons.FOLDER_OPEN, i -> {
                             curentSelectedSectionName = _newSectionName;
                             curentSelectedSectionObject = sectionJson;
-                            loadSection(curentSelectedSectionObject);
+                            loadSection();
                         }, sectionsSeparatorMenuItem);
                     });
                 } catch (SQLException e) {
