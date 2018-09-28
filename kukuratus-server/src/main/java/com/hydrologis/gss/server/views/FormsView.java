@@ -261,8 +261,9 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         sectionsMenuItem = menuBar.addItem("Sections", VaadinIcons.TASKS, null);
         sectionsMap.keySet().stream().forEach(sectionName -> {
             sectionsMenuItem.addItem(sectionName, VaadinIcons.FOLDER_OPEN, i -> {
+                LinkedHashMap<String, JSONObject> tmpSectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
                 curentSelectedSectionName = sectionName;
-                curentSelectedSectionObject = sectionsMap.get(sectionName);
+                curentSelectedSectionObject = tmpSectionsMap.get(sectionName);
                 loadSection();
             });
         });
