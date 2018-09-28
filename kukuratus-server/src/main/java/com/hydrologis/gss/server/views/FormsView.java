@@ -570,10 +570,10 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                 JSONObject formJson = new JSONObject(newForm.toString());
                 JSONArray formsArray = sectionObject.getJSONArray(Utilities.ATTR_FORMS);
                 formsArray.put(formJson);
-                
+
                 sectionsMap.put(curentSelectedSectionName, sectionObject);
                 curentSelectedSectionObject = sectionObject;
-                
+
                 JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
                 String rootString = rootArray.toString(2);
                 currentSelectedTags.form = rootString;
@@ -602,48 +602,32 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             return;
         }
 
-        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
-        JSONObject sectionObject = sectionsMap.get(curentSelectedSectionName);
-        List<String> formNames = Utilities.getFormNames4Section(sectionObject);
+        if (currentSelectedFormTab == null) {
+            KukuratusWindows.openInfoNotification("No form selected.");
+            return;
+        }
+        String formName = currentSelectedFormTab.getCaption();
 
-        String message = "<h3>Add a new Form to the Section: <b>" + curentSelectedSectionName + "</b>. Enter a name for it!</h3>";
-        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+        String message = "<h3>Are you sure you want to delete Form: <b>" + formName + "</b>?</h3>";
+        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){
             @Override
-            public void runOnText( String newFormName ) {
-                newFormName = newFormName.trim();
-                if (formNames.contains(newFormName)) {
-                    getUI().access(() -> {
-                        KukuratusWindows.openWarningNotification("A form with that name already exists.");
-                    });
-                    return;
-                }
-
-                Form newForm = new Form(newFormName);
-
-                JSONObject formJson = new JSONObject(newForm.toString());
-                JSONArray formsArray = sectionObject.getJSONArray(Utilities.ATTR_FORMS);
-                formsArray.put(formJson);
+            public void run() {
+                Utilities.removeFormFromSection(formName, curentSelectedSectionObject);
                 
-                sectionsMap.put(curentSelectedSectionName, sectionObject);
-
+                LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
+                sectionsMap.put(curentSelectedSectionName, curentSelectedSectionObject);
                 JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
                 String rootString = rootArray.toString(2);
                 currentSelectedTags.form = rootString;
                 try {
                     formsDAO.update(currentSelectedTags);
-                    String _newFormName = newFormName;
-                    getUI().access(() -> {
-                        final VerticalLayout layout = new VerticalLayout();
-                        layout.setMargin(true);
-                        currentSelectedFormsTabSheet.addTab(layout, _newFormName);
-                    });
                 } catch (SQLException e) {
                     KukuratusWindows.openErrorNotification(e.getMessage());
-                    e.printStackTrace();
                 }
-
+                getUI().access(() -> {
+                    currentSelectedFormsTabSheet.removeTab(currentSelectedFormTab);
+                });
             }
-
         });
 
     }
