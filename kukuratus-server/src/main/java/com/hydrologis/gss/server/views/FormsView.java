@@ -19,18 +19,14 @@
 package com.hydrologis.gss.server.views;
 
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.Collection;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.hortonmachine.gears.io.geopaparazzi.forms.Form;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Section;
@@ -53,14 +49,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hydrologis.gss.server.database.objects.Forms;
-import com.hydrologis.gss.server.utils.KukuratusWindows;
-import com.hydrologis.gss.server.utils.TextRunnable;
+import com.hydrologis.gss.server.utils.GssWindows;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
 import com.hydrologis.kukuratus.libs.spi.DefaultPage;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
+import com.hydrologis.kukuratus.libs.utils.KukuratusWindows;
+import com.hydrologis.kukuratus.libs.utils.TextRunnable;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.vaadin.event.selection.SingleSelectionEvent;
@@ -68,22 +65,16 @@ import com.vaadin.event.selection.SingleSelectionListener;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
-import com.vaadin.server.FileDownloader;
-import com.vaadin.server.StreamResource;
 import com.vaadin.shared.ui.ContentMode;
-import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.DateTimeField;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Image;
-import com.vaadin.ui.InlineDateField;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Layout;
 import com.vaadin.ui.MenuBar;
-import com.vaadin.ui.Notification;
 import com.vaadin.ui.MenuBar.MenuItem;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.TabSheet;
@@ -91,7 +82,6 @@ import com.vaadin.ui.TabSheet.SelectedTabChangeEvent;
 import com.vaadin.ui.TabSheet.Tab;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Window;
 import com.vaadin.ui.themes.ValoTheme;
 
 @SuppressWarnings("serial")
@@ -120,6 +110,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     private MenuItem sectionsSeparatorMenuItem;
 
     private MenuItem formsMenuItem;
+
+    private MenuItem widgetsMenuItem;
 
     @Override
     public void enter( ViewChangeEvent event ) {
@@ -282,14 +274,23 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         formsMenuItem.addItem("remove selected", VaadinIcons.MINUS, i -> {
             removeForm();
         });
+        formsMenuItem.setVisible(false);
 
-        MenuItem widgetsItem = menuBar.addItem("Widgets", VaadinIcons.INPUT, null);
-        widgetsItem.addItem("add new", VaadinIcons.PLUS, i -> {
-            addNewWidget();
+        widgetsMenuItem = menuBar.addItem("Widgets", VaadinIcons.INPUT, null);
+        List<String> widgetNames = Arrays.asList(Utilities.ITEM_NAMES).stream().filter(name -> {
+            boolean isUnsupported = name.equals(ItemConnectedCombo.TYPE) || name.equals(ItemOneToManyConnectedCombo.TYPE);
+            return !isUnsupported;
+        }).sorted().collect(Collectors.toList());
+
+        widgetNames.forEach(name -> {
+            widgetsMenuItem.addItem("add " + name, VaadinIcons.PLUS, i -> {
+                addNewWidget(name);
+            });
         });
-        widgetsItem.addItem("remove", VaadinIcons.MINUS, i -> {
+        widgetsMenuItem.addItem("remove last", VaadinIcons.MINUS, i -> {
             removeWidget();
         });
+        widgetsMenuItem.setVisible(false);
 
         formAndMenubarAreaLayout.addComponent(menuBar);
         formAreaLayout = new VerticalLayout();
@@ -306,6 +307,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             throw new RuntimeException();
         }
         formAreaLayout.removeAllComponents();
+        formsMenuItem.setVisible(true);
+        widgetsMenuItem.setVisible(true);
 
         List<String> formNames4Section = Utilities.getFormNames4Section(curentSelectedSectionObject);
 
@@ -316,213 +319,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         currentSelectedFormsTabSheet.addSelectedTabChangeListener(new TabSheet.SelectedTabChangeListener(){
             public void selectedTabChange( SelectedTabChangeEvent event ) {
                 currentSelectedFormsTabSheet = event.getTabSheet();
-                Layout tab = (Layout) currentSelectedFormsTabSheet.getSelectedTab();
-
-                currentSelectedFormTab = currentSelectedFormsTabSheet.getTab(tab);
-                String formName = currentSelectedFormTab.getCaption();
-                JSONObject formJson = Utilities.getForm4Name(formName, curentSelectedSectionObject);
-                tab.removeAllComponents();
-
-                JSONArray formItems = Utilities.getFormItems(formJson);
-                for( int i = 0; i < formItems.length(); i++ ) {
-                    JSONObject jsonObject = formItems.getJSONObject(i);
-                    if (jsonObject.has(Utilities.TAG_TYPE)) {
-                        String type = jsonObject.getString(Utilities.TAG_TYPE).trim();
-
-                        String key = null;
-                        if (jsonObject.has(Utilities.TAG_KEY)) {
-                            key = jsonObject.getString(Utilities.TAG_KEY).trim();
-                        }
-                        String label = null;
-                        if (jsonObject.has(Utilities.TAG_LABEL)) {
-                            label = jsonObject.get(Utilities.TAG_LABEL).toString().trim();
-                        }
-                        if (label == null && key != null) {
-                            label = key;
-                        }
-                        String defaultValue = null;
-                        if (jsonObject.has(Utilities.TAG_VALUE)) {
-                            defaultValue = jsonObject.get(Utilities.TAG_VALUE).toString().trim();
-                        }
-                        if (defaultValue == null) {
-                            defaultValue = "";
-                        }
-                        Label mainLabel = new Label("<font color=\"#5d9d76\">" + label + "</font>", ContentMode.HTML);
-                        tab.addComponent(mainLabel);
-                        switch( type ) {
-                        case ItemLabel.TYPE:
-                            String size = "20";
-                            if (jsonObject.has(Utilities.TAG_SIZE)) {
-                                size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
-                            }
-                            mainLabel.setValue("<font color=\"#5d9d76\" size=\"" + size + "\">" + defaultValue + "</font>");
-                            break;
-                        case ItemLabel.TYPE_WITHLINE:
-                            size = "20";
-                            if (jsonObject.has(Utilities.TAG_SIZE)) {
-                                size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
-                            }
-                            mainLabel
-                                    .setValue("<u><font color=\"#5d9d76\" size=\"" + size + "\">" + defaultValue + "</font></u>");
-                            break;
-                        case ItemBoolean.TYPE:
-                            CheckBox checkBox = new CheckBox();
-                            if (defaultValue != null && defaultValue.equals("true")) {
-                                checkBox.setValue(true);
-                            }
-                            tab.addComponent(checkBox);
-                            break;
-                        case ItemCombo.TYPE:
-                            String[] values = new String[0];
-                            if (jsonObject.has(Utilities.TAG_VALUES)) {
-                                JSONObject valuesObject = jsonObject.getJSONObject(Utilities.TAG_VALUES);
-                                if (valuesObject.has(Utilities.TAG_ITEMS)) {
-                                    JSONArray valuesArray = valuesObject.getJSONArray(Utilities.TAG_ITEMS);
-                                    values = new String[valuesArray.length()];
-                                    for( int j = 0; j < valuesArray.length(); j++ ) {
-                                        JSONObject itemObj = valuesArray.getJSONObject(j);
-                                        values[j] = itemObj.getString(Utilities.TAG_ITEM);
-                                    }
-                                }
-                            }
-
-                            ComboBox<String> comboBox = new ComboBox<>();
-                            comboBox.setItems(values);
-                            if (defaultValue != null) {
-                                comboBox.setSelectedItem(defaultValue);
-                            }
-                            tab.addComponent(comboBox);
-                            break;
-                        case ItemCombo.MULTI_TYPE:
-                            String[] multiValues = new String[0];
-                            if (jsonObject.has(Utilities.TAG_VALUES)) {
-                                JSONObject valuesObject = jsonObject.getJSONObject(Utilities.TAG_VALUES);
-                                if (valuesObject.has(Utilities.TAG_ITEMS)) {
-                                    JSONArray valuesArray = valuesObject.getJSONArray(Utilities.TAG_ITEMS);
-                                    multiValues = new String[valuesArray.length()];
-                                    for( int j = 0; j < valuesArray.length(); j++ ) {
-                                        JSONObject itemObj = valuesArray.getJSONObject(j);
-                                        multiValues[j] = itemObj.getString(Utilities.TAG_ITEM);
-                                    }
-                                }
-                            }
-
-                            ComboBox<String> multiComboBox = new ComboBox<>();
-                            multiComboBox.setItems(multiValues);
-                            if (defaultValue != null) {
-                                multiComboBox.setSelectedItem(defaultValue);
-                            }
-                            tab.addComponent(multiComboBox);
-                            break;
-                        case ItemDate.TYPE:
-                            DateTimeField date = new DateTimeField();
-                            if (defaultValue.length() == 0) {
-                                date.setValue(LocalDateTime.now());
-                            } else {
-                                try {
-                                    if (defaultValue.trim().length() > 0) {
-                                        DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
-                                        DateTimeFormatter formatter = b.appendPattern("yyyy-MM-dd").toFormatter();
-                                        date.setValue(LocalDateTime.parse(defaultValue, formatter));
-                                    }
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            tab.addComponent(date);
-                            break;
-                        case ItemTime.TYPE:
-                            DateTimeField time = new DateTimeField();
-                            if (defaultValue.length() == 0) {
-                                time.setValue(LocalDateTime.now());
-                                time.setDateFormat("HH:mm:ss");
-                            } else {
-                                try {
-                                    if (defaultValue.trim().length() > 0) {
-                                        DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
-                                        DateTimeFormatter formatter = b.appendPattern("HH:mm:ss").toFormatter();
-                                        time.setValue(LocalDateTime.parse(defaultValue, formatter));
-                                    }
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            tab.addComponent(time);
-                            break;
-                        case ItemInteger.TYPE:
-                            TextField integerField = new TextField();
-                            integerField.setValue(defaultValue);
-                            tab.addComponent(integerField);
-                            break;
-                        case ItemDouble.TYPE:
-                            TextField doubleField = new TextField();
-                            doubleField.setValue(defaultValue);
-                            tab.addComponent(doubleField);
-                            break;
-                        case ItemDynamicText.TYPE:
-                            String[] split = defaultValue.split(";");
-                            for( String string : split ) {
-                                TextField dynamicField = new TextField();
-                                dynamicField.setValue(string.trim());
-                                tab.addComponent(dynamicField);
-                            }
-                            Button addButton = new Button(VaadinIcons.PLUS_CIRCLE);
-                            addButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
-                            tab.addComponent(addButton);
-                            break;
-                        case ItemPicture.TYPE:
-                            Label pictureImage = new Label();
-                            pictureImage.setContentMode(ContentMode.HTML);
-                            pictureImage.setValue(VaadinIcons.PICTURE.getHtml());
-                            pictureImage.addStyleName("big-icon");
-                            tab.addComponent(pictureImage);
-                            break;
-                        case ItemSketch.TYPE:
-                            Label sketchImage = new Label();
-                            sketchImage.setContentMode(ContentMode.HTML);
-                            sketchImage.setValue(VaadinIcons.PAINTBRUSH.getHtml());
-                            sketchImage.addStyleName("big-icon");
-                            tab.addComponent(sketchImage);
-                            break;
-                        case ItemMap.TYPE:
-                            Label mapImage = new Label();
-                            mapImage.setContentMode(ContentMode.HTML);
-                            mapImage.setValue(VaadinIcons.MAP_MARKER.getHtml());
-                            mapImage.addStyleName("big-icon");
-                            tab.addComponent(mapImage);
-                            break;
-                        case ItemText.TYPE:
-                            TextField textField = new TextField();
-                            textField.setValue(defaultValue);
-                            tab.addComponent(textField);
-                            break;
-                        case ItemConnectedCombo.TYPE:
-                            tab.addComponent(new Label(ItemConnectedCombo.TYPE));
-                            break;
-                        case ItemOneToManyConnectedCombo.TYPE:
-                            tab.addComponent(new Label(ItemOneToManyConnectedCombo.TYPE));
-                            break;
-                        default:
-                            break;
-                        }
-
-//                        if (!jsonObject.has(Utilities.TAG_KEY)) {
-//                            continue;
-//                        }
-//                        String key = jsonObject.getString(Utilities.TAG_KEY).trim();
-//
-//                        String value = null;
-//                        if (jsonObject.has(Utilities.TAG_VALUE)) {
-//                            value = jsonObject.get(Utilities.TAG_VALUE).toString().trim();
-//                        }
-
-                    }
-                }
-
-//                tab.addComponent(new Image(null,
-//                    new ThemeResource("img/planets/"+formName+".jpg")));
+                reloadFormTab();
             }
         });
 
@@ -535,8 +332,65 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         formAreaLayout.addComponentsAndExpand(currentSelectedFormsTabSheet);
     }
 
-    private void addNewWidget() {
-        // TODO Auto-generated method stub
+    private void addNewWidget( String widgetName ) {
+        if (curentSelectedSectionName == null) {
+            KukuratusWindows.openInfoNotification("No section selected.");
+            return;
+        }
+
+        if (currentSelectedFormTab == null) {
+            KukuratusWindows.openInfoNotification("No form selected.");
+            return;
+        }
+        String formName = currentSelectedFormTab.getCaption();
+        JSONObject form4Name = Utilities.getForm4Name(formName, curentSelectedSectionObject);
+        JSONArray formItems = Utilities.getFormItems(form4Name);
+
+        switch( widgetName ) {
+        case ItemLabel.TYPE:
+            GssWindows.labelParamsWindow(this, false, formItems);
+            break;
+        case ItemLabel.TYPE_WITHLINE:
+            GssWindows.labelParamsWindow(this, true, formItems);
+            break;
+        case ItemBoolean.TYPE:
+            GssWindows.booleanParamsWindow(this, formItems);
+            break;
+        case ItemCombo.TYPE:
+            GssWindows.comboParamsWindow(this, false, formItems);
+            break;
+        case ItemCombo.MULTI_TYPE:
+            GssWindows.comboParamsWindow(this, true, formItems);
+            break;
+        case ItemText.TYPE:
+            GssWindows.textParamsWindow(this, formItems);
+            break;
+        case ItemInteger.TYPE:
+            GssWindows.numericParamsWindow(this, false, formItems);
+            break;
+        case ItemDouble.TYPE:
+            GssWindows.numericParamsWindow(this, true, formItems);
+            break;
+        case ItemDynamicText.TYPE:
+            GssWindows.dynamicTextParamsWindow(this, formItems);
+            break;
+        case ItemDate.TYPE:
+            break;
+        case ItemTime.TYPE:
+            break;
+        case ItemPicture.TYPE:
+            break;
+        case ItemSketch.TYPE:
+            break;
+        case ItemMap.TYPE:
+            break;
+        case ItemConnectedCombo.TYPE:
+            break;
+        case ItemOneToManyConnectedCombo.TYPE:
+            break;
+        default:
+            break;
+        }
 
     }
     private void removeWidget() {
@@ -614,7 +468,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             @Override
             public void run() {
                 Utilities.removeFormFromSection(formName, curentSelectedSectionObject);
-                
+
                 LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
                 sectionsMap.put(curentSelectedSectionName, curentSelectedSectionObject);
                 JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
@@ -709,6 +563,218 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             }
         });
 
+    }
+
+    public void saveCurrentTag() {
+        LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
+        if (curentSelectedSectionObject != null) {
+            sectionsMap.put(curentSelectedSectionName, curentSelectedSectionObject);
+        }
+        JSONArray rootArray = Utilities.formsRootFromSectionsMap(sectionsMap);
+        String rootString = rootArray.toString(2);
+        currentSelectedTags.form = rootString;
+        try {
+            formsDAO.update(currentSelectedTags);
+        } catch (SQLException e) {
+            KukuratusWindows.openErrorNotification(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void reloadFormTab() {
+        Layout tab = (Layout) currentSelectedFormsTabSheet.getSelectedTab();
+        currentSelectedFormTab = currentSelectedFormsTabSheet.getTab(tab);
+        String formName = currentSelectedFormTab.getCaption();
+        JSONObject formJson = Utilities.getForm4Name(formName, curentSelectedSectionObject);
+        tab.removeAllComponents();
+
+        JSONArray formItems = Utilities.getFormItems(formJson);
+        for( int i = 0; i < formItems.length(); i++ ) {
+            JSONObject jsonObject = formItems.getJSONObject(i);
+            if (jsonObject.has(Utilities.TAG_TYPE)) {
+                String type = jsonObject.getString(Utilities.TAG_TYPE).trim();
+
+                String key = null;
+                if (jsonObject.has(Utilities.TAG_KEY)) {
+                    key = jsonObject.getString(Utilities.TAG_KEY).trim();
+                }
+                String label = null;
+                if (jsonObject.has(Utilities.TAG_LABEL)) {
+                    label = jsonObject.get(Utilities.TAG_LABEL).toString().trim();
+                }
+                if (label == null && key != null) {
+                    label = key;
+                }
+                String defaultValue = null;
+                if (jsonObject.has(Utilities.TAG_VALUE)) {
+                    defaultValue = jsonObject.get(Utilities.TAG_VALUE).toString().trim();
+                }
+                if (defaultValue == null) {
+                    defaultValue = "";
+                }
+                Label mainLabel = new Label("<font color=\"#5d9d76\">" + label + "</font>", ContentMode.HTML);
+                tab.addComponent(mainLabel);
+                switch( type ) {
+                case ItemLabel.TYPE:
+                    String size = "20";
+                    if (jsonObject.has(Utilities.TAG_SIZE)) {
+                        size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
+                    }
+                    mainLabel.setValue("<span style=\"color: #5d9d76; font-size: " + size + "px;\" >" + defaultValue + "</span>");
+                    break;
+                case ItemLabel.TYPE_WITHLINE:
+                    size = "20";
+                    if (jsonObject.has(Utilities.TAG_SIZE)) {
+                        size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
+                    }
+                    mainLabel.setValue(
+                            "<u><span style=\"color: #5d9d76; font-size: " + size + "px;\" >" + defaultValue + "</span></u>");
+                    break;
+                case ItemBoolean.TYPE:
+                    CheckBox checkBox = new CheckBox();
+                    if (defaultValue != null && defaultValue.equals("true")) {
+                        checkBox.setValue(true);
+                    }
+                    tab.addComponent(checkBox);
+                    break;
+                case ItemCombo.TYPE:
+                    String[] values = new String[0];
+                    if (jsonObject.has(Utilities.TAG_VALUES)) {
+                        JSONObject valuesObject = jsonObject.getJSONObject(Utilities.TAG_VALUES);
+                        if (valuesObject.has(Utilities.TAG_ITEMS)) {
+                            JSONArray valuesArray = valuesObject.getJSONArray(Utilities.TAG_ITEMS);
+                            values = new String[valuesArray.length()];
+                            for( int j = 0; j < valuesArray.length(); j++ ) {
+                                JSONObject itemObj = valuesArray.getJSONObject(j);
+                                values[j] = itemObj.getString(Utilities.TAG_ITEM);
+                            }
+                        }
+                    }
+
+                    ComboBox<String> comboBox = new ComboBox<>();
+                    comboBox.setItems(values);
+                    if (defaultValue != null) {
+                        comboBox.setSelectedItem(defaultValue);
+                    }
+                    tab.addComponent(comboBox);
+                    break;
+                case ItemCombo.MULTI_TYPE:
+                    String[] multiValues = new String[0];
+                    if (jsonObject.has(Utilities.TAG_VALUES)) {
+                        JSONObject valuesObject = jsonObject.getJSONObject(Utilities.TAG_VALUES);
+                        if (valuesObject.has(Utilities.TAG_ITEMS)) {
+                            JSONArray valuesArray = valuesObject.getJSONArray(Utilities.TAG_ITEMS);
+                            multiValues = new String[valuesArray.length()];
+                            for( int j = 0; j < valuesArray.length(); j++ ) {
+                                JSONObject itemObj = valuesArray.getJSONObject(j);
+                                multiValues[j] = itemObj.getString(Utilities.TAG_ITEM);
+                            }
+                        }
+                    }
+
+                    ComboBox<String> multiComboBox = new ComboBox<>();
+                    multiComboBox.setItems(multiValues);
+                    if (defaultValue != null) {
+                        multiComboBox.setSelectedItem(defaultValue);
+                    }
+                    tab.addComponent(multiComboBox);
+                    break;
+                case ItemDate.TYPE:
+                    DateTimeField date = new DateTimeField();
+                    if (defaultValue.length() == 0) {
+                        date.setValue(LocalDateTime.now());
+                    } else {
+                        try {
+                            if (defaultValue.trim().length() > 0) {
+                                DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
+                                DateTimeFormatter formatter = b.appendPattern("yyyy-MM-dd").toFormatter();
+                                date.setValue(LocalDateTime.parse(defaultValue, formatter));
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    tab.addComponent(date);
+                    break;
+                case ItemTime.TYPE:
+                    DateTimeField time = new DateTimeField();
+                    if (defaultValue.length() == 0) {
+                        time.setValue(LocalDateTime.now());
+                        time.setDateFormat("HH:mm:ss");
+                    } else {
+                        try {
+                            if (defaultValue.trim().length() > 0) {
+                                DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
+                                DateTimeFormatter formatter = b.appendPattern("HH:mm:ss").toFormatter();
+                                time.setValue(LocalDateTime.parse(defaultValue, formatter));
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    tab.addComponent(time);
+                    break;
+                case ItemInteger.TYPE:
+                    TextField integerField = new TextField();
+                    integerField.setValue(defaultValue);
+                    tab.addComponent(integerField);
+                    break;
+                case ItemDouble.TYPE:
+                    TextField doubleField = new TextField();
+                    doubleField.setValue(defaultValue);
+                    tab.addComponent(doubleField);
+                    break;
+                case ItemDynamicText.TYPE:
+                    String[] split = defaultValue.split(";");
+                    for( String string : split ) {
+                        TextField dynamicField = new TextField();
+                        dynamicField.setValue(string.trim());
+                        tab.addComponent(dynamicField);
+                    }
+                    Button addButton = new Button(VaadinIcons.PLUS_CIRCLE);
+                    addButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
+                    tab.addComponent(addButton);
+                    break;
+                case ItemPicture.TYPE:
+                    Label pictureImage = new Label();
+                    pictureImage.setContentMode(ContentMode.HTML);
+                    pictureImage.setValue(VaadinIcons.PICTURE.getHtml());
+                    pictureImage.addStyleName("big-icon");
+                    tab.addComponent(pictureImage);
+                    break;
+                case ItemSketch.TYPE:
+                    Label sketchImage = new Label();
+                    sketchImage.setContentMode(ContentMode.HTML);
+                    sketchImage.setValue(VaadinIcons.PAINTBRUSH.getHtml());
+                    sketchImage.addStyleName("big-icon");
+                    tab.addComponent(sketchImage);
+                    break;
+                case ItemMap.TYPE:
+                    Label mapImage = new Label();
+                    mapImage.setContentMode(ContentMode.HTML);
+                    mapImage.setValue(VaadinIcons.MAP_MARKER.getHtml());
+                    mapImage.addStyleName("big-icon");
+                    tab.addComponent(mapImage);
+                    break;
+                case ItemText.TYPE:
+                    TextField textField = new TextField();
+                    textField.setValue(defaultValue);
+                    tab.addComponent(textField);
+                    break;
+                case ItemConnectedCombo.TYPE:
+                    tab.addComponent(new Label(ItemConnectedCombo.TYPE));
+                    break;
+                case ItemOneToManyConnectedCombo.TYPE:
+                    tab.addComponent(new Label(ItemOneToManyConnectedCombo.TYPE));
+                    break;
+                default:
+                    break;
+                }
+
+            }
+        }
     }
 
     @Override
