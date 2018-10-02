@@ -18,6 +18,10 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.views;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -44,6 +48,9 @@ import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemPicture;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemSketch;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemText;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemTime;
+import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.hortonmachine.gears.utils.files.FileUtilities;
+import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -65,6 +72,8 @@ import com.vaadin.event.selection.SingleSelectionListener;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.server.FileDownloader;
+import com.vaadin.server.StreamResource;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
@@ -113,6 +122,9 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
     private MenuItem widgetsMenuItem;
 
+    private Button downloadTag;
+    private FileDownloader tagFileDownloader;
+
     @Override
     public void enter( ViewChangeEvent event ) {
         try {
@@ -133,12 +145,15 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             deleteTag.setStyleName(ValoTheme.BUTTON_DANGER);
             deleteTag.setVisible(false);
             deleteTag.addClickListener(e -> deleteTag());
+            downloadTag = new Button("Download", VaadinIcons.DOWNLOAD);
+            downloadTag.setVisible(false);
 
             tagsCombo = new ComboBox<>();
             tagsCombo.setPlaceholder("No tags selected");
             tagsCombo.setItemCaptionGenerator(Forms::getName);
             tagsCombo.setEmptySelectionAllowed(false);
             tagsCombo.addSelectionListener(new SingleSelectionListener<Forms>(){
+
                 @Override
                 public void selectionChange( SingleSelectionEvent<Forms> event ) {
                     Optional<Forms> selectedForm = event.getFirstSelectedItem();
@@ -146,11 +161,27 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                         currentSelectedTags = form;
                         selectForm();
                         deleteTag.setVisible(true);
+                        downloadTag.setVisible(true);
+                        if (tagFileDownloader != null) {
+                            tagFileDownloader.remove();
+                        }
+                        tagFileDownloader = new FileDownloader(new StreamResource(() -> {
+                            try {
+                                File tmpFile = File.createTempFile("gss_tmp_", ".json");
+                                FileUtilities.writeFile(currentSelectedTags.form, tmpFile);
+                                return new FileInputStream(tmpFile);
+                            } catch (Exception e1) {
+                                e1.printStackTrace();
+                                return null;
+                            }
+                        }, currentSelectedTags.name + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact)
+                                + ".json"));
+                        tagFileDownloader.extend(downloadTag);
                     });
                 }
             });
 
-            HorizontalLayout tagsLayout = new HorizontalLayout(tagsCombo, addTag, deleteTag);
+            HorizontalLayout tagsLayout = new HorizontalLayout(tagsCombo, addTag, deleteTag, downloadTag);
             addComponent(tagsLayout);
 
             formAndMenubarAreaLayout = new VerticalLayout();
