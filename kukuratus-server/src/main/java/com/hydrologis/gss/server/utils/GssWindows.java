@@ -22,17 +22,30 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Optional;
 
+import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemBoolean;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemCombo;
+import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemDate;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemDynamicText;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemLabel;
+import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemMap;
+import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemPicture;
+import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemSketch;
 import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemText;
+import org.hortonmachine.gears.io.geopaparazzi.forms.items.ItemTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hydrologis.gss.server.views.FormsView;
+import com.hydrologis.kukuratus.libs.utils.KukuratusValidators;
 import com.hydrologis.kukuratus.libs.utils.KukuratusWindows;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.StreamVariable;
@@ -41,6 +54,7 @@ import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
+import com.vaadin.ui.DateField;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.TextArea;
@@ -51,6 +65,12 @@ import com.vaadin.ui.themes.ValoTheme;
 
 @SuppressWarnings("serial")
 public abstract class GssWindows {
+    public final static String DEFAULT_WIDTH = "650px";
+
+    public static enum IMAGEWIDGET {
+        PICTURE, SKETCH, MAP
+    };
+
     public static void labelParamsWindow( FormsView parent, boolean checkUnderline, JSONArray formItems ) {
         KukuratusWindows window = new KukuratusWindows("Add a new label", true){
             private TextField labelTextField;
@@ -111,7 +131,7 @@ public abstract class GssWindows {
                 getMainWindow().close();
             }
         };
-        window.centerWithSize("400px", null);
+        window.centerWithSize(DEFAULT_WIDTH, null);
         window.setClosable(false);
         window.setResizable(false);
         window.open(parent);
@@ -181,7 +201,7 @@ public abstract class GssWindows {
                 getMainWindow().close();
             }
         };
-        window.centerWithSize("400px", null);
+        window.centerWithSize(DEFAULT_WIDTH, null);
         window.setClosable(false);
         window.setResizable(false);
         window.open(parent);
@@ -329,7 +349,7 @@ public abstract class GssWindows {
 
             }
         };
-        window.centerWithSize("600px", null);
+        window.centerWithSize(DEFAULT_WIDTH, null);
         window.setClosable(false);
         window.setResizable(false);
         window.open(parent);
@@ -408,7 +428,7 @@ public abstract class GssWindows {
             }
 
         };
-        window.centerWithSize("600px", null);
+        window.centerWithSize(DEFAULT_WIDTH, null);
         window.setClosable(false);
         window.setResizable(false);
         window.open(parent);
@@ -486,7 +506,7 @@ public abstract class GssWindows {
             }
 
         };
-        window.centerWithSize("400px", null);
+        window.centerWithSize(DEFAULT_WIDTH, null);
         window.setClosable(false);
         window.setResizable(false);
         window.open(parent);
@@ -582,7 +602,332 @@ public abstract class GssWindows {
             }
 
         };
-        window.centerWithSize("400px", null);
+        window.centerWithSize(DEFAULT_WIDTH, null);
+        window.setClosable(false);
+        window.setResizable(false);
+        window.open(parent);
+    }
+
+    public static void dateParamsWindow( FormsView parent, JSONArray formItems ) {
+        KukuratusWindows window = new KukuratusWindows("Add a new date field", true){
+            private TextField keyTextField;
+            private TextField labelTextField;
+            private CheckBox isMandatoryCheck;
+            private DateField dateField;
+
+            @Override
+            public void addWidgets( VerticalLayout layout ) {
+                Label label = new Label(getMessage(), ContentMode.HTML);
+                layout.addComponent(label);
+                layout.setComponentAlignment(label, Alignment.TOP_CENTER);
+
+                keyTextField = new TextField();
+                keyTextField.setPlaceholder("Enter key (has to be unique).");
+                keyTextField.setWidth("100%");
+
+                labelTextField = new TextField();
+                labelTextField.setPlaceholder("Enter label text.");
+                labelTextField.setWidth("100%");
+
+                dateField = new DateField();
+                dateField.setValue(LocalDate.now());
+                dateField.setDateFormat("yyyy-MM-dd");
+                dateField.setWidth("100%");
+
+                isMandatoryCheck = new CheckBox();
+                isMandatoryCheck.setCaption("is mandatory?");
+
+                layout.addComponent(keyTextField);
+                layout.addComponent(labelTextField);
+                layout.addComponent(dateField);
+                layout.addComponent(isMandatoryCheck);
+
+                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                cancelButton.addClickListener(e -> onCancelButtonPushed());
+                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                submitButton.addClickListener(e -> onActionButtonPushed());
+                submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
+                HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
+                layout.addComponent(hLayout);
+                hLayout.setMargin(true);
+                layout.setComponentAlignment(hLayout, Alignment.BOTTOM_CENTER);
+            }
+
+            public void onActionButtonPushed() {
+                String key = keyTextField.getValue();
+                if (checkKey(key)) {
+                    String label = labelTextField.getValue();
+                    LocalDate defaultValue = dateField.getValue();
+                    Boolean isMandatory = isMandatoryCheck.getValue();
+
+                    long epochMilli = defaultValue.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                    ItemDate id = new ItemDate(key, label, new Date(epochMilli), isMandatory);
+                    String textJson = id.toString();
+                    formItems.put(new JSONObject(textJson));
+
+                    parent.saveCurrentTag();
+                    parent.reloadFormTab();
+                    getMainWindow().close();
+                }
+            }
+
+            public void onCancelButtonPushed() {
+                getMainWindow().close();
+            }
+
+        };
+        window.centerWithSize(DEFAULT_WIDTH, null);
+        window.setClosable(false);
+        window.setResizable(false);
+        window.open(parent);
+    }
+
+    public static void timeParamsWindow( FormsView parent, JSONArray formItems ) {
+        KukuratusWindows window = new KukuratusWindows("Add a new time field", true){
+            private TextField keyTextField;
+            private TextField labelTextField;
+            private CheckBox isMandatoryCheck;
+            private TextField timeField;
+            private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+            @Override
+            public void addWidgets( VerticalLayout layout ) {
+                Label label = new Label(getMessage(), ContentMode.HTML);
+                layout.addComponent(label);
+                layout.setComponentAlignment(label, Alignment.TOP_CENTER);
+
+                keyTextField = new TextField();
+                keyTextField.setPlaceholder("Enter key (has to be unique).");
+                keyTextField.setWidth("100%");
+
+                labelTextField = new TextField();
+                labelTextField.setPlaceholder("Enter label text.");
+                labelTextField.setWidth("100%");
+
+                timeField = new TextField();
+                timeField.setValue(formatter.format(LocalDateTime.now()));
+                timeField.setPlaceholder("Optional default value HH:MM:SS");
+                timeField.setWidth("100%");
+
+                isMandatoryCheck = new CheckBox();
+                isMandatoryCheck.setCaption("is mandatory?");
+
+                layout.addComponent(keyTextField);
+                layout.addComponent(labelTextField);
+                layout.addComponent(timeField);
+                layout.addComponent(isMandatoryCheck);
+
+                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                cancelButton.addClickListener(e -> onCancelButtonPushed());
+                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                submitButton.addClickListener(e -> onActionButtonPushed());
+                submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
+                HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
+                layout.addComponent(hLayout);
+                hLayout.setMargin(true);
+                layout.setComponentAlignment(hLayout, Alignment.BOTTOM_CENTER);
+
+                KukuratusValidators.TimeStringValidator timeStringValidator = new KukuratusValidators.TimeStringValidator(true);
+                KukuratusValidators.addStringValidator(timeField, timeStringValidator, t -> {
+                    submitButton.setEnabled(!t);
+                });
+            }
+
+            public void onActionButtonPushed() {
+                String key = keyTextField.getValue();
+                if (checkKey(key)) {
+                    String label = labelTextField.getValue();
+                    String defaultValue = timeField.getValue();
+                    Boolean isMandatory = isMandatoryCheck.getValue();
+
+                    LocalDateTime defaultValueLD = null;
+                    if (defaultValue.trim().length() == 0) {
+                        defaultValueLD = LocalDateTime.now();
+                    } else {
+                        try {
+                            defaultValue = "1999-01-01 " + defaultValue;
+                            defaultValueLD = LocalDateTime
+                                    .from(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").parse(defaultValue));
+                        } catch (Exception e) {
+                            KukuratusWindows.openErrorNotification("The time format has to be: HH:mm:ss");
+                            return;
+                        }
+                    }
+                    long epochMilli = defaultValueLD.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                    ItemTime it = new ItemTime(key, label, new Date(epochMilli), isMandatory);
+                    String textJson = it.toString();
+                    formItems.put(new JSONObject(textJson));
+
+                    parent.saveCurrentTag();
+                    parent.reloadFormTab();
+                    getMainWindow().close();
+                }
+            }
+
+            public void onCancelButtonPushed() {
+                getMainWindow().close();
+            }
+
+        };
+        window.centerWithSize(DEFAULT_WIDTH, null);
+        window.setClosable(false);
+        window.setResizable(false);
+        window.open(parent);
+    }
+
+    public static void imageParamsWindow( FormsView parent, JSONArray formItems, IMAGEWIDGET type ) {
+        String msgType = "picture";
+        switch( type ) {
+        case SKETCH:
+            msgType = "sketch";
+            break;
+        case MAP:
+            msgType = "map";
+            break;
+        case PICTURE:
+            break;
+        }
+
+        KukuratusWindows window = new KukuratusWindows("Add a new " + msgType + " field", true){
+            private TextField keyTextField;
+            private TextField labelTextField;
+            private CheckBox isMandatoryCheck;
+
+            @Override
+            public void addWidgets( VerticalLayout layout ) {
+                Label label = new Label(getMessage(), ContentMode.HTML);
+                layout.addComponent(label);
+                layout.setComponentAlignment(label, Alignment.TOP_CENTER);
+
+                keyTextField = new TextField();
+                keyTextField.setPlaceholder("Enter key (has to be unique).");
+                keyTextField.setWidth("100%");
+
+                labelTextField = new TextField();
+                labelTextField.setPlaceholder("Enter label text.");
+                labelTextField.setWidth("100%");
+
+                isMandatoryCheck = new CheckBox();
+                isMandatoryCheck.setCaption("is mandatory?");
+
+                layout.addComponent(keyTextField);
+                layout.addComponent(labelTextField);
+                layout.addComponent(isMandatoryCheck);
+
+                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                cancelButton.addClickListener(e -> onCancelButtonPushed());
+                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                submitButton.addClickListener(e -> onActionButtonPushed());
+                submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
+                HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
+                layout.addComponent(hLayout);
+                hLayout.setMargin(true);
+                layout.setComponentAlignment(hLayout, Alignment.BOTTOM_CENTER);
+            }
+
+            public void onActionButtonPushed() {
+                String key = keyTextField.getValue();
+                if (checkKey(key)) {
+                    String label = labelTextField.getValue();
+                    Boolean isMandatory = isMandatoryCheck.getValue();
+
+                    String textJson;
+                    switch( type ) {
+                    case SKETCH:
+                        ItemSketch is = new ItemSketch(key, label, null, isMandatory);
+                        textJson = is.toString();
+                        break;
+                    case MAP:
+                        ItemMap im = new ItemMap(key, label, null, isMandatory);
+                        textJson = im.toString();
+                        break;
+                    case PICTURE:
+                        ItemPicture ip = new ItemPicture(key, label, null, isMandatory);
+                        textJson = ip.toString();
+                        break;
+                    default:
+                        return;
+                    }
+
+                    formItems.put(new JSONObject(textJson));
+
+                    parent.saveCurrentTag();
+                    parent.reloadFormTab();
+                    getMainWindow().close();
+                }
+            }
+
+            public void onCancelButtonPushed() {
+                getMainWindow().close();
+            }
+
+        };
+        window.centerWithSize(DEFAULT_WIDTH, null);
+        window.setClosable(false);
+        window.setResizable(false);
+        window.open(parent);
+    }
+
+    public static void deleteWidgetWindow( FormsView parent, JSONArray formItems ) {
+        int length = formItems.length();
+        if (length == 0) {
+            return;
+        }
+        String[] names = new String[length];
+        for( int i = 0; i < length; i++ ) {
+            JSONObject jsonObject = formItems.getJSONObject(i);
+            if (jsonObject.has(Utilities.TAG_KEY)) {
+                names[i] = jsonObject.getString(Utilities.TAG_KEY).trim();
+            }
+        }
+
+        KukuratusWindows window = new KukuratusWindows("Delete a widget", true){
+            private ComboBox<String> itemKeyCombo;
+
+            @Override
+            public void addWidgets( VerticalLayout layout ) {
+                Label label = new Label(getMessage(), ContentMode.HTML);
+                layout.addComponent(label);
+                layout.setComponentAlignment(label, Alignment.TOP_CENTER);
+
+                itemKeyCombo = new ComboBox<>();
+                itemKeyCombo.setItems(names);
+                itemKeyCombo.setSelectedItem(names[0]);
+                itemKeyCombo.setEmptySelectionAllowed(false);
+                itemKeyCombo.setPlaceholder("Select key of item to remove");
+                itemKeyCombo.setWidth("100%");
+
+                layout.addComponent(itemKeyCombo);
+
+                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                cancelButton.addClickListener(e -> onCancelButtonPushed());
+                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                submitButton.addClickListener(e -> onActionButtonPushed());
+                submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
+                HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
+                layout.addComponent(hLayout);
+                hLayout.setMargin(true);
+                layout.setComponentAlignment(hLayout, Alignment.BOTTOM_CENTER);
+            }
+
+            public void onActionButtonPushed() {
+                String keyToRemove = itemKeyCombo.getValue();
+                if (checkKey(keyToRemove)) {
+                    int indexOf = Arrays.asList(names).indexOf(keyToRemove);
+                    formItems.remove(indexOf);
+
+                    parent.saveCurrentTag();
+                    parent.reloadFormTab();
+                    getMainWindow().close();
+                }
+            }
+
+            public void onCancelButtonPushed() {
+                getMainWindow().close();
+            }
+
+        };
+        window.centerWithSize(DEFAULT_WIDTH, null);
         window.setClosable(false);
         window.setResizable(false);
         window.open(parent);

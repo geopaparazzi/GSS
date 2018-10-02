@@ -19,9 +19,8 @@
 package com.hydrologis.gss.server.views;
 
 import java.sql.SQLException;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,6 +54,7 @@ import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
 import com.hydrologis.kukuratus.libs.spi.DefaultPage;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
+import com.hydrologis.kukuratus.libs.utils.KLabel;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.KukuratusWindows;
 import com.hydrologis.kukuratus.libs.utils.TextRunnable;
@@ -70,7 +70,7 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
-import com.vaadin.ui.DateTimeField;
+import com.vaadin.ui.DateField;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Layout;
@@ -126,10 +126,10 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             QueryBuilder<Forms, ? > formsQB = formsDAO.queryBuilder();
             List<Forms> formsList = formsQB.where().eq(Forms.WEBUSER_FIELD_NAME, authenticatedUsername).query();
 
-            Button addTag = new Button("Add");
+            Button addTag = new Button("Add", VaadinIcons.PLUS_CIRCLE);
             addTag.setStyleName(ValoTheme.BUTTON_PRIMARY);
             addTag.addClickListener(e -> addTag());
-            Button deleteTag = new Button("Remove");
+            Button deleteTag = new Button("Remove", VaadinIcons.TRASH);
             deleteTag.setStyleName(ValoTheme.BUTTON_DANGER);
             deleteTag.setVisible(false);
             deleteTag.addClickListener(e -> deleteTag());
@@ -174,9 +174,9 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     }
 
     private void deleteTag() {
-        String message = "<font color=\"red\"><h3>Are you sure you want to delete tags: <b>" + currentSelectedTags.name
-                + "</b></h3></font>";
-        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){
+        String message = new KLabel.Builder().text("Are you sure you want to delete: <b>" + currentSelectedTags.name + "</b>")
+                .fontSizeInPixels(18).color("#AF0000").buildLabel();
+        KukuratusWindows.openCancelDeleteWindow(this, message, GssWindows.DEFAULT_WIDTH, null, new Runnable(){
             public void run() {
                 try {
                     QueryBuilder<Forms, ? > formsQB = formsDAO.queryBuilder();
@@ -204,8 +204,9 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     }
 
     private void addTag() {
-        String message = "<h3>Add a new tag definition. Enter a name for it!</h3>";
-        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+        String message = new KLabel.Builder().text("Add a new tag definition. Enter a name for it!").fontSizeInPixels(18)
+                .buildLabel();
+        KukuratusWindows.inputWindow(this, message, GssWindows.DEFAULT_WIDTH, null, new TextRunnable(){
             @Override
             public void runOnText( String newTagName ) {
                 newTagName = newTagName.trim();
@@ -287,7 +288,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                 addNewWidget(name);
             });
         });
-        widgetsMenuItem.addItem("remove last", VaadinIcons.MINUS, i -> {
+        widgetsMenuItem.addItem("remove", VaadinIcons.MINUS, i -> {
             removeWidget();
         });
         widgetsMenuItem.setVisible(false);
@@ -375,27 +376,46 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             GssWindows.dynamicTextParamsWindow(this, formItems);
             break;
         case ItemDate.TYPE:
+            GssWindows.dateParamsWindow(this, formItems);
             break;
         case ItemTime.TYPE:
+            GssWindows.timeParamsWindow(this, formItems);
             break;
         case ItemPicture.TYPE:
+            GssWindows.imageParamsWindow(this, formItems, GssWindows.IMAGEWIDGET.PICTURE);
             break;
         case ItemSketch.TYPE:
+            GssWindows.imageParamsWindow(this, formItems, GssWindows.IMAGEWIDGET.SKETCH);
             break;
         case ItemMap.TYPE:
+            GssWindows.imageParamsWindow(this, formItems, GssWindows.IMAGEWIDGET.MAP);
             break;
         case ItemConnectedCombo.TYPE:
+            KukuratusWindows.openWarningNotification("Not implemented yet");
             break;
         case ItemOneToManyConnectedCombo.TYPE:
+            KukuratusWindows.openWarningNotification("Not implemented yet");
             break;
         default:
+            KukuratusWindows.openWarningNotification("Widget " + widgetName + " does not exist.");
             break;
         }
 
     }
     private void removeWidget() {
-        // TODO Auto-generated method stub
+        if (curentSelectedSectionName == null) {
+            KukuratusWindows.openInfoNotification("No section selected.");
+            return;
+        }
 
+        if (currentSelectedFormTab == null) {
+            KukuratusWindows.openInfoNotification("No form selected.");
+            return;
+        }
+        String formName = currentSelectedFormTab.getCaption();
+        JSONObject form4Name = Utilities.getForm4Name(formName, curentSelectedSectionObject);
+        JSONArray formItems = Utilities.getFormItems(form4Name);
+        GssWindows.deleteWidgetWindow(this, formItems);
     }
 
     private void addNewForm() {
@@ -536,8 +556,9 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             return;
         }
         LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
-        String message = "<font color=\"red\"><h3>Are you sure you want to delete the Section: <b>" + curentSelectedSectionName
-                + "</b></h3></font>";
+        String message = new KLabel.Builder()
+                .text("Are you sure you want to delete the Section: <b>" + curentSelectedSectionName + "</b>")
+                .fontSizeInPixels(18).color("#AF0000").buildLabel();
         KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){
             public void run() {
                 JSONObject sectionObj = sectionsMap.remove(curentSelectedSectionName);
@@ -612,23 +633,25 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                 if (defaultValue == null) {
                     defaultValue = "";
                 }
-                Label mainLabel = new Label("<font color=\"#5d9d76\">" + label + "</font>", ContentMode.HTML);
+                KLabel mainLabel = new KLabel.Builder().text(label).color("#5d9d76").build();
                 tab.addComponent(mainLabel);
                 switch( type ) {
                 case ItemLabel.TYPE:
-                    String size = "20";
+                    int size = 20;
                     if (jsonObject.has(Utilities.TAG_SIZE)) {
-                        size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
+                        size = Integer.parseInt(jsonObject.get(Utilities.TAG_SIZE).toString().trim());
                     }
-                    mainLabel.setValue("<span style=\"color: #5d9d76; font-size: " + size + "px;\" >" + defaultValue + "</span>");
+                    String value = new KLabel.Builder().text(defaultValue).fontSizeInPixels(size).color("#5d9d76").buildLabel();
+                    mainLabel.setValue(value);
                     break;
                 case ItemLabel.TYPE_WITHLINE:
-                    size = "20";
+                    size = 20;
                     if (jsonObject.has(Utilities.TAG_SIZE)) {
-                        size = jsonObject.get(Utilities.TAG_SIZE).toString().trim();
+                        size = Integer.parseInt(jsonObject.get(Utilities.TAG_SIZE).toString().trim());
                     }
-                    mainLabel.setValue(
-                            "<u><span style=\"color: #5d9d76; font-size: " + size + "px;\" >" + defaultValue + "</span></u>");
+                    String value1 = new KLabel.Builder().text(defaultValue).underline().fontSizeInPixels(size).color("#5d9d76")
+                            .buildLabel();
+                    mainLabel.setValue(value1);
                     break;
                 case ItemBoolean.TYPE:
                     CheckBox checkBox = new CheckBox();
@@ -680,15 +703,15 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     tab.addComponent(multiComboBox);
                     break;
                 case ItemDate.TYPE:
-                    DateTimeField date = new DateTimeField();
+                    DateField date = new DateField();
+                    date.setDateFormat("yyyy-MM-dd");
                     if (defaultValue.length() == 0) {
-                        date.setValue(LocalDateTime.now());
+                        date.setValue(LocalDate.now());
                     } else {
                         try {
                             if (defaultValue.trim().length() > 0) {
-                                DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
-                                DateTimeFormatter formatter = b.appendPattern("yyyy-MM-dd").toFormatter();
-                                date.setValue(LocalDateTime.parse(defaultValue, formatter));
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                                date.setValue(LocalDate.parse(defaultValue, formatter));
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -698,20 +721,14 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     tab.addComponent(date);
                     break;
                 case ItemTime.TYPE:
-                    DateTimeField time = new DateTimeField();
-                    if (defaultValue.length() == 0) {
-                        time.setValue(LocalDateTime.now());
-                        time.setDateFormat("HH:mm:ss");
-                    } else {
-                        try {
-                            if (defaultValue.trim().length() > 0) {
-                                DateTimeFormatterBuilder b = new DateTimeFormatterBuilder();
-                                DateTimeFormatter formatter = b.appendPattern("HH:mm:ss").toFormatter();
-                                time.setValue(LocalDateTime.parse(defaultValue, formatter));
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                    TextField time = new TextField();
+                    time.setPlaceholder("HH:mm:ss");
+                    try {
+                        if (defaultValue.trim().length() > 0) {
+                            time.setValue(defaultValue);
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
 
                     tab.addComponent(time);
