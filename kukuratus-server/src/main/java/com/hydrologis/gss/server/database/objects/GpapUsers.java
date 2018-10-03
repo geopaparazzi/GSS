@@ -50,7 +50,7 @@ public class GpapUsers {
     @DatabaseField(columnName = CONTACT_FIELD_NAME, canBeNull = true)
     public String contact;
 
-    GpapUsers() {
+    public GpapUsers() {
     }
 
     public GpapUsers( long id ) {

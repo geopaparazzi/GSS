@@ -15,11 +15,8 @@ import com.codename1.ui.TextField;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.plaf.Border;
 import com.codename1.ui.plaf.Style;
-import com.codename1.ui.validation.Constraint;
-import com.codename1.ui.validation.LengthConstraint;
 import com.codename1.ui.validation.Validator;
 import com.hydrologis.cn1.libs.HyDialogs;
-import com.hydrologis.cn1.libs.HyUtilities;
 
 /**
  *
@@ -37,9 +34,9 @@ public class ServerUrlDialog extends Dialog {
 
         SpanLabel titleLabel = new SpanLabel("Insert the server to connect to");
 
-        String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "http://localhost:8080/upload");
+        String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "http://localhost:8080");
 
-        serverUrlField = new TextField(serverUrl, "Complete server URL");
+        serverUrlField = new TextField(serverUrl, "The server URL");
 
         Validator val = new Validator();
         val.addConstraint(serverUrlField, new UrlConstraint());

@@ -51,7 +51,7 @@ public class ServletUtils {
             errStatus.sendTo(response);
             return null;
         }
-        debug("Download data connection from: " + gpapUser.name);
+        debug("Connection from: " + gpapUser.name);
         return deviceId;
     }
 

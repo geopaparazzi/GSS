@@ -37,14 +37,8 @@ import javax.servlet.http.HttpSession;
 import org.hortonmachine.dbs.log.Logger;
 
 import com.hydrologis.gss.server.GssWorkspace;
-import com.hydrologis.gss.server.database.objects.GpapUsers;
-import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.Status;
-import com.hydrologis.kukuratus.libs.spi.SpiHandler;
-import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
-import com.hydrologis.kukuratus.libs.utils.NetworkUtilities;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
-import com.j256.ormlite.dao.Dao;
 
 @WebServlet(urlPatterns = "/datadownload")
 public class DataDownloadServlet extends HttpServlet {
@@ -65,7 +59,7 @@ public class DataDownloadServlet extends HttpServlet {
                 return;
             }
 
-            String fileName = request.getParameter("id");
+            String fileName = request.getParameter("name");
             if (fileName == null) {
                 // send list
                 String mapsListJson = GssWorkspace.INSTANCE.getMapsListJson();

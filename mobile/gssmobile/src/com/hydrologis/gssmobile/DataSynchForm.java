@@ -175,7 +175,6 @@ public class DataSynchForm extends Form {
             FloatingActionButton loadAllFab = fab.createSubFAB(FontImage.MATERIAL_CLEAR_ALL, "Everything");
             loadAllFab.addActionListener(e -> uploadWithProgress(true, true, true));
 
-//            .show();
             String lastDbPath = Preferences.get(GssUtilities.LAST_DB_PATH, "");
             HyLog.p("Db found in preferences: " + lastDbPath);
             final boolean dbExists = Database.exists(lastDbPath);
@@ -423,7 +422,7 @@ public class DataSynchForm extends Form {
                     HyLog.p("Response status code: " + status);
                     if (status != 200) {
                         callSerially(() -> {
-                            final Label label = new Label(responseMap.get("trace").toString(), "uploadProgressErrorLabel");
+                            final Label label = new Label(responseMap.get("message").toString(), "uploadProgressErrorLabel");
                             addProgressLabelAndRefresh(label);
                         });
                         return;
@@ -499,6 +498,7 @@ public class DataSynchForm extends Form {
             HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
             return;
         }
+        serverUrl = serverUrl + GssUtilities.SYNCH_PATH;
 
         up = new HyUploadProgressForm(getCurrentForm(), "Upload data...", false);
         callSerially(() -> {

@@ -94,6 +94,8 @@ public class GssMobile {
             synchForm.show();
         });
         toolbar.addMaterialCommandToSideMenu("Data download", FontImage.MATERIAL_CLOUD_DOWNLOAD, e -> {
+            DataDownloadForm dataDownloadForm = new DataDownloadForm(mainForm, theme);
+            dataDownloadForm.show();
         });
         toolbar.addMaterialCommandToSideMenu("Forms download", FontImage.MATERIAL_EVENT_NOTE, e -> {
         });

@@ -20,6 +20,7 @@ package com.hydrologis.gss.server.servlets;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -30,15 +31,18 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.hortonmachine.dbs.log.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.hydrologis.gss.server.database.objects.Forms;
+import com.hydrologis.gss.server.utils.FormStatus;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.Status;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
 
-@WebServlet(urlPatterns = "/tagdownload")
+@WebServlet(urlPatterns = "/tagsdownload")
 public class FormDownloadServlet extends HttpServlet {
     private static final String TAG = FormDownloadServlet.class.getSimpleName();
     private static final long serialVersionUID = 1L;
@@ -57,15 +61,33 @@ public class FormDownloadServlet extends HttpServlet {
             }
 
             DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+            Dao<Forms, ? > formsDao = dbHandler.getDao(Forms.class);
             String tagName = request.getParameter("name");
             if (tagName != null) {
-                Dao<Forms, ? > formsDao = dbHandler.getDao(Forms.class);
                 Forms form = formsDao.queryBuilder().where().eq(Forms.NAME_FIELD_NAME, tagName).queryForFirst();
 
                 response.setHeader("Content-Type", "application/json");
                 ServletOutputStream outputStream = response.getOutputStream();
                 PrintStream bou = new PrintStream(outputStream);
                 bou.println(form.form);
+                bou.close();
+                outputStream.flush();
+            } else {
+                List<Forms> visibleForms = formsDao.queryBuilder().where()
+                        .eq(Forms.STATUS_FIELD_NAME, FormStatus.VISIBLE.getStatusCode()).query();
+                JSONObject root = new JSONObject();
+                JSONArray formsArray = new JSONArray();
+                root.put("tags", formsArray);
+                for( Forms form : visibleForms ) {
+                    JSONObject formObj = new JSONObject();
+                    formObj.put("tag", form.name);
+                    formsArray.put(formObj);
+                }
+
+                response.setHeader("Content-Type", "application/json");
+                ServletOutputStream outputStream = response.getOutputStream();
+                PrintStream bou = new PrintStream(outputStream);
+                bou.println(root.toString());
                 bou.close();
                 outputStream.flush();
             }

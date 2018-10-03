@@ -24,7 +24,7 @@ public class UrlConstraint implements Constraint {
 
     @Override
     public String getDefaultFailMessage() {
-        return "Format has to be: http://host/upload";
+        return "Format has to be: http://host";
     }
 
 }
