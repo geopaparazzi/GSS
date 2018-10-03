@@ -55,6 +55,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hydrologis.gss.server.database.objects.Forms;
+import com.hydrologis.gss.server.utils.FormStatus;
 import com.hydrologis.gss.server.utils.GssWindows;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
@@ -75,6 +76,7 @@ import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FileDownloader;
 import com.vaadin.server.StreamResource;
 import com.vaadin.shared.ui.ContentMode;
+import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.ComboBox;
@@ -125,6 +127,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     private Button downloadTag;
     private FileDownloader tagFileDownloader;
 
+    private CheckBox visibleCheckBox;
+
     @Override
     public void enter( ViewChangeEvent event ) {
         try {
@@ -148,6 +152,18 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             downloadTag = new Button("Download", VaadinIcons.DOWNLOAD);
             downloadTag.setVisible(false);
 
+            visibleCheckBox = new CheckBox("make visible to connecting devices");
+            visibleCheckBox.addValueChangeListener(l -> {
+                Boolean makeVisible = l.getValue();
+                if (currentSelectedTags != null) {
+                    currentSelectedTags.status = makeVisible
+                            ? FormStatus.VISIBLE.getStatusCode()
+                            : FormStatus.HIDDEN.getStatusCode();
+                    saveCurrentTag();
+                }
+            });
+            visibleCheckBox.setVisible(false);
+
             tagsCombo = new ComboBox<>();
             tagsCombo.setPlaceholder("No tags selected");
             tagsCombo.setItemCaptionGenerator(Forms::getName);
@@ -162,6 +178,9 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                         selectForm();
                         deleteTag.setVisible(true);
                         downloadTag.setVisible(true);
+                        visibleCheckBox.setVisible(true);
+                        visibleCheckBox.setValue(currentSelectedTags.status == FormStatus.VISIBLE.getStatusCode() ? true : false);
+
                         if (tagFileDownloader != null) {
                             tagFileDownloader.remove();
                         }
@@ -181,7 +200,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                 }
             });
 
-            HorizontalLayout tagsLayout = new HorizontalLayout(tagsCombo, addTag, deleteTag, downloadTag);
+            HorizontalLayout tagsLayout = new HorizontalLayout(tagsCombo, addTag, deleteTag, downloadTag, visibleCheckBox);
+            tagsLayout.setComponentAlignment(visibleCheckBox, Alignment.MIDDLE_CENTER);
             addComponent(tagsLayout);
 
             formAndMenubarAreaLayout = new VerticalLayout();
@@ -252,7 +272,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                         return;
                     }
 
-                    Forms newTag = new Forms(newTagName, "[]", authenticatedUsername);
+                    Forms newTag = new Forms(newTagName, "[]", authenticatedUsername, FormStatus.HIDDEN.getStatusCode());
                     newTag = formsDAO.createIfNotExists(newTag);
                     formsQB = formsDAO.queryBuilder();
                     List<Forms> formsList = formsQB.where().eq(Forms.WEBUSER_FIELD_NAME, authenticatedUsername).query();

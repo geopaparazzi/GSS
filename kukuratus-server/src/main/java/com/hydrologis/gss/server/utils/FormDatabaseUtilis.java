@@ -29,7 +29,6 @@ import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.j256.ormlite.dao.Dao;
 
 public class FormDatabaseUtilis {
-
     public static void main( String[] args ) throws Exception {
 //        insertForm("/home/hydrologis/TMP/TESTGSS/DATA/gss_database.mv.db",
 //                "/home/hydrologis/TMP/TESTGSS/FW_TreeVisualAssessment.json");
@@ -51,7 +50,7 @@ public class FormDatabaseUtilis {
             String formString = FileUtilities.readFile(formPath);
             String formName = FileUtilities.getNameWithoutExtention(new File(formPath));
 
-            Forms form = new Forms(formName, formString, "god");
+            Forms form = new Forms(formName, formString, "god", FormStatus.VISIBLE.getStatusCode());
             formsDao.create(form);
 
         }

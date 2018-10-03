@@ -33,6 +33,7 @@ public class Forms {
     public static final String NAME_FIELD_NAME = "name";
     public static final String FORM_FIELD_NAME = "form";
     public static final String WEBUSER_FIELD_NAME = "webuseruniquename";
+    public static final String STATUS_FIELD_NAME = "status";
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
@@ -46,6 +47,9 @@ public class Forms {
     @DatabaseField(columnName = WEBUSER_FIELD_NAME, canBeNull = false, index = true)
     public String webUser;
 
+    @DatabaseField(columnName = STATUS_FIELD_NAME, canBeNull = false)
+    public int status;
+
     Forms() {
     }
 
@@ -53,11 +57,12 @@ public class Forms {
         this.id = id;
     }
 
-    public Forms( String name, String form, String webUser ) {
+    public Forms( String name, String form, String webUser, int status ) {
         super();
         this.name = name;
         this.form = form;
         this.webUser = webUser;
+        this.status = status;
     }
 
     public long getId() {
@@ -90,6 +95,14 @@ public class Forms {
 
     public void setWebUser( String webUser ) {
         this.webUser = webUser;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus( int status ) {
+        this.status = status;
     }
 
 }
