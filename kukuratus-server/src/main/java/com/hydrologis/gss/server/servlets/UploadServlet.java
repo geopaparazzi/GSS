@@ -55,7 +55,6 @@ import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.Status;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
-import com.hydrologis.kukuratus.libs.utils.NetworkUtilities;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -82,26 +81,14 @@ public class UploadServlet extends HttpServlet {
         String ipAddress = "unknown";
         String deviceId = "unknown";
         try {
-            String authHeader = request.getHeader("Authorization");
-            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
-            if (userPwd == null || !userPwd[1].equals("gss_Master_Survey_Forever_2018")) {
-                throw new ServletException(NO_PERMISSION);
+            if ((deviceId = ServletUtils.canProceed(request, response)) == null) {
+                return;
             }
-            deviceId = userPwd[0];
 
             DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+            GeometryFactory gf = GeometryUtilities.gf();
             Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
             GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
-            if (gpapUser == null) {
-                // create one for the new device
-                gpapUser = new GpapUsers(deviceId, deviceId, null, null);
-                usersDao.create(gpapUser);
-            }
-
-            debug("Upload connection from : " + gpapUser.name);
-
-            GeometryFactory gf = GeometryUtilities.gf();
-            GpapUsers _gpapUser = gpapUser;
 
             Dao<Notes, ? > notesDao = dbHandler.getDao(Notes.class);
 
@@ -114,9 +101,7 @@ public class UploadServlet extends HttpServlet {
 
             int[] notesLogsImagesCounts = new int[]{0, 0, 0};
 
-            dbHandler.callInTransaction(new Callable<Void>(){
-                @Override
-                public Void call() throws Exception {
+            dbHandler.callInTransaction(() -> {
 //                    Collection<Part> parts = request.getParts();
 //                    Part data = parts.iterator().next();
 //                    String partName = data.getName();
@@ -124,100 +109,99 @@ public class UploadServlet extends HttpServlet {
 //                        // store or do something with the input stream
 //                    }
 
-                    ServletFileUpload sfu = new ServletFileUpload(new DiskFileItemFactory());
+                ServletFileUpload sfu = new ServletFileUpload(new DiskFileItemFactory());
 
-                    HashMap<Long, Long> deviceNoteId2serverNoteId = new HashMap<>();
-                    List<FileItem> items = sfu.parseRequest(request);
-                    /*
-                     * first handle notes, since images need to be placed connected
-                     */
-                    for( FileItem item : items ) {
-                        String name = item.getName();
-                        if (name.equals(GssNote.OBJID)) {
-                            DataInputStream dis = new DataInputStream(item.getInputStream());
-                            while( dis.available() > 0 ) {
-                                GssNote note = new GssNote();
-                                note.internalize(GssNote.VERSION, dis);
+                HashMap<Long, Long> deviceNoteId2serverNoteId = new HashMap<>();
+                List<FileItem> items = sfu.parseRequest(request);
+                /*
+                 * first handle notes, since images need to be placed connected
+                 */
+                for( FileItem item : items ) {
+                    String name = item.getName();
+                    if (name.equals(GssNote.OBJID)) {
+                        DataInputStream dis = new DataInputStream(item.getInputStream());
+                        while( dis.available() > 0 ) {
+                            GssNote note = new GssNote();
+                            note.internalize(GssNote.VERSION, dis);
 
-                                Point point = gf.createPoint(new Coordinate(note.longitude, note.latitude));
-                                Notes serverNote = new Notes(point, note.altitude, note.timeStamp, note.description, note.text,
-                                        note.form, note.style, _gpapUser);
+                            Point point = gf.createPoint(new Coordinate(note.longitude, note.latitude));
+                            Notes serverNote = new Notes(point, note.altitude, note.timeStamp, note.description, note.text,
+                                    note.form, note.style, gpapUser);
 
-                                notesDao.create(serverNote);
-                                deviceNoteId2serverNoteId.put(note.id, serverNote.id);
-                                notesLogsImagesCounts[0] += 1;
-                                debug("Uploaded note: " + serverNote.text);
-                            }
-                        } else if (name.equals(GssGpsLog.OBJID)) {
-                            DataInputStream dis = new DataInputStream(item.getInputStream());
-
-                            List<GpsLogs> logs = new ArrayList<>();
-                            List<GpsLogsData> logsData = new ArrayList<>();
-                            List<GpsLogsProperties> logsProps = new ArrayList<>();
-                            while( dis.available() > 0 ) {
-                                GssGpsLog gpsLog = new GssGpsLog();
-                                gpsLog.internalize(GssGpsLog.VERSION, dis);
-
-                                List<Coordinate> logCoordinates = gpsLog.points.stream()
-                                        .map(gp -> new Coordinate(gp.longitude, gp.latitude)).collect(Collectors.toList());
-                                LineString logLine = gf
-                                        .createLineString(logCoordinates.toArray(new Coordinate[logCoordinates.size()]));
-                                GpsLogs newLog = new GpsLogs(gpsLog.name, gpsLog.startts, gpsLog.endts, logLine, _gpapUser);
-                                logs.add(newLog);
-
-                                for( GssGpsLogPoint gpsPoint : gpsLog.points ) {
-                                    Coordinate c = new Coordinate(gpsPoint.longitude, gpsPoint.latitude);
-                                    Point point = gf.createPoint(c);
-                                    GpsLogsData gpsLogsData = new GpsLogsData(point, gpsPoint.altimetry, gpsPoint.ts, newLog);
-                                    logsData.add(gpsLogsData);
-                                }
-
-                                GpsLogsProperties prop = new GpsLogsProperties(gpsLog.color, gpsLog.width, newLog);
-                                logsProps.add(prop);
-                                notesLogsImagesCounts[1] += 1;
-                            }
-                            logsDao.create(logs);
-                            logsDataDao.create(logsData);
-                            logsPropsDao.create(logsProps);
-                            debug("Uploaded Logs: " + logs.size());
-
+                            notesDao.create(serverNote);
+                            deviceNoteId2serverNoteId.put(note.id, serverNote.id);
+                            notesLogsImagesCounts[0] += 1;
+                            debug("Uploaded note: " + serverNote.text);
                         }
-                    }
+                    } else if (name.equals(GssGpsLog.OBJID)) {
+                        DataInputStream dis = new DataInputStream(item.getInputStream());
 
-                    /*
-                     * now handle images
-                     */
-                    for( FileItem item : items ) {
-                        String name = item.getName();
-                        if (name.startsWith(GssImage.OBJID)) {
-                            DataInputStream dis = new DataInputStream(item.getInputStream());
-                            GssImage image = new GssImage();
-                            image.internalize(GssImage.VERSION, dis);
+                        List<GpsLogs> logs = new ArrayList<>();
+                        List<GpsLogsData> logsData = new ArrayList<>();
+                        List<GpsLogsProperties> logsProps = new ArrayList<>();
+                        while( dis.available() > 0 ) {
+                            GssGpsLog gpsLog = new GssGpsLog();
+                            gpsLog.internalize(GssGpsLog.VERSION, dis);
 
-                            ImageData imgData = new ImageData(image.dataThumb, image.data);
-                            imageDataDao.create(imgData);
+                            List<Coordinate> logCoordinates = gpsLog.points.stream()
+                                    .map(gp -> new Coordinate(gp.longitude, gp.latitude)).collect(Collectors.toList());
+                            LineString logLine = gf
+                                    .createLineString(logCoordinates.toArray(new Coordinate[logCoordinates.size()]));
+                            GpsLogs newLog = new GpsLogs(gpsLog.name, gpsLog.startts, gpsLog.endts, logLine, gpapUser);
+                            logs.add(newLog);
 
-                            Notes tmpNote = null;
-                            if (image.noteId != -1) {
-                                Long noteId = deviceNoteId2serverNoteId.get(image.noteId);
-                                tmpNote = new Notes(noteId);
+                            for( GssGpsLogPoint gpsPoint : gpsLog.points ) {
+                                Coordinate c = new Coordinate(gpsPoint.longitude, gpsPoint.latitude);
+                                Point point = gf.createPoint(c);
+                                GpsLogsData gpsLogsData = new GpsLogsData(point, gpsPoint.altimetry, gpsPoint.ts, newLog);
+                                logsData.add(gpsLogsData);
                             }
-                            Point point = gf.createPoint(new Coordinate(image.longitude, image.latitude));
-                            Images img = new Images(point, image.altitude, image.timeStamp, image.azimuth, image.text, tmpNote,
-                                    imgData, _gpapUser);
-                            imagesDao.create(img);
-                            notesLogsImagesCounts[2] += 1;
 
-                            String str = "";
-                            if (tmpNote != null) {
-                                str = " for note: " + tmpNote.id;
-                            }
-                            debug("Uploaded image: " + image.text + str);
+                            GpsLogsProperties prop = new GpsLogsProperties(gpsLog.color, gpsLog.width, newLog);
+                            logsProps.add(prop);
+                            notesLogsImagesCounts[1] += 1;
                         }
-                    }
+                        logsDao.create(logs);
+                        logsDataDao.create(logsData);
+                        logsPropsDao.create(logsProps);
+                        debug("Uploaded Logs: " + logs.size());
 
-                    return null;
+                    }
                 }
+
+                /*
+                 * now handle images
+                 */
+                for( FileItem item : items ) {
+                    String name = item.getName();
+                    if (name.startsWith(GssImage.OBJID)) {
+                        DataInputStream dis = new DataInputStream(item.getInputStream());
+                        GssImage image = new GssImage();
+                        image.internalize(GssImage.VERSION, dis);
+
+                        ImageData imgData = new ImageData(image.dataThumb, image.data);
+                        imageDataDao.create(imgData);
+
+                        Notes tmpNote = null;
+                        if (image.noteId != -1) {
+                            Long noteId = deviceNoteId2serverNoteId.get(image.noteId);
+                            tmpNote = new Notes(noteId);
+                        }
+                        Point point = gf.createPoint(new Coordinate(image.longitude, image.latitude));
+                        Images img = new Images(point, image.altitude, image.timeStamp, image.azimuth, image.text, tmpNote,
+                                imgData, gpapUser);
+                        imagesDao.create(img);
+                        notesLogsImagesCounts[2] += 1;
+
+                        String str = "";
+                        if (tmpNote != null) {
+                            str = " for note: " + tmpNote.id;
+                        }
+                        debug("Uploaded image: " + image.text + str);
+                    }
+                }
+
+                return null;
             });
 
             logDb.insert(EMessageType.ACCESS, TAG,

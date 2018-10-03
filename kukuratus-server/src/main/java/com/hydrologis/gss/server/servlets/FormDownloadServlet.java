@@ -18,13 +18,8 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.servlets;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.Optional;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -36,20 +31,16 @@ import javax.servlet.http.HttpSession;
 
 import org.hortonmachine.dbs.log.Logger;
 
-import com.hydrologis.gss.server.GssWorkspace;
-import com.hydrologis.gss.server.database.objects.GpapUsers;
+import com.hydrologis.gss.server.database.objects.Forms;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.Status;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
-import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
-import com.hydrologis.kukuratus.libs.utils.NetworkUtilities;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
 
-@WebServlet(urlPatterns = "/datadownload")
-public class DataDownloadServlet extends HttpServlet {
-    private static final String TAG = DataDownloadServlet.class.getSimpleName();
-
+@WebServlet(urlPatterns = "/tagdownload")
+public class FormDownloadServlet extends HttpServlet {
+    private static final String TAG = FormDownloadServlet.class.getSimpleName();
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -65,38 +56,23 @@ public class DataDownloadServlet extends HttpServlet {
                 return;
             }
 
-            String fileName = request.getParameter("id");
-            if (fileName == null) {
-                // send list
-                String mapsListJson = GssWorkspace.INSTANCE.getMapsListJson();
+            DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+            String tagName = request.getParameter("name");
+            if (tagName != null) {
+                Dao<Forms, ? > formsDao = dbHandler.getDao(Forms.class);
+                Forms form = formsDao.queryBuilder().where().eq(Forms.NAME_FIELD_NAME, tagName).queryForFirst();
+
                 response.setHeader("Content-Type", "application/json");
                 ServletOutputStream outputStream = response.getOutputStream();
                 PrintStream bou = new PrintStream(outputStream);
-                bou.println(mapsListJson);
+                bou.println(form.form);
                 bou.close();
                 outputStream.flush();
-            } else {
-                response.setContentType("application/octet-stream");
-                response.setHeader("Content-disposition", "attachment; filename=" + fileName);
-
-                Optional<File> mapFileOpt = GssWorkspace.INSTANCE.getMapFile(fileName);
-                if (mapFileOpt.isPresent()) {
-                    File file = mapFileOpt.get();
-                    try (InputStream in = new FileInputStream(file); OutputStream out = response.getOutputStream()) {
-                        byte[] buffer = new byte[1024];
-                        int numBytesRead;
-                        while( (numBytesRead = in.read(buffer)) > 0 ) {
-                            out.write(buffer, 0, numBytesRead);
-                        }
-                        out.flush();
-                    }
-                }
-
             }
 
         } catch (Exception ex) {
             try {
-                logDb.insertError(TAG, "Data download connection from '" + deviceId + "' at ip:" + ipAddress + " errored with:\n",
+                logDb.insertError(TAG, "Tag download connection from '" + deviceId + "' at ip:" + ipAddress + " errored with:\n",
                         ex);
                 /*
                  * if there are problems, return some information.
