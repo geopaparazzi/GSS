@@ -475,7 +475,7 @@ public class DataSynchForm extends Form {
             }
 
         };
-        mpr.setTimeout(GssMobile.MPR_TIMEOUT);
+        mpr.setTimeout(GssUtilities.MPR_TIMEOUT);
         return mpr;
     }
 
@@ -535,7 +535,7 @@ public class DataSynchForm extends Form {
             } else {
                 index = 1;
             }
-            String authCode = HyUtilities.getUdid() + ":" + GssMobile.MASTER_GSS_PASSWORD;
+            String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
             if (doNotes || doLogs) {
                 boolean oneAdded = false;

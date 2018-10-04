@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- *****************************************************************************
+ * ****************************************************************************
  */
 package com.hydrologis.gssmobile.utils;
 
@@ -24,6 +24,10 @@ package com.hydrologis.gssmobile.utils;
  * @author hydrologis
  */
 public class GssUtilities {
+
+    public static final String MASTER_GSS_PASSWORD = "gss_Master_Survey_Forever_2018";
+
+    public static final int MPR_TIMEOUT = 5 * 60 * 1000; // 5 minutes timeout
 
     public static final String LAST_DB_PATH = "GSS_LAST_DB_PATH";
     public static final String SERVER_URL = "GSS_SERVER_URL";

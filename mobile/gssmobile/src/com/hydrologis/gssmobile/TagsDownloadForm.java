@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- *****************************************************************************
+ * ****************************************************************************
  */
 package com.hydrologis.gssmobile;
 
@@ -93,7 +93,7 @@ public class TagsDownloadForm extends Form {
 
     private void refreshDataList() {
 
-        String authCode = HyUtilities.getUdid() + ":" + GssMobile.MASTER_GSS_PASSWORD;
+        String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
         String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
         String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
@@ -171,7 +171,7 @@ public class TagsDownloadForm extends Form {
             HyDialogs.showWarningDialog("A file with the same name already exists on the device. Not overwriting it!");
         } else {
             String filePath = tagsFolder + "/" + name + "_tags.json";
-            String authCode = HyUtilities.getUdid() + ":" + GssMobile.MASTER_GSS_PASSWORD;
+            String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
             String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
@@ -184,14 +184,26 @@ public class TagsDownloadForm extends Form {
             ConnectionRequest req = new ConnectionRequest() {
                 @Override
                 protected void readResponse(InputStream input) throws IOException {
-                    FileSystemStorage fsStorage = FileSystemStorage.getInstance();
-                    OutputStream out = fsStorage.openOutputStream(filePath);
-                    byte[] buf = new byte[1024];
-                    int i = 0;
-                    while ((i = input.read(buf)) != -1) {
-                        out.write(buf, 0, i);
+                    try {
+                        FileSystemStorage fsStorage = FileSystemStorage.getInstance();
+                        OutputStream out = fsStorage.openOutputStream(filePath);
+                        byte[] buf = new byte[1024];
+                        int i = 0;
+                        while ((i = input.read(buf)) != -1) {
+                            out.write(buf, 0, i);
+                        }
+                        out.close();
+
+                        CN.callSerially(() -> {
+                            HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
+                        });
+                    } catch (IOException iOException) {
+                        CN.callSerially(() -> {
+                            HyDialogs.showErrorDialog("An error occurred while downloading: " + name);
+                        });
+
+                        throw iOException;
                     }
-                    out.close();
                 }
             };
 

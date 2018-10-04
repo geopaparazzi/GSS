@@ -1,21 +1,22 @@
-/*******************************************************************************
+/** *****************************************************************************
  * Copyright (C) 2018 HydroloGIS S.r.l. (www.hydrologis.com)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package com.hydrologis.gssmobile;
 
 import com.codename1.components.FloatingActionButton;
@@ -97,7 +98,7 @@ public class DataDownloadForm extends Form {
 
     private void refreshDataList() {
 
-        String authCode = HyUtilities.getUdid() + ":" + GssMobile.MASTER_GSS_PASSWORD;
+        String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
         String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
         String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
@@ -204,7 +205,7 @@ public class DataDownloadForm extends Form {
             HyDialogs.showWarningDialog("A file with the same name already exists on the device. Not overwriting it!");
         } else {
             String filePath = gssMapsFolder + "/" + name;
-            String authCode = HyUtilities.getUdid() + ":" + GssMobile.MASTER_GSS_PASSWORD;
+            String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
             String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
@@ -217,14 +218,26 @@ public class DataDownloadForm extends Form {
             ConnectionRequest req = new ConnectionRequest() {
                 @Override
                 protected void readResponse(InputStream input) throws IOException {
-                    FileSystemStorage fsStorage = FileSystemStorage.getInstance();
-                    OutputStream out = fsStorage.openOutputStream(filePath);
-                    byte[] buf = new byte[1024];
-                    int i = 0;
-                    while ((i = input.read(buf)) != -1) {
-                        out.write(buf, 0, i);
+                    try {
+                        FileSystemStorage fsStorage = FileSystemStorage.getInstance();
+                        OutputStream out = fsStorage.openOutputStream(filePath);
+                        byte[] buf = new byte[1024];
+                        int i = 0;
+                        while ((i = input.read(buf)) != -1) {
+                            out.write(buf, 0, i);
+                        }
+                        out.close();
+
+                        CN.callSerially(() -> {
+                            HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
+                        });
+                    } catch (IOException iOException) {
+                        CN.callSerially(() -> {
+                            HyDialogs.showErrorDialog("An error occurred while downloading: " + name);
+                        });
+                        
+                        throw iOException;
                     }
-                    out.close();
                 }
             };
 

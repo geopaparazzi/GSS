@@ -44,10 +44,6 @@ import com.hydrologis.gssmobile.utils.UdidDialog;
 
 public class GssMobile {
 
-    public static final String MASTER_GSS_PASSWORD = "gss_Master_Survey_Forever_2018";
-
-    public static final int MPR_TIMEOUT = 5 * 60 * 1000; // 5 minutes timeout
-
     private Form current;
     private Resources theme;
 
