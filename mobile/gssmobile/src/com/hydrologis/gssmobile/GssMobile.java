@@ -39,6 +39,7 @@ import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.HyNativeUtils;
 import com.hydrologis.cn1.libs.HyUtilities;
+import com.hydrologis.cn1.libs.LogCommentDialog;
 import com.hydrologis.gssmobile.utils.ServerUrlDialog;
 import com.hydrologis.gssmobile.utils.UdidDialog;
 
@@ -121,23 +122,28 @@ public class GssMobile {
             String udid = HyUtilities.getUdid();
             if (udid == null) {
                 UdidDialog insertUdidDialog = new UdidDialog();
-                insertUdidDialog.show();
-
-                String newUdid = insertUdidDialog.getUdid();
-                Preferences.set(HyUtilities.CUSTOM_UDID, newUdid);
+                if (insertUdidDialog.openAndWait()) {
+                    String newUdid = insertUdidDialog.getUdid();
+                    Preferences.set(HyUtilities.CUSTOM_UDID, newUdid);
+                }
             } else {
                 HyDialogs.showInfoDialog("Unique device id", "UDID: " + udid);
             }
         });
         toolbar.addMaterialCommandToSideMenu("Server URL", FontImage.MATERIAL_CLOUD_CIRCLE, e -> {
-            ServerUrlDialog serverUrlDialog = new ServerUrlDialog();
-            serverUrlDialog.show();
-
-            String serverUrl = serverUrlDialog.getServerUrl();
-            Preferences.set(GssUtilities.SERVER_URL, serverUrl);
+            ServerUrlDialog dialog = new ServerUrlDialog();
+            if (dialog.openAndWait()) {
+                String serverUrl = dialog.getServerUrl();
+                Preferences.set(GssUtilities.SERVER_URL, serverUrl);
+            }
         });
         toolbar.addMaterialCommandToSideMenu("Send debug log", FontImage.MATERIAL_SEND, e -> {
-            HyLog.sendLog();
+            LogCommentDialog dialog = new LogCommentDialog();
+            if (dialog.openAndWait()) {
+                String logComment = "USER ADDED LOG COMMENT:\n----------------\n" + dialog.getLogComment() + "\n----------------\n";
+                HyLog.w(logComment);
+                HyLog.sendLog();
+            }
         });
 
         Image logoImage = theme.getImage("gss_logo_512.png");

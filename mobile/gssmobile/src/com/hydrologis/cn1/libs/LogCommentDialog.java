@@ -15,55 +15,48 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- *****************************************************************************
+ * ****************************************************************************
  */
-package com.hydrologis.gssmobile.utils;
+package com.hydrologis.cn1.libs;
 
 import com.codename1.components.SpanLabel;
-import com.codename1.io.Preferences;
 import com.codename1.ui.Button;
 import com.codename1.ui.Command;
 import com.codename1.ui.Container;
 import com.codename1.ui.Dialog;
 import com.codename1.ui.Label;
-import com.codename1.ui.TextField;
+import com.codename1.ui.TextArea;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.layouts.GridLayout;
 import com.codename1.ui.plaf.Border;
 import com.codename1.ui.plaf.Style;
-import com.codename1.ui.validation.LengthConstraint;
-import com.codename1.ui.validation.Validator;
-import com.hydrologis.cn1.libs.HyDialogs;
-import com.hydrologis.cn1.libs.HyUtilities;
 
 /**
  *
  * @author hydrologis
  */
-public class UdidDialog extends Dialog {
+public class LogCommentDialog extends Dialog {
 
-    private final Command cancelCommand = new Command(HyDialogs.CANCEL);
-    private final Command okCommand = new Command(HyDialogs.OK);
+    private Command cancelCommand = new Command(HyDialogs.CANCEL);
+    private Command okCommand = new Command(HyDialogs.OK);
 
-    private TextField udidField;
+    private final TextArea commentField;
 
-    public UdidDialog() {
-        super("Device UDID not supported");
+    public LogCommentDialog() {
+
+        super("Log comment");
 
         setLayout(BoxLayout.y());
 
-        SpanLabel titleLabel = new SpanLabel("Please insert a user selected unique id");
+        SpanLabel titleLabel = new SpanLabel("Please add commment and/or email to help the developers to understand the issue.");
 
-        String udid = Preferences.get(HyUtilities.CUSTOM_UDID, "");
-        udidField = new TextField(udid, "Insert UDID of at least 10 chars");
-
-        Validator val = new Validator();
-        val.addConstraint(udidField, new LengthConstraint(10));
+        commentField = new TextArea();
+        commentField.setRows(6);
 
         add(titleLabel);
-        add(udidField);
+        add(commentField);
 
-        setEditOnShow(udidField);
+        setEditOnShow(commentField);
 
         Label grayLabel = new Label();
         grayLabel.setShowEvenIfBlank(true);
@@ -75,7 +68,6 @@ public class UdidDialog extends Dialog {
         Button ok = new Button(okCommand);
         ok.getAllStyles().setBorder(Border.createEmpty());
         ok.getAllStyles().setFgColor(0);
-        val.addSubmitButtons(ok);
 
         Button cancel = new Button(cancelCommand);
         cancel.getAllStyles().setBorder(Border.createEmpty());
@@ -85,11 +77,10 @@ public class UdidDialog extends Dialog {
         buttons.add(ok);
         buttons.add(cancel);
         add(buttons);
-
     }
 
-    public String getUdid() {
-        return udidField.getText();
+    public String getLogComment() {
+        return commentField.getText();
     }
 
     public boolean openAndWait() {

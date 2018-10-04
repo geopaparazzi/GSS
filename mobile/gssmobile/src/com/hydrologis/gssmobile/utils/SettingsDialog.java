@@ -1,32 +1,36 @@
-/*******************************************************************************
+/** *****************************************************************************
  * Copyright (C) 2018 HydroloGIS S.r.l. (www.hydrologis.com)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package com.hydrologis.gssmobile.utils;
 
 import com.codename1.components.SpanLabel;
 import com.codename1.db.Database;
 import com.codename1.ui.Button;
+import com.codename1.ui.Command;
 import com.codename1.ui.ComponentGroup;
 import com.codename1.ui.Container;
 import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
+import com.codename1.ui.layouts.GridLayout;
+import com.codename1.ui.plaf.Border;
 import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.HyUtilities;
@@ -41,6 +45,7 @@ import java.io.IOException;
  */
 public class SettingsDialog extends Dialog {
 
+    private Command cancelCommand = new Command(HyDialogs.CANCEL);
     private Container nativeBrowserContainer = null;
 
     public SettingsDialog(final Database db) {
@@ -113,8 +118,11 @@ public class SettingsDialog extends Dialog {
 
         add(group);
 
-        setDisposeWhenPointerOutOfBounds(true);
+        Button cancel = new Button(cancelCommand);
+        cancel.getAllStyles().setBorder(Border.createEmpty());
+        cancel.getAllStyles().setFgColor(0);
 
+        add(cancel);
     }
 
 }
