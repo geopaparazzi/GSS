@@ -58,6 +58,14 @@
         <val key="Toolbar.bgColor" value="5d9d76" />
         <border key="Toolbar.border" type="empty" />
         <val key="Toolbar.transparency" value="255" />
+        <val key="hylistdownloadbutton.marUnit" value="2,2,2,2" />
+        <val key="hylistdownloadbutton.margin" value="1.0,1.0,1.0,1.0" />
+        <val key="hylistdownloadbutton.press#marUnit" value="2,2,2,2" />
+        <val key="hylistdownloadbutton.press#margin" value="1.0,1.0,1.0,1.0" />
+        <val key="hylistdownloadbutton.sel#marUnit" value="2,2,2,2" />
+        <val key="hylistdownloadbutton.sel#margin" value="1.0,1.0,1.0,1.0" />
+        <border key="hylistrow.border" type="underline"  millimeters="false" thickness="1.0" color="0" />
+        <val key="hylistrow.margin" value="0.0,1.0,0.0,0.0" />
         <val key="sideMenuFillerContainer.bgColor" value="ffffff" />
         <border key="sideMenuFillerContainer.border" type="empty" />
         <val key="sideMenuFillerContainer.fgColor" value="ffffff" />

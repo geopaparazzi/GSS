@@ -6,32 +6,33 @@
 package com.hydrologis.gssmobile;
 
 import com.codename1.components.FloatingActionButton;
+import com.codename1.components.InfiniteProgress;
 import com.hydrologis.cn1.libs.*;
 import com.codename1.db.Database;
 import com.codename1.io.ConnectionRequest;
+import com.codename1.io.File;
+import com.codename1.io.FileSystemStorage;
 import com.codename1.io.JSONParser;
-import com.codename1.io.Log;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.Preferences;
 import com.codename1.ui.Button;
-import com.codename1.ui.Component;
+import com.codename1.ui.CN;
 import com.codename1.ui.Container;
+import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
-import com.codename1.ui.InfiniteContainer;
+import com.codename1.ui.Image;
 import com.codename1.ui.Label;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
-import com.hydrologis.gssmobile.database.DaoNotes;
-import com.hydrologis.gssmobile.database.GssNote;
 import com.hydrologis.gssmobile.utils.GssUtilities;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +43,11 @@ import java.util.Map;
  */
 public class DataDownloadForm extends Form {
 
-    private static final char NOTE_ICON = FontImage.MATERIAL_NOTE;
-    private static final char FORM_NOTE_ICON = FontImage.MATERIAL_NOTE_ADD;
-
     private Container list = null;
     private Database db = null;
+    private FontImage basemapIcon;
+    private FontImage overlaysIcon;
+    private FontImage projectsIcon;
 
     public DataDownloadForm(Form previous, Resources theme) {
         setLayout(new BorderLayout());
@@ -61,16 +62,21 @@ public class DataDownloadForm extends Form {
 
     private void init() {
 
+        basemapIcon = FontImage.createMaterial(FontImage.MATERIAL_GRID_ON, "basemapsIcon", 4);
+        overlaysIcon = FontImage.createMaterial(FontImage.MATERIAL_TIMELINE, "overlaysIcon", 4);
+        projectsIcon = FontImage.createMaterial(FontImage.MATERIAL_STORAGE, "storageIcon", 4);
+
         try {
             list = new Container(BoxLayout.y());
             list.setScrollableY(true);
             add(BorderLayout.CENTER, list);
 
             FloatingActionButton fab = FloatingActionButton.createFAB(FontImage.MATERIAL_REFRESH);
-            fab.bindFabToContainer(getContentPane());
+            fab.bindFabToContainer(this.getContentPane());
             fab.addActionListener(e -> refreshDataList());
 
-            setScrollable(false);
+//            setScrollable(false);
+            refreshDataList();
         } catch (Exception ex) {
             HyLog.e(ex);
         }
@@ -99,54 +105,43 @@ public class DataDownloadForm extends Form {
                 List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
                 List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
 
-                list.removeAll();
-                for (Object obj : baseMapsJson) {
-                    if (obj instanceof HashMap) {
-                        HashMap hashMap = (HashMap) obj;
-                        Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                        if (nameObj instanceof String) {
-                            String name = (String) nameObj;
-
-                            Container rowContainer = new Container(BoxLayout.x());
-
-                            Button b = new Button(FontImage.MATERIAL_CLOUD_DOWNLOAD, name);
-                            list.add(b);
-                            b.addActionListener(e -> Log.p("You picked: " + b.getText()));
+                CN.callSerially(() -> {
+                    list.removeAll();
+                    for (Object obj : baseMapsJson) {
+                        if (obj instanceof HashMap) {
+                            HashMap hashMap = (HashMap) obj;
+                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                            if (nameObj instanceof String) {
+                                String name = (String) nameObj;
+                                addDownloadRow(name, basemapIcon, 0);
+                            }
                         }
                     }
-                }
-                for (Object obj : overlaysJson) {
-                    if (obj instanceof HashMap) {
-                        HashMap hashMap = (HashMap) obj;
-                        Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                        if (nameObj instanceof String) {
-                            String name = (String) nameObj;
-
-                            Container rowContainer = new Container(BoxLayout.x());
-
-                            Button b = new Button(FontImage.MATERIAL_CLOUD_DOWNLOAD, name);
-                            list.add(b);
-                            b.addActionListener(e -> Log.p("You picked: " + b.getText()));
+                    for (Object obj : overlaysJson) {
+                        if (obj instanceof HashMap) {
+                            HashMap hashMap = (HashMap) obj;
+                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                            if (nameObj instanceof String) {
+                                String name = (String) nameObj;
+                                addDownloadRow(name, overlaysIcon, 1);
+                            }
                         }
                     }
-                }
-                for (Object obj : projectsJson) {
-                    if (obj instanceof HashMap) {
-                        HashMap hashMap = (HashMap) obj;
-                        Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                        if (nameObj instanceof String) {
-                            String name = (String) nameObj;
-
-                            Container rowContainer = new Container(BoxLayout.x());
-
-                            Button b = new Button(FontImage.MATERIAL_CLOUD_DOWNLOAD, name);
-                            list.add(b);
-                            b.addActionListener(e -> Log.p("You picked: " + b.getText()));
+                    for (Object obj : projectsJson) {
+                        if (obj instanceof HashMap) {
+                            HashMap hashMap = (HashMap) obj;
+                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                            if (nameObj instanceof String) {
+                                String name = (String) nameObj;
+                                addDownloadRow(name, projectsIcon, 2);
+                            }
                         }
                     }
-                }
 
+                    list.forceRevalidate();
+                });
             }
+
         };
 
         req.setPost(false);
@@ -155,6 +150,82 @@ public class DataDownloadForm extends Form {
         req.setUrl(serverUrl);
 
         NetworkManager.getInstance().addToQueue(req);
+    }
+
+    private void addDownloadRow(String name, Image typeIcon, int type) {
+
+        Label label = new Label(name, typeIcon);
+
+        Button downloadButton = new Button(FontImage.MATERIAL_CLOUD_DOWNLOAD, "hylistdownloadbutton");
+        downloadButton.addActionListener(e -> {
+            try {
+                downloadFile(name, type);
+            } catch (IOException ex) {
+                HyLog.e(ex);
+            }
+        });
+
+        Container rowContainer = new Container(BoxLayout.x(), "hylistrow");
+        rowContainer.add(downloadButton);
+        rowContainer.add(label);
+
+        list.add(rowContainer);
+    }
+
+    private void downloadFile(String name, int type) throws IOException {
+        String sdcard = FileUtilities.INSTANCE.getSdcard();
+
+        String gssMapsFolder;
+        if (type == 0 || type == 1) {
+            gssMapsFolder = sdcard + "/gssworkspace/maps";
+        } else {
+            gssMapsFolder = sdcard + "/gssworkspace/projects";
+        }
+        File mapsFile = new File(gssMapsFolder);
+        if (!mapsFile.exists()) {
+            mapsFile.mkdirs();
+        }
+        HyLog.p("download folder: " + gssMapsFolder);
+        List<String> existingFiles = FileUtilities.INSTANCE.findFilesByExtension(gssMapsFolder, name);
+        if (existingFiles.size() > 0) {
+            HyDialogs.showWarningDialog("A file with the same name already exists on the device. Not overwriting it!");
+        } else {
+            String filePath = gssMapsFolder + "/" + name;
+            String authCode = HyUtilities.getUdid() + ":" + GssMobile.MASTER_GSS_PASSWORD;
+            String authHeader = "Basic " + Base64.encode(authCode.getBytes());
+
+            String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
+            if (serverUrl.trim().length() == 0) {
+                HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
+                return;
+            }
+            serverUrl = serverUrl + GssUtilities.DATA_DOWNLOAD_PATH + "?" + GssUtilities.DATA_DOWNLOAD_NAME + "=" + name;
+
+            ConnectionRequest req = new ConnectionRequest() {
+                @Override
+                protected void readResponse(InputStream input) throws IOException {
+                    FileSystemStorage fsStorage = FileSystemStorage.getInstance();
+                    OutputStream out = fsStorage.openOutputStream(filePath);
+                    byte[] buf = new byte[1024];
+                    int i = 0;
+                    while ((i = input.read(buf)) != -1) {
+                        out.write(buf, 0, i);
+                    }
+                    out.close();
+                }
+            };
+
+            req.setPost(false);
+            req.setHttpMethod("GET");
+            req.addRequestHeader("Authorization", authHeader);
+            req.setUrl(serverUrl);
+
+            InfiniteProgress prog = new InfiniteProgress();
+            Dialog dlg = prog.showInifiniteBlocking();
+            req.setDisposeOnCompletion(dlg);
+            NetworkManager.getInstance().addToQueueAndWait(req);
+        }
+
     }
 
 }
