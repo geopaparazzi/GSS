@@ -19,6 +19,7 @@
  */
 package com.hydrologis.gssmobile;
 
+import com.hydrologis.gssmobile.utils.GssDownloadProgressDialog;
 import com.codename1.components.FloatingActionButton;
 import com.codename1.components.InfiniteProgress;
 import com.hydrologis.cn1.libs.*;
@@ -29,6 +30,7 @@ import com.codename1.io.FileSystemStorage;
 import com.codename1.io.JSONParser;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.Preferences;
+import com.codename1.io.Util;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
 import com.codename1.ui.Container;
@@ -62,6 +64,7 @@ public class DataDownloadForm extends Form {
     private FontImage basemapIcon;
     private FontImage overlaysIcon;
     private FontImage projectsIcon;
+    private final Resources theme;
 
     public DataDownloadForm(Form previous, Resources theme) {
         setLayout(new BorderLayout());
@@ -72,6 +75,7 @@ public class DataDownloadForm extends Form {
         setTitle("Data Download");
 
         init();
+        this.theme = theme;
     }
 
     private void init() {
@@ -219,23 +223,31 @@ public class DataDownloadForm extends Form {
                 @Override
                 protected void readResponse(InputStream input) throws IOException {
                     try {
-                        FileSystemStorage fsStorage = FileSystemStorage.getInstance();
-                        OutputStream out = fsStorage.openOutputStream(filePath);
-                        byte[] buf = new byte[1024];
-                        int i = 0;
-                        while ((i = input.read(buf)) != -1) {
-                            out.write(buf, 0, i);
-                        }
-                        out.close();
 
-                        CN.callSerially(() -> {
-                            HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
-                        });
+                        if (isKilled()) {
+                            return;
+                        }
+                        if (filePath != null) {
+                            FileSystemStorage fsStorage = FileSystemStorage.getInstance();
+                            OutputStream out = fsStorage.openOutputStream(filePath);
+                            Util.copy(input, out);
+
+                            // was the download killed while we downloaded
+                            if (isKilled()) {
+                                FileSystemStorage.getInstance().delete(filePath);
+                            }
+                        }
+
+                        if (!isKilled()) {
+                            CN.callSerially(() -> {
+                                HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
+                            });
+                        }
                     } catch (IOException iOException) {
                         CN.callSerially(() -> {
                             HyDialogs.showErrorDialog("An error occurred while downloading: " + name);
                         });
-                        
+
                         throw iOException;
                     }
                 }
@@ -246,9 +258,8 @@ public class DataDownloadForm extends Form {
             req.addRequestHeader("Authorization", authHeader);
             req.setUrl(serverUrl);
 
-            InfiniteProgress prog = new InfiniteProgress();
-            Dialog dlg = prog.showInifiniteBlocking();
-            req.setDisposeOnCompletion(dlg);
+            GssDownloadProgressDialog prog = new GssDownloadProgressDialog();
+            prog.showInfiniteBlockingWithTitle("Downloading " + name + " (this might take a while).", theme, req);
             NetworkManager.getInstance().addToQueueAndWait(req);
         }
 

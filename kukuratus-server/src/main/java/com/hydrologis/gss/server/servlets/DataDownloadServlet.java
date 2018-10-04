@@ -76,13 +76,13 @@ public class DataDownloadServlet extends HttpServlet {
                 Optional<File> mapFileOpt = GssWorkspace.INSTANCE.getMapFile(fileName);
                 if (mapFileOpt.isPresent()) {
                     File file = mapFileOpt.get();
-                    try (InputStream in = new FileInputStream(file); OutputStream out = response.getOutputStream()) {
-                        byte[] buffer = new byte[1024];
-                        int numBytesRead;
-                        while( (numBytesRead = in.read(buffer)) > 0 ) {
-                            out.write(buffer, 0, numBytesRead);
+                    try (InputStream i = new FileInputStream(file); OutputStream o = response.getOutputStream()) {
+                        byte[] buffer = new byte[8192];
+                        int size = i.read(buffer);
+                        while(size > -1) {
+                            o.write(buffer, 0, size);
+                            size = i.read(buffer);
                         }
-                        out.flush();
                     }
                 }
 

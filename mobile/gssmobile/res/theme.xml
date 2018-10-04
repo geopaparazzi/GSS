@@ -2,8 +2,8 @@
 
 <resource majorVersion="1" minorVersion="9" useXmlUI="false">
     <image name="gss_launcher_icon.png" type="multi"  />
-    <image name="gss_logo_1024.png" type="multi"  />
     <image name="gss_logo_512.png" type="multi"  />
+    <image name="gss_spinner_128.png" type="multi"  />
     <theme name="Theme">
         <val key="@includeNativeBool" value="true" />
         <val key="Button.fgColor" value="000000" />
@@ -17,6 +17,13 @@
         <val key="FloatingActionButton.sel#transparency" value="255" />
         <val key="FloatingActionButton.transparency" value="255" />
         <val key="FloatingActionText.fgColor" value="993300" />
+        <val key="HyInfiniteContainer.bgColor" value="ffffff" />
+        <val key="HyInfiniteContainer.derive" value="Container" />
+        <val key="HyInfiniteContainer.marUnit" value="1,1,1,1" />
+        <val key="HyInfiniteContainer.margin" value="30.0,30.0,5.0,5.0" />
+        <val key="HyInfiniteContainer.transparency" value="255" />
+        <val key="InfiniteProgress.align" value="4" />
+        <val key="InfiniteProgress.fgColor" value="5d9d76" />
         <val key="ItemsListRow.bgColor" value="ffffff" />
         <border key="ItemsListRow.border" type="line" millimeters="false" thickness="1.0" color="6135158" />
         <val key="ItemsListRow.margin" value="0.0,0.0,0.0,0.0" />

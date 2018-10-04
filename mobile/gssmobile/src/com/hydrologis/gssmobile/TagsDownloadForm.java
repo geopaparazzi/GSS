@@ -42,6 +42,7 @@ import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
+import com.hydrologis.gssmobile.utils.GssDownloadProgressDialog;
 import com.hydrologis.gssmobile.utils.GssUtilities;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,6 +61,7 @@ public class TagsDownloadForm extends Form {
     private Container list = null;
     private Database db = null;
     private FontImage tagsIcon;
+    private final Resources theme;
 
     public TagsDownloadForm(Form previous, Resources theme) {
         setLayout(new BorderLayout());
@@ -70,6 +72,7 @@ public class TagsDownloadForm extends Form {
         setTitle("Tags Download");
 
         init();
+        this.theme = theme;
     }
 
     private void init() {
@@ -166,11 +169,12 @@ public class TagsDownloadForm extends Form {
             tagsFile.mkdirs();
         }
         HyLog.p("download folder: " + tagsFolder);
-        List<String> existingFiles = FileUtilities.INSTANCE.findFilesByExtension(tagsFolder, name);
+        final String fullName = name + "_tags.json";
+        List<String> existingFiles = FileUtilities.INSTANCE.findFilesByExtension(tagsFolder, fullName);
         if (existingFiles.size() > 0) {
             HyDialogs.showWarningDialog("A file with the same name already exists on the device. Not overwriting it!");
         } else {
-            String filePath = tagsFolder + "/" + name + "_tags.json";
+            String filePath = tagsFolder + "/" + fullName;
             String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
@@ -212,9 +216,9 @@ public class TagsDownloadForm extends Form {
             req.addRequestHeader("Authorization", authHeader);
             req.setUrl(serverUrl);
 
-            InfiniteProgress prog = new InfiniteProgress();
-            Dialog dlg = prog.showInifiniteBlocking();
-            req.setDisposeOnCompletion(dlg);
+            GssDownloadProgressDialog prog = new GssDownloadProgressDialog();
+            prog.showInfiniteBlockingWithTitle("Downloading " + name + " (this might take a while).", theme, req);
+            
             NetworkManager.getInstance().addToQueueAndWait(req);
         }
 
