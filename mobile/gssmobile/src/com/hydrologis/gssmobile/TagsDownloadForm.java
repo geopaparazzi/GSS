@@ -1,21 +1,22 @@
-/*******************************************************************************
+/** *****************************************************************************
  * Copyright (C) 2018 HydroloGIS S.r.l. (www.hydrologis.com)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- ******************************************************************************/
+ *****************************************************************************
+ */
 package com.hydrologis.gssmobile;
 
 import com.codename1.components.FloatingActionButton;
@@ -54,30 +55,26 @@ import java.util.Map;
  *
  * @author hydrologis
  */
-public class DataTagsForm extends Form {
+public class TagsDownloadForm extends Form {
 
     private Container list = null;
     private Database db = null;
-    private FontImage basemapIcon;
-    private FontImage overlaysIcon;
-    private FontImage projectsIcon;
+    private FontImage tagsIcon;
 
-    public DataTagsForm(Form previous, Resources theme) {
+    public TagsDownloadForm(Form previous, Resources theme) {
         setLayout(new BorderLayout());
         Toolbar tb = getToolbar();
         tb.setBackCommand("Back", (e) -> {
             previous.showBack();
         });
-        setTitle("Data Download");
+        setTitle("Tags Download");
 
         init();
     }
 
     private void init() {
 
-        basemapIcon = FontImage.createMaterial(FontImage.MATERIAL_GRID_ON, "basemapsIcon", 4);
-        overlaysIcon = FontImage.createMaterial(FontImage.MATERIAL_TIMELINE, "overlaysIcon", 4);
-        projectsIcon = FontImage.createMaterial(FontImage.MATERIAL_STORAGE, "storageIcon", 4);
+        tagsIcon = FontImage.createMaterial(FontImage.MATERIAL_EVENT_NOTE, "tagsIcon", 4);
 
         try {
             list = new Container(BoxLayout.y());
@@ -88,7 +85,6 @@ public class DataTagsForm extends Form {
             fab.bindFabToContainer(this.getContentPane());
             fab.addActionListener(e -> refreshDataList());
 
-//            setScrollable(false);
             refreshDataList();
         } catch (Exception ex) {
             HyLog.e(ex);
@@ -105,7 +101,7 @@ public class DataTagsForm extends Form {
             HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
             return;
         }
-        serverUrl = serverUrl + GssUtilities.DATA_DOWNLOAD_PATH;
+        serverUrl = serverUrl + GssUtilities.TAGS_DOWNLOAD_PATH;
 
         ConnectionRequest req = new ConnectionRequest() {
             @Override
@@ -113,44 +109,20 @@ public class DataTagsForm extends Form {
                 InputStreamReader reader = new InputStreamReader(input);
                 JSONParser parser = new JSONParser();
                 Map<String, Object> response = parser.parseJSON(reader);
-                List baseMapsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_BASEMAP);
-
-                List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
-                List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
+                List tagsJsonList = (List) response.get(GssUtilities.TAGS_DOWNLOAD_TAGS);
 
                 CN.callSerially(() -> {
                     list.removeAll();
-                    for (Object obj : baseMapsJson) {
+                    for (Object obj : tagsJsonList) {
                         if (obj instanceof HashMap) {
                             HashMap hashMap = (HashMap) obj;
-                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                            Object nameObj = hashMap.get(GssUtilities.TAGS_DOWNLOAD_TAG);
                             if (nameObj instanceof String) {
                                 String name = (String) nameObj;
-                                addDownloadRow(name, basemapIcon, 0);
+                                addDownloadRow(name);
                             }
                         }
                     }
-                    for (Object obj : overlaysJson) {
-                        if (obj instanceof HashMap) {
-                            HashMap hashMap = (HashMap) obj;
-                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                            if (nameObj instanceof String) {
-                                String name = (String) nameObj;
-                                addDownloadRow(name, overlaysIcon, 1);
-                            }
-                        }
-                    }
-                    for (Object obj : projectsJson) {
-                        if (obj instanceof HashMap) {
-                            HashMap hashMap = (HashMap) obj;
-                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                            if (nameObj instanceof String) {
-                                String name = (String) nameObj;
-                                addDownloadRow(name, projectsIcon, 2);
-                            }
-                        }
-                    }
-
                     list.forceRevalidate();
                 });
             }
@@ -165,14 +137,14 @@ public class DataTagsForm extends Form {
         NetworkManager.getInstance().addToQueue(req);
     }
 
-    private void addDownloadRow(String name, Image typeIcon, int type) {
+    private void addDownloadRow(String name) {
 
-        Label label = new Label(name, typeIcon);
+        Label label = new Label(name, tagsIcon);
 
         Button downloadButton = new Button(FontImage.MATERIAL_CLOUD_DOWNLOAD, "hylistdownloadbutton");
         downloadButton.addActionListener(e -> {
             try {
-                downloadFile(name, type);
+                downloadFile(name);
             } catch (IOException ex) {
                 HyLog.e(ex);
             }
@@ -185,25 +157,20 @@ public class DataTagsForm extends Form {
         list.add(rowContainer);
     }
 
-    private void downloadFile(String name, int type) throws IOException {
+    private void downloadFile(String name) throws IOException {
         String sdcard = FileUtilities.INSTANCE.getSdcard();
 
-        String gssMapsFolder;
-        if (type == 0 || type == 1) {
-            gssMapsFolder = sdcard + "/gssworkspace/maps";
-        } else {
-            gssMapsFolder = sdcard + "/gssworkspace/projects";
+        String tagsFolder = sdcard + "/geopaparazzi";
+        File tagsFile = new File(tagsFolder);
+        if (!tagsFile.exists()) {
+            tagsFile.mkdirs();
         }
-        File mapsFile = new File(gssMapsFolder);
-        if (!mapsFile.exists()) {
-            mapsFile.mkdirs();
-        }
-        HyLog.p("download folder: " + gssMapsFolder);
-        List<String> existingFiles = FileUtilities.INSTANCE.findFilesByExtension(gssMapsFolder, name);
+        HyLog.p("download folder: " + tagsFolder);
+        List<String> existingFiles = FileUtilities.INSTANCE.findFilesByExtension(tagsFolder, name);
         if (existingFiles.size() > 0) {
             HyDialogs.showWarningDialog("A file with the same name already exists on the device. Not overwriting it!");
         } else {
-            String filePath = gssMapsFolder + "/" + name;
+            String filePath = tagsFolder + "/" + name + "_tags.json";
             String authCode = HyUtilities.getUdid() + ":" + GssMobile.MASTER_GSS_PASSWORD;
             String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
@@ -212,7 +179,7 @@ public class DataTagsForm extends Form {
                 HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
                 return;
             }
-            serverUrl = serverUrl + GssUtilities.DATA_DOWNLOAD_PATH + "?" + GssUtilities.DATA_DOWNLOAD_NAME + "=" + name;
+            serverUrl = serverUrl + GssUtilities.TAGS_DOWNLOAD_PATH + "?" + GssUtilities.TAGS_DOWNLOAD_NAME + "=" + name;
 
             ConnectionRequest req = new ConnectionRequest() {
                 @Override

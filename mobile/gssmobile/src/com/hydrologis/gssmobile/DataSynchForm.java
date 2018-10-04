@@ -43,7 +43,6 @@ import com.codename1.ui.Tabs;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
-import com.codename1.ui.plaf.UIManager;
 import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
 import com.hydrologis.gssmobile.database.DaoGpsLogs;
@@ -95,7 +94,7 @@ public class DataSynchForm extends Form {
         tb.setBackCommand("Back", (e) -> {
             previous.showBack();
         });
-        setTitle("Data Synchronization");
+        setTitle("Synchronization");
 
         init();
     }

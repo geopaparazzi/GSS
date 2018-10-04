@@ -2,6 +2,8 @@
 
 <resource majorVersion="1" minorVersion="9" useXmlUI="false">
     <image name="gss_launcher_icon.png" type="multi"  />
+    <image name="gss_logo_1024.png" type="multi"  />
+    <image name="gss_logo_512.png" type="multi"  />
     <theme name="Theme">
         <val key="@includeNativeBool" value="true" />
         <val key="Button.fgColor" value="000000" />
@@ -58,12 +60,17 @@
         <val key="Toolbar.bgColor" value="5d9d76" />
         <border key="Toolbar.border" type="empty" />
         <val key="Toolbar.transparency" value="255" />
+        <val key="hy_mainlogolabel.align" value="4" />
+        <val key="hy_mainlogolabel.marUnit" value="2,0,0,0" />
+        <val key="hy_mainlogolabel.margin" value="6.0,0.0,0.0,0.0" />
+        <val key="hy_maintitlelabel.align" value="4" />
+        <val key="hy_maintitlelabel.fgColor" value="5d9d76" />
         <val key="hylistdownloadbutton.marUnit" value="2,2,2,2" />
-        <val key="hylistdownloadbutton.margin" value="1.0,1.0,1.0,1.0" />
+        <val key="hylistdownloadbutton.margin" value="3.0,3.0,2.0,2.0" />
         <val key="hylistdownloadbutton.press#marUnit" value="2,2,2,2" />
-        <val key="hylistdownloadbutton.press#margin" value="1.0,1.0,1.0,1.0" />
+        <val key="hylistdownloadbutton.press#margin" value="3.0,3.0,2.0,2.0" />
         <val key="hylistdownloadbutton.sel#marUnit" value="2,2,2,2" />
-        <val key="hylistdownloadbutton.sel#margin" value="1.0,1.0,1.0,1.0" />
+        <val key="hylistdownloadbutton.sel#margin" value="3.0,3.0,2.0,2.0" />
         <border key="hylistrow.border" type="underline"  millimeters="false" thickness="1.0" color="0" />
         <val key="hylistrow.margin" value="0.0,1.0,0.0,0.0" />
         <val key="sideMenuFillerContainer.bgColor" value="ffffff" />

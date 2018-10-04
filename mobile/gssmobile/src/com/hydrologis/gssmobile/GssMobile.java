@@ -1,21 +1,22 @@
-/*******************************************************************************
+/** *****************************************************************************
  * Copyright (C) 2018 HydroloGIS S.r.l. (www.hydrologis.com)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package com.hydrologis.gssmobile;
 
 import com.hydrologis.gssmobile.utils.GssUtilities;
@@ -32,6 +33,7 @@ import com.codename1.system.NativeLookup;
 import com.codename1.ui.Container;
 import com.codename1.ui.Image;
 import com.codename1.ui.Label;
+import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.tree.Tree;
 import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyLog;
@@ -116,6 +118,8 @@ public class GssMobile {
             dataDownloadForm.show();
         });
         toolbar.addMaterialCommandToSideMenu("Forms download", FontImage.MATERIAL_EVENT_NOTE, e -> {
+            TagsDownloadForm tagsDownloadForm = new TagsDownloadForm(mainForm, theme);
+            tagsDownloadForm.show();
         });
         toolbar.addMaterialCommandToSideMenu("Device Id", FontImage.MATERIAL_SECURITY, e -> {
             String udid = HyUtilities.getUdid();
@@ -139,6 +143,15 @@ public class GssMobile {
         toolbar.addMaterialCommandToSideMenu("Send debug log", FontImage.MATERIAL_SEND, e -> {
             HyLog.sendLog();
         });
+
+        Image logoImage = theme.getImage("gss_logo_512.png");
+        Label logoLabel = new Label(logoImage, "hy_mainlogolabel");
+        Label titleLabel = new Label("Geopaparazzi Survey Server Sync", "hy_maintitlelabel");
+
+        Container logoContainer = new Container(BoxLayout.y());
+        logoContainer.add(logoLabel);
+        logoContainer.add(titleLabel);
+        mainForm.add(BorderLayout.CENTER, logoContainer);
 
         mainForm.show();
     }
