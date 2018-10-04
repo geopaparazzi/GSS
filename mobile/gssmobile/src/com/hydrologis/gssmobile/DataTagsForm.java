@@ -54,7 +54,7 @@ import java.util.Map;
  *
  * @author hydrologis
  */
-public class DataDownloadForm extends Form {
+public class DataTagsForm extends Form {
 
     private Container list = null;
     private Database db = null;
@@ -62,7 +62,7 @@ public class DataDownloadForm extends Form {
     private FontImage overlaysIcon;
     private FontImage projectsIcon;
 
-    public DataDownloadForm(Form previous, Resources theme) {
+    public DataTagsForm(Form previous, Resources theme) {
         setLayout(new BorderLayout());
         Toolbar tb = getToolbar();
         tb.setBackCommand("Back", (e) -> {
