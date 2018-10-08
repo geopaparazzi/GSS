@@ -29,6 +29,7 @@ import com.codename1.io.FileSystemStorage;
 import com.codename1.io.JSONParser;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.Preferences;
+import com.codename1.io.Util;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
 import com.codename1.ui.Container;
@@ -48,9 +49,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -88,6 +93,7 @@ public class TagsDownloadForm extends Form {
             fab.bindFabToContainer(this.getContentPane());
             fab.addActionListener(e -> refreshDataList());
 
+            list.forceRevalidate();
             refreshDataList();
         } catch (Exception ex) {
             HyLog.e(ex);
@@ -96,9 +102,6 @@ public class TagsDownloadForm extends Form {
 
     private void refreshDataList() {
 
-        String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
-        String authHeader = "Basic " + Base64.encode(authCode.getBytes());
-
         String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
         if (serverUrl.trim().length() == 0) {
             HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
@@ -106,35 +109,50 @@ public class TagsDownloadForm extends Form {
         }
         serverUrl = serverUrl + GssUtilities.TAGS_DOWNLOAD_PATH;
 
+        HyLog.d("GET: " + serverUrl);
         ConnectionRequest req = new ConnectionRequest() {
             @Override
             protected void readResponse(InputStream input) throws IOException {
                 InputStreamReader reader = new InputStreamReader(input);
-                JSONParser parser = new JSONParser();
-                Map<String, Object> response = parser.parseJSON(reader);
-                List tagsJsonList = (List) response.get(GssUtilities.TAGS_DOWNLOAD_TAGS);
-
-                CN.callSerially(() -> {
-                    list.removeAll();
-                    for (Object obj : tagsJsonList) {
-                        if (obj instanceof HashMap) {
-                            HashMap hashMap = (HashMap) obj;
-                            Object nameObj = hashMap.get(GssUtilities.TAGS_DOWNLOAD_TAG);
-                            if (nameObj instanceof String) {
-                                String name = (String) nameObj;
-                                addDownloadRow(name);
+                try {
+                    JSONParser parser = new JSONParser();
+                    Map<String, Object> response = parser.parseJSON(reader);
+                    List tagsJsonList = (List) response.get(GssUtilities.TAGS_DOWNLOAD_TAGS);
+                    if (tagsJsonList != null) {
+                        CN.callSerially(() -> {
+                            list.removeAll();
+                            for (Object obj : tagsJsonList) {
+                                if (obj instanceof HashMap) {
+                                    HashMap hashMap = (HashMap) obj;
+                                    Object nameObj = hashMap.get(GssUtilities.TAGS_DOWNLOAD_TAG);
+                                    if (nameObj instanceof String) {
+                                        String name = (String) nameObj;
+                                        addDownloadRow(name);
+                                    }
+                                }
                             }
-                        }
+                            list.forceRevalidate();
+                        });
+                    } else {
+                        CN.callSerially(() -> {
+                            HyDialogs.showWarningDialog("Could not retrieve any tag.");
+                        });
                     }
-                    list.forceRevalidate();
-                });
+                } catch (IOException iOException) {
+                    CN.callSerially(() -> {
+                        HyDialogs.showErrorDialog("An error occurred while downloading the tags list.");
+                    });
+
+                    HyLog.e(iOException);
+                }
             }
 
         };
 
         req.setPost(false);
         req.setHttpMethod("GET");
-        req.addRequestHeader("Authorization", authHeader);
+        req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
+        req.addRequestHeader("Connection", "keep-alive");
         req.setUrl(serverUrl);
 
         NetworkManager.getInstance().addToQueue(req);
@@ -175,8 +193,6 @@ public class TagsDownloadForm extends Form {
             HyDialogs.showWarningDialog("A file with the same name already exists on the device. Not overwriting it!");
         } else {
             String filePath = tagsFolder + "/" + fullName;
-            String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
-            String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
             String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
             if (serverUrl.trim().length() == 0) {
@@ -185,19 +201,14 @@ public class TagsDownloadForm extends Form {
             }
             serverUrl = serverUrl + GssUtilities.TAGS_DOWNLOAD_PATH + "?" + GssUtilities.TAGS_DOWNLOAD_NAME + "=" + name;
 
+            HyLog.d("download with url: " + serverUrl);
             ConnectionRequest req = new ConnectionRequest() {
                 @Override
                 protected void readResponse(InputStream input) throws IOException {
                     try {
                         FileSystemStorage fsStorage = FileSystemStorage.getInstance();
                         OutputStream out = fsStorage.openOutputStream(filePath);
-                        byte[] buf = new byte[1024];
-                        int i = 0;
-                        while ((i = input.read(buf)) != -1) {
-                            out.write(buf, 0, i);
-                        }
-                        out.close();
-
+                        Util.copy(input, out);
                         CN.callSerially(() -> {
                             HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
                         });
@@ -206,20 +217,24 @@ public class TagsDownloadForm extends Form {
                             HyDialogs.showErrorDialog("An error occurred while downloading: " + name);
                         });
 
-                        throw iOException;
+                        HyLog.e(iOException);
                     }
                 }
+
             };
 
             req.setPost(false);
             req.setHttpMethod("GET");
-            req.addRequestHeader("Authorization", authHeader);
+//            req.setFailSilently(false);
+            req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
+            req.addRequestHeader("Connection", "keep-alive");
             req.setUrl(serverUrl);
 
             GssDownloadProgressDialog prog = new GssDownloadProgressDialog();
             prog.showInfiniteBlockingWithTitle("Downloading " + name + " (this might take a while).", theme, req);
-            
+
             NetworkManager.getInstance().addToQueueAndWait(req);
+
         }
 
     }

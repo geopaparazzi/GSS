@@ -19,11 +19,17 @@
  */
 package com.hydrologis.gssmobile.utils;
 
+import com.codename1.util.Base64;
+import com.hydrologis.cn1.libs.HyUtilities;
+
 /**
  *
  * @author hydrologis
  */
 public class GssUtilities {
+    
+    
+    public static final int DEFAULT_BYTE_ARRAY_READ = 8192;
 
     public static final String MASTER_GSS_PASSWORD = "gss_Master_Survey_Forever_2018";
 
@@ -50,5 +56,11 @@ public class GssUtilities {
     public static final float BIG_ICON_SIZE = 8;
     public static final String YES = "Yes";
     public static final String NO = "No";
+
+    public static String getAuthHeader() {
+        String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
+        String authHeader = "Basic " + Base64.encode(authCode.getBytes());
+        return authHeader;
+    }
 
 }

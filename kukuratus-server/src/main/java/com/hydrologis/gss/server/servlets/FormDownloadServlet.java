@@ -20,6 +20,7 @@ package com.hydrologis.gss.server.servlets;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -56,22 +57,22 @@ public class FormDownloadServlet extends HttpServlet {
         String ipAddress = "unknown";
         String deviceId = "unknown";
         try {
-            if ((deviceId = ServletUtils.canProceed(request, response)) == null) {
+            String tagName = request.getParameter("name");
+            String tag = "tag download";
+            if (tagName == null) {
+                tag = "tags list download";
+            }
+            if ((deviceId = ServletUtils.canProceed(request, response, tag)) == null) {
                 return;
             }
 
             DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
             Dao<Forms, ? > formsDao = dbHandler.getDao(Forms.class);
-            String tagName = request.getParameter("name");
             if (tagName != null) {
                 Forms form = formsDao.queryBuilder().where().eq(Forms.NAME_FIELD_NAME, tagName).queryForFirst();
 
-                response.setHeader("Content-Type", "application/json");
-                ServletOutputStream outputStream = response.getOutputStream();
-                PrintStream bou = new PrintStream(outputStream);
-                bou.println(form.form);
-                bou.close();
-                outputStream.flush();
+                String jsonToSend = form.form;
+                ServletUtils.sendJsonString(response, jsonToSend);
             } else {
                 List<Forms> visibleForms = formsDao.queryBuilder().where()
                         .eq(Forms.STATUS_FIELD_NAME, FormStatus.VISIBLE.getStatusCode()).query();
@@ -84,12 +85,8 @@ public class FormDownloadServlet extends HttpServlet {
                     formsArray.put(formObj);
                 }
 
-                response.setHeader("Content-Type", "application/json");
-                ServletOutputStream outputStream = response.getOutputStream();
-                PrintStream bou = new PrintStream(outputStream);
-                bou.println(root.toString());
-                bou.close();
-                outputStream.flush();
+                String jsonToSend = root.toString();
+                ServletUtils.sendJsonString(response, jsonToSend);
             }
 
         } catch (Exception ex) {

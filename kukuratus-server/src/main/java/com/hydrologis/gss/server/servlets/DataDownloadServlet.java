@@ -18,6 +18,8 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.servlets;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,6 +27,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -34,11 +38,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.io.IOUtils;
 import org.hortonmachine.dbs.log.Logger;
 
 import com.hydrologis.gss.server.GssWorkspace;
 import com.hydrologis.kukuratus.libs.servlets.Status;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
+import com.vaadin.server.FileDownloader;
 
 @WebServlet(urlPatterns = "/datadownload")
 public class DataDownloadServlet extends HttpServlet {
@@ -55,33 +61,44 @@ public class DataDownloadServlet extends HttpServlet {
         String ipAddress = "unknown";
         String deviceId = "unknown";
         try {
-            if ((deviceId = ServletUtils.canProceed(request, response)) == null) {
+            ServletUtils.printHeaders(request, response);
+            
+            String fileName = request.getParameter("name");
+            String tag = "data download";
+            if (fileName == null) {
+                tag = "data list download";
+            }
+            if ((deviceId = ServletUtils.canProceed(request, response, tag)) == null) {
                 return;
             }
 
-            String fileName = request.getParameter("name");
             if (fileName == null) {
                 // send list
                 String mapsListJson = GssWorkspace.INSTANCE.getMapsListJson();
-                response.setHeader("Content-Type", "application/json");
-                ServletOutputStream outputStream = response.getOutputStream();
-                PrintStream bou = new PrintStream(outputStream);
-                bou.println(mapsListJson);
-                bou.close();
-                outputStream.flush();
+                ServletUtils.sendJsonString(response, mapsListJson);
             } else {
                 response.setContentType("application/octet-stream");
                 response.setHeader("Content-disposition", "attachment; filename=" + fileName);
 
                 Optional<File> mapFileOpt = GssWorkspace.INSTANCE.getMapFile(fileName);
                 if (mapFileOpt.isPresent()) {
+
                     File file = mapFileOpt.get();
-                    try (InputStream i = new FileInputStream(file); OutputStream o = response.getOutputStream()) {
+//                    long length = file.length();
+
+                    try (InputStream in = new BufferedInputStream(new FileInputStream(file));
+                            ServletOutputStream out = response.getOutputStream()) {
+
+//                        ZipOutputStream zout = new ZipOutputStream(out);
+//                        zout.putNextEntry(new ZipEntry(fileName));
+                        int totalBytesWritten = 0;
                         byte[] buffer = new byte[8192];
-                        int size = i.read(buffer);
-                        while(size > -1) {
-                            o.write(buffer, 0, size);
-                            size = i.read(buffer);
+                        int numBytesRead;
+                        while( (numBytesRead = in.read(buffer)) > 0 ) {
+//                            System.out.print("Reading... ");
+                            out.write(buffer, 0, numBytesRead);
+                            totalBytesWritten += numBytesRead;
+//                            System.out.println(totalBytesWritten + " of " + length);
                         }
                     }
                 }

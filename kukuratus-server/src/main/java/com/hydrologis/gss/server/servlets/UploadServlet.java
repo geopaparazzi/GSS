@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
@@ -54,7 +53,6 @@ import com.hydrologis.gssmobile.database.GssNote;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.Status;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
-import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -68,9 +66,7 @@ import com.vividsolutions.jts.geom.Point;
 //        maxRequestSize = 1024 * 1024 * 200) // 100 MB
 public class UploadServlet extends HttpServlet {
     private static final String TAG = UploadServlet.class.getSimpleName();
-    private static final String NO_PERMISSION = "No permission! Contact your system administrator.";
     private static final long serialVersionUID = 1L;
-    private static boolean DEBUG = true;
 
     @Override
     protected void doPost( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -81,7 +77,7 @@ public class UploadServlet extends HttpServlet {
         String ipAddress = "unknown";
         String deviceId = "unknown";
         try {
-            if ((deviceId = ServletUtils.canProceed(request, response)) == null) {
+            if ((deviceId = ServletUtils.canProceed(request, response, "synch")) == null) {
                 return;
             }
 
@@ -131,7 +127,7 @@ public class UploadServlet extends HttpServlet {
                             notesDao.create(serverNote);
                             deviceNoteId2serverNoteId.put(note.id, serverNote.id);
                             notesLogsImagesCounts[0] += 1;
-                            debug("Uploaded note: " + serverNote.text);
+                            ServletUtils.debug("Uploaded note: " + serverNote.text);
                         }
                     } else if (name.equals(GssGpsLog.OBJID)) {
                         DataInputStream dis = new DataInputStream(item.getInputStream());
@@ -164,7 +160,7 @@ public class UploadServlet extends HttpServlet {
                         logsDao.create(logs);
                         logsDataDao.create(logsData);
                         logsPropsDao.create(logsProps);
-                        debug("Uploaded Logs: " + logs.size());
+                        ServletUtils.debug("Uploaded Logs: " + logs.size());
 
                     }
                 }
@@ -197,7 +193,7 @@ public class UploadServlet extends HttpServlet {
                         if (tmpNote != null) {
                             str = " for note: " + tmpNote.id;
                         }
-                        debug("Uploaded image: " + image.text + str);
+                        ServletUtils.debug("Uploaded image: " + image.text + str);
                     }
                 }
 
@@ -213,7 +209,7 @@ public class UploadServlet extends HttpServlet {
             sb.append("Images: " + notesLogsImagesCounts[2]);
 
             String message = sb.toString();
-            debug("SENDING RESPONSE MESSAGE: " + message);
+            ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message);
             Status okStatus = new Status(Status.CODE_200_OK, message);
             okStatus.sendTo(response);
         } catch (Exception ex) {
@@ -228,12 +224,6 @@ public class UploadServlet extends HttpServlet {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private void debug( String msg ) {
-        if (DEBUG) {
-            KukuratusLogger.logDebug(this, msg);
         }
     }
 

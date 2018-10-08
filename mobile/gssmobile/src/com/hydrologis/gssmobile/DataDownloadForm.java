@@ -31,6 +31,7 @@ import com.codename1.io.JSONParser;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.Preferences;
 import com.codename1.io.Util;
+import com.codename1.io.gzip.GZConnectionRequest;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
 import com.codename1.ui.Container;
@@ -102,9 +103,6 @@ public class DataDownloadForm extends Form {
 
     private void refreshDataList() {
 
-        String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
-        String authHeader = "Basic " + Base64.encode(authCode.getBytes());
-
         String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
         if (serverUrl.trim().length() == 0) {
             HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
@@ -118,53 +116,81 @@ public class DataDownloadForm extends Form {
                 InputStreamReader reader = new InputStreamReader(input);
                 JSONParser parser = new JSONParser();
                 Map<String, Object> response = parser.parseJSON(reader);
-                List baseMapsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_BASEMAP);
 
-                List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
-                List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
+                if (response != null) {
 
-                CN.callSerially(() -> {
-                    list.removeAll();
-                    for (Object obj : baseMapsJson) {
-                        if (obj instanceof HashMap) {
-                            HashMap hashMap = (HashMap) obj;
-                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                            if (nameObj instanceof String) {
-                                String name = (String) nameObj;
-                                addDownloadRow(name, basemapIcon, 0);
+                    List baseMapsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_BASEMAP);
+
+                    List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
+                    List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
+
+                    CN.callSerially(() -> {
+                        list.removeAll();
+                        for (Object obj : baseMapsJson) {
+                            if (obj instanceof HashMap) {
+                                HashMap hashMap = (HashMap) obj;
+                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                if (nameObj instanceof String) {
+                                    String name = (String) nameObj;
+                                    addDownloadRow(name, basemapIcon, 0);
+                                }
                             }
                         }
-                    }
-                    for (Object obj : overlaysJson) {
-                        if (obj instanceof HashMap) {
-                            HashMap hashMap = (HashMap) obj;
-                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                            if (nameObj instanceof String) {
-                                String name = (String) nameObj;
-                                addDownloadRow(name, overlaysIcon, 1);
+                        for (Object obj : overlaysJson) {
+                            if (obj instanceof HashMap) {
+                                HashMap hashMap = (HashMap) obj;
+                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                if (nameObj instanceof String) {
+                                    String name = (String) nameObj;
+                                    addDownloadRow(name, overlaysIcon, 1);
+                                }
                             }
                         }
-                    }
-                    for (Object obj : projectsJson) {
-                        if (obj instanceof HashMap) {
-                            HashMap hashMap = (HashMap) obj;
-                            Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                            if (nameObj instanceof String) {
-                                String name = (String) nameObj;
-                                addDownloadRow(name, projectsIcon, 2);
+                        for (Object obj : projectsJson) {
+                            if (obj instanceof HashMap) {
+                                HashMap hashMap = (HashMap) obj;
+                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                if (nameObj instanceof String) {
+                                    String name = (String) nameObj;
+                                    addDownloadRow(name, projectsIcon, 2);
+                                }
                             }
                         }
-                    }
 
-                    list.forceRevalidate();
-                });
+                        list.forceRevalidate();
+                    });
+                } else {
+                    CN.callSerially(() -> {
+                        HyDialogs.showWarningDialog("Could not retrieve data list.");
+                    });
+                }
+            }
+
+            @Override
+            protected void readHeaders(Object connection) throws IOException {
+                String[] headerNames = getHeaderFieldNames(connection);
+                for (String headerName : headerNames) {
+                    if (headerName == null) {
+                        continue;
+                    }
+                    String[] values = getHeaders(connection, headerName);
+                    if (values.length == 1) {
+                        HyLog.d("header: " + headerName + " = " + values[0]);
+                    } else {
+                        HyLog.d("header: " + headerName + " with values:");
+                        for (String value : values) {
+                            HyLog.d(" --> " + value);
+                        }
+                    }
+                }
             }
 
         };
 
         req.setPost(false);
         req.setHttpMethod("GET");
-        req.addRequestHeader("Authorization", authHeader);
+        req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
+        req.addRequestHeader("Connection", "keep-alive");
         req.setUrl(serverUrl);
 
         NetworkManager.getInstance().addToQueue(req);
@@ -209,8 +235,6 @@ public class DataDownloadForm extends Form {
             HyDialogs.showWarningDialog("A file with the same name already exists on the device. Not overwriting it!");
         } else {
             String filePath = gssMapsFolder + "/" + name;
-            String authCode = HyUtilities.getUdid() + ":" + GssUtilities.MASTER_GSS_PASSWORD;
-            String authHeader = "Basic " + Base64.encode(authCode.getBytes());
 
             String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
             if (serverUrl.trim().length() == 0) {
@@ -219,6 +243,7 @@ public class DataDownloadForm extends Form {
             }
             serverUrl = serverUrl + GssUtilities.DATA_DOWNLOAD_PATH + "?" + GssUtilities.DATA_DOWNLOAD_NAME + "=" + name;
 
+            HyLog.d("Downloading from: " + serverUrl);
             ConnectionRequest req = new ConnectionRequest() {
                 @Override
                 protected void readResponse(InputStream input) throws IOException {
@@ -232,18 +257,31 @@ public class DataDownloadForm extends Form {
                             OutputStream out = fsStorage.openOutputStream(filePath);
                             Util.copy(input, out);
 
-                            // was the download killed while we downloaded
+//                            HyLog.d("reading for: " + filePath);
+//                            byte[] dataBuffer = new byte[GssUtilities.DEFAULT_BYTE_ARRAY_READ];
+//                            int bytesRead;
+//                            int totalRead = 0;
+//                            while ((bytesRead = input.read(dataBuffer, 0, GssUtilities.DEFAULT_BYTE_ARRAY_READ)) != -1) {
+//                                out.write(dataBuffer, 0, bytesRead);
+//                                totalRead += bytesRead;
+////                                HyLog.d("bytes read: " + totalRead);
+//                            }
+//                            out.flush();
+//                            out.close();
+
+                            if (!isKilled()) {
+                                CN.callSerially(() -> {
+                                    HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
+                                });
+                            }
+
                             if (isKilled()) {
                                 FileSystemStorage.getInstance().delete(filePath);
                             }
                         }
 
-                        if (!isKilled()) {
-                            CN.callSerially(() -> {
-                                HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
-                            });
-                        }
                     } catch (IOException iOException) {
+                        FileSystemStorage.getInstance().delete(filePath);
                         CN.callSerially(() -> {
                             HyDialogs.showErrorDialog("An error occurred while downloading: " + name);
                         });
@@ -251,16 +289,38 @@ public class DataDownloadForm extends Form {
                         throw iOException;
                     }
                 }
+
+                @Override
+                protected void readHeaders(Object connection) throws IOException {
+                    String[] headerNames = getHeaderFieldNames(connection);
+                    for (String headerName : headerNames) {
+                        if (headerName == null) {
+                            continue;
+                        }
+                        String[] values = getHeaders(connection, headerName);
+                        if (values.length == 1) {
+                            HyLog.d("header: " + headerName + " = " + values[0]);
+                        } else {
+                            HyLog.d("header: " + headerName + " with values:");
+                            for (String value : values) {
+                                HyLog.d(" --> " + value);
+                            }
+                        }
+                    }
+                }
+
             };
 
             req.setPost(false);
             req.setHttpMethod("GET");
-            req.addRequestHeader("Authorization", authHeader);
+            req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
+            req.addRequestHeader("Connection", "keep-alive");
             req.setUrl(serverUrl);
+//            req.setTimeout(GssUtilities.MPR_TIMEOUT);
 
             GssDownloadProgressDialog prog = new GssDownloadProgressDialog();
             prog.showInfiniteBlockingWithTitle("Downloading " + name + " (this might take a while).", theme, req);
-            NetworkManager.getInstance().addToQueueAndWait(req);
+            NetworkManager.getInstance().addToQueue(req);
         }
 
     }
