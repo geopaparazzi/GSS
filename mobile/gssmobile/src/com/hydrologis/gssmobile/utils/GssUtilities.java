@@ -28,7 +28,6 @@ import com.hydrologis.cn1.libs.HyUtilities;
  */
 public class GssUtilities {
     
-    
     public static final int DEFAULT_BYTE_ARRAY_READ = 8192;
 
     public static final String MASTER_GSS_PASSWORD = "gss_Master_Survey_Forever_2018";

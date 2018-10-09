@@ -3,7 +3,7 @@
 <resource majorVersion="1" minorVersion="9" useXmlUI="false">
     <image name="gss_launcher_icon.png" type="multi"  />
     <image name="gss_logo_512.png" type="multi"  />
-    <image name="gss_spinner_128.png" type="multi"  />
+    <image name="infinite_spinner.png" type="multi"  />
     <theme name="Theme">
         <val key="@includeNativeBool" value="true" />
         <val key="Button.fgColor" value="000000" />

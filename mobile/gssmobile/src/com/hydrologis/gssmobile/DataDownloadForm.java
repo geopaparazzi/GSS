@@ -19,9 +19,8 @@
  */
 package com.hydrologis.gssmobile;
 
-import com.hydrologis.gssmobile.utils.GssDownloadProgressDialog;
+import com.hydrologis.cn1.libs.kukuratus.KukuratusInfiniteDownloadProgressDialog;
 import com.codename1.components.FloatingActionButton;
-import com.codename1.components.InfiniteProgress;
 import com.hydrologis.cn1.libs.*;
 import com.codename1.db.Database;
 import com.codename1.io.ConnectionRequest;
@@ -31,11 +30,9 @@ import com.codename1.io.JSONParser;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.Preferences;
 import com.codename1.io.Util;
-import com.codename1.io.gzip.GZConnectionRequest;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
 import com.codename1.ui.Container;
-import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
 import com.codename1.ui.Image;
@@ -44,8 +41,9 @@ import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.Resources;
-import com.codename1.util.Base64;
+import com.hydrologis.cn1.libs.kukuratus.KukuratusConnectionRequest;
 import com.hydrologis.gssmobile.utils.GssUtilities;
+import com.hydrologis.cn1.libs.kukuratus.KukuratusStatus;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -94,8 +92,8 @@ public class DataDownloadForm extends Form {
             fab.bindFabToContainer(this.getContentPane());
             fab.addActionListener(e -> refreshDataList());
 
-//            setScrollable(false);
-            refreshDataList();
+//            refreshDataList();
+            list.forceRevalidate();
         } catch (Exception ex) {
             HyLog.e(ex);
         }
@@ -110,90 +108,67 @@ public class DataDownloadForm extends Form {
         }
         serverUrl = serverUrl + GssUtilities.DATA_DOWNLOAD_PATH;
 
-        ConnectionRequest req = new ConnectionRequest() {
+        KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
             @Override
-            protected void readResponse(InputStream input) throws IOException {
-                InputStreamReader reader = new InputStreamReader(input);
-                JSONParser parser = new JSONParser();
-                Map<String, Object> response = parser.parseJSON(reader);
+            public void readResponse(InputStream input) throws IOException {
+                int responseCode = getResponseCode();
+                if (responseCode == 200) {
+                    InputStreamReader reader = new InputStreamReader(input);
+                    JSONParser parser = new JSONParser();
+                    Map<String, Object> response = parser.parseJSON(reader);
 
-                if (response != null) {
+                    if (response != null) {
 
-                    List baseMapsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_BASEMAP);
+                        List baseMapsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_BASEMAP);
 
-                    List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
-                    List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
+                        List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
+                        List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
 
-                    CN.callSerially(() -> {
-                        list.removeAll();
-                        for (Object obj : baseMapsJson) {
-                            if (obj instanceof HashMap) {
-                                HashMap hashMap = (HashMap) obj;
-                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                                if (nameObj instanceof String) {
-                                    String name = (String) nameObj;
-                                    addDownloadRow(name, basemapIcon, 0);
+                        CN.callSerially(() -> {
+                            list.removeAll();
+                            for (Object obj : baseMapsJson) {
+                                if (obj instanceof HashMap) {
+                                    HashMap hashMap = (HashMap) obj;
+                                    Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                    if (nameObj instanceof String) {
+                                        String name = (String) nameObj;
+                                        addDownloadRow(name, basemapIcon, 0);
+                                    }
                                 }
                             }
-                        }
-                        for (Object obj : overlaysJson) {
-                            if (obj instanceof HashMap) {
-                                HashMap hashMap = (HashMap) obj;
-                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                                if (nameObj instanceof String) {
-                                    String name = (String) nameObj;
-                                    addDownloadRow(name, overlaysIcon, 1);
+                            for (Object obj : overlaysJson) {
+                                if (obj instanceof HashMap) {
+                                    HashMap hashMap = (HashMap) obj;
+                                    Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                    if (nameObj instanceof String) {
+                                        String name = (String) nameObj;
+                                        addDownloadRow(name, overlaysIcon, 1);
+                                    }
                                 }
                             }
-                        }
-                        for (Object obj : projectsJson) {
-                            if (obj instanceof HashMap) {
-                                HashMap hashMap = (HashMap) obj;
-                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                                if (nameObj instanceof String) {
-                                    String name = (String) nameObj;
-                                    addDownloadRow(name, projectsIcon, 2);
+                            for (Object obj : projectsJson) {
+                                if (obj instanceof HashMap) {
+                                    HashMap hashMap = (HashMap) obj;
+                                    Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                    if (nameObj instanceof String) {
+                                        String name = (String) nameObj;
+                                        addDownloadRow(name, projectsIcon, 2);
+                                    }
                                 }
                             }
-                        }
 
-                        list.forceRevalidate();
-                    });
-                } else {
-                    CN.callSerially(() -> {
-                        HyDialogs.showWarningDialog("Could not retrieve data list.");
-                    });
-                }
-            }
-
-            @Override
-            protected void readHeaders(Object connection) throws IOException {
-                String[] headerNames = getHeaderFieldNames(connection);
-                for (String headerName : headerNames) {
-                    if (headerName == null) {
-                        continue;
-                    }
-                    String[] values = getHeaders(connection, headerName);
-                    if (values.length == 1) {
-                        HyLog.d("header: " + headerName + " = " + values[0]);
+                            list.forceRevalidate();
+                        });
                     } else {
-                        HyLog.d("header: " + headerName + " with values:");
-                        for (String value : values) {
-                            HyLog.d(" --> " + value);
-                        }
+                        CN.callSerially(() -> {
+                            HyDialogs.showWarningDialog("Could not retrieve data list.");
+                        });
                     }
                 }
             }
-
         };
 
-        req.setPost(false);
-        req.setHttpMethod("GET");
-        req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
-        req.addRequestHeader("Connection", "keep-alive");
-        req.setUrl(serverUrl);
-
-        NetworkManager.getInstance().addToQueue(req);
+        req.doGetWithProgress(serverUrl, GssUtilities.getAuthHeader(), theme, "Downloading data list...");
     }
 
     private void addDownloadRow(String name, Image typeIcon, int type) {
@@ -244,9 +219,9 @@ public class DataDownloadForm extends Form {
             serverUrl = serverUrl + GssUtilities.DATA_DOWNLOAD_PATH + "?" + GssUtilities.DATA_DOWNLOAD_NAME + "=" + name;
 
             HyLog.d("Downloading from: " + serverUrl);
-            ConnectionRequest req = new ConnectionRequest() {
+            KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
                 @Override
-                protected void readResponse(InputStream input) throws IOException {
+                public void readResponse(InputStream input) throws IOException {
                     try {
 
                         if (isKilled()) {
@@ -256,19 +231,6 @@ public class DataDownloadForm extends Form {
                             FileSystemStorage fsStorage = FileSystemStorage.getInstance();
                             OutputStream out = fsStorage.openOutputStream(filePath);
                             Util.copy(input, out);
-
-//                            HyLog.d("reading for: " + filePath);
-//                            byte[] dataBuffer = new byte[GssUtilities.DEFAULT_BYTE_ARRAY_READ];
-//                            int bytesRead;
-//                            int totalRead = 0;
-//                            while ((bytesRead = input.read(dataBuffer, 0, GssUtilities.DEFAULT_BYTE_ARRAY_READ)) != -1) {
-//                                out.write(dataBuffer, 0, bytesRead);
-//                                totalRead += bytesRead;
-////                                HyLog.d("bytes read: " + totalRead);
-//                            }
-//                            out.flush();
-//                            out.close();
-
                             if (!isKilled()) {
                                 CN.callSerially(() -> {
                                     HyDialogs.showInfoDialog("File downloaded to: " + FileUtilities.stripFileProtocol(filePath));
@@ -290,37 +252,9 @@ public class DataDownloadForm extends Form {
                     }
                 }
 
-                @Override
-                protected void readHeaders(Object connection) throws IOException {
-                    String[] headerNames = getHeaderFieldNames(connection);
-                    for (String headerName : headerNames) {
-                        if (headerName == null) {
-                            continue;
-                        }
-                        String[] values = getHeaders(connection, headerName);
-                        if (values.length == 1) {
-                            HyLog.d("header: " + headerName + " = " + values[0]);
-                        } else {
-                            HyLog.d("header: " + headerName + " with values:");
-                            for (String value : values) {
-                                HyLog.d(" --> " + value);
-                            }
-                        }
-                    }
-                }
-
             };
 
-            req.setPost(false);
-            req.setHttpMethod("GET");
-            req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
-            req.addRequestHeader("Connection", "keep-alive");
-            req.setUrl(serverUrl);
-//            req.setTimeout(GssUtilities.MPR_TIMEOUT);
-
-            GssDownloadProgressDialog prog = new GssDownloadProgressDialog();
-            prog.showInfiniteBlockingWithTitle("Downloading " + name + " (this might take a while).", theme, req);
-            NetworkManager.getInstance().addToQueue(req);
+            req.doGetWithProgress(serverUrl, GssUtilities.getAuthHeader(), theme, "Downloading " + name + " (this might take a while)...");
         }
 
     }

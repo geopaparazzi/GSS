@@ -20,42 +20,32 @@
 package com.hydrologis.gssmobile;
 
 import com.codename1.components.FloatingActionButton;
-import com.codename1.components.InfiniteProgress;
 import com.hydrologis.cn1.libs.*;
 import com.codename1.db.Database;
-import com.codename1.io.ConnectionRequest;
 import com.codename1.io.File;
 import com.codename1.io.FileSystemStorage;
 import com.codename1.io.JSONParser;
-import com.codename1.io.NetworkManager;
 import com.codename1.io.Preferences;
 import com.codename1.io.Util;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
 import com.codename1.ui.Container;
-import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
-import com.codename1.ui.Image;
 import com.codename1.ui.Label;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.Resources;
-import com.codename1.util.Base64;
-import com.hydrologis.gssmobile.utils.GssDownloadProgressDialog;
+import com.hydrologis.cn1.libs.kukuratus.KukuratusConnectionRequest;
 import com.hydrologis.gssmobile.utils.GssUtilities;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  *
@@ -109,10 +99,9 @@ public class TagsDownloadForm extends Form {
         }
         serverUrl = serverUrl + GssUtilities.TAGS_DOWNLOAD_PATH;
 
-        HyLog.d("GET: " + serverUrl);
-        ConnectionRequest req = new ConnectionRequest() {
+        KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
             @Override
-            protected void readResponse(InputStream input) throws IOException {
+            public void readResponse(InputStream input) throws IOException {
                 InputStreamReader reader = new InputStreamReader(input);
                 try {
                     JSONParser parser = new JSONParser();
@@ -148,14 +137,7 @@ public class TagsDownloadForm extends Form {
             }
 
         };
-
-        req.setPost(false);
-        req.setHttpMethod("GET");
-        req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
-        req.addRequestHeader("Connection", "keep-alive");
-        req.setUrl(serverUrl);
-
-        NetworkManager.getInstance().addToQueue(req);
+        req.doGetWithProgress(serverUrl, GssUtilities.getAuthHeader(), theme, "Downloading tags list...");
     }
 
     private void addDownloadRow(String name) {
@@ -201,10 +183,9 @@ public class TagsDownloadForm extends Form {
             }
             serverUrl = serverUrl + GssUtilities.TAGS_DOWNLOAD_PATH + "?" + GssUtilities.TAGS_DOWNLOAD_NAME + "=" + name;
 
-            HyLog.d("download with url: " + serverUrl);
-            ConnectionRequest req = new ConnectionRequest() {
+            KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
                 @Override
-                protected void readResponse(InputStream input) throws IOException {
+                public void readResponse(InputStream input) throws IOException {
                     try {
                         FileSystemStorage fsStorage = FileSystemStorage.getInstance();
                         OutputStream out = fsStorage.openOutputStream(filePath);
@@ -223,18 +204,7 @@ public class TagsDownloadForm extends Form {
 
             };
 
-            req.setPost(false);
-            req.setHttpMethod("GET");
-//            req.setFailSilently(false);
-            req.addRequestHeader("Authorization", GssUtilities.getAuthHeader());
-            req.addRequestHeader("Connection", "keep-alive");
-            req.setUrl(serverUrl);
-
-            GssDownloadProgressDialog prog = new GssDownloadProgressDialog();
-            prog.showInfiniteBlockingWithTitle("Downloading " + name + " (this might take a while).", theme, req);
-
-            NetworkManager.getInstance().addToQueueAndWait(req);
-
+            req.doGetWithProgress(serverUrl, GssUtilities.getAuthHeader(), theme, "Downloading " + name + " (this might take a while)...");
         }
 
     }

@@ -51,7 +51,7 @@ import com.hydrologis.gssmobile.database.GssGpsLogPoint;
 import com.hydrologis.gssmobile.database.GssImage;
 import com.hydrologis.gssmobile.database.GssNote;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
-import com.hydrologis.kukuratus.libs.servlets.Status;
+import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
@@ -210,7 +210,7 @@ public class UploadServlet extends HttpServlet {
 
             String message = sb.toString();
             ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message);
-            Status okStatus = new Status(Status.CODE_200_OK, message);
+            KukuratusStatus okStatus = new KukuratusStatus(KukuratusStatus.CODE_200_OK, message);
             okStatus.sendTo(response);
         } catch (Exception ex) {
             try {
@@ -219,7 +219,7 @@ public class UploadServlet extends HttpServlet {
                  * if there are problems, return some information.
                  */
                 String msg = "An error occurred while uploading data to the server.";
-                Status errStatus = new Status(Status.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
+                KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
                 errStatus.sendTo(response);
             } catch (Exception e) {
                 e.printStackTrace();

@@ -1,18 +1,29 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/** *****************************************************************************
+ * Copyright (C) 2018 HydroloGIS S.r.l. (www.hydrologis.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Author: Antonello Andrea (http://www.hydrologis.com)
+ * ****************************************************************************
  */
-package com.hydrologis.gssmobile.utils;
+package com.hydrologis.cn1.libs.kukuratus;
 
 import com.codename1.components.InfiniteProgress;
 import com.codename1.components.SpanLabel;
 import com.codename1.io.ConnectionRequest;
 import com.codename1.ui.Button;
-import com.codename1.ui.Command;
 import com.codename1.ui.Dialog;
-import com.codename1.ui.Display;
-import com.codename1.ui.Form;
 import com.codename1.ui.Image;
 import com.codename1.ui.animations.CommonTransitions;
 import com.codename1.ui.layouts.BorderLayout;
@@ -24,24 +35,14 @@ import com.hydrologis.cn1.libs.HyDialogs;
  *
  * @author hydrologis
  */
-public class GssDownloadProgressDialog extends InfiniteProgress {
+public class KukuratusInfiniteDownloadProgressDialog extends InfiniteProgress {
 
     public void showInfiniteBlockingWithTitle(String title, Resources theme, ConnectionRequest req) {
-//        Form f = Display.getInstance().getCurrent();
-//        if (f == null) {
-//            f = new Form();
-//            f.show();
-//        }
-//        if (f.getClientProperty("isInfiniteProgress") == null) {
-//            f.setTintColor(hyTintColor);
-//        }
         if (theme != null) {
-            Image spinnerImage = theme.getImage("gss_spinner_128.png");
+            Image spinnerImage = theme.getImage("infinite_spinner.png");
             setAnimation(spinnerImage);
         }
         Dialog d = new Dialog();
-
-        //Command cancelCommand = new Command(HyDialogs.CANCEL);
         d.putClientProperty("isInfiniteProgress", true);
         d.setTintColor(0xF);
         d.setDialogUIID("HyInfiniteContainer");

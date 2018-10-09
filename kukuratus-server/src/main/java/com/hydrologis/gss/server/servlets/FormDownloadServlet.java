@@ -19,12 +19,9 @@
 package com.hydrologis.gss.server.servlets;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.List;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -38,7 +35,7 @@ import org.json.JSONObject;
 import com.hydrologis.gss.server.database.objects.Forms;
 import com.hydrologis.gss.server.utils.FormStatus;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
-import com.hydrologis.kukuratus.libs.servlets.Status;
+import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
@@ -97,7 +94,7 @@ public class FormDownloadServlet extends HttpServlet {
                  * if there are problems, return some information.
                  */
                 String msg = "An error occurred while downloading data from the server.";
-                Status errStatus = new Status(Status.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
+                KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
                 errStatus.sendTo(response);
             } catch (Exception e) {
                 e.printStackTrace();

@@ -19,16 +19,11 @@
 package com.hydrologis.gss.server.servlets;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Optional;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -38,13 +33,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.io.IOUtils;
 import org.hortonmachine.dbs.log.Logger;
 
 import com.hydrologis.gss.server.GssWorkspace;
-import com.hydrologis.kukuratus.libs.servlets.Status;
+import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
-import com.vaadin.server.FileDownloader;
 
 @WebServlet(urlPatterns = "/datadownload")
 public class DataDownloadServlet extends HttpServlet {
@@ -84,21 +77,12 @@ public class DataDownloadServlet extends HttpServlet {
                 if (mapFileOpt.isPresent()) {
 
                     File file = mapFileOpt.get();
-//                    long length = file.length();
-
                     try (InputStream in = new BufferedInputStream(new FileInputStream(file));
                             ServletOutputStream out = response.getOutputStream()) {
-
-//                        ZipOutputStream zout = new ZipOutputStream(out);
-//                        zout.putNextEntry(new ZipEntry(fileName));
-                        int totalBytesWritten = 0;
                         byte[] buffer = new byte[8192];
                         int numBytesRead;
                         while( (numBytesRead = in.read(buffer)) > 0 ) {
-//                            System.out.print("Reading... ");
                             out.write(buffer, 0, numBytesRead);
-                            totalBytesWritten += numBytesRead;
-//                            System.out.println(totalBytesWritten + " of " + length);
                         }
                     }
                 }
@@ -113,7 +97,7 @@ public class DataDownloadServlet extends HttpServlet {
                  * if there are problems, return some information.
                  */
                 String msg = "An error occurred while downloading data from the server.";
-                Status errStatus = new Status(Status.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
+                KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
                 errStatus.sendTo(response);
             } catch (Exception e) {
                 e.printStackTrace();

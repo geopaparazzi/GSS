@@ -20,7 +20,6 @@ package com.hydrologis.gss.server.servlets;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Enumeration;
 
@@ -29,7 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
-import com.hydrologis.kukuratus.libs.servlets.Status;
+import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.NetworkUtilities;
@@ -46,7 +45,7 @@ public class ServletUtils {
         String authHeader = request.getHeader("Authorization");
         String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
         if (userPwd == null || !userPwd[1].equals("gss_Master_Survey_Forever_2018")) {
-            Status errStatus = new Status(Status.CODE_403_FORBIDDEN, NO_PERMISSION);
+            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION);
             errStatus.sendTo(response);
             return null;
         }
@@ -57,7 +56,7 @@ public class ServletUtils {
         GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
         if (gpapUser == null) {
             debug("Connection from: " + deviceId + tagPart + " NO PERMISSION ERROR");
-            Status errStatus = new Status(Status.CODE_403_FORBIDDEN, NO_PERMISSION);
+            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION);
             errStatus.sendTo(response);
             return null;
         }
