@@ -37,7 +37,7 @@ import com.vaadin.server.VaadinServlet;
 @SuppressWarnings("serial")
 public class GssWebConfig {
 
-    @WebServlet("/*")
+    @WebServlet(value = "/*", asyncSupported = true)
     @VaadinServletConfiguration(ui = GssApplication.class, productionMode = true)
     public static class WebappVaadinServlet extends VaadinServlet {
     }
