@@ -100,7 +100,7 @@ public class TagsDownloadForm extends Form {
 
         KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
             @Override
-            public void readResponse(InputStream input) throws IOException {
+            public void readOkResponse(InputStream input) throws IOException {
                 InputStreamReader reader = new InputStreamReader(input);
                 try {
                     JSONParser parser = new JSONParser();
@@ -184,7 +184,7 @@ public class TagsDownloadForm extends Form {
 
             KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
                 @Override
-                public void readResponse(InputStream input) throws IOException {
+                public void readOkResponse(InputStream input) throws IOException {
                     try {
                         FileSystemStorage fsStorage = FileSystemStorage.getInstance();
                         OutputStream out = fsStorage.openOutputStream(filePath);
@@ -200,9 +200,7 @@ public class TagsDownloadForm extends Form {
                         HyLog.e(iOException);
                     }
                 }
-
             };
-
             req.doGetWithProgress(serverUrl, GssUtilities.getAuthHeader(), theme, "Downloading " + name + " (this might take a while)...");
         }
 

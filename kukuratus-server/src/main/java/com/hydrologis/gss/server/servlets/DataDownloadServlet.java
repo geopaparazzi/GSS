@@ -51,7 +51,6 @@ public class DataDownloadServlet extends HttpServlet {
         session.setMaxInactiveInterval(60 * 10);
 
         Logger logDb = KukuratusWorkspace.getInstance().getLogDb();
-        String ipAddress = "unknown";
         String deviceId = "unknown";
         try {
             ServletUtils.printHeaders(request, response);
@@ -91,7 +90,7 @@ public class DataDownloadServlet extends HttpServlet {
 
         } catch (Exception ex) {
             try {
-                logDb.insertError(TAG, "Data download connection from '" + deviceId + "' at ip:" + ipAddress + " errored with:\n",
+                logDb.insertError(TAG, "Data download connection from '" + deviceId + "' errored with:\n",
                         ex);
                 /*
                  * if there are problems, return some information.

@@ -74,7 +74,6 @@ public class UploadServlet extends HttpServlet {
         session.setMaxInactiveInterval(60 * 10);
 
         Logger logDb = KukuratusWorkspace.getInstance().getLogDb();
-        String ipAddress = "unknown";
         String deviceId = "unknown";
         try {
             if ((deviceId = ServletUtils.canProceed(request, response, "synch")) == null) {
@@ -201,7 +200,7 @@ public class UploadServlet extends HttpServlet {
             });
 
             logDb.insert(EMessageType.ACCESS, TAG,
-                    "Upload connection from '" + deviceId + "' at ip:" + ipAddress + " completed properly.");
+                    "Upload connection from '" + deviceId + "' completed properly.");
             StringBuilder sb = new StringBuilder();
             sb.append("Data properly inserted in the server.");
             sb.append("\nNotes: " + notesLogsImagesCounts[0] + "\n");
@@ -214,7 +213,7 @@ public class UploadServlet extends HttpServlet {
             okStatus.sendTo(response);
         } catch (Exception ex) {
             try {
-                logDb.insertError(TAG, "Upload connection from '" + deviceId + "' at ip:" + ipAddress + " errored with:\n", ex);
+                logDb.insertError(TAG, "Upload connection from '" + deviceId + "' errored with:\n", ex);
                 /*
                  * if there are problems, return some information.
                  */

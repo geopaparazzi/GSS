@@ -42,9 +42,18 @@ public class ServletUtils {
         String tagPart = "";
         if (tag != null)
             tagPart = " (" + tag + ")";
+        String ipAddress = NetworkUtilities.getIpAddress(request);
+
         String authHeader = request.getHeader("Authorization");
         String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
         if (userPwd == null || !userPwd[1].equals("gss_Master_Survey_Forever_2018")) {
+            String msg = "";
+            if (userPwd != null && userPwd[0] != null && userPwd[1] != null) {
+                msg = "PERMISSION DENIED: on connection ip: " + ipAddress + " for user " + userPwd[0] + " with pwd " + userPwd[1];
+            } else {
+                msg = "PERMISSION DENIED: on connection ip: " + ipAddress;
+            }
+            logAccess(msg);
             KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
                     new RuntimeException());
             errStatus.sendTo(response);
@@ -56,7 +65,8 @@ public class ServletUtils {
         Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
         GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
         if (gpapUser == null) {
-            debug("Connection from: " + deviceId + tagPart + " NO PERMISSION ERROR");
+            logAccess("PERMISSION DENIED: on connection ip: " + ipAddress + " for device " + deviceId + tagPart
+                    + " NO PERMISSION ERROR");
             KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
                     new RuntimeException());
             errStatus.sendTo(response);
@@ -70,10 +80,6 @@ public class ServletUtils {
     public static void sendJsonString( HttpServletResponse response, String jsonToSend ) throws IOException {
         response.setHeader("Content-Type", "application/json");
         PrintWriter writer = response.getWriter();
-//        char[] chars = jsonToSend.toCharArray();
-//        int length = jsonToSend.getBytes().length;
-//        setContentLength(response, length);
-//        writer.print(chars);
         writer.print(jsonToSend);
         writer.flush();
     }
@@ -90,6 +96,9 @@ public class ServletUtils {
         if (DEBUG) {
             KukuratusLogger.logDebug("ServletUtils", msg);
         }
+    }
+    public static void logAccess( String msg ) {
+        KukuratusLogger.logAccess("ServletUtils", msg);
     }
 
     public static void printHeaders( HttpServletRequest request, HttpServletResponse response ) {

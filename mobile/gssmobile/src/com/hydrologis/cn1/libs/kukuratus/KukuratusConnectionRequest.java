@@ -20,14 +20,16 @@
 package com.hydrologis.cn1.libs.kukuratus;
 
 import com.codename1.io.ConnectionRequest;
+import com.codename1.io.JSONParser;
 import com.codename1.io.NetworkManager;
 import com.codename1.ui.CN;
 import com.codename1.ui.util.Resources;
 import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyLog;
-import com.hydrologis.gssmobile.utils.GssUtilities;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Map;
 
 /**
  * Connection request class in line with kukuratus servers.
@@ -35,24 +37,54 @@ import java.io.InputStream;
  * @author hydrologis
  */
 public abstract class KukuratusConnectionRequest extends ConnectionRequest {
-
+    
+    public static final int HTTP_OK = 200;
+    
     @Override
-    public abstract void readResponse(InputStream input) throws IOException;
+    public void readResponse(InputStream input) throws IOException {
+        int responseCode = getResponseCode();
+        if (responseCode == HTTP_OK) {
+            readOkResponse(input);
+        } else {
+            InputStreamReader reader = new InputStreamReader(input);
+            JSONParser parser = new JSONParser();
+            Map<String, Object> response = parser.parseJSON(reader);
+            if (response != null) {
+                Object message = response.get("message");
+                if (message instanceof String) {
+                    String msg = (String) message;
+                    CN.callSerially(() -> {
+                        HyDialogs.showWarningDialog(msg);
+                    });
+                }
+            }
+        }
+    }
+    
+    public abstract void readOkResponse(InputStream input) throws IOException;
 
     @Override
     protected void handleErrorResponseCode(int code, String message) {
-        if (code != 200) {
-            CN.callSerially(() -> {
-                try {
-                    KukuratusStatus status = KukuratusStatus.fromJsonString(message);
-                    HyDialogs.showWarningDialog(status.getMessage());
-                } catch (IOException ex) {
-                    HyDialogs.showErrorDialog(message);
-                }
-            });
-        }
+        // Errors handled in readResponse
+        
+        
+//        if (code != 200) {
+//            CN.callSerially(() -> {
+//                if (message != null) {
+//                    try {
+//                        KukuratusStatus status = KukuratusStatus.fromJsonString(message);
+//                        HyDialogs.showWarningDialog(status.getMessage());
+//                    } catch (IOException ex) {
+//                        HyDialogs.showErrorDialog(message);
+//                    }
+//                } else {
+//                    String msg = "An error occurred.";
+//                    HyDialogs.showWarningDialog(msg);
+//                }
+//            });
+//        }
     }
-
+    
     @Override
     protected void readHeaders(Object connection) throws IOException {
         if (HyLog.DO_DEBUG) {
@@ -74,7 +106,7 @@ public abstract class KukuratusConnectionRequest extends ConnectionRequest {
         } else {
             super.readHeaders(connection);
         }
-
+        
     }
 
     /**
@@ -108,5 +140,5 @@ public abstract class KukuratusConnectionRequest extends ConnectionRequest {
         prog.showInfiniteBlockingWithTitle(progressTitle, theme, this);
         NetworkManager.getInstance().addToQueue(this);
     }
-
+    
 }

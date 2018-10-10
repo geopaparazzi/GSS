@@ -47,6 +47,7 @@ import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
+import com.hydrologis.cn1.libs.kukuratus.KukuratusConnectionRequest;
 import com.hydrologis.cn1.libs.kukuratus.KukuratusStatus;
 import com.hydrologis.gssmobile.database.DaoGpsLogs;
 import com.hydrologis.gssmobile.database.DaoImages;
@@ -430,7 +431,7 @@ public class DataSynchForm extends Form {
             @Override
             protected void readResponse(InputStream input) throws IOException {
                 int responseCode = getResponseCode();
-                if (responseCode == 200) {
+                if (responseCode == KukuratusConnectionRequest.HTTP_OK) {
                     JSONParser jp = new JSONParser();
                     Map<String, Object> responseMap = jp.parseJSON(new InputStreamReader(input, "UTF-8"));
                     Object statusCode = responseMap.get("code");
@@ -477,25 +478,37 @@ public class DataSynchForm extends Form {
                             HyLog.e(ex);
                         }
                     });
+                } else {
+                    InputStreamReader reader = new InputStreamReader(input);
+                    JSONParser parser = new JSONParser();
+                    Map<String, Object> response = parser.parseJSON(reader);
+                    if (response != null) {
+                        Object message = response.get("message");
+                        if (message instanceof String) {
+                            String msg = (String) message;
+                            requestsList.clear();
+                            CN.callSerially(() -> {
+                                show();
+                                refreshContainers();
+                                HyDialogs.showWarningDialog(msg);
+                            });
+                        }
+                    }
+
+//                    CN.callSerially(() -> {
+//                        //up.dismiss();
+//                        try {
+//                            KukuratusStatus status = KukuratusStatus.fromJsonString(message);
+//                            HyDialogs.showWarningDialog(status.getMessage());
+//                        } catch (IOException ex) {
+//                            HyDialogs.showErrorDialog(message);
+//                        }
+//                    });
                 }
             }
 
             @Override
             protected void handleErrorResponseCode(int code, String message) {
-                if (code != 200) {
-                    requestsList.clear();
-                    CN.callSerially(() -> {
-                        //up.dismiss();
-                        show();
-                        refreshContainers();
-                        try {
-                            KukuratusStatus status = KukuratusStatus.fromJsonString(message);
-                            HyDialogs.showWarningDialog(status.getMessage());
-                        } catch (IOException ex) {
-                            HyDialogs.showErrorDialog(message);
-                        }
-                    });
-                }
             }
 
         };
@@ -654,6 +667,7 @@ public class DataSynchForm extends Form {
 
             if (requestsList.isEmpty()) {
                 HyDialogs.showWarningDialog("No data to upload.");
+                show();
             } else {
                 totalCount = requestsList.size();
                 callSerially(() -> {

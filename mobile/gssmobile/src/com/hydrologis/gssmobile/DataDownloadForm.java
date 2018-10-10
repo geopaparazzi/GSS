@@ -19,15 +19,12 @@
  */
 package com.hydrologis.gssmobile;
 
-import com.hydrologis.cn1.libs.kukuratus.KukuratusInfiniteDownloadProgressDialog;
 import com.codename1.components.FloatingActionButton;
 import com.hydrologis.cn1.libs.*;
 import com.codename1.db.Database;
-import com.codename1.io.ConnectionRequest;
 import com.codename1.io.File;
 import com.codename1.io.FileSystemStorage;
 import com.codename1.io.JSONParser;
-import com.codename1.io.NetworkManager;
 import com.codename1.io.Preferences;
 import com.codename1.io.Util;
 import com.codename1.ui.Button;
@@ -43,7 +40,6 @@ import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.Resources;
 import com.hydrologis.cn1.libs.kukuratus.KukuratusConnectionRequest;
 import com.hydrologis.gssmobile.utils.GssUtilities;
-import com.hydrologis.cn1.libs.kukuratus.KukuratusStatus;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -109,60 +105,54 @@ public class DataDownloadForm extends Form {
 
         KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
             @Override
-            public void readResponse(InputStream input) throws IOException {
-                int responseCode = getResponseCode();
-                if (responseCode == 200) {
-                    InputStreamReader reader = new InputStreamReader(input);
-                    JSONParser parser = new JSONParser();
-                    Map<String, Object> response = parser.parseJSON(reader);
+            public void readOkResponse(InputStream input) throws IOException {
+                InputStreamReader reader = new InputStreamReader(input);
+                JSONParser parser = new JSONParser();
+                Map<String, Object> response = parser.parseJSON(reader);
+                if (response != null) {
+                    List baseMapsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_BASEMAP);
+                    List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
+                    List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
 
-                    if (response != null) {
-
-                        List baseMapsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_BASEMAP);
-
-                        List overlaysJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_OVERLAYS);
-                        List projectsJson = (List) response.get(GssUtilities.DATA_DOWNLOAD_PROJECTS);
-
-                        CN.callSerially(() -> {
-                            list.removeAll();
-                            for (Object obj : baseMapsJson) {
-                                if (obj instanceof HashMap) {
-                                    HashMap hashMap = (HashMap) obj;
-                                    Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                                    if (nameObj instanceof String) {
-                                        String name = (String) nameObj;
-                                        addDownloadRow(name, basemapIcon, 0);
-                                    }
+                    CN.callSerially(() -> {
+                        list.removeAll();
+                        for (Object obj : baseMapsJson) {
+                            if (obj instanceof HashMap) {
+                                HashMap hashMap = (HashMap) obj;
+                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                if (nameObj instanceof String) {
+                                    String name = (String) nameObj;
+                                    addDownloadRow(name, basemapIcon, 0);
                                 }
                             }
-                            for (Object obj : overlaysJson) {
-                                if (obj instanceof HashMap) {
-                                    HashMap hashMap = (HashMap) obj;
-                                    Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                                    if (nameObj instanceof String) {
-                                        String name = (String) nameObj;
-                                        addDownloadRow(name, overlaysIcon, 1);
-                                    }
+                        }
+                        for (Object obj : overlaysJson) {
+                            if (obj instanceof HashMap) {
+                                HashMap hashMap = (HashMap) obj;
+                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                if (nameObj instanceof String) {
+                                    String name = (String) nameObj;
+                                    addDownloadRow(name, overlaysIcon, 1);
                                 }
                             }
-                            for (Object obj : projectsJson) {
-                                if (obj instanceof HashMap) {
-                                    HashMap hashMap = (HashMap) obj;
-                                    Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
-                                    if (nameObj instanceof String) {
-                                        String name = (String) nameObj;
-                                        addDownloadRow(name, projectsIcon, 2);
-                                    }
+                        }
+                        for (Object obj : projectsJson) {
+                            if (obj instanceof HashMap) {
+                                HashMap hashMap = (HashMap) obj;
+                                Object nameObj = hashMap.get(GssUtilities.DATA_DOWNLOAD_NAME);
+                                if (nameObj instanceof String) {
+                                    String name = (String) nameObj;
+                                    addDownloadRow(name, projectsIcon, 2);
                                 }
                             }
+                        }
 
-                            list.forceRevalidate();
-                        });
-                    } else {
-                        CN.callSerially(() -> {
-                            HyDialogs.showWarningDialog("Could not retrieve data list.");
-                        });
-                    }
+                        list.forceRevalidate();
+                    });
+                } else {
+                    CN.callSerially(() -> {
+                        HyDialogs.showWarningDialog("Could not retrieve data list.");
+                    });
                 }
             }
         };
@@ -220,9 +210,8 @@ public class DataDownloadForm extends Form {
             HyLog.d("Downloading from: " + serverUrl);
             KukuratusConnectionRequest req = new KukuratusConnectionRequest() {
                 @Override
-                public void readResponse(InputStream input) throws IOException {
+                public void readOkResponse(InputStream input) throws IOException {
                     try {
-
                         if (isKilled()) {
                             return;
                         }
