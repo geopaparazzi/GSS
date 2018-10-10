@@ -92,7 +92,6 @@ public class DataDownloadForm extends Form {
             fab.bindFabToContainer(this.getContentPane());
             fab.addActionListener(e -> refreshDataList());
 
-//            refreshDataList();
             list.forceRevalidate();
         } catch (Exception ex) {
             HyLog.e(ex);

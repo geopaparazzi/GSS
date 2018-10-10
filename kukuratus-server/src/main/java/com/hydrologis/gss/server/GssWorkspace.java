@@ -81,7 +81,7 @@ public enum GssWorkspace {
             File folder = workspaceFolder.get();
             File projectsFolder = new File(folder, PROJECTS);
             if (!projectsFolder.exists()) {
-                if (projectsFolder.mkdirs()) {
+                if (!projectsFolder.mkdirs()) {
                     return Optional.empty();
                 }
             }

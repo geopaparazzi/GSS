@@ -66,8 +66,8 @@ public class TagsDownloadForm extends Form {
         });
         setTitle("Tags Download");
 
-        init();
         this.theme = theme;
+        init();
     }
 
     private void init() {
@@ -84,7 +84,6 @@ public class TagsDownloadForm extends Form {
             fab.addActionListener(e -> refreshDataList());
 
             list.forceRevalidate();
-            refreshDataList();
         } catch (Exception ex) {
             HyLog.e(ex);
         }
