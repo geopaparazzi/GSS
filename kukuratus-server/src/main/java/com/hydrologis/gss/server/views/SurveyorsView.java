@@ -29,6 +29,7 @@ import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
 import com.hydrologis.kukuratus.libs.registry.User;
 import com.hydrologis.kukuratus.libs.spi.SettingsPage;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
+import com.hydrologis.kukuratus.libs.utils.KukuratusWindows;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.field.DatabaseField;
 import com.vaadin.data.Binder;
@@ -79,6 +80,8 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
                 .setEditorBinding(binder.forField(new TextField()).bind(GpapUsers::getName, GpapUsers::setName));
         usersGrid.addColumn(GpapUsers::getContact).setCaption("Contact").setExpandRatio(3)
                 .setEditorBinding(binder.forField(new TextField()).bind(GpapUsers::getContact, GpapUsers::setContact));
+        usersGrid.addComponentColumn(gpapUser -> new Button(VaadinIcons.TRASH, e -> deleteSurveyorClicked(gpapUser)))
+                .setExpandRatio(1);
 
         usersGrid.setColumnReorderingAllowed(true);
 
@@ -89,6 +92,29 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
 
         setSizeFull();
         refresh();
+    }
+
+    private void deleteSurveyorClicked( GpapUsers user ) {
+        KukuratusWindows.openCancelDeleteWindow(usersGrid,
+                "Are you sure you want to delete the surveyor " + user.name + "?<br/>This will also remove all his/her data!",
+                null, null, new Runnable(){
+                    public void run() {
+
+                        DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+                        try {
+                            Dao<GpapUsers, ? > dao = databaseHandler.getDao(GpapUsers.class);
+                            dao.delete(user);
+
+                            getUI().access(() -> {
+                                refresh();
+                            });
+
+                        } catch (SQLException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                });
     }
 
     private void save( GpapUsers user ) {

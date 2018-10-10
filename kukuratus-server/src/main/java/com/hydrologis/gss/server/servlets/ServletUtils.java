@@ -35,8 +35,8 @@ import com.hydrologis.kukuratus.libs.utils.NetworkUtilities;
 import com.j256.ormlite.dao.Dao;
 
 public class ServletUtils {
-    private static boolean DEBUG = true;
-    private static final String NO_PERMISSION = "No permission! Contact your system administrator.";
+    private static boolean DEBUG = false;
+    private static final String NO_PERMISSION = "No permission to access the server! Are you signed up as surveyor? Contact your system administrator to make sure.";
 
     public static String canProceed( HttpServletRequest request, HttpServletResponse response, String tag ) throws Exception {
         String tagPart = "";
@@ -45,7 +45,8 @@ public class ServletUtils {
         String authHeader = request.getHeader("Authorization");
         String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
         if (userPwd == null || !userPwd[1].equals("gss_Master_Survey_Forever_2018")) {
-            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION);
+            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
+                    new RuntimeException());
             errStatus.sendTo(response);
             return null;
         }
@@ -56,7 +57,8 @@ public class ServletUtils {
         GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
         if (gpapUser == null) {
             debug("Connection from: " + deviceId + tagPart + " NO PERMISSION ERROR");
-            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION);
+            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
+                    new RuntimeException());
             errStatus.sendTo(response);
             return null;
         }
