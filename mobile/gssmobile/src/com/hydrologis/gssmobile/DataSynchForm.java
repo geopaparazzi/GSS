@@ -1,21 +1,22 @@
-/*******************************************************************************
+/** *****************************************************************************
  * Copyright (C) 2018 HydroloGIS S.r.l. (www.hydrologis.com)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- ******************************************************************************/
+ * ****************************************************************************
+ */
 package com.hydrologis.gssmobile;
 
 import com.codename1.components.FloatingActionButton;
@@ -28,6 +29,7 @@ import com.codename1.io.MultipartRequest;
 import com.codename1.io.Preferences;
 import com.codename1.io.Util;
 import com.codename1.ui.Button;
+import com.codename1.ui.CN;
 import static com.codename1.ui.CN.callSerially;
 import static com.codename1.ui.CN.getCurrentForm;
 import com.codename1.ui.Component;
@@ -45,6 +47,7 @@ import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.Resources;
 import com.codename1.util.Base64;
+import com.hydrologis.cn1.libs.kukuratus.KukuratusStatus;
 import com.hydrologis.gssmobile.database.DaoGpsLogs;
 import com.hydrologis.gssmobile.database.DaoImages;
 import com.hydrologis.gssmobile.database.DaoNotes;
@@ -426,52 +429,73 @@ public class DataSynchForm extends Form {
         MultipartRequest mpr = new MultipartRequest() {
             @Override
             protected void readResponse(InputStream input) throws IOException {
-                JSONParser jp = new JSONParser();
-                Map<String, Object> responseMap = jp.parseJSON(new InputStreamReader(input, "UTF-8"));
-                Object statusCode = responseMap.get("code");
-                if (statusCode instanceof Number) {
-                    int status = ((Number) statusCode).intValue();
-                    HyLog.p("Response status code: " + status);
-                    if (status != 200) {
-                        callSerially(() -> {
-                            final Label label = new Label(responseMap.get("message").toString(), "uploadProgressErrorLabel");
-                            addProgressLabelAndRefresh(label);
-                        });
-                        return;
-                    }
-                }
-                callSerially(() -> {
-                    try {
-                        final Label label = new Label("Done", "uploadProgressLabel");
-                        addProgressLabelAndRefresh(label);
-
-                        switch (index) {
-                            case 0:
-                                DaoNotes.clearDirtySimple(db);
-                                break;
-                            case 1:
-                                DaoGpsLogs.clearDirty(db);
-                                break;
-                            case 2:
-                                DaoNotes.clearDirtySimple(db);
-                                DaoGpsLogs.clearDirty(db);
-                                break;
-                            case 3:
-                                DaoNotes.clearDirtyById(db, itemId);
-                                DaoImages.clearDirtyByNoteId(db, itemId);
-                                break;
-                            case 4:
-                                DaoImages.clearDirtyById(db, itemId);
-                                break;
-                            default:
-                                break;
+                int responseCode = getResponseCode();
+                if (responseCode == 200) {
+                    JSONParser jp = new JSONParser();
+                    Map<String, Object> responseMap = jp.parseJSON(new InputStreamReader(input, "UTF-8"));
+                    Object statusCode = responseMap.get("code");
+                    if (statusCode instanceof Number) {
+                        int status = ((Number) statusCode).intValue();
+                        HyLog.p("Response status code: " + status);
+                        if (status != 200) {
+                            callSerially(() -> {
+                                final Label label = new Label(responseMap.get("message").toString(), "uploadProgressErrorLabel");
+                                addProgressLabelAndRefresh(label);
+                            });
+                            return;
                         }
-
-                        runNextInList();
-                    } catch (IOException ex) {
-                        HyLog.e(ex);
                     }
-                });
+                    callSerially(() -> {
+                        try {
+                            final Label label = new Label("Done", "uploadProgressLabel");
+                            addProgressLabelAndRefresh(label);
+
+                            switch (index) {
+                                case 0:
+                                    DaoNotes.clearDirtySimple(db);
+                                    break;
+                                case 1:
+                                    DaoGpsLogs.clearDirty(db);
+                                    break;
+                                case 2:
+                                    DaoNotes.clearDirtySimple(db);
+                                    DaoGpsLogs.clearDirty(db);
+                                    break;
+                                case 3:
+                                    DaoNotes.clearDirtyById(db, itemId);
+                                    DaoImages.clearDirtyByNoteId(db, itemId);
+                                    break;
+                                case 4:
+                                    DaoImages.clearDirtyById(db, itemId);
+                                    break;
+                                default:
+                                    break;
+                            }
+
+                            runNextInList();
+                        } catch (IOException ex) {
+                            HyLog.e(ex);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            protected void handleErrorResponseCode(int code, String message) {
+                if (code != 200) {
+                    requestsList.clear();
+                    CN.callSerially(() -> {
+                        //up.dismiss();
+                        show();
+                        refreshContainers();
+                        try {
+                            KukuratusStatus status = KukuratusStatus.fromJsonString(message);
+                            HyDialogs.showWarningDialog(status.getMessage());
+                        } catch (IOException ex) {
+                            HyDialogs.showErrorDialog(message);
+                        }
+                    });
+                }
             }
 
         };
