@@ -202,7 +202,7 @@ or:
 The data can be queried by clicking on them. Simple information is shown as described below.
 
 In the case of notes, the main note text, the elevation and the timestamp are shown. Note that 
-or notes that have forms, the complex form is not visualized in the information box.
+for notes that have forms, the complex form is not visualized in the information box.
 
 .Notes.
 image::images/08_notes.png[scaledwidth=25%, width=25%, align="center"]
@@ -221,9 +221,10 @@ image::images/10_media.png[scaledwidth=70%, width=70%, align="center"]
 
 Selecting the proper action from the settings menu it is possible to:
 
-* Configure surveyors. New devices that connect and upload are automatically added.
-  The name of the surveyor by default is the id of the device. This can be changed 
-  by double-clicking on the surveyor.
+* Configure surveyors. Surveyors can be added or removed. Note that only 
+  surveyors registered are able to connect with the mobile app.
+  Editable attributes can be changed by double-clicking on the surveyor. 
+  **Warning: removing a surveyor will also delete all its data.**
 
 .Surveyor configuration.
 image::images/12_surveyors.png[scaledwidth=100%, width=100%, align="center"]
