@@ -1,7 +1,7 @@
 = The Geopaparazzi Survey Server
 HydroloGIS S.r.l.
-v2.10, 2018-08-23
-:gss_version: v2.10
+v2.12, 2018-10-15
+:gss_version: v2.12
 :doctype: article
 :description: A description
 :encoding: utf-8
@@ -39,8 +39,7 @@ https://play.google.com/store/apps/details?id=com.hydrologis.gssmobile[available
 The app can connect to geopaparazzi projects and synchronize the data contained using the unique device ID to
 upload the data to the server.
 
-Any device that connects to the server with its ID, will be accepted and if not available, the new id is 
-automatically inserted in the central db.
+A device, to be able to connect to the server, needs to be registered in the surveyor settings section of the server by an administrator user.
 
 The applications are available as Free and Open Source software. The server is available under EPL v2.0, while the 
 mobile app is available under GPL v3.0.
@@ -117,7 +116,7 @@ the command to run the application is:
 
 [source,bash,subs="attributes+"]
 ----
-docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -p 8080:8080 moovida/gss:{gss_version}
+docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -e JAVA_OPTS="-Xms1256m -Xmx4g -Dstage.globalfolder=/home/basefolder/" -p 8080:8080 moovida/gss:{gss_version}
 ----
 
 Open your favorite browser and enter the url:
@@ -155,12 +154,18 @@ The left toolbar contains buttons to access the available views:
 * Dashboard
 * Map View
 * Settings
-  - Surveyors
-  - Web Users
+  - Surveyors (admin mode)
+  - Web Users (admin mode)
   - Map Chooser
 * Export
   - PDF
   - KMZ
+  - Database (admin mode)
+* Project Data (admin mode)
+* Form Builder
+* Log View (admin mode)
+* About
+* Logout
 
 
 ==== The dashboard
@@ -182,15 +187,12 @@ image::images/04_dashboard2.png[scaledwidth=100%, width=100%, align="center"]
 
 The mapview features the Surveyor list and a map panel.
 
-.The mapview with the surveyors list.
-image::images/05_mapview.png[scaledwidth=100%, width=100%, align="center"]
-
 The surveyor can be actived by selecting the checkbox in the table. Once the data of the 
 surveyor are loaded, through the zoom button on top of the table it is possible to zoom to 
 the surveyor's data extent.
 
-.The mapview zoomed on the data of a surveyor.
-image::images/06_surveyor.png[scaledwidth=100%, width=100%, align="center"]
+.The mapview with the surveyors list.
+image::images/05_mapview.png[scaledwidth=100%, width=100%, align="center"]
 
 If data are uploaded while on the map view, one can either reload the view by refreshing the page
 or:
@@ -257,6 +259,83 @@ image::images/14_export_pdf.png[scaledwidth=100%, width=100%, align="center"]
 .The KMZ export view
 image::images/15_export_kmz.png[scaledwidth=100%, width=100%, align="center"]
 
+* Export the current database. While it is best to connect to the online database through the port 9092, which is exposed, 
+  in some environments it might not be possible (ex. Heroku allows only one port). In this
+  case it is possible to export the database by downloading it.
+
+.The database export view
+image::images/15_1_export_db.png[scaledwidth=100%, width=100%, align="center"]
+
+==== The Project Data View
+
+In the project data view it is possible to upload datasets that can be downloaded by the mobiles app to 
+allow geopaparazzi to access them.
+
+The view is split into 3 columns, one for each supported datatype: 
+
+* basemaps (mbtiles, mapsforge maps)
+* overlays (spatialite databases)
+* projects (geopaparazzi projects)
+
+The user can simply drag the files in the lower area to upload the files.
+
+.The project data view
+image::images/23_dataview_drag.png[scaledwidth=100%, width=100%, align="center"]
+
+File types are placed in the right tables if recongized:
+
+.The different datatype tables
+image::images/24_dataview.png[scaledwidth=100%, width=100%, align="center"]
+
+
+==== The Form Builder View
+
+The form view is an interactive gui builder for geopaparazzi forms.
+
+To better understand the description of its usage, some naming needs to be fixed:
+
+* **tags**: a tag is what we see as a complete file on geopaparazzi (speak tags.json). From 
+  version 5.6.2 on Geopaparazzi loads any file that ends with **tags.json** from the geopaparazzi folder,
+  allowing tags to be kept separate.
+* **section**: a section is what in geopaparazzi is seen as a button in the *add notes* view.
+* **form**: a form is a tab of the geopaparazzi view
+* **widget**: it is the widget the user interacts with, ex. combobox or textfield
+
+The naming is a bit confusing, but comes form the early days and is in the source code of geopaparazzi. So, in order 
+to be able to always document things the same way, we have to follow these naming.
+
+.The From Builder
+image::images/25_forms.png[scaledwidth=100%, width=100%, align="center"]
+
+After creating a tag with the **add** button, one can add a new section to the tag:
+
+.The add section dialog.
+image::images/26_forms.png[scaledwidth=100%, width=100%, align="center"]
+
+Once the section is created the user can add **forms** to the section, which will load
+tabs for each one in the tab view.
+
+To each of it widgets can be added:
+
+.The add widget menu while adding a widget to a form tab.
+image::images/27_forms.png[scaledwidth=100%, width=100%, align="center"]
+
+The add widget dialogs prompt the user for a key and a label and other parameters depending on the type:
+
+.The add text field widget
+image::images/28_forms.png[scaledwidth=100%, width=100%, align="center"]
+
+.The add combo widget, which can load from a textfile the combobox entries.
+image::images/29_forms.png[scaledwidth=100%, width=100%, align="center"]
+
+.The work in progress form view.
+image::images/30_forms.png[scaledwidth=100%, width=100%, align="center"]
+
+Once the user has finalized his tag entry, it is necessary to mark it visible in order for the mobile app to see it:
+
+.The checkbox to mark the tag visible.
+image::images/31_forms.png[scaledwidth=70%, width=70%, align="center"]
+
 
 == The mobile app, GSSS
 
@@ -265,33 +344,44 @@ The GSSS can be installed from the https://play.google.com/store/apps/details?id
 .GSSS on play store.
 image::images/16_mobile_install.png[scaledwidth=70%, width=70%]
 
-Once installed and launched it will complain about the fact that no project database has been chosen yet:
+Once installed and launched it shows an empty view with the logo:
 
 .First start of GSSS.
-image::images/16_mobile_start.png[scaledwidth=30%, width=30%]
+image::images/32_mobile.png[scaledwidth=30%, width=30%]
 
-In the side menu it is possible to access several features.
+In the side menu it is possible to access several features. The first 3 are the synchronization features:
+
+* Synchronization
+* Data Download
+* Forms Download
 
 .The main menu.
-image::images/17_mobile_menu.png[scaledwidth=30%, width=30%]
+image::images/33_mobile_menu.png[scaledwidth=30%, width=30%]
+
+
+=== Settings
+
+==== Checking the Device Id
 
 The first thing to do is to check if the device has an own unique device id. If it
 has one, the following screen will be shown:
 
 .The device id.
-image::images/17_mobile_menu_id.png[scaledwidth=30%, width=30%]
+image::images/37_mobile_id.png[scaledwidth=30%, width=30%]
 
 This is also the id that the server part uses as device identifier.
 
-If no id is available, the user will be prompted to insert one.
+If no id is available, the user will be prompted to insert one manually.
 
-To be able to connect to the GSS server, the url of the server needs to be inserted. 
-The url has to end with **upload**:
+==== Setting the server URL
+
+To be able to connect to the GSS server, the URL of the server needs to be inserted. 
 
 .The upload URL of the server.
-image::images/17_mobile_menu_url.png[scaledwidth=30%, width=30%]
+image::images/38_mobile_url.png[scaledwidth=30%, width=30%]
 
-From the side menu it is also possible to access some basic settings:
+From the right side menu it is also possible to load a new geopaparazzi database
+and access some basic settings:
 
 1. the possibility to reset the connected database to be in a complete 
    dirty state. After that the database will upload everything as if it never
@@ -300,21 +390,15 @@ From the side menu it is also possible to access some basic settings:
    no data are synchronized. Only new data surveyed in geopaparazzi
    will be uploaded again.
 
-.The settings dialog.
-image::images/18_mobile_settings.png[scaledwidth=30%, width=30%]
+=== Synchronization
 
 Once the app is configured, it is possible to load a project (first entry
-of the menu). A filechooser of dialog will open to select the database to
+of the right side menu). A filechooser of dialog will open to select the database to
 synchronize. Once loaded the list of notes, gps log and media notes 
 are shown in the tabbed view:
 
 .The content of the database that can be synchronized.
 image::images/19_mobile_load.png[scaledwidth=30%, width=30%]
-
-Also, at the bottom of the main menu, the path and name of the database are shown:
-
-.The path and name of the connected database.
-image::images/19_mobile_menu_loaded.png[scaledwidth=30%, width=30%]
 
 To synchronize, the floating action button at the bottom right part can 
 be used. It is possible to synchronize everything or just a part.
@@ -326,7 +410,27 @@ Once the button is pushed, the app connects to the GSS server and sends
 the selected data to the server. At the end 
 
 .The dialog of a successful sync.
-image::images/21_mobile_syncdone.png[scaledwidth=30%, width=30%]
+image::images/40_mobile_upload.png[scaledwidth=30%, width=30%]
+
+=== Data Download
+
+The **Data download** action opens an empty view and a referesh button. Once hit, the 
+app will download the data available for the user to download:
+
+.The data list downloaded from the server.
+image::images/35_mobile_data.png[scaledwidth=30%, width=30%]
+
+The icons show the different types of dataset.
+
+One can download a dataset by tapping on the most left button with the cloud download icon.
+
+=== Tags Download
+
+The **Forms download** action opens an empty view and a referesh button. Once hit, the 
+app will download the tags available for the user to download:
+
+.The tags list downloaded from the server.
+image::images/36_mobile_tags.png[scaledwidth=30%, width=30%]
 
 
 === Troubleshooting
@@ -337,4 +441,12 @@ to solve the issue and create a new release.
 
 .The send log button.
 image::images/22_send_log.png[scaledwidth=30%, width=30%]
+
+Note that the more information is added in the text view, the better it will be for the developers.
+
+.The send log dialog
+image::images/39_mobile_log.png[scaledwidth=30%, width=30%]
+
+
+
 

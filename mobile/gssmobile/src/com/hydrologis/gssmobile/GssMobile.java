@@ -19,6 +19,7 @@
  */
 package com.hydrologis.gssmobile;
 
+import com.codename1.components.InfiniteProgress;
 import com.hydrologis.gssmobile.utils.GssUtilities;
 import static com.codename1.ui.CN.*;
 import com.codename1.ui.Dialog;
@@ -65,6 +66,7 @@ public class GssMobile {
 
         // Pro only feature
         HyLog.bindCrashProtection(true);
+//        InfiniteProgress.setDefaultMaterialDesignMode(true);
 
         addNetworkErrorListener(err -> {
             // prevent the event from propagating
