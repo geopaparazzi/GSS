@@ -33,7 +33,7 @@ public class GpapUsers {
     public static final String PASSWORD_FIELD_NAME = "password";
     public static final String CONTACT_FIELD_NAME = "contact";
 
-    public static final String usersFKColumnDefinition = "long references gpapusers(id) on delete cascade";
+    public static final String usersFKColumnDefinition = "bigint references gpapusers(id) on delete cascade";
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;

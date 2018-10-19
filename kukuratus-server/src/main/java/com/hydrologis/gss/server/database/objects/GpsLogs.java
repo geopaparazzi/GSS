@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.hydrologis.kukuratus.libs.database.ISpatialTable;
-import com.hydrologis.kukuratus.libs.database.ormlite.LineStringTypeH2GIS;
+import com.hydrologis.kukuratus.libs.database.ormlite.KukuratusLineStringType;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.export.KmlRepresenter;
@@ -45,7 +45,7 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
     public static final String ENDTS_FIELD_NAME = "endts";
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid";
 
-    public static final String gpslogFKColumnDefinition = "long references gpslogs(id) on delete cascade";
+    public static final String gpslogFKColumnDefinition = "bigint references gpslogs(id) on delete cascade";
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
@@ -59,7 +59,7 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
     @DatabaseField(columnName = ENDTS_FIELD_NAME, canBeNull = false)
     public long endTs;
 
-    @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = LineStringTypeH2GIS.class)
+    @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusLineStringType.class)
     public LineString the_geom;
 
     @DatabaseField(columnName = GPAPUSER_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapUsers.usersFKColumnDefinition)
@@ -107,7 +107,7 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
         sB.append("<LineString>\n");
         sB.append("<tessellate>1</tessellate>\n");
         sB.append("<coordinates>\n");
-        Coordinate[] coords = the_geom.getCoordinates();
+        Coordinate[] coords = ((LineString) the_geom).getCoordinates();
         for( int i = 0; i < coords.length; i++ ) {
             double lon = coords[i].x;
             double lat = coords[i].y;

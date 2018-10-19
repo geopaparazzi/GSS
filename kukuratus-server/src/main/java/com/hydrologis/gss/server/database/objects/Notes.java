@@ -28,7 +28,7 @@ import org.json.JSONObject;
 
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.database.ISpatialTable;
-import com.hydrologis.kukuratus.libs.database.ormlite.PointTypeH2GIS;
+import com.hydrologis.kukuratus.libs.database.ormlite.KukuratusPointType;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.utils.export.KmlRepresenter;
@@ -55,12 +55,12 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     public static final String STYLE_FIELD_NAME = "style";
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid";
 
-    public static final String notesFKColumnDefinition = "long references notes(id) on delete cascade";
+    public static final String notesFKColumnDefinition = "bigint references notes(id) on delete cascade";
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
 
-    @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = PointTypeH2GIS.class)
+    @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusPointType.class)
     public Point the_geom;
 
     @DatabaseField(columnName = ALTIM_FIELD_NAME, canBeNull = false)

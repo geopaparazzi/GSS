@@ -32,7 +32,7 @@ public class ImageData {
     public static final String DATA_FIELD_NAME = "data";
     public static final String THUMB_FIELD_NAME = "thumbnail";
     
-    public static final String imagedataFKColumnDefinition = "long references imagedata(id) on delete cascade";
+    public static final String imagedataFKColumnDefinition = "bigint references imagedata(id) on delete cascade";
 
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)

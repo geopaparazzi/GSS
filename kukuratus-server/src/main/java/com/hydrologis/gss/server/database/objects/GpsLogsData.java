@@ -18,7 +18,7 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.database.objects;
 import com.hydrologis.kukuratus.libs.database.ISpatialTable;
-import com.hydrologis.kukuratus.libs.database.ormlite.PointTypeH2GIS;
+import com.hydrologis.kukuratus.libs.database.ormlite.KukuratusPointType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import com.vividsolutions.jts.geom.Point;
@@ -38,7 +38,7 @@ public class GpsLogsData implements ISpatialTable {
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
 
-    @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = PointTypeH2GIS.class)
+    @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusPointType.class)
     public Point the_geom;
 
     @DatabaseField(columnName = ALTIM_FIELD_NAME, canBeNull = false)

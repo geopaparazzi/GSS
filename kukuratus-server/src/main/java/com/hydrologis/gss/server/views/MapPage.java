@@ -76,6 +76,7 @@ import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.LineString;
 
 public class MapPage extends VerticalLayout implements View, com.hydrologis.kukuratus.libs.spi.MapPage {
     private static final long serialVersionUID = 1L;
@@ -272,7 +273,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             for( GpsLogs log : gpsLogs ) {
                 GpsLogsProperties props = logsPropertiesDao.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, log)
                         .queryForFirst();
-                LPolyline leafletPolyline = new LPolyline(log.the_geom);
+                LPolyline leafletPolyline = new LPolyline((LineString) log.the_geom);
                 leafletPolyline.setColor(props.color);
                 leafletPolyline.setClickable(true);
                 leafletPolyline.setWeight((int) props.width);
@@ -371,8 +372,8 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
     private void reloadDevices() {
         try {
             allDevices.clear();
-            allDevices
-                    .addAll(SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll());
+            allDevices.addAll(SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class)
+                    .queryForAll());
             deviceNamesMap.clear();
             deviceNamesMap.putAll(allDevices.stream().collect(Collectors.toMap(gu -> getUserName(gu), Function.identity())));
         } catch (SQLException e1) {
@@ -426,7 +427,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
     private String getUserName( GpapUsers user ) {
         return user.name;
     }
-    
+
     @Override
     public VaadinIcons getIcon() {
         return VaadinIcons.MAP_MARKER;
