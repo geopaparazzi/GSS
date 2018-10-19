@@ -63,10 +63,10 @@ public class GssDbProvider implements DbProvider {
     private static final String TCP_LOCALHOST = "tcp://localhost:9092";
     private static final String TCP_PASSWORD = null;
     private static final String DB_PREFIX = "gss_database";
-    public static final String USERNAME = "gss";
+    public static String USERNAME = "gss";
     public static final String PWD = "gss";
 
-    private static boolean doPostgis = true;
+    private static boolean doPostgis = false;
     private static final String PG_URL = "localhost:5432/gss";
 
     private ASpatialDb db;
@@ -99,6 +99,7 @@ public class GssDbProvider implements DbProvider {
                 dburl = PG_URL;
                 KukuratusLogger.logDebug(this, "Connecting to database: " + dburl);
             } else {
+                USERNAME = null;
                 databaseFile = getDatabaseFile();
                 if (databaseFile.getName().endsWith(EDb.SPATIALITE.getExtension())) {
                     dbToUse = EDb.SPATIALITE;
