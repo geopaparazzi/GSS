@@ -57,10 +57,10 @@ import com.hydrologis.gss.server.database.objects.Notes;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.j256.ormlite.dao.Dao;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Point;
 
 public class ProjectsImporter {
     private static final GeometryFactory gf = GeometryUtilities.gf();

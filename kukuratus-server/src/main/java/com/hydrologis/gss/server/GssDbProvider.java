@@ -49,7 +49,7 @@ import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 
 /**
  * The db provider as loaded from the SPI. It has to be instanced and initialized only once.

@@ -55,10 +55,10 @@ import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Point;
 
 @WebServlet(urlPatterns = "/upload")
 //@MultipartConfig(fileSizeThreshold = 2 * 1024 * 1024 * 100, // 20 MB

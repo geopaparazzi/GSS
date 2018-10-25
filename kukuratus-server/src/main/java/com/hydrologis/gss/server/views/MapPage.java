@@ -54,6 +54,7 @@ import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.kukuratus.libs.KukuratusLibs;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.maps.EOnlineTileSources;
@@ -75,8 +76,6 @@ import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.LineString;
 
 public class MapPage extends VerticalLayout implements View, com.hydrologis.kukuratus.libs.spi.MapPage {
     private static final long serialVersionUID = 1L;
@@ -169,10 +168,10 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
                 return;
             }
 
-            Envelope envelope = new Envelope();
+            com.vividsolutions.jts.geom.Envelope envelope = new com.vividsolutions.jts.geom.Envelope();
             for( GpapUsers user : selectedUsers ) {
                 LLayerGroup layersGroup = userId4LoadedLayersMap.get(user.deviceId);
-                Envelope env = layersGroup.getGeometry().getEnvelopeInternal();
+                com.vividsolutions.jts.geom.Envelope env = layersGroup.getGeometry().getEnvelopeInternal();
                 envelope.expandToInclude(env);
             }
 
@@ -273,7 +272,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             for( GpsLogs log : gpsLogs ) {
                 GpsLogsProperties props = logsPropertiesDao.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, log)
                         .queryForFirst();
-                LPolyline leafletPolyline = new LPolyline((LineString) log.the_geom);
+                LPolyline leafletPolyline = new LPolyline(new KukuratusLibs().toOldJtsLinestring(log.the_geom));
                 leafletPolyline.setColor(props.color);
                 leafletPolyline.setClickable(true);
                 leafletPolyline.setWeight((int) props.width);
@@ -289,7 +288,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         List<Images> imagesList = imagesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user).query();
         if (imagesList.size() > 0) {
             for( Images image : imagesList ) {
-                LMarker leafletMarker = new LMarker(image.the_geom);
+                LMarker leafletMarker = new LMarker(new KukuratusLibs().toOldJtsPoint(image.the_geom));
                 leafletMarker.setIcon(imagesResource);
                 int iconSize = 36;
                 leafletMarker.setIconSize(new Point(iconSize, iconSize));
@@ -327,7 +326,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         List<Notes> notesList = notesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user).query();
         if (notesList.size() > 0) {
             for( Notes note : notesList ) {
-                LMarker leafletMarker = new LMarker(note.the_geom);
+                LMarker leafletMarker = new LMarker(new KukuratusLibs().toOldJtsPoint(note.the_geom));
                 leafletMarker.setIcon(notesResource);
                 int iconSize = 36;
                 leafletMarker.setIconSize(new Point(iconSize, iconSize));

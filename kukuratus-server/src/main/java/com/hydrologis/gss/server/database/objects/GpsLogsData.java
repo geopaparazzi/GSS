@@ -21,7 +21,7 @@ import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.hydrologis.kukuratus.libs.database.ormlite.KukuratusPointType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
-import com.vividsolutions.jts.geom.Point;
+import org.locationtech.jts.geom.Point;
 
 /**
  * The gps log data table.
