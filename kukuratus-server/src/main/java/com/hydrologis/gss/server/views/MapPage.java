@@ -102,7 +102,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
     @Override
     public void enter( ViewChangeEvent event ) {
 
-        File dataFolder = KukuratusWorkspace.getInstance().getDataFolder(null).get();
+        File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
         File notesFile = new File(dataFolder, "notes.png");
         File imagesFile = new File(dataFolder, "images.png");
         notesResource = new FileResource(notesFile);

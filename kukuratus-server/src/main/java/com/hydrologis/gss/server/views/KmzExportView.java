@@ -144,7 +144,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
                 List<GpsLogs> logsList = logsDAO.queryBuilder().where().in(Notes.GPAPUSER_FIELD_NAME, devices).query();
                 kmlList.addAll(logsList);
 
-                File tmpFolder = KukuratusWorkspace.getInstance().getTmpFolder().get();
+                File tmpFolder = KukuratusWorkspace.getInstance().getTmpFolder();
                 File outFile = new File(tmpFolder,
                         "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".kmz");
                 KmzExport exporter = new KmzExport(null, outFile){

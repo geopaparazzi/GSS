@@ -158,7 +158,7 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
                 Notification.Type.TRAY_NOTIFICATION);
         reportsMenuItem.setEnabled(false);
 
-        File tmpFolder = KukuratusWorkspace.getInstance().getTmpFolder().get();
+        File tmpFolder = KukuratusWorkspace.getInstance().getTmpFolder();
         File outFile = new File(tmpFolder,
                 "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".pdf");
 

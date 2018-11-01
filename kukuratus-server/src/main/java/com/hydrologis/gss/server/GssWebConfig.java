@@ -51,11 +51,7 @@ public class GssWebConfig {
             try {
                 SpiHandler.INSTANCE.getDbProviderSingleton().init();
 
-                Optional<File> globalDataFolder = KukuratusWorkspace.getInstance().getGlobalDataFolder();
-                if (!globalDataFolder.isPresent()) {
-                    throw new IllegalArgumentException("No global datafolder found.");
-                }
-                File dataFolder = globalDataFolder.get();
+                File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
                 File notesOutFile = new File(dataFolder, "notes.png");
                 File imagesOutFile = new File(dataFolder, "images.png");
                 if (!notesOutFile.exists()) {

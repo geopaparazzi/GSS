@@ -46,48 +46,36 @@ public enum GssWorkspace {
     private Optional<File> projectsFolder;
 
     public Optional<File> getBasemapsFolder() {
-        Optional<File> workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
-        if (workspaceFolder.isPresent()) {
-            File folder = workspaceFolder.get();
-            File baseMapsFolder = new File(folder, BASEMAP);
-            if (!baseMapsFolder.exists()) {
-                if (!baseMapsFolder.mkdirs()) {
-                    return Optional.empty();
-                }
+        File workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
+        File baseMapsFolder = new File(workspaceFolder, BASEMAP);
+        if (!baseMapsFolder.exists()) {
+            if (!baseMapsFolder.mkdirs()) {
+                return Optional.empty();
             }
-            return Optional.of(baseMapsFolder);
         }
-        return Optional.empty();
+        return Optional.of(baseMapsFolder);
     }
 
     public Optional<File> getOverlaysFolder() {
-        Optional<File> workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
-        if (workspaceFolder.isPresent()) {
-            File folder = workspaceFolder.get();
-            File overlaysFolder = new File(folder, OVERLAYS);
-            if (!overlaysFolder.exists()) {
-                if (!overlaysFolder.mkdirs()) {
-                    return Optional.empty();
-                }
+        File workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
+        File overlaysFolder = new File(workspaceFolder, OVERLAYS);
+        if (!overlaysFolder.exists()) {
+            if (!overlaysFolder.mkdirs()) {
+                return Optional.empty();
             }
-            return Optional.of(overlaysFolder);
         }
-        return Optional.empty();
+        return Optional.of(overlaysFolder);
     }
 
     public Optional<File> getProjectsFolder() {
-        Optional<File> workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
-        if (workspaceFolder.isPresent()) {
-            File folder = workspaceFolder.get();
-            File projectsFolder = new File(folder, PROJECTS);
-            if (!projectsFolder.exists()) {
-                if (!projectsFolder.mkdirs()) {
-                    return Optional.empty();
-                }
+        File workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
+        File projectsFolder = new File(workspaceFolder, PROJECTS);
+        if (!projectsFolder.exists()) {
+            if (!projectsFolder.mkdirs()) {
+                return Optional.empty();
             }
-            return Optional.of(projectsFolder);
         }
-        return Optional.empty();
+        return Optional.of(projectsFolder);
     }
 
     private void checkFolders() {

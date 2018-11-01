@@ -21,7 +21,6 @@ package com.hydrologis.gss.server;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -29,12 +28,7 @@ import java.util.Optional;
 import org.h2.tools.Server;
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
-import org.hortonmachine.dbs.compat.IHMStatement;
-import org.hortonmachine.dbs.h2gis.H2GisDb;
 import org.hortonmachine.dbs.h2gis.H2GisServer;
-import org.hortonmachine.dbs.postgis.PostgisDb;
-import org.hortonmachine.dbs.spatialite.hm.SpatialiteDb;
-import org.hortonmachine.dbs.utils.EGeometryType;
 
 import com.hydrologis.gss.server.database.objects.Forms;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
@@ -45,11 +39,9 @@ import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
-import com.hydrologis.kukuratus.libs.database.ISpatialTable;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
-import org.locationtech.jts.geom.Point;
 
 /**
  * The db provider as loaded from the SPI. It has to be instanced and initialized only once.
@@ -160,26 +152,22 @@ public class GssDbProvider implements DbProvider {
     }
 
     public File getDatabaseFile() throws IOException {
-        Optional<File> globalDataFolder = KukuratusWorkspace.getInstance().getGlobalDataFolder();
-        if (globalDataFolder.isPresent()) {
-            File dataFolderFile = globalDataFolder.get();
-            File[] databaseFiles = dataFolderFile.listFiles(new FilenameFilter(){
-                @Override
-                public boolean accept( File dir, String name ) {
-                    return name.startsWith(DB_PREFIX)
-                            && (name.endsWith(EDb.SPATIALITE.getExtension()) || name.endsWith(EDb.H2GIS.getExtension()));
-                }
-            });
-            if (databaseFiles != null && databaseFiles.length == 1) {
-                return databaseFiles[0];
+        File dataFolderFile = KukuratusWorkspace.getInstance().getDataFolder();
+        File[] databaseFiles = dataFolderFile.listFiles(new FilenameFilter(){
+            @Override
+            public boolean accept( File dir, String name ) {
+                return name.startsWith(DB_PREFIX)
+                        && (name.endsWith(EDb.SPATIALITE.getExtension()) || name.endsWith(EDb.H2GIS.getExtension()));
             }
-
-            // create a new database
-            KukuratusLogger.logInfo(this, "No database present in folder, creating one.");
-            File dbFile = new File(dataFolderFile, "gss_database.mv.db");
-            return dbFile;
+        });
+        if (databaseFiles != null && databaseFiles.length == 1) {
+            return databaseFiles[0];
         }
-        throw new IOException("Can't find main database file. Check your workspace startup configuration. ");
+
+        // create a new database
+        KukuratusLogger.logInfo(this, "No database present in folder, creating one.");
+        File dbFile = new File(dataFolderFile, "gss_database.mv.db");
+        return dbFile;
     }
 
     public ASpatialDb getDb() {
