@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 
 import org.hortonmachine.dbs.compat.ASpatialDb;
+import org.hortonmachine.dbs.compat.ASqlTemplates;
 import org.hortonmachine.dbs.compat.IHMResultSet;
 import org.hortonmachine.dbs.compat.IHMStatement;
 import org.hortonmachine.gears.libs.modules.HMConstants;
@@ -124,6 +125,8 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
     private Dao<GpsLogsProperties, ? > logsPropertiesDao;
 
+    private List<String> allDates;
+
     @Override
     public void enter( ViewChangeEvent event ) {
         dbh = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
@@ -159,13 +162,13 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             setSizeFull();
 
             reloadSavedSurveyors();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
-    private void reloadSavedSurveyors() {
+    private void reloadSavedSurveyors() throws Exception {
         // loaded surveyors should be back
         String[] loadedGpapUsers = GssSession.getLoadedGpapUsers();
         if (loadedGpapUsers != null) {
@@ -177,6 +180,11 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             if (loaded.length > 0)
                 surveyorsGrid.asMultiSelect().select(loaded);
         }
+
+        allDates = getCurrentAllDates();
+
+        fromDateBox.setItems(allDates);
+        toDateBox.setItems(allDates);
     }
 
     private void createSurveyorsGrid() {
@@ -253,9 +261,11 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             enableSelectButtons(!selectedUsers.isEmpty());
 
             try {
-                List<String> allDates = getCurrentAllDates();
+                allDates = getCurrentAllDates();
                 fromDateBox.setItems(allDates);
                 toDateBox.setItems(allDates);
+                fromDateBox.setSelectedItem(null);
+                toDateBox.setSelectedItem(null);
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
@@ -270,14 +280,14 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
         try {
 
-            List<String> allDates = getCurrentAllDates();
             fromDateBox = new ComboBox<>();
             fromDateBox.setPlaceholder("Start date filter");
-            fromDateBox.setItems(allDates);
 
             toDateBox = new ComboBox<>();
             toDateBox.setPlaceholder("End date filter");
-            toDateBox.setItems(allDates);
+
+            fromDateBox.setSelectedItem(null);
+            toDateBox.setSelectedItem(null);
 
             fromDateBox.addValueChangeListener(e -> {
                 String selectedDate = e.getValue();
@@ -285,6 +295,14 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
                     int selected = allDates.indexOf(selectedDate);
                     List<String> subList = allDates.subList(selected, allDates.size());
                     toDateBox.setItems(subList);
+
+                    toDateBox.getSelectedItem().ifPresent(toItem -> {
+                        int compareTo = toItem.compareTo(selectedDate);
+                        if (compareTo < 0) {
+                            toDateBox.setSelectedItem(selectedDate);
+                        }
+                    });
+
                 }
                 renderUserData();
             });
@@ -314,12 +332,21 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
         String _whereStr = whereStr;
         return db.execOnConnection(connection -> {
-            String selectAllDates = "select distinct to_char(TIMESTAMP 'epoch' + ts/1000 * interval '1 second', 'YYYY-mm-dd') as ts from notes "
-                    + _whereStr + " union "
-                    + "select distinct to_char(TIMESTAMP 'epoch' + ts/1000 * interval '1 second', 'YYYY-mm-dd') as ts from images "
-                    + _whereStr + " union "
-                    + "select distinct to_char(TIMESTAMP 'epoch' + startts/1000 * interval '1 second', 'YYYY-mm-dd') as ts from gpslogs "
-                    + _whereStr + " order by ts;";
+            ASqlTemplates sqlTemplates = db.getType().getSqlTemplates();
+            String notesTime = sqlTemplates.getFormatTimeSyntax(Notes.TIMESTAMP_FIELD_NAME, "yyyy-MM-dd");
+            String imagesTime = sqlTemplates.getFormatTimeSyntax(Images.TIMESTAMP_FIELD_NAME, "yyyy-MM-dd");
+            String logStartTime = sqlTemplates.getFormatTimeSyntax(GpsLogs.STARTTS_FIELD_NAME, "yyyy-MM-dd");
+//            String logEndTime = sqlTemplates.getFormatTimeSyntax(GpsLogs.ENDTS_FIELD_NAME, "YYYY-mm-dd");
+
+            String selectAllDates = "select distinct " + notesTime + " as ts from " + DatabaseHandler.getTableName(Notes.class)
+                    + " " + _whereStr //
+//                    + " union " //
+//                    + "select distinct " + imagesTime + " as ts from " + DatabaseHandler.getTableName(Images.class) + " "
+//                    + _whereStr //
+//                    + " union " //
+//                    + "select distinct " + logStartTime + " as ts from " + DatabaseHandler.getTableName(GpsLogs.class) + " "
+//                    + _whereStr 
+                    + " order by ts;";
             try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(selectAllDates)) {
                 List<String> datesList = new ArrayList<>();
                 while( rs.next() ) {

@@ -33,8 +33,8 @@
 	</prerequisites>
 
 	<properties>
-		<vaadin.version>8.4.5</vaadin.version>
-		<vaadin.plugin.version>8.4.5</vaadin.plugin.version>
+		<vaadin.version>8.6.0</vaadin.version>
+		<vaadin.plugin.version>8.6.0</vaadin.plugin.version>
 
 		<kukuratus.libs.version>0.1.2</kukuratus.libs.version>
 		<vleaflet.version>2.0.7</vleaflet.version>
