@@ -95,11 +95,12 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
                 ChartJs chart = createChart();
 
                 numbers.setWidth("100%");
-                chart.setWidth("100%");
+                chart.setSizeFull();
                 
-                addComponents(numbers, chart);
+                addComponent(numbers);
                 setComponentAlignment(numbers, Alignment.TOP_CENTER);
-                setComponentAlignment(chart, Alignment.MIDDLE_CENTER);
+                addComponentsAndExpand(chart);
+//                setComponentAlignment(chart, Alignment.MIDDLE_CENTER);
 //                setExpandRatio(numbers, 1);
 //                setExpandRatio(chart, 3);
 
@@ -139,7 +140,7 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
                 .title().display(true)//
                 .position(Position.LEFT).text("Stats per Surveyor")//
                 .and().scales().add(Axis.X, new CategoryScale().position(Position.BOTTOM))
-                .add(Axis.Y, linearScale.position(Position.LEFT)).and().done();
+                .add(Axis.Y, linearScale.position(Position.LEFT)).and().maintainAspectRatio(false).done();
 
         List<Double> notesList = new ArrayList<>();
         List<Double> imagesList = new ArrayList<>();
