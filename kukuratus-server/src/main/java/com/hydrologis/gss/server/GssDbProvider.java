@@ -58,7 +58,7 @@ public class GssDbProvider implements DbProvider {
     public static String USERNAME = "gss";
     public static final String PWD = "gss";
 
-    private static boolean doPostgis = true;
+    private static boolean doPostgis = false;
     private static final String PG_URL = "localhost:5432/gss";
 
     private ASpatialDb db;
