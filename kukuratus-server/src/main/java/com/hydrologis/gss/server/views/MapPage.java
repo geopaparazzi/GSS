@@ -340,13 +340,12 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
             String selectAllDates = "select distinct " + notesTime + " as ts from " + DatabaseHandler.getTableName(Notes.class)
                     + " " + _whereStr //
-//                    + " union " //
-//                    + "select distinct " + imagesTime + " as ts from " + DatabaseHandler.getTableName(Images.class) + " "
-//                    + _whereStr //
-//                    + " union " //
-//                    + "select distinct " + logStartTime + " as ts from " + DatabaseHandler.getTableName(GpsLogs.class) + " "
-//                    + _whereStr 
-                    + " order by ts;";
+                    + " union " //
+                    + "select distinct " + imagesTime + " as ts from " + DatabaseHandler.getTableName(Images.class) + " "
+                    + _whereStr //
+                    + " union " //
+                    + "select distinct " + logStartTime + " as ts from " + DatabaseHandler.getTableName(GpsLogs.class) + " "
+                    + _whereStr + " order by ts;";
             try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(selectAllDates)) {
                 List<String> datesList = new ArrayList<>();
                 while( rs.next() ) {
