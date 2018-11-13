@@ -22,6 +22,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +36,9 @@ import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
+import org.hortonmachine.dbs.compat.ASpatialDb;
+import org.hortonmachine.dbs.compat.IHMResultSet;
+import org.hortonmachine.dbs.compat.IHMStatement;
 import org.hortonmachine.gears.libs.modules.HMConstants;
 import org.hortonmachine.gears.utils.images.ImageUtilities;
 import org.joda.time.DateTime;
@@ -64,11 +69,13 @@ import com.hydrologis.kukuratus.libs.utils.ImageSource;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.Where;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FileResource;
 import com.vaadin.ui.Button;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Grid;
@@ -99,35 +106,63 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
     private FileResource imagesResource;
 
+    private DatabaseHandler dbh;
+
+    private Long from;
+
+    private Long to;
+
+    private ComboBox<String> fromDateBox;
+
+    private ComboBox<String> toDateBox;
+
+    private Dao<Notes, ? > notesDao;
+
+    private Dao<Images, ? > imagesDao;
+
+    private Dao<GpsLogs, ? > logsDao;
+
+    private Dao<GpsLogsProperties, ? > logsPropertiesDao;
+
     @Override
     public void enter( ViewChangeEvent event ) {
+        dbh = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+        try {
+            notesDao = dbh.getDao(Notes.class);
+            imagesDao = dbh.getDao(Images.class);
+            logsDao = dbh.getDao(GpsLogs.class);
+            logsPropertiesDao = dbh.getDao(GpsLogsProperties.class);
 
-        File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
-        File notesFile = new File(dataFolder, "notes.png");
-        File imagesFile = new File(dataFolder, "images.png");
-        notesResource = new FileResource(notesFile);
-        imagesResource = new FileResource(imagesFile);
+            File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
+            File notesFile = new File(dataFolder, "notes.png");
+            File imagesFile = new File(dataFolder, "images.png");
+            notesResource = new FileResource(notesFile);
+            imagesResource = new FileResource(imagesFile);
 
-        reloadDevices();
+            reloadDevices();
 
-        mainSplitPanel = new HorizontalSplitPanel();
-        mainSplitPanel.setSizeFull();
-        mainSplitPanel.setSplitPosition(20, Unit.PERCENTAGE);
+            mainSplitPanel = new HorizontalSplitPanel();
+            mainSplitPanel.setSizeFull();
+            mainSplitPanel.setSplitPosition(20, Unit.PERCENTAGE);
 
-        createSurveyorsGrid();
-        surveyorsLayout.setStyleName("layout-border", true);
-        mainSplitPanel.setFirstComponent(surveyorsLayout);
-        createMap();
-        leafletMap.setStyleName("layout-border", true);
-        mainSplitPanel.setSecondComponent(leafletMap);
+            createSurveyorsGrid();
+            surveyorsLayout.setStyleName("layout-border", true);
+            mainSplitPanel.setFirstComponent(surveyorsLayout);
+            createMap();
+            leafletMap.setStyleName("layout-border", true);
+            mainSplitPanel.setSecondComponent(leafletMap);
 
-        leafletMap.setSizeFull();
-        surveyorsLayout.setSizeFull();
+            leafletMap.setSizeFull();
+            surveyorsLayout.setSizeFull();
 
-        addComponent(mainSplitPanel);
-        setSizeFull();
+            addComponent(mainSplitPanel);
+            setSizeFull();
 
-        reloadSavedSurveyors();
+            reloadSavedSurveyors();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     private void reloadSavedSurveyors() {
@@ -217,44 +252,14 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             Set<GpapUsers> selectedUsers = e.getValue();
             enableSelectButtons(!selectedUsers.isEmpty());
 
-            String[] userNames = selectedUsers.stream().map(u -> u.getName()).collect(Collectors.toList()).toArray(new String[0]);
-            GssSession.setLoadedGpapUsers(userNames);
-
-            DatabaseHandler dbh = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
-
-            // first remove layers
-            List<Component> toRemove = new ArrayList<>();
-            Iterator<Component> iterator = leafletMap.iterator();
-            while( iterator.hasNext() ) {
-                Component component = iterator.next();
-                toRemove.add(component);
-            }
-            toRemove.forEach(comp -> {
-                if (comp instanceof LLayerGroup) {
-                    LLayerGroup layer = (LLayerGroup) comp;
-                    leafletMap.removeComponent(layer);
-                }
-            });
             try {
-                Dao<Notes, ? > notesDao = dbh.getDao(Notes.class);
-                Dao<Images, ? > imagesDao = dbh.getDao(Images.class);
-                Dao<GpsLogs, ? > logsDao = dbh.getDao(GpsLogs.class);
-                Dao<GpsLogsProperties, ? > logsPropertiesDao = dbh.getDao(GpsLogsProperties.class);
-
-                for( GpapUsers user : selectedUsers ) {
-                    LLayerGroup layersGroup = new LLayerGroup();
-
-                    addLogs(logsDao, logsPropertiesDao, user, layersGroup);
-                    addNotes(notesDao, user, layersGroup);
-                    addImages(dbh, imagesDao, user, layersGroup);
-
-                    leafletMap.addOverlay(layersGroup, user.name);
-
-                    userId4LoadedLayersMap.put(user.deviceId, layersGroup);
-                }
-            } catch (SQLException e1) {
+                List<String> allDates = getCurrentAllDates();
+                fromDateBox.setItems(allDates);
+                toDateBox.setItems(allDates);
+            } catch (Exception e1) {
                 e1.printStackTrace();
             }
+            renderUserData();
 
         });
         surveyorsGrid.setSizeFull();
@@ -263,11 +268,136 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         surveyorsLayout.addComponent(surveyorsGrid);
         surveyorsLayout.setExpandRatio(surveyorsGrid, 1);
 
+        try {
+
+            List<String> allDates = getCurrentAllDates();
+            fromDateBox = new ComboBox<>();
+            fromDateBox.setPlaceholder("Start date filter");
+            fromDateBox.setItems(allDates);
+
+            toDateBox = new ComboBox<>();
+            toDateBox.setPlaceholder("End date filter");
+            toDateBox.setItems(allDates);
+
+            fromDateBox.addValueChangeListener(e -> {
+                String selectedDate = e.getValue();
+                if (selectedDate != null) {
+                    int selected = allDates.indexOf(selectedDate);
+                    List<String> subList = allDates.subList(selected, allDates.size());
+                    toDateBox.setItems(subList);
+                }
+                renderUserData();
+            });
+            toDateBox.addValueChangeListener(e -> {
+                renderUserData();
+            });
+
+            fromDateBox.setWidth("100%");
+            toDateBox.setWidth("100%");
+            surveyorsLayout.addComponent(fromDateBox);
+            surveyorsLayout.addComponent(toDateBox);
+        } catch (Exception e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+
+    }
+
+    private List<String> getCurrentAllDates() throws Exception {
+        Set<GpapUsers> selectedItems = surveyorsGrid.asMultiSelect().getSelectedItems();
+        String whereStr = "";
+        if (selectedItems.size() > 0) {
+            String collect = selectedItems.stream().map(u -> String.valueOf(u.id)).collect(Collectors.joining(","));
+            whereStr = "where gpapusersid in (" + collect + ")";
+        }
+        ASpatialDb db = dbh.getDb();
+
+        String _whereStr = whereStr;
+        return db.execOnConnection(connection -> {
+            String selectAllDates = "select distinct to_char(TIMESTAMP 'epoch' + ts/1000 * interval '1 second', 'YYYY-mm-dd') as ts from notes "
+                    + _whereStr + " union "
+                    + "select distinct to_char(TIMESTAMP 'epoch' + ts/1000 * interval '1 second', 'YYYY-mm-dd') as ts from images "
+                    + _whereStr + " union "
+                    + "select distinct to_char(TIMESTAMP 'epoch' + startts/1000 * interval '1 second', 'YYYY-mm-dd') as ts from gpslogs "
+                    + _whereStr + " order by ts;";
+            try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(selectAllDates)) {
+                List<String> datesList = new ArrayList<>();
+                while( rs.next() ) {
+                    String date = rs.getString(1);
+                    datesList.add(date);
+                }
+                return datesList;
+            }
+        });
+    }
+
+    private void renderUserData() {
+        try {
+            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String fromValue = fromDateBox.getValue();
+            if (fromValue != null) {
+                String fromDate = fromValue + " 00:00:00";
+                from = f.parse(fromDate).getTime();
+            } else {
+                from = null;
+            }
+            String toValue = toDateBox.getValue();
+            if (toValue != null) {
+                String toDate = toValue + " 23:59:00";
+                to = f.parse(toDate).getTime();
+            } else {
+                to = null;
+            }
+        } catch (ParseException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+        Set<GpapUsers> selectedUsers = surveyorsGrid.asMultiSelect().getValue();
+
+        String[] userNames = selectedUsers.stream().map(u -> u.getName()).collect(Collectors.toList()).toArray(new String[0]);
+        GssSession.setLoadedGpapUsers(userNames);
+
+        // first remove layers
+        List<Component> toRemove = new ArrayList<>();
+        Iterator<Component> iterator = leafletMap.iterator();
+        while( iterator.hasNext() ) {
+            Component component = iterator.next();
+            toRemove.add(component);
+        }
+        toRemove.forEach(comp -> {
+            if (comp instanceof LLayerGroup) {
+                LLayerGroup layer = (LLayerGroup) comp;
+                leafletMap.removeComponent(layer);
+            }
+        });
+        try {
+            for( GpapUsers user : selectedUsers ) {
+                LLayerGroup layersGroup = new LLayerGroup();
+
+                addLogs(logsDao, logsPropertiesDao, user, layersGroup, from, to);
+                addNotes(notesDao, user, layersGroup, from, to);
+                addImages(dbh, imagesDao, user, layersGroup, from, to);
+
+                leafletMap.addOverlay(layersGroup, user.name);
+
+                userId4LoadedLayersMap.put(user.deviceId, layersGroup);
+            }
+        } catch (SQLException e1) {
+            e1.printStackTrace();
+        }
     }
 
     private void addLogs( Dao<GpsLogs, ? > logsDao, Dao<GpsLogsProperties, ? > logsPropertiesDao, GpapUsers user,
-            LLayerGroup layer ) throws SQLException {
-        List<GpsLogs> gpsLogs = logsDao.queryBuilder().where().eq(GpsLogs.GPAPUSER_FIELD_NAME, user).query();
+            LLayerGroup layer, Long from, Long to ) throws SQLException {
+        Where<GpsLogs, ? > eq = logsDao.queryBuilder().where().eq(GpsLogs.GPAPUSER_FIELD_NAME, user);
+        if (from != null) {
+            eq = eq.and().ge(GpsLogs.STARTTS_FIELD_NAME, from);
+        }
+        if (to != null) {
+            eq = eq.and().le(GpsLogs.ENDTS_FIELD_NAME, to);
+        }
+
+        List<GpsLogs> gpsLogs = eq.query();
         if (gpsLogs.size() > 0) {
             for( GpsLogs log : gpsLogs ) {
                 GpsLogsProperties props = logsPropertiesDao.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, log)
@@ -283,9 +413,17 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         }
     }
 
-    private void addImages( DatabaseHandler dbh, Dao<Images, ? > imagesDao, GpapUsers user, LLayerGroup layer )
-            throws SQLException {
-        List<Images> imagesList = imagesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user).query();
+    private void addImages( DatabaseHandler dbh, Dao<Images, ? > imagesDao, GpapUsers user, LLayerGroup layer, Long from,
+            Long to ) throws SQLException {
+        Where<Images, ? > eq = imagesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user);
+        if (from != null) {
+            eq = eq.and().ge(Images.TIMESTAMP_FIELD_NAME, from);
+        }
+        if (to != null) {
+            eq = eq.and().le(Images.TIMESTAMP_FIELD_NAME, to);
+        }
+
+        List<Images> imagesList = eq.query();
         if (imagesList.size() > 0) {
             for( Images image : imagesList ) {
                 LMarker leafletMarker = new LMarker(new KukuratusLibs().toOldJtsPoint(image.the_geom));
@@ -322,8 +460,16 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         }
     }
 
-    private void addNotes( Dao<Notes, ? > notesDao, GpapUsers user, LLayerGroup layer ) throws SQLException {
-        List<Notes> notesList = notesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user).query();
+    private void addNotes( Dao<Notes, ? > notesDao, GpapUsers user, LLayerGroup layer, Long from, Long to ) throws SQLException {
+        Where<Notes, ? > eq = notesDao.queryBuilder().where().eq(Notes.GPAPUSER_FIELD_NAME, user);
+        if (from != null) {
+            eq = eq.and().ge(Notes.TIMESTAMP_FIELD_NAME, from);
+        }
+        if (to != null) {
+            eq = eq.and().le(Notes.TIMESTAMP_FIELD_NAME, to);
+        }
+
+        List<Notes> notesList = eq.query();
         if (notesList.size() > 0) {
             for( Notes note : notesList ) {
                 LMarker leafletMarker = new LMarker(new KukuratusLibs().toOldJtsPoint(note.the_geom));
