@@ -22,6 +22,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ import org.vaadin.addon.leaflet.LeafletMoveEndEvent;
 import org.vaadin.addon.leaflet.LeafletMoveEndListener;
 import org.vaadin.addon.leaflet.shared.Bounds;
 import org.vaadin.addon.leaflet.shared.Point;
+import org.vaadin.addon.leaflet.shared.TooltipState;
 
 import com.hydrologis.gss.server.GssSession;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
@@ -126,6 +128,8 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
     private Dao<GpsLogsProperties, ? > logsPropertiesDao;
 
     private List<String> allDates;
+
+    private DecimalFormat elevFormatter = new DecimalFormat("0");
 
     @Override
     public void enter( ViewChangeEvent event ) {
@@ -504,9 +508,15 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
                 leafletMarker.setIconSize(new Point(iconSize, iconSize));
                 leafletMarker.setIconAnchor(new Point(iconSize, iconSize / 2));
 //                            leafletMarker.addClickListener(listener);
-                leafletMarker.setTitle(note.text);
-                leafletMarker.setPopup(getNotesHtml(note));
-                leafletMarker.setPopupAnchor(new Point(-iconSize / 2, -iconSize / 2));
+//                leafletMarker.setTitle(note.text);
+//                leafletMarker.setPopup(notesHtml);
+//                leafletMarker.setPopupAnchor(new Point(-iconSize / 2, -iconSize / 2));
+
+                String notesHtml = getNotesHtml(note);
+                leafletMarker.setTooltip(notesHtml);
+                TooltipState tooltipState = new TooltipState();
+                tooltipState.permanent = false;
+                leafletMarker.setTooltipState(tooltipState);
 
                 layer.addComponent(leafletMarker);
             }
@@ -517,7 +527,10 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         StringBuilder sb = new StringBuilder("<h2>" + note.text + "</h2>");
         sb.append("<table style='width:100%' border='0' cellpadding='5'>");
         sb.append("<tr><td><b>Timestamp</b></td><td>").append(formatDate(note.timestamp)).append("</td></tr>");
-        sb.append("<tr><td><b>Elevation</b></td><td>").append(note.altimetry).append("</td></tr>");
+        if (note.altimetry != 0.0) {
+            String elev = elevFormatter.format(note.altimetry);
+            sb.append("<tr><td><b>Elevation</b></td><td>").append(elev).append("</td></tr>");
+        }
         sb.append("</table>");
         return sb.toString();
     }
