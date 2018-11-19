@@ -1,0 +1,8 @@
+[main]
+host = https://www.transifex.com
+
+[geopaparazzi-survey-server.gss_messagesproperties]
+file_filter = kukuratus-server/src/main/resources/gss_messages_<lang>.properties
+source_file = kukuratus-server/src/main/resources/gss_messages.properties
+source_lang = en
+type = UNICODEPROPERTIES
