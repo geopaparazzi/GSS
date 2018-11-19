@@ -17,7 +17,7 @@
 	<groupId>com.hydrologis.kukuratus</groupId>
 	<artifactId>gss</artifactId>
 	<packaging>war</packaging>
-	<version>2.13</version>
+	<version>2.14</version>
 	<name>Geopaparazzi Survey Server</name>
 
 	<prerequisites>
