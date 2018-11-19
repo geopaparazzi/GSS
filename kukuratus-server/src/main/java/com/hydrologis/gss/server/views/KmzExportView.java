@@ -33,6 +33,7 @@ import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.ExportPage;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
@@ -72,10 +73,10 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
 
         List<GpapUsers> devices = new ArrayList<>();
         try {
-            devices = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll();
+            devices = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll();
         } catch (SQLException e1) {
             KukuratusLogger.logError(this, e1);
-            Notification.show("An error occurred.", Type.ERROR_MESSAGE);
+            Notification.show(Messages.getString("KmzExportView.error_occurred"), Type.ERROR_MESSAGE); //$NON-NLS-1$
         }
 
         VerticalLayout gridLayout = new VerticalLayout();
@@ -83,26 +84,26 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
         surveyorsGrid.setItems(devices);
         surveyorsGrid.setSelectionMode(SelectionMode.MULTI);
         surveyorsGrid.setColumns();
-        surveyorsGrid.addColumn(GpapUsers::getName).setCaption("Surveyors");
+        surveyorsGrid.addColumn(GpapUsers::getName).setCaption(Messages.getString("KmzExportView.surveyors")); //$NON-NLS-1$
         surveyorsGrid.asMultiSelect().addValueChangeListener(e -> {
             Set<GpapUsers> selectedUsers = e.getValue();
             prepareBtn.setEnabled(!selectedUsers.isEmpty());
         });
         surveyorsGrid.setSizeFull();
 
-        gridLayout.addComponent(new Label("Select Surveyors"));
+        gridLayout.addComponent(new Label(Messages.getString("KmzExportView.select_surveyors"))); //$NON-NLS-1$
         gridLayout.addComponentsAndExpand(surveyorsGrid);
         gridLayout.setSizeFull();
         mainLayout.addComponent(gridLayout);
         mainLayout.setComponentAlignment(gridLayout, Alignment.TOP_LEFT);
 
-        prepareBtn = new Button("Prepare data", VaadinIcons.COGS);
+        prepareBtn = new Button(Messages.getString("KmzExportView.prepare_data"), VaadinIcons.COGS); //$NON-NLS-1$
         prepareBtn.addClickListener(e -> {
             try {
                 prepareData();
             } catch (Exception e1) {
                 KukuratusLogger.logError(this, e1);
-                Notification.show("An error occurred.", Type.ERROR_MESSAGE);
+                Notification.show(Messages.getString("KmzExportView.error_occurred"), Type.ERROR_MESSAGE); //$NON-NLS-1$
             }
         });
         prepareBtn.setSizeUndefined();
@@ -112,7 +113,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
         mainLayout.setComponentAlignment(btnLayout, Alignment.TOP_LEFT);
         prepareBtn.setEnabled(false);
 
-        mainLayout.setHeight("100%");
+        mainLayout.setHeight("100%"); //$NON-NLS-1$
         downloadLayout = new VerticalLayout();
         downloadLayout.setSizeFull();
         mainLayout.addComponent(downloadLayout);
@@ -126,13 +127,13 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
     private void prepareData() throws Exception {
         Set<GpapUsers> devices = surveyorsGrid.asMultiSelect().getSelectedItems();
 
-        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+        DatabaseHandler dbHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
         Dao<Notes, ? > notesDAO = dbHandler.getDao(Notes.class);
         Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
         Dao<ImageData, ? > imageDataDAO = dbHandler.getDao(ImageData.class);
         Dao<GpsLogs, ? > logsDAO = dbHandler.getDao(GpsLogs.class);
 
-        Notification.show("Report generation started", "You'll be notified once the report is ready.",
+        Notification.show(Messages.getString("KmzExportView.report_gen_started"), Messages.getString("KmzExportView.will_notify"), //$NON-NLS-1$ //$NON-NLS-2$
                 Notification.Type.TRAY_NOTIFICATION);
         prepareBtn.setEnabled(false);
 
@@ -146,7 +147,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
 
                 File tmpFolder = KukuratusWorkspace.getInstance().getTmpFolder();
                 File outFile = new File(tmpFolder,
-                        "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".kmz");
+                        "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".kmz"); //$NON-NLS-1$ //$NON-NLS-2$
                 KmzExport exporter = new KmzExport(null, outFile){
 
                     @Override
@@ -155,7 +156,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
                             return imagesDAO.queryForSameId(new Images(id)).text;
                         } catch (SQLException e) {
                             KukuratusLogger.logError(this, e);
-                            return "ERROR";
+                            return "ERROR"; //$NON-NLS-1$
                         }
                     }
 
@@ -176,7 +177,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
                 FileInputStream fileInputStream = new FileInputStream(outFile);
 
                 getUI().access(() -> {
-                    Button downloadBtn = new Button("Download KMZ", VaadinIcons.DOWNLOAD_ALT);
+                    Button downloadBtn = new Button(Messages.getString("KmzExportView.download_kmz"), VaadinIcons.DOWNLOAD_ALT); //$NON-NLS-1$
                     downloadBtn.setSizeUndefined();
                     downloadBtn.addStyleName(ValoTheme.BUTTON_PRIMARY);
                     downloadLayout.addComponent(downloadBtn);
@@ -189,7 +190,7 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
                     }, outFile.getName()));
                     downloader.extend(downloadBtn);
 
-                    Notification.show("KMZ ready for download", Notification.Type.TRAY_NOTIFICATION);
+                    Notification.show(Messages.getString("KmzExportView.kmz_ready"), Notification.Type.TRAY_NOTIFICATION); //$NON-NLS-1$
                 });
             } catch (Exception e) {
                 e.printStackTrace();
@@ -205,7 +206,12 @@ public class KmzExportView extends VerticalLayout implements View, ExportPage {
 
     @Override
     public String getLabel() {
-        return "KMZ";
+        return Messages.getString("KmzExportView.kmz_label"); //$NON-NLS-1$
+    }
+    
+    @Override
+    public String getPagePath() {
+        return "kmzexport"; //$NON-NLS-1$
     }
 
     @Override

@@ -46,16 +46,16 @@ import org.locationtech.jts.geom.Point;
 @DatabaseTable(tableName = "notes")
 public class Notes implements ISpatialTable, KmlRepresenter {
     private static final long serialVersionUID = 1L;
-    public static final String ID_FIELD_NAME = "id";
-    public static final String ALTIM_FIELD_NAME = "altim";
-    public static final String TIMESTAMP_FIELD_NAME = "ts";
-    public static final String DESCRIPTION_FIELD_NAME = "description";
-    public static final String TEXT_FIELD_NAME = "text";
-    public static final String FORM_FIELD_NAME = "form";
-    public static final String STYLE_FIELD_NAME = "style";
-    public static final String GPAPUSER_FIELD_NAME = "gpapusersid";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String ALTIM_FIELD_NAME = "altim"; //$NON-NLS-1$
+    public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
+    public static final String DESCRIPTION_FIELD_NAME = "description"; //$NON-NLS-1$
+    public static final String TEXT_FIELD_NAME = "text"; //$NON-NLS-1$
+    public static final String FORM_FIELD_NAME = "form"; //$NON-NLS-1$
+    public static final String STYLE_FIELD_NAME = "style"; //$NON-NLS-1$
+    public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
 
-    public static final String notesFKColumnDefinition = "bigint references notes(id) on delete cascade";
+    public static final String notesFKColumnDefinition = "bigint references notes(id) on delete cascade"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
@@ -193,33 +193,33 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     }
 
     public String toKmlString() throws Exception {
-        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+        DatabaseHandler dbHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
         Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
 
         images = new ArrayList<>();
         String name = makeXmlSafe(text);
         StringBuilder sB = new StringBuilder();
-        sB.append("<Placemark>\n");
+        sB.append("<Placemark>\n"); //$NON-NLS-1$
         // sB.append("<styleUrl>#red-pushpin</styleUrl>\n");
-        sB.append("<styleUrl>#info-icon</styleUrl>\n");
-        sB.append("<name>").append(name).append("</name>\n");
-        sB.append("<description>\n");
+        sB.append("<styleUrl>#info-icon</styleUrl>\n"); //$NON-NLS-1$
+        sB.append("<name>").append(name).append("</name>\n"); //$NON-NLS-1$ //$NON-NLS-2$
+        sB.append("<description>\n"); //$NON-NLS-1$
 
         if (form != null && form.length() > 0) {
 
-            sB.append("<![CDATA[\n");
+            sB.append("<![CDATA[\n"); //$NON-NLS-1$
             JSONObject sectionObject = new JSONObject(form);
             if (sectionObject.has(Utilities.ATTR_SECTIONNAME)) {
                 String sectionName = sectionObject.getString(Utilities.ATTR_SECTIONNAME);
-                sB.append("<h1>").append(sectionName).append("</h1>\n");
+                sB.append("<h1>").append(sectionName).append("</h1>\n"); //$NON-NLS-1$ //$NON-NLS-2$
             }
 
             List<String> formsNames = Utilities.getFormNames4Section(sectionObject);
             for( String formName : formsNames ) {
-                sB.append("<h2>").append(formName).append("</h2>\n");
+                sB.append("<h2>").append(formName).append("</h2>\n"); //$NON-NLS-1$ //$NON-NLS-2$
 
-                sB.append("<table style=\"text-align: left; width: 100%;\" border=\"1\" cellpadding=\"5\" cellspacing=\"2\">");
-                sB.append("<tbody>");
+                sB.append("<table style=\"text-align: left; width: 100%;\" border=\"1\" cellpadding=\"5\" cellspacing=\"2\">"); //$NON-NLS-1$
+                sB.append("<tbody>"); //$NON-NLS-1$
 
                 JSONObject form4Name = Utilities.getForm4Name(formName, sectionObject);
                 JSONArray formItems = Utilities.getFormItems(form4Name);
@@ -247,11 +247,11 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
                             Images image = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
                             String imgName = image.text;
-                            sB.append("<tr>");
-                            sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">");
-                            sB.append("<img src=\"").append(imgName).append("\" width=\"300\">");
-                            sB.append("</td>");
-                            sB.append("</tr>");
+                            sB.append("<tr>"); //$NON-NLS-1$
+                            sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">"); //$NON-NLS-1$
+                            sB.append("<img src=\"").append(imgName).append("\" width=\"300\">"); //$NON-NLS-1$ //$NON-NLS-2$
+                            sB.append("</td>"); //$NON-NLS-1$
+                            sB.append("</tr>"); //$NON-NLS-1$
 
                             images.add(imageId);
                         }
@@ -259,15 +259,15 @@ public class Notes implements ISpatialTable, KmlRepresenter {
                         if (value.trim().length() == 0) {
                             continue;
                         }
-                        sB.append("<tr>");
+                        sB.append("<tr>"); //$NON-NLS-1$
                         // FIXME
                         String imageId = value.trim();
                         Images image = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
                         String imgName = image.text;
-                        sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">");
-                        sB.append("<img src=\"").append(imgName).append("\" width=\"300\">");
-                        sB.append("</td>");
-                        sB.append("</tr>");
+                        sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">"); //$NON-NLS-1$
+                        sB.append("<img src=\"").append(imgName).append("\" width=\"300\">"); //$NON-NLS-1$ //$NON-NLS-2$
+                        sB.append("</td>"); //$NON-NLS-1$
+                        sB.append("</tr>"); //$NON-NLS-1$
                         images.add(imageId);
                     } else if (type.equals(Utilities.TYPE_SKETCH)) {
                         if (value.trim().length() == 0) {
@@ -277,42 +277,42 @@ public class Notes implements ISpatialTable, KmlRepresenter {
                         for( String imageId : imageIdsSplit ) {
                             Images image = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
                             String imgName = image.text;
-                            sB.append("<tr>");
-                            sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">");
-                            sB.append("<img src=\"").append(imgName).append("\" width=\"300\">");
-                            sB.append("</td>");
-                            sB.append("</tr>");
+                            sB.append("<tr>"); //$NON-NLS-1$
+                            sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">"); //$NON-NLS-1$
+                            sB.append("<img src=\"").append(imgName).append("\" width=\"300\">"); //$NON-NLS-1$ //$NON-NLS-2$
+                            sB.append("</td>"); //$NON-NLS-1$
+                            sB.append("</tr>"); //$NON-NLS-1$
 
                             images.add(imageId);
                         }
                     } else {
-                        sB.append("<tr>");
-                        sB.append("<td style=\"text-align: left; vertical-align: top; width: 50%;\">");
+                        sB.append("<tr>"); //$NON-NLS-1$
+                        sB.append("<td style=\"text-align: left; vertical-align: top; width: 50%;\">"); //$NON-NLS-1$
                         sB.append(label);
-                        sB.append("</td>");
-                        sB.append("<td style=\"text-align: left; vertical-align: top; width: 50%;\">");
+                        sB.append("</td>"); //$NON-NLS-1$
+                        sB.append("<td style=\"text-align: left; vertical-align: top; width: 50%;\">"); //$NON-NLS-1$
                         sB.append(value);
-                        sB.append("</td>");
-                        sB.append("</tr>");
+                        sB.append("</td>"); //$NON-NLS-1$
+                        sB.append("</tr>"); //$NON-NLS-1$
                     }
                 }
-                sB.append("</tbody>");
-                sB.append("</table>");
+                sB.append("</tbody>"); //$NON-NLS-1$
+                sB.append("</table>"); //$NON-NLS-1$
             }
-            sB.append("]]>\n");
+            sB.append("]]>\n"); //$NON-NLS-1$
         } else {
             String description = makeXmlSafe(this.description);
             sB.append(description);
-            sB.append("\n");
+            sB.append("\n"); //$NON-NLS-1$
             sB.append(new Date(timestamp));
         }
 
-        sB.append("</description>\n");
-        sB.append("<gx:balloonVisibility>1</gx:balloonVisibility>\n");
-        sB.append("<Point>\n");
-        sB.append("<coordinates>").append(the_geom.getX()).append(",").append(the_geom.getY()).append(",0</coordinates>\n");
-        sB.append("</Point>\n");
-        sB.append("</Placemark>\n");
+        sB.append("</description>\n"); //$NON-NLS-1$
+        sB.append("<gx:balloonVisibility>1</gx:balloonVisibility>\n"); //$NON-NLS-1$
+        sB.append("<Point>\n"); //$NON-NLS-1$
+        sB.append("<coordinates>").append(the_geom.getX()).append(",").append(the_geom.getY()).append(",0</coordinates>\n"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        sB.append("</Point>\n"); //$NON-NLS-1$
+        sB.append("</Placemark>\n"); //$NON-NLS-1$
 
         return sB.toString();
     }

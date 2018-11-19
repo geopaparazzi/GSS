@@ -19,39 +19,33 @@
 package com.hydrologis.gss.server.views;
 
 import java.sql.SQLException;
-import java.util.Collections;
+import java.text.MessageFormat;
 import java.util.List;
 
 import com.hydrologis.gss.server.database.objects.GpapUsers;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
-import com.hydrologis.kukuratus.libs.registry.Group;
-import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
-import com.hydrologis.kukuratus.libs.registry.User;
 import com.hydrologis.kukuratus.libs.spi.SettingsPage;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusWindows;
 import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.field.DatabaseField;
 import com.vaadin.data.Binder;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
-import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Grid;
+import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.PasswordField;
-import com.vaadin.ui.Grid.SelectionMode;
 import com.vaadin.ui.Notification.Type;
-import com.vaadin.ui.themes.ValoTheme;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import com.vaadin.ui.themes.ValoTheme;
 
 public class SurveyorsView extends VerticalLayout implements View, SettingsPage {
     private static final long serialVersionUID = 1L;
@@ -60,9 +54,9 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
     @Override
     public void enter( ViewChangeEvent event ) {
         Button addButton = new Button(VaadinIcons.PLUS);
-        addButton.setDescription("Add a new Surveyor");
+        addButton.setDescription(Messages.getString("SurveyorsView.add_surveyor")); //$NON-NLS-1$
         addButton.addClickListener(e -> {
-            SurveyorFormWindow window = new SurveyorFormWindow("Add new Surveyor", new GpapUsers());
+            SurveyorFormWindow window = new SurveyorFormWindow(Messages.getString("SurveyorsView.add_surveyor"), new GpapUsers()); //$NON-NLS-1$
             getUI().addWindow(window);
         });
         addComponent(addButton);
@@ -75,18 +69,18 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
         usersGrid.setSelectionMode(SelectionMode.SINGLE);
 
         usersGrid.setColumns();
-        usersGrid.addColumn(GpapUsers::getDeviceId).setCaption("Device Id").setExpandRatio(2);
-        usersGrid.addColumn(GpapUsers::getName).setCaption("Name").setExpandRatio(3)
+        usersGrid.addColumn(GpapUsers::getDeviceId).setCaption(Messages.getString("SurveyorsView.device_id")).setExpandRatio(2); //$NON-NLS-1$
+        usersGrid.addColumn(GpapUsers::getName).setCaption(Messages.getString("SurveyorsView.name")).setExpandRatio(3) //$NON-NLS-1$
                 .setEditorBinding(binder.forField(new TextField()).bind(GpapUsers::getName, GpapUsers::setName));
-        usersGrid.addColumn(GpapUsers::getContact).setCaption("Contact").setExpandRatio(3)
+        usersGrid.addColumn(GpapUsers::getContact).setCaption(Messages.getString("SurveyorsView.contact")).setExpandRatio(3) //$NON-NLS-1$
                 .setEditorBinding(binder.forField(new TextField()).bind(GpapUsers::getContact, GpapUsers::setContact));
         usersGrid.addComponentColumn(gpapUser -> new Button(VaadinIcons.TRASH, e -> deleteSurveyorClicked(gpapUser)))
                 .setExpandRatio(1);
 
         usersGrid.setColumnReorderingAllowed(true);
 
-        usersGrid.setWidth("95%");
-        usersGrid.setHeight("100%");
+        usersGrid.setWidth("95%"); //$NON-NLS-1$
+        usersGrid.setHeight("100%"); //$NON-NLS-1$
         addComponent(usersGrid);
         setExpandRatio(usersGrid, 1);
 
@@ -96,11 +90,13 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
 
     private void deleteSurveyorClicked( GpapUsers user ) {
         KukuratusWindows.openCancelDeleteWindow(usersGrid,
-                "Are you sure you want to delete the surveyor " + user.name + "?<br/>This will also remove all his/her data!",
+                MessageFormat.format(
+                        Messages.getString("SurveyorsView.sure_delete_surveyor"), //$NON-NLS-1$
+                        user.name),
                 null, null, new Runnable(){
                     public void run() {
 
-                        DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+                        DatabaseHandler databaseHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
                         try {
                             Dao<GpapUsers, ? > dao = databaseHandler.getDao(GpapUsers.class);
                             dao.delete(user);
@@ -119,7 +115,7 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
 
     private void save( GpapUsers user ) {
         try {
-            DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+            DatabaseHandler databaseHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
             Dao<GpapUsers, ? > dao = databaseHandler.getDao(GpapUsers.class);
             dao.update(user);
             refresh();
@@ -129,7 +125,7 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
     }
 
     private void refresh() {
-        DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+        DatabaseHandler databaseHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
         try {
             Dao<GpapUsers, ? > dao = databaseHandler.getDao(GpapUsers.class);
             List<GpapUsers> userList = dao.queryForAll();
@@ -147,7 +143,12 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
 
     @Override
     public String getLabel() {
-        return "Surveyors";
+        return Messages.getString("SurveyorsView.sruveyors_label"); //$NON-NLS-1$
+    }
+    
+    @Override
+    public String getPagePath() {
+        return "surveyors"; //$NON-NLS-1$
     }
 
     @Override
@@ -171,14 +172,15 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
         return true;
     }
 
+    @SuppressWarnings("serial")
     private class SurveyorFormWindow extends Window {
 
-        private TextField deviceId = new TextField("Device Id");
-        private TextField name = new TextField("Name");
-        private TextField contact = new TextField("Contact");
+        private TextField deviceId = new TextField(Messages.getString("SurveyorsView.device_id")); //$NON-NLS-1$
+        private TextField name = new TextField(Messages.getString("SurveyorsView.name")); //$NON-NLS-1$
+        private TextField contact = new TextField(Messages.getString("SurveyorsView.contact")); //$NON-NLS-1$
 
-        private Button cancel = new Button("Cancel");
-        private Button save = new Button("Save", VaadinIcons.CHECK);
+        private Button cancel = new Button(Messages.getString("SurveyorsView.cancel")); //$NON-NLS-1$
+        private Button save = new Button(Messages.getString("SurveyorsView.save"), VaadinIcons.CHECK); //$NON-NLS-1$
 
         public SurveyorFormWindow( String caption, GpapUsers user ) {
             initLayout(caption);
@@ -214,26 +216,26 @@ public class SurveyorsView extends VerticalLayout implements View, SettingsPage 
                     binder.writeBean(user);
 
                     if (user.getName() != null && user.getName().trim().length() == 0) {
-                        Notification.show("The name is mandatory.", Type.ERROR_MESSAGE);
+                        Notification.show(Messages.getString("SurveyorsView.name_mandatory"), Type.ERROR_MESSAGE); //$NON-NLS-1$
                         return;
                     }
                     if (user.getDeviceId() != null && user.getDeviceId().trim().length() == 0) {
-                        Notification.show("The device id is mandatory.", Type.ERROR_MESSAGE);
+                        Notification.show(Messages.getString("SurveyorsView.device_mandatory"), Type.ERROR_MESSAGE); //$NON-NLS-1$
                         return;
                     }
 
-                    DatabaseHandler databaseHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+                    DatabaseHandler databaseHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
                     Dao<GpapUsers, ? > dao = databaseHandler.getDao(GpapUsers.class);
 
                     GpapUsers sameNameUser = dao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, user.getDeviceId())
                             .queryForFirst();
                     if (sameNameUser != null) {
-                        Notification.show("A device with the same unique id exists already.", Type.ERROR_MESSAGE);
+                        Notification.show(Messages.getString("SurveyorsView.device_same_id_exists"), Type.ERROR_MESSAGE); //$NON-NLS-1$
                     } else {
                         dao.create(user);
                         close();
                         refresh();
-                        Notification.show("Surveyor saved");
+                        Notification.show(Messages.getString("SurveyorsView.surveyor_saved")); //$NON-NLS-1$
                     }
                 } catch (Exception ex) {
                     Notification.show(ex.getMessage(), Type.ERROR_MESSAGE);

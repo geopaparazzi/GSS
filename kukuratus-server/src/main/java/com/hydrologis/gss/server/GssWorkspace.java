@@ -37,10 +37,10 @@ import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 public enum GssWorkspace {
     INSTANCE;
 
-    public static final String BASEMAP = "basemaps";
-    public static final String OVERLAYS = "overlays";
-    public static final String PROJECTS = "projects";
-    public static final String NAME = "name";
+    public static final String BASEMAP = "basemaps"; //$NON-NLS-1$
+    public static final String OVERLAYS = "overlays"; //$NON-NLS-1$
+    public static final String PROJECTS = "projects"; //$NON-NLS-1$
+    public static final String NAME = "name"; //$NON-NLS-1$
     private Optional<File> basemapsFolder;
     private Optional<File> overlaysFolder;
     private Optional<File> projectsFolder;
@@ -179,15 +179,15 @@ public enum GssWorkspace {
     }
 
     public static boolean isBaseMap( String name ) {
-        return name.toLowerCase().endsWith(".map") || name.toLowerCase().endsWith(".mbtiles");
+        return name.toLowerCase().endsWith(".map") || name.toLowerCase().endsWith(".mbtiles"); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     public static boolean isOverlay( String name ) {
-        return name.toLowerCase().endsWith(".sqlite");
+        return name.toLowerCase().endsWith(".sqlite"); //$NON-NLS-1$
     }
 
     public static boolean isProject( String name ) {
-        return name.toLowerCase().endsWith(".gpap");
+        return name.toLowerCase().endsWith(".gpap"); //$NON-NLS-1$
     }
 
     public Optional<File> getMapFile( String fileName ) {

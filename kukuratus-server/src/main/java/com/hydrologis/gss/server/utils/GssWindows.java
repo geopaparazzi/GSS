@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -65,14 +66,16 @@ import com.vaadin.ui.themes.ValoTheme;
 
 @SuppressWarnings("serial")
 public abstract class GssWindows {
-    public final static String DEFAULT_WIDTH = "650px";
+    private static final String OK = com.hydrologis.kukuratus.libs.utils.Messages.get("forall_ok"); //$NON-NLS-1$
+    private static final String CANCEL = com.hydrologis.kukuratus.libs.utils.Messages.get("forall_cancel"); //$NON-NLS-1$
+    public final static String DEFAULT_WIDTH = "650px"; //$NON-NLS-1$
 
     public static enum IMAGEWIDGET {
         PICTURE, SKETCH, MAP
     };
 
     public static void labelParamsWindow( FormsView parent, boolean checkUnderline, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new label", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.label.add_new"), true){ //$NON-NLS-1$
             private TextField labelTextField;
             private ComboBox<Integer> sizeCombo;
             private CheckBox underLineCheck;
@@ -84,27 +87,27 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 sizeCombo = new ComboBox<>();
                 sizeCombo.setItems(10, 14, 16, 18, 20, 24, 28, 30, 34, 38, 40, 50, 60);
                 sizeCombo.setSelectedItem(20);
                 sizeCombo.setEmptySelectionAllowed(false);
-                sizeCombo.setPlaceholder("Label size");
-                sizeCombo.setWidth("100%");
+                sizeCombo.setPlaceholder(Messages.getString("GssWindows.label.size")); //$NON-NLS-1$
+                sizeCombo.setWidth("100%"); //$NON-NLS-1$
 
                 underLineCheck = new CheckBox();
                 underLineCheck.setValue(checkUnderline);
-                underLineCheck.setCaption("underline");
+                underLineCheck.setCaption(Messages.getString("GssWindows.label.underline")); //$NON-NLS-1$
 
                 layout.addComponent(labelTextField);
                 layout.addComponent(sizeCombo);
                 layout.addComponent(underLineCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -138,7 +141,7 @@ public abstract class GssWindows {
     }
 
     public static void booleanParamsWindow( FormsView parent, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new boolean", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.boolean.add_new"), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox defaultValueCheck;
@@ -151,27 +154,27 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 defaultValueCheck = new CheckBox();
-                defaultValueCheck.setCaption("default value");
+                defaultValueCheck.setCaption(Messages.getString("GssWindows.default_value")); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
                 layout.addComponent(defaultValueCheck);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -208,7 +211,7 @@ public abstract class GssWindows {
     }
 
     public static void comboParamsWindow( FormsView parent, boolean isMulti, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new combo", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.combo.add_new"), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox isMandatoryCheck;
@@ -222,37 +225,37 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 itemsTextField = new TextArea();
                 itemsTextField.setRows(10);
-                itemsTextField.setPlaceholder("Enter items (one per line).");
+                itemsTextField.setPlaceholder(Messages.getString("GssWindows.enter_items")); //$NON-NLS-1$
                 itemsTextField.setSizeFull();
 
-                final Label infoLabel = new Label("<b>or drop file here</b>", ContentMode.HTML);
+                final Label infoLabel = new Label(Messages.getString("GssWindows.drop_file_here"), ContentMode.HTML); //$NON-NLS-1$
                 infoLabel.setSizeUndefined();
                 VerticalLayout itemsDropPane = new VerticalLayout(infoLabel);
                 itemsDropPane.setComponentAlignment(infoLabel, Alignment.MIDDLE_CENTER);
                 itemsDropPane.addStyleName(ValoTheme.PANEL_WELL);// ("drop-area");
-                itemsDropPane.setWidth("100%");
-                itemsDropPane.setHeight("100%");
+                itemsDropPane.setWidth("100%"); //$NON-NLS-1$
+                itemsDropPane.setHeight("100%"); //$NON-NLS-1$
                 addDropFunctionality(itemsDropPane);
 
                 HorizontalLayout itemsLayoutLayout = new HorizontalLayout(itemsTextField, itemsDropPane);
-                itemsLayoutLayout.setWidth("100%");
+                itemsLayoutLayout.setWidth("100%"); //$NON-NLS-1$
                 layout.addComponent(itemsLayoutLayout);
 
                 defaultTextField = new TextField();
-                defaultTextField.setPlaceholder("Optional default value.");
-                defaultTextField.setWidth("100%");
+                defaultTextField.setPlaceholder(Messages.getString("GssWindows.optional_default")); //$NON-NLS-1$
+                defaultTextField.setWidth("100%"); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
@@ -260,9 +263,9 @@ public abstract class GssWindows {
                 layout.addComponent(defaultTextField);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -279,7 +282,7 @@ public abstract class GssWindows {
                     String defaultValue = defaultTextField.getValue();
                     Boolean isMandatory = isMandatoryCheck.getValue();
 
-                    ItemCombo ic = new ItemCombo(key, label, itemsValue.split("\n"), defaultValue, isMulti, isMandatory);
+                    ItemCombo ic = new ItemCombo(key, label, itemsValue.split("\n"), defaultValue, isMulti, isMandatory); //$NON-NLS-1$
                     String comboJson = ic.toString();
                     formItems.put(new JSONObject(comboJson));
 
@@ -300,8 +303,8 @@ public abstract class GssWindows {
                         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 
                         if (html5File.getFileSize() > fileSizeLimit) {
-                            KukuratusWindows
-                                    .openWarningNotification("File rejected. Max " + fileSizeLimit + "MB files are accepted.");
+                            KukuratusWindows.openWarningNotification(
+                                    MessageFormat.format(Messages.getString("GssWindows.file_too_big"), fileSizeLimit)); //$NON-NLS-1$
                         } else {
                             final StreamVariable streamVariable = new StreamVariable(){
                                 @Override
@@ -356,7 +359,7 @@ public abstract class GssWindows {
     }
 
     public static void dynamicTextParamsWindow( FormsView parent, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new dynamic text", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.add_dynamic_text"), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox isMandatoryCheck;
@@ -370,23 +373,23 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 itemsTextField = new TextArea();
                 itemsTextField.setRows(10);
-                itemsTextField.setPlaceholder("Enter default items (one per line).");
-                itemsTextField.setWidth("100%");
+                itemsTextField.setPlaceholder(Messages.getString("GssWindows.enter_default_items")); //$NON-NLS-1$
+                itemsTextField.setWidth("100%"); //$NON-NLS-1$
 
                 isLabelCheck = new CheckBox();
-                isLabelCheck.setCaption("is label?");
+                isLabelCheck.setCaption(Messages.getString("GssWindows.islabel")); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
@@ -394,9 +397,9 @@ public abstract class GssWindows {
                 layout.addComponent(isLabelCheck);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -435,7 +438,7 @@ public abstract class GssWindows {
     }
 
     public static void textParamsWindow( FormsView parent, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new text field", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.add_new_textfield"), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox isMandatoryCheck;
@@ -449,22 +452,22 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 defaultTextField = new TextField();
-                defaultTextField.setPlaceholder("Optional default value.");
-                defaultTextField.setWidth("100%");
+                defaultTextField.setPlaceholder(Messages.getString("GssWindows.optional_default")); //$NON-NLS-1$
+                defaultTextField.setWidth("100%"); //$NON-NLS-1$
 
                 isLabelCheck = new CheckBox();
-                isLabelCheck.setCaption("is label?");
+                isLabelCheck.setCaption(Messages.getString("GssWindows.islabel")); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
@@ -472,9 +475,9 @@ public abstract class GssWindows {
                 layout.addComponent(isLabelCheck);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -513,7 +516,7 @@ public abstract class GssWindows {
     }
 
     public static void numericParamsWindow( FormsView parent, boolean isDouble, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new numeric field", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.add_new_numeric"), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox isMandatoryCheck;
@@ -527,22 +530,22 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 defaultTextField = new TextField();
-                defaultTextField.setPlaceholder("Optional default value.");
-                defaultTextField.setWidth("100%");
+                defaultTextField.setPlaceholder(Messages.getString("GssWindows.optional_default")); //$NON-NLS-1$
+                defaultTextField.setWidth("100%"); //$NON-NLS-1$
 
                 isLabelCheck = new CheckBox();
-                isLabelCheck.setCaption("is label?");
+                isLabelCheck.setCaption(Messages.getString("GssWindows.islabel")); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
@@ -550,9 +553,9 @@ public abstract class GssWindows {
                 layout.addComponent(isLabelCheck);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -570,14 +573,14 @@ public abstract class GssWindows {
                             try {
                                 Double.parseDouble(defaultValue);
                             } catch (NumberFormatException e) {
-                                KukuratusWindows.openWarningNotification("The value has to be a double number.");
+                                KukuratusWindows.openWarningNotification(Messages.getString("GssWindows.value_is_double")); //$NON-NLS-1$
                                 return;
                             }
                         } else {
                             try {
                                 Integer.parseInt(defaultValue);
                             } catch (NumberFormatException e) {
-                                KukuratusWindows.openWarningNotification("The value has to be an integer number.");
+                                KukuratusWindows.openWarningNotification(Messages.getString("GssWindows.value_is_int")); //$NON-NLS-1$
                                 return;
                             }
                         }
@@ -609,7 +612,7 @@ public abstract class GssWindows {
     }
 
     public static void dateParamsWindow( FormsView parent, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new date field", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.add_new_date"), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox isMandatoryCheck;
@@ -622,29 +625,29 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 dateField = new DateField();
                 dateField.setValue(LocalDate.now());
-                dateField.setDateFormat("yyyy-MM-dd");
-                dateField.setWidth("100%");
+                dateField.setDateFormat("yyyy-MM-dd"); //$NON-NLS-1$
+                dateField.setWidth("100%"); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
                 layout.addComponent(dateField);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -683,12 +686,12 @@ public abstract class GssWindows {
     }
 
     public static void timeParamsWindow( FormsView parent, JSONArray formItems ) {
-        KukuratusWindows window = new KukuratusWindows("Add a new time field", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.add_new_time"), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox isMandatoryCheck;
             private TextField timeField;
-            private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+            private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss"); //$NON-NLS-1$
 
             @Override
             public void addWidgets( VerticalLayout layout ) {
@@ -697,29 +700,29 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 timeField = new TextField();
                 timeField.setValue(formatter.format(LocalDateTime.now()));
-                timeField.setPlaceholder("Optional default value HH:MM:SS");
-                timeField.setWidth("100%");
+                timeField.setPlaceholder(Messages.getString("GssWindows.Optional_default_time")); //$NON-NLS-1$
+                timeField.setWidth("100%"); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
                 layout.addComponent(timeField);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -745,11 +748,11 @@ public abstract class GssWindows {
                         defaultValueLD = LocalDateTime.now();
                     } else {
                         try {
-                            defaultValue = "1999-01-01 " + defaultValue;
+                            defaultValue = "1999-01-01 " + defaultValue; //$NON-NLS-1$
                             defaultValueLD = LocalDateTime
-                                    .from(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").parse(defaultValue));
+                                    .from(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").parse(defaultValue)); //$NON-NLS-1$
                         } catch (Exception e) {
-                            KukuratusWindows.openErrorNotification("The time format has to be: HH:mm:ss");
+                            KukuratusWindows.openErrorNotification(Messages.getString("GssWindows.time_format_is")); //$NON-NLS-1$
                             return;
                         }
                     }
@@ -776,19 +779,19 @@ public abstract class GssWindows {
     }
 
     public static void imageParamsWindow( FormsView parent, JSONArray formItems, IMAGEWIDGET type ) {
-        String msgType = "picture";
+        String msgType = "picture"; //$NON-NLS-1$
         switch( type ) {
         case SKETCH:
-            msgType = "sketch";
+            msgType = "sketch"; //$NON-NLS-1$
             break;
         case MAP:
-            msgType = "map";
+            msgType = "map"; //$NON-NLS-1$
             break;
         case PICTURE:
             break;
         }
 
-        KukuratusWindows window = new KukuratusWindows("Add a new " + msgType + " field", true){
+        KukuratusWindows window = new KukuratusWindows(MessageFormat.format(Messages.getString("GssWindows.add_new_type_field"), msgType), true){ //$NON-NLS-1$
             private TextField keyTextField;
             private TextField labelTextField;
             private CheckBox isMandatoryCheck;
@@ -800,23 +803,23 @@ public abstract class GssWindows {
                 layout.setComponentAlignment(label, Alignment.TOP_CENTER);
 
                 keyTextField = new TextField();
-                keyTextField.setPlaceholder("Enter key (has to be unique).");
-                keyTextField.setWidth("100%");
+                keyTextField.setPlaceholder(Messages.getString("GssWindows.enter_key")); //$NON-NLS-1$
+                keyTextField.setWidth("100%"); //$NON-NLS-1$
 
                 labelTextField = new TextField();
-                labelTextField.setPlaceholder("Enter label text.");
-                labelTextField.setWidth("100%");
+                labelTextField.setPlaceholder(Messages.getString("GssWindows.enter_text")); //$NON-NLS-1$
+                labelTextField.setWidth("100%"); //$NON-NLS-1$
 
                 isMandatoryCheck = new CheckBox();
-                isMandatoryCheck.setCaption("is mandatory?");
+                isMandatoryCheck.setCaption(Messages.getString("GssWindows.mandatory")); //$NON-NLS-1$
 
                 layout.addComponent(keyTextField);
                 layout.addComponent(labelTextField);
                 layout.addComponent(isMandatoryCheck);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -881,7 +884,7 @@ public abstract class GssWindows {
             }
         }
 
-        KukuratusWindows window = new KukuratusWindows("Delete a widget", true){
+        KukuratusWindows window = new KukuratusWindows(Messages.getString("GssWindows.delete_widget"), true){ //$NON-NLS-1$
             private ComboBox<String> itemKeyCombo;
 
             @Override
@@ -894,14 +897,14 @@ public abstract class GssWindows {
                 itemKeyCombo.setItems(names);
                 itemKeyCombo.setSelectedItem(names[0]);
                 itemKeyCombo.setEmptySelectionAllowed(false);
-                itemKeyCombo.setPlaceholder("Select key of item to remove");
-                itemKeyCombo.setWidth("100%");
+                itemKeyCombo.setPlaceholder(Messages.getString("GssWindows.select_remove_key")); //$NON-NLS-1$
+                itemKeyCombo.setWidth("100%"); //$NON-NLS-1$
 
                 layout.addComponent(itemKeyCombo);
 
-                Button cancelButton = new Button("Cancel", VaadinIcons.CLOSE);
+                Button cancelButton = new Button(CANCEL, VaadinIcons.CLOSE);
                 cancelButton.addClickListener(e -> onCancelButtonPushed());
-                Button submitButton = new Button("Ok", VaadinIcons.CHECK);
+                Button submitButton = new Button(OK, VaadinIcons.CHECK);
                 submitButton.addClickListener(e -> onActionButtonPushed());
                 submitButton.setStyleName(ValoTheme.BUTTON_PRIMARY);
                 HorizontalLayout hLayout = new HorizontalLayout(cancelButton, submitButton);
@@ -936,10 +939,10 @@ public abstract class GssWindows {
     private static boolean checkKey( String key ) {
         key = key.trim();
         if (key.length() == 0) {
-            KukuratusWindows.openWarningNotification("The key needs to be set.");
+            KukuratusWindows.openWarningNotification(Messages.getString("GssWindows.key_mandatory")); //$NON-NLS-1$
             return false;
-        } else if (key.contains(" ")) {
-            KukuratusWindows.openWarningNotification("The key should not contain spaces.");
+        } else if (key.contains(" ")) { //$NON-NLS-1$
+            KukuratusWindows.openWarningNotification(Messages.getString("GssWindows.key_no_spaces")); //$NON-NLS-1$
             return false;
         } else {
             return true;

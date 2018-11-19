@@ -20,6 +20,7 @@ package com.hydrologis.gss.server.servlets;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,7 @@ import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.gssmobile.database.GssGpsLog;
 import com.hydrologis.gssmobile.database.GssGpsLogPoint;
 import com.hydrologis.gssmobile.database.GssImage;
@@ -74,13 +76,13 @@ public class UploadServlet extends HttpServlet {
         session.setMaxInactiveInterval(60 * 10);
 
         Logger logDb = KukuratusWorkspace.getInstance().getLogDb();
-        String deviceId = "unknown";
+        String deviceId = "unknown"; //$NON-NLS-1$
         try {
-            if ((deviceId = ServletUtils.canProceed(request, response, "synch")) == null) {
+            if ((deviceId = ServletUtils.canProceed(request, response, "synch")) == null) { //$NON-NLS-1$
                 return;
             }
 
-            DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+            DatabaseHandler dbHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
             GeometryFactory gf = GeometryUtilities.gf();
             Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
             GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
@@ -126,7 +128,7 @@ public class UploadServlet extends HttpServlet {
                             notesDao.create(serverNote);
                             deviceNoteId2serverNoteId.put(note.id, serverNote.id);
                             notesLogsImagesCounts[0] += 1;
-                            ServletUtils.debug("Uploaded note: " + serverNote.text);
+                            ServletUtils.debug("Uploaded note: " + serverNote.text); //$NON-NLS-1$
                         }
                     } else if (name.equals(GssGpsLog.OBJID)) {
                         DataInputStream dis = new DataInputStream(item.getInputStream());
@@ -159,7 +161,7 @@ public class UploadServlet extends HttpServlet {
                         logsDao.create(logs);
                         logsDataDao.create(logsData);
                         logsPropsDao.create(logsProps);
-                        ServletUtils.debug("Uploaded Logs: " + logs.size());
+                        ServletUtils.debug("Uploaded Logs: " + logs.size()); //$NON-NLS-1$
 
                     }
                 }
@@ -188,36 +190,31 @@ public class UploadServlet extends HttpServlet {
                         imagesDao.create(img);
                         notesLogsImagesCounts[2] += 1;
 
-                        String str = "";
+                        String str = ""; //$NON-NLS-1$
                         if (tmpNote != null) {
-                            str = " for note: " + tmpNote.id;
+                            str = " for note: " + tmpNote.id; //$NON-NLS-1$
                         }
-                        ServletUtils.debug("Uploaded image: " + image.text + str);
+                        ServletUtils.debug("Uploaded image: " + image.text + str); //$NON-NLS-1$
                     }
                 }
 
                 return null;
             });
 
-            logDb.insert(EMessageType.ACCESS, TAG,
-                    "Upload connection from '" + deviceId + "' completed properly.");
-            StringBuilder sb = new StringBuilder();
-            sb.append("Data properly inserted in the server.");
-            sb.append("\nNotes: " + notesLogsImagesCounts[0] + "\n");
-            sb.append("Gps Logs: " + notesLogsImagesCounts[1] + "\n");
-            sb.append("Images: " + notesLogsImagesCounts[2]);
+            logDb.insert(EMessageType.ACCESS, TAG, "Upload connection from '" + deviceId + "' completed properly."); //$NON-NLS-1$//$NON-NLS-2$
+            String message = MessageFormat.format(Messages.getString("UploadServlet.data_uploaded"), //$NON-NLS-1$
+                    notesLogsImagesCounts[0], notesLogsImagesCounts[1], notesLogsImagesCounts[2]);
 
-            String message = sb.toString();
-            ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message);
+            ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message); //$NON-NLS-1$
             KukuratusStatus okStatus = new KukuratusStatus(KukuratusStatus.CODE_200_OK, message);
             okStatus.sendTo(response);
         } catch (Exception ex) {
             try {
-                logDb.insertError(TAG, "Upload connection from '" + deviceId + "' errored with:\n", ex);
+                logDb.insertError(TAG, "Upload connection from '" + deviceId + "' errored with:\n", ex); //$NON-NLS-1$ //$NON-NLS-2$
                 /*
                  * if there are problems, return some information.
                  */
-                String msg = "An error occurred while uploading data to the server.";
+                String msg = Messages.getString("UploadServlet.error_uploading"); //$NON-NLS-1$
                 KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
                 errStatus.sendTo(response);
             } catch (Exception e) {

@@ -34,6 +34,7 @@ import org.json.JSONObject;
 
 import com.hydrologis.gss.server.database.objects.Forms;
 import com.hydrologis.gss.server.utils.FormStatus;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
@@ -51,18 +52,18 @@ public class FormDownloadServlet extends HttpServlet {
         session.setMaxInactiveInterval(60 * 10);
 
         Logger logDb = KukuratusWorkspace.getInstance().getLogDb();
-        String deviceId = "unknown";
+        String deviceId = "unknown"; //$NON-NLS-1$
         try {
-            String tagName = request.getParameter("name");
-            String tag = "tag download";
+            String tagName = request.getParameter("name"); //$NON-NLS-1$
+            String tag = "tag download"; //$NON-NLS-1$
             if (tagName == null) {
-                tag = "tags list download";
+                tag = "tags list download"; //$NON-NLS-1$
             }
             if ((deviceId = ServletUtils.canProceed(request, response, tag)) == null) {
                 return;
             }
 
-            DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+            DatabaseHandler dbHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
             Dao<Forms, ? > formsDao = dbHandler.getDao(Forms.class);
             if (tagName != null) {
                 Forms form = formsDao.queryBuilder().where().eq(Forms.NAME_FIELD_NAME, tagName).queryForFirst();
@@ -74,10 +75,10 @@ public class FormDownloadServlet extends HttpServlet {
                         .eq(Forms.STATUS_FIELD_NAME, FormStatus.VISIBLE.getStatusCode()).query();
                 JSONObject root = new JSONObject();
                 JSONArray formsArray = new JSONArray();
-                root.put("tags", formsArray);
+                root.put("tags", formsArray); //$NON-NLS-1$
                 for( Forms form : visibleForms ) {
                     JSONObject formObj = new JSONObject();
-                    formObj.put("tag", form.name);
+                    formObj.put("tag", form.name); //$NON-NLS-1$
                     formsArray.put(formObj);
                 }
 
@@ -87,12 +88,12 @@ public class FormDownloadServlet extends HttpServlet {
 
         } catch (Exception ex) {
             try {
-                logDb.insertError(TAG, "Tag download connection from '" + deviceId + "' errored with:\n",
+                logDb.insertError(TAG, "Tag download connection from '" + deviceId + "' errored with:\n", //$NON-NLS-1$ //$NON-NLS-2$
                         ex);
                 /*
                  * if there are problems, return some information.
                  */
-                String msg = "An error occurred while downloading data from the server.";
+                String msg = Messages.getString("FormDownloadServlet.error_downloading"); //$NON-NLS-1$
                 KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
                 errStatus.sendTo(response);
             } catch (Exception e) {

@@ -37,6 +37,7 @@ import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
@@ -59,19 +60,19 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
     @Override
     public void enter( ViewChangeEvent event ) {
 
-        dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+        dbHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
         try {
             long surveyorsCount = dbHandler.getDao(GpapUsers.class).countOf();
             if (surveyorsCount == 0) {
 
                 VerticalLayout layout = new VerticalLayout();
-                Label noSurveyorsLabel = new Label("<h1><b>No surveyor data available yet!</b></h1><br/>");
+                Label noSurveyorsLabel = new Label(Messages.getString("DashboardPage.no_survey_data_available")); //$NON-NLS-1$
                 noSurveyorsLabel.setContentMode(com.vaadin.shared.ui.ContentMode.HTML);
                 noSurveyorsLabel.setWidth(null);
                 layout.addComponent(noSurveyorsLabel);
-                Link appLink = new Link("You might want to get the Android app to upload some data!",
-                        new ExternalResource("https://play.google.com/store/apps/details?id=com.hydrologis.gssmobile"));
-                appLink.setDescription("Geopaparazzi Survey Server Sync");
+                Link appLink = new Link(Messages.getString("DashboardPage.get_android_sync_app"), //$NON-NLS-1$
+                        new ExternalResource("https://play.google.com/store/apps/details?id=com.hydrologis.gssmobile")); //$NON-NLS-1$
+                appLink.setDescription(Messages.getString("DashboardPage.gsss")); //$NON-NLS-1$
                 appLink.setWidth(null);
                 layout.addComponent(appLink);
                 layout.setWidth(null);
@@ -86,15 +87,15 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
                 long logsCount = dbHandler.getDao(GpsLogs.class).countOf();
                 long mediaCount = dbHandler.getDao(Images.class).countOf();
 
-                Label surveyLabel = getLabel("Surveyors: ", surveyorsCount);
-                Label logsLabel = getLabel("GPS Logs: ", logsCount);
-                Label notesLabel = getLabel("Notes: ", notesCount);
-                Label imageslabel = getLabel("Media: ", mediaCount);
+                Label surveyLabel = getLabel(Messages.getString("DashboardPage.surveyors"), surveyorsCount); //$NON-NLS-1$
+                Label logsLabel = getLabel(Messages.getString("DashboardPage.gpslogs_colon"), logsCount); //$NON-NLS-1$
+                Label notesLabel = getLabel(Messages.getString("DashboardPage.notes_colon"), notesCount); //$NON-NLS-1$
+                Label imageslabel = getLabel(Messages.getString("DashboardPage.media"), mediaCount); //$NON-NLS-1$
                 HorizontalLayout numbers = new HorizontalLayout(surveyLabel, logsLabel, notesLabel, imageslabel);
 
                 ChartJs chart = createChart();
 
-                numbers.setWidth("100%");
+                numbers.setWidth("100%"); //$NON-NLS-1$
                 chart.setSizeFull();
                 
                 addComponent(numbers);
@@ -111,7 +112,7 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
     }
 
     private Label getLabel( String string, long count ) {
-        Label label = new Label("<h1>" + string + "<b>" + count + "</b></h1>");
+        Label label = new Label("<h1>" + string + "<b>" + count + "</b></h1>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         label.setContentMode(com.vaadin.shared.ui.ContentMode.HTML);
         label.setSizeFull();
         return label;
@@ -128,17 +129,17 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
         Data<BarChartConfig> data = config.data();
         data.labels(deviceIdMap.values().toArray(new String[0]));
         data.addDataset(
-                new BarDataset().type().label("Notes").backgroundColor("rgba(255,0,0,0.5)").borderColor("white").borderWidth(2));
+                new BarDataset().type().label(Messages.getString("DashboardPage.notes")).backgroundColor("rgba(255,0,0,0.5)").borderColor("white").borderWidth(2)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         data.addDataset(
-                new BarDataset().type().label("Images").backgroundColor("rgba(0,255,0,0.5)").borderColor("white").borderWidth(2));
-        data.addDataset(new BarDataset().type().label("Gps Logs").backgroundColor("rgba(0,0,225,0.5)").borderColor("white")
+                new BarDataset().type().label(Messages.getString("DashboardPage.images")).backgroundColor("rgba(0,255,0,0.5)").borderColor("white").borderWidth(2)); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        data.addDataset(new BarDataset().type().label(Messages.getString("DashboardPage.gpslogs")).backgroundColor("rgba(0,0,225,0.5)").borderColor("white") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 .borderWidth(2)).and();
 
         LinearScale linearScale = new LinearScale();
         linearScale.ticks().beginAtZero(true);
         config.options().responsive(true)//
                 .title().display(true)//
-                .position(Position.LEFT).text("Stats per Surveyor")//
+                .position(Position.LEFT).text(Messages.getString("DashboardPage.stats_per_surveyor"))// //$NON-NLS-1$
                 .and().scales().add(Axis.X, new CategoryScale().position(Position.BOTTOM))
                 .add(Axis.Y, linearScale.position(Position.LEFT)).and().maintainAspectRatio(false).done();
 
@@ -166,9 +167,9 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
     }
 
     public LinkedHashMap<Long, int[]> getStats() throws Exception {
-        String notesSql = "select g.id, count(n.GPAPUSERSID) from gpapusers g left join notes n on g.id=n.GPAPUSERSID group by g.id order by g.id";
-        String imagesSql = "select g.id, count(n.GPAPUSERSID ) from gpapusers g left join images n on g.id=n.GPAPUSERSID group by g.id order by g.id";
-        String logsSql = "select g.id, count(n.GPAPUSERSID ) from gpapusers g left join gpslogs n on g.id=n.GPAPUSERSID group by g.id order by g.id";
+        String notesSql = "select g.id, count(n.GPAPUSERSID) from gpapusers g left join notes n on g.id=n.GPAPUSERSID group by g.id order by g.id"; //$NON-NLS-1$
+        String imagesSql = "select g.id, count(n.GPAPUSERSID ) from gpapusers g left join images n on g.id=n.GPAPUSERSID group by g.id order by g.id"; //$NON-NLS-1$
+        String logsSql = "select g.id, count(n.GPAPUSERSID ) from gpapusers g left join gpslogs n on g.id=n.GPAPUSERSID group by g.id order by g.id"; //$NON-NLS-1$
 
         LinkedHashMap<Long, int[]> devicesMap = new LinkedHashMap<>();
         Dao<Notes, ? > notesDao = dbHandler.getDao(Notes.class);
@@ -222,7 +223,12 @@ public class DashboardPage extends VerticalLayout implements View, com.hydrologi
 
     @Override
     public String getLabel() {
-        return "Dashboard";
+        return Messages.getString("DashboardPage.dashboard_label"); //$NON-NLS-1$
+    }
+    
+    @Override
+    public String getPagePath() {
+        return "dashboard"; //$NON-NLS-1$
     }
 
     @Override

@@ -20,9 +20,8 @@ package com.hydrologis.gss.server.views;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -57,6 +56,7 @@ import org.json.JSONObject;
 import com.hydrologis.gss.server.database.objects.Forms;
 import com.hydrologis.gss.server.utils.FormStatus;
 import com.hydrologis.gss.server.utils.GssWindows;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
@@ -134,25 +134,25 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         try {
             setMargin(true);
 
-            authenticatedUsername = AuthService.INSTANCE.getAuthenticatedUsername();
-            DbProvider dbProvider = SpiHandler.INSTANCE.getDbProviderSingleton();
+            authenticatedUsername = AuthService.getAuthenticatedUsername();
+            DbProvider dbProvider = SpiHandler.getDbProviderSingleton();
             DatabaseHandler dbHandler = dbProvider.getDatabaseHandler().get();
 
             formsDAO = dbHandler.getDao(Forms.class);
             QueryBuilder<Forms, ? > formsQB = formsDAO.queryBuilder();
             List<Forms> formsList = formsQB.where().eq(Forms.WEBUSER_FIELD_NAME, authenticatedUsername).query();
 
-            Button addTag = new Button("Add", VaadinIcons.PLUS_CIRCLE);
+            Button addTag = new Button(Messages.getString("FormsView.add"), VaadinIcons.PLUS_CIRCLE); //$NON-NLS-1$
             addTag.setStyleName(ValoTheme.BUTTON_PRIMARY);
             addTag.addClickListener(e -> addTag());
-            Button deleteTag = new Button("Remove", VaadinIcons.TRASH);
+            Button deleteTag = new Button(Messages.getString("FormsView.remove"), VaadinIcons.TRASH); //$NON-NLS-1$
             deleteTag.setStyleName(ValoTheme.BUTTON_DANGER);
             deleteTag.setVisible(false);
             deleteTag.addClickListener(e -> deleteTag());
-            downloadTag = new Button("Download", VaadinIcons.DOWNLOAD);
+            downloadTag = new Button(Messages.getString("FormsView.download"), VaadinIcons.DOWNLOAD); //$NON-NLS-1$
             downloadTag.setVisible(false);
 
-            visibleCheckBox = new CheckBox("make visible to connecting devices");
+            visibleCheckBox = new CheckBox(Messages.getString("FormsView.make_visible_to_devices")); //$NON-NLS-1$
             visibleCheckBox.addValueChangeListener(l -> {
                 Boolean makeVisible = l.getValue();
                 if (currentSelectedTags != null) {
@@ -165,7 +165,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             visibleCheckBox.setVisible(false);
 
             tagsCombo = new ComboBox<>();
-            tagsCombo.setPlaceholder("No tags selected");
+            tagsCombo.setPlaceholder(Messages.getString("FormsView.no_tag_selected")); //$NON-NLS-1$
             tagsCombo.setItemCaptionGenerator(Forms::getName);
             tagsCombo.setEmptySelectionAllowed(false);
             tagsCombo.addSelectionListener(new SingleSelectionListener<Forms>(){
@@ -186,7 +186,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                         }
                         tagFileDownloader = new FileDownloader(new StreamResource(() -> {
                             try {
-                                File tmpFile = File.createTempFile("gss_tmp_", ".json");
+                                File tmpFile = File.createTempFile("gss_tmp_", ".json"); //$NON-NLS-1$ //$NON-NLS-2$
                                 FileUtilities.writeFile(currentSelectedTags.form, tmpFile);
                                 return new FileInputStream(tmpFile);
                             } catch (Exception e1) {
@@ -194,7 +194,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                                 return null;
                             }
                         }, currentSelectedTags.name + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact)
-                                + ".json"));
+                                + ".json")); //$NON-NLS-1$
                         tagFileDownloader.extend(downloadTag);
                     });
                 }
@@ -225,8 +225,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     }
 
     private void deleteTag() {
-        String message = new KLabel.Builder().text("Are you sure you want to delete: <b>" + currentSelectedTags.name + "</b>")
-                .fontSizeInPixels(18).color("#AF0000").buildLabel();
+        String message = new KLabel.Builder().text(MessageFormat.format(Messages.getString("FormsView.sure_want_delete"), currentSelectedTags.name)) //$NON-NLS-1$
+                .fontSizeInPixels(18).color("#AF0000").buildLabel(); //$NON-NLS-1$
         KukuratusWindows.openCancelDeleteWindow(this, message, GssWindows.DEFAULT_WIDTH, null, new Runnable(){
             public void run() {
                 try {
@@ -234,7 +234,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     Forms formToDelete = formsQB.where().eq(Forms.NAME_FIELD_NAME, currentSelectedTags.name).queryForFirst();
                     if (formToDelete == null) {
                         getUI().access(() -> {
-                            KukuratusWindows.openWarningNotification("The selected form doesn't exist anymore.");
+                            KukuratusWindows.openWarningNotification(Messages.getString("FormsView.selected_form_doesnt_exist")); //$NON-NLS-1$
                         });
                         return;
                     }
@@ -255,7 +255,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     }
 
     private void addTag() {
-        String message = new KLabel.Builder().text("Add a new tag definition. Enter a name for it!").fontSizeInPixels(18)
+        String message = new KLabel.Builder().text(Messages.getString("FormsView.enter_name_for_new_tag")).fontSizeInPixels(18) //$NON-NLS-1$
                 .buildLabel();
         KukuratusWindows.inputWindow(this, message, GssWindows.DEFAULT_WIDTH, null, new TextRunnable(){
             @Override
@@ -267,12 +267,12 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     Forms forms = formsQB.where().eq(Forms.NAME_FIELD_NAME, newTagName).queryForFirst();
                     if (forms != null) {
                         getUI().access(() -> {
-                            KukuratusWindows.openWarningNotification("A form with that name already exists.");
+                            KukuratusWindows.openWarningNotification(Messages.getString("FormsView.form_already_exists")); //$NON-NLS-1$
                         });
                         return;
                     }
 
-                    Forms newTag = new Forms(newTagName, "[]", authenticatedUsername, FormStatus.HIDDEN.getStatusCode());
+                    Forms newTag = new Forms(newTagName, "[]", authenticatedUsername, FormStatus.HIDDEN.getStatusCode()); //$NON-NLS-1$
                     newTag = formsDAO.createIfNotExists(newTag);
                     formsQB = formsDAO.queryBuilder();
                     List<Forms> formsList = formsQB.where().eq(Forms.WEBUSER_FIELD_NAME, authenticatedUsername).query();
@@ -302,7 +302,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         MenuBar menuBar = new MenuBar();
         menuBar.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
 
-        sectionsMenuItem = menuBar.addItem("Sections", VaadinIcons.TASKS, null);
+        sectionsMenuItem = menuBar.addItem(Messages.getString("FormsView.sections"), VaadinIcons.TASKS, null); //$NON-NLS-1$
         sectionsMap.keySet().stream().forEach(sectionName -> {
             sectionsMenuItem.addItem(sectionName, VaadinIcons.FOLDER_OPEN, i -> {
                 LinkedHashMap<String, JSONObject> tmpSectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
@@ -312,34 +312,34 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             });
         });
         sectionsSeparatorMenuItem = sectionsMenuItem.addSeparator();
-        sectionsMenuItem.addItem("add new", VaadinIcons.PLUS, i -> {
+        sectionsMenuItem.addItem(Messages.getString("FormsView.add_new"), VaadinIcons.PLUS, i -> { //$NON-NLS-1$
             addNewSection();
         });
-        sectionsMenuItem.addItem("remove selected", VaadinIcons.MINUS, i -> {
+        sectionsMenuItem.addItem(Messages.getString("FormsView.remove_selected"), VaadinIcons.MINUS, i -> { //$NON-NLS-1$
             removeSection();
         });
 
-        formsMenuItem = menuBar.addItem("Forms", VaadinIcons.TABS, null);
-        formsMenuItem.addItem("add new", VaadinIcons.PLUS, i -> {
+        formsMenuItem = menuBar.addItem(Messages.getString("FormsView.forms"), VaadinIcons.TABS, null); //$NON-NLS-1$
+        formsMenuItem.addItem(Messages.getString("FormsView.add_new"), VaadinIcons.PLUS, i -> { //$NON-NLS-1$
             addNewForm();
         });
-        formsMenuItem.addItem("remove selected", VaadinIcons.MINUS, i -> {
+        formsMenuItem.addItem(Messages.getString("FormsView.remove_selected"), VaadinIcons.MINUS, i -> { //$NON-NLS-1$
             removeForm();
         });
         formsMenuItem.setVisible(false);
 
-        widgetsMenuItem = menuBar.addItem("Widgets", VaadinIcons.INPUT, null);
+        widgetsMenuItem = menuBar.addItem(Messages.getString("FormsView.widgets"), VaadinIcons.INPUT, null); //$NON-NLS-1$
         List<String> widgetNames = Arrays.asList(Utilities.ITEM_NAMES).stream().filter(name -> {
             boolean isUnsupported = name.equals(ItemConnectedCombo.TYPE) || name.equals(ItemOneToManyConnectedCombo.TYPE);
             return !isUnsupported;
         }).sorted().collect(Collectors.toList());
 
         widgetNames.forEach(name -> {
-            widgetsMenuItem.addItem("add " + name, VaadinIcons.PLUS, i -> {
+            widgetsMenuItem.addItem(Messages.getString("FormsView.add_lower") + name, VaadinIcons.PLUS, i -> { //$NON-NLS-1$
                 addNewWidget(name);
             });
         });
-        widgetsMenuItem.addItem("remove", VaadinIcons.MINUS, i -> {
+        widgetsMenuItem.addItem(Messages.getString("FormsView.remove_lower"), VaadinIcons.MINUS, i -> { //$NON-NLS-1$
             removeWidget();
         });
         widgetsMenuItem.setVisible(false);
@@ -386,12 +386,12 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
     private void addNewWidget( String widgetName ) {
         if (curentSelectedSectionName == null) {
-            KukuratusWindows.openInfoNotification("No section selected.");
+            KukuratusWindows.openInfoNotification(Messages.getString("FormsView.no_section_selected")); //$NON-NLS-1$
             return;
         }
 
         if (currentSelectedFormTab == null) {
-            KukuratusWindows.openInfoNotification("No form selected.");
+            KukuratusWindows.openInfoNotification(Messages.getString("FormsView.no_form_selected")); //$NON-NLS-1$
             return;
         }
         String formName = currentSelectedFormTab.getCaption();
@@ -442,25 +442,25 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
             GssWindows.imageParamsWindow(this, formItems, GssWindows.IMAGEWIDGET.MAP);
             break;
         case ItemConnectedCombo.TYPE:
-            KukuratusWindows.openWarningNotification("Not implemented yet");
+            KukuratusWindows.openWarningNotification(Messages.getString("FormsView.not_implemented_yet")); //$NON-NLS-1$
             break;
         case ItemOneToManyConnectedCombo.TYPE:
-            KukuratusWindows.openWarningNotification("Not implemented yet");
+            KukuratusWindows.openWarningNotification(Messages.getString("FormsView.not_implemented_yet")); //$NON-NLS-1$
             break;
         default:
-            KukuratusWindows.openWarningNotification("Widget " + widgetName + " does not exist.");
+            KukuratusWindows.openWarningNotification(MessageFormat.format(Messages.getString("FormsView.widget_doesnt_exist"), widgetName)); //$NON-NLS-1$
             break;
         }
 
     }
     private void removeWidget() {
         if (curentSelectedSectionName == null) {
-            KukuratusWindows.openInfoNotification("No section selected.");
+            KukuratusWindows.openInfoNotification(Messages.getString("FormsView.no_section_selected")); //$NON-NLS-1$
             return;
         }
 
         if (currentSelectedFormTab == null) {
-            KukuratusWindows.openInfoNotification("No form selected.");
+            KukuratusWindows.openInfoNotification(Messages.getString("FormsView.no_form_selected")); //$NON-NLS-1$
             return;
         }
         String formName = currentSelectedFormTab.getCaption();
@@ -471,7 +471,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
     private void addNewForm() {
         if (curentSelectedSectionName == null) {
-            KukuratusWindows.openInfoNotification("No section selected.");
+            KukuratusWindows.openInfoNotification(Messages.getString("FormsView.no_section_selected")); //$NON-NLS-1$
             return;
         }
 
@@ -479,14 +479,14 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         JSONObject sectionObject = sectionsMap.get(curentSelectedSectionName);
         List<String> formNames = Utilities.getFormNames4Section(sectionObject);
 
-        String message = "<h3>Add a new Form to the Section: <b>" + curentSelectedSectionName + "</b>. Enter a name for it!</h3>";
-        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+        String message = MessageFormat.format(Messages.getString("FormsView.add_new_form"), curentSelectedSectionName); //$NON-NLS-1$
+        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){ //$NON-NLS-1$
             @Override
             public void runOnText( String newFormName ) {
                 newFormName = newFormName.trim();
                 if (formNames.contains(newFormName)) {
                     getUI().access(() -> {
-                        KukuratusWindows.openWarningNotification("A form with that name already exists.");
+                        KukuratusWindows.openWarningNotification(Messages.getString("FormsView.form_already_exists")); //$NON-NLS-1$
                     });
                     return;
                 }
@@ -524,18 +524,18 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
     }
     private void removeForm() {
         if (curentSelectedSectionName == null) {
-            KukuratusWindows.openInfoNotification("No section selected.");
+            KukuratusWindows.openInfoNotification(Messages.getString("FormsView.no_section_selected")); //$NON-NLS-1$
             return;
         }
 
         if (currentSelectedFormTab == null) {
-            KukuratusWindows.openInfoNotification("No form selected.");
+            KukuratusWindows.openInfoNotification(Messages.getString("FormsView.no_form_selected")); //$NON-NLS-1$
             return;
         }
         String formName = currentSelectedFormTab.getCaption();
 
-        String message = "<h3>Are you sure you want to delete Form: <b>" + formName + "</b>?</h3>";
-        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){
+        String message = MessageFormat.format(Messages.getString("FormsView.sure_delete_form"), formName); //$NON-NLS-1$
+        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){ //$NON-NLS-1$
             @Override
             public void run() {
                 Utilities.removeFormFromSection(formName, curentSelectedSectionObject);
@@ -560,8 +560,8 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
     private void addNewSection() {
         LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
-        String message = "<h3>Add a new Section to Tag: <b>" + currentSelectedTags.name + "</b>. Enter a name for it!</h3>";
-        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){
+        String message = MessageFormat.format(Messages.getString("FormsView.add_new_section"), currentSelectedTags.name); //$NON-NLS-1$
+        KukuratusWindows.inputWindow(this, message, "500px", null, new TextRunnable(){ //$NON-NLS-1$
             @Override
             public void runOnText( String newSectionName ) {
                 newSectionName = newSectionName.trim();
@@ -569,7 +569,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                 JSONObject sectionObj = sectionsMap.get(newSectionName);
                 if (sectionObj != null) {
                     getUI().access(() -> {
-                        KukuratusWindows.openWarningNotification("A section with that name already exists.");
+                        KukuratusWindows.openWarningNotification(Messages.getString("FormsView.section_already_exists")); //$NON-NLS-1$
                     });
                     return;
                 }
@@ -608,14 +608,14 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
         }
         LinkedHashMap<String, JSONObject> sectionsMap = Utilities.getSectionsFromJsonString(currentSelectedTags.form);
         String message = new KLabel.Builder()
-                .text("Are you sure you want to delete the Section: <b>" + curentSelectedSectionName + "</b>")
-                .fontSizeInPixels(18).color("#AF0000").buildLabel();
-        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){
+                .text(MessageFormat.format(Messages.getString("FormsView.sure_delete_section"), curentSelectedSectionName)) //$NON-NLS-1$
+                .fontSizeInPixels(18).color("#AF0000").buildLabel(); //$NON-NLS-1$
+        KukuratusWindows.openCancelDeleteWindow(this, message, "500px", null, new Runnable(){ //$NON-NLS-1$
             public void run() {
                 JSONObject sectionObj = sectionsMap.remove(curentSelectedSectionName);
                 if (sectionObj == null) {
                     getUI().access(() -> {
-                        KukuratusWindows.openWarningNotification("The selected section doesn't exist.");
+                        KukuratusWindows.openWarningNotification(Messages.getString("FormsView.selected_section_doesnt_exist")); //$NON-NLS-1$
                     });
                     return;
                 }
@@ -682,9 +682,9 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     defaultValue = jsonObject.get(Utilities.TAG_VALUE).toString().trim();
                 }
                 if (defaultValue == null) {
-                    defaultValue = "";
+                    defaultValue = ""; //$NON-NLS-1$
                 }
-                KLabel mainLabel = new KLabel.Builder().text(label).color("#5d9d76").build();
+                KLabel mainLabel = new KLabel.Builder().text(label).color("#5d9d76").build(); //$NON-NLS-1$
                 tab.addComponent(mainLabel);
                 switch( type ) {
                 case ItemLabel.TYPE:
@@ -692,7 +692,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     if (jsonObject.has(Utilities.TAG_SIZE)) {
                         size = Integer.parseInt(jsonObject.get(Utilities.TAG_SIZE).toString().trim());
                     }
-                    String value = new KLabel.Builder().text(defaultValue).fontSizeInPixels(size).color("#5d9d76").buildLabel();
+                    String value = new KLabel.Builder().text(defaultValue).fontSizeInPixels(size).color("#5d9d76").buildLabel(); //$NON-NLS-1$
                     mainLabel.setValue(value);
                     break;
                 case ItemLabel.TYPE_WITHLINE:
@@ -700,13 +700,13 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     if (jsonObject.has(Utilities.TAG_SIZE)) {
                         size = Integer.parseInt(jsonObject.get(Utilities.TAG_SIZE).toString().trim());
                     }
-                    String value1 = new KLabel.Builder().text(defaultValue).underline().fontSizeInPixels(size).color("#5d9d76")
+                    String value1 = new KLabel.Builder().text(defaultValue).underline().fontSizeInPixels(size).color("#5d9d76") //$NON-NLS-1$
                             .buildLabel();
                     mainLabel.setValue(value1);
                     break;
                 case ItemBoolean.TYPE:
                     CheckBox checkBox = new CheckBox();
-                    if (defaultValue != null && defaultValue.equals("true")) {
+                    if (defaultValue != null && defaultValue.equals("true")) { //$NON-NLS-1$
                         checkBox.setValue(true);
                     }
                     tab.addComponent(checkBox);
@@ -755,13 +755,13 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     break;
                 case ItemDate.TYPE:
                     DateField date = new DateField();
-                    date.setDateFormat("yyyy-MM-dd");
+                    date.setDateFormat("yyyy-MM-dd"); //$NON-NLS-1$
                     if (defaultValue.length() == 0) {
                         date.setValue(LocalDate.now());
                     } else {
                         try {
                             if (defaultValue.trim().length() > 0) {
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); //$NON-NLS-1$
                                 date.setValue(LocalDate.parse(defaultValue, formatter));
                             }
                         } catch (Exception e) {
@@ -773,7 +773,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     break;
                 case ItemTime.TYPE:
                     TextField time = new TextField();
-                    time.setPlaceholder("HH:mm:ss");
+                    time.setPlaceholder("HH:mm:ss"); //$NON-NLS-1$
                     try {
                         if (defaultValue.trim().length() > 0) {
                             time.setValue(defaultValue);
@@ -795,7 +795,7 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     tab.addComponent(doubleField);
                     break;
                 case ItemDynamicText.TYPE:
-                    String[] split = defaultValue.split(";");
+                    String[] split = defaultValue.split(";"); //$NON-NLS-1$
                     for( String string : split ) {
                         TextField dynamicField = new TextField();
                         dynamicField.setValue(string.trim());
@@ -809,21 +809,21 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
                     Label pictureImage = new Label();
                     pictureImage.setContentMode(ContentMode.HTML);
                     pictureImage.setValue(VaadinIcons.PICTURE.getHtml());
-                    pictureImage.addStyleName("big-icon");
+                    pictureImage.addStyleName("big-icon"); //$NON-NLS-1$
                     tab.addComponent(pictureImage);
                     break;
                 case ItemSketch.TYPE:
                     Label sketchImage = new Label();
                     sketchImage.setContentMode(ContentMode.HTML);
                     sketchImage.setValue(VaadinIcons.PAINTBRUSH.getHtml());
-                    sketchImage.addStyleName("big-icon");
+                    sketchImage.addStyleName("big-icon"); //$NON-NLS-1$
                     tab.addComponent(sketchImage);
                     break;
                 case ItemMap.TYPE:
                     Label mapImage = new Label();
                     mapImage.setContentMode(ContentMode.HTML);
                     mapImage.setValue(VaadinIcons.MAP_MARKER.getHtml());
-                    mapImage.addStyleName("big-icon");
+                    mapImage.addStyleName("big-icon"); //$NON-NLS-1$
                     tab.addComponent(mapImage);
                     break;
                 case ItemText.TYPE:
@@ -852,7 +852,12 @@ public class FormsView extends VerticalLayout implements View, DefaultPage {
 
     @Override
     public String getLabel() {
-        return "Form Builder";
+        return Messages.getString("FormsView.formbuilder_label"); //$NON-NLS-1$
+    }
+    
+    @Override
+    public String getPagePath() {
+        return "formbuilder"; //$NON-NLS-1$
     }
 
     @Override

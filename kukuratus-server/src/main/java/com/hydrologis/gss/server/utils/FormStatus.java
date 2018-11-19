@@ -37,7 +37,7 @@ public enum FormStatus {
                 return fs;
             }
         }
-        throw new IllegalArgumentException("No status available for code: " + status);
+        throw new IllegalArgumentException("No status available for code: " + status); //$NON-NLS-1$
     }
 
 }

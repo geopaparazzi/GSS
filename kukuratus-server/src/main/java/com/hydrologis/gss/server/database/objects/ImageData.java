@@ -28,11 +28,11 @@ import com.j256.ormlite.table.DatabaseTable;
  */
 @DatabaseTable(tableName = "imagedata")
 public class ImageData {
-    public static final String ID_FIELD_NAME = "id";
-    public static final String DATA_FIELD_NAME = "data";
-    public static final String THUMB_FIELD_NAME = "thumbnail";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String DATA_FIELD_NAME = "data"; //$NON-NLS-1$
+    public static final String THUMB_FIELD_NAME = "thumbnail"; //$NON-NLS-1$
     
-    public static final String imagedataFKColumnDefinition = "bigint references imagedata(id) on delete cascade";
+    public static final String imagedataFKColumnDefinition = "bigint references imagedata(id) on delete cascade"; //$NON-NLS-1$
 
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)

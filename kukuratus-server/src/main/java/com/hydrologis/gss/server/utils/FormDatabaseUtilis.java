@@ -32,7 +32,7 @@ public class FormDatabaseUtilis {
     public static void main( String[] args ) throws Exception {
 //        insertForm("/home/hydrologis/TMP/TESTGSS/DATA/gss_database.mv.db",
 //                "/home/hydrologis/TMP/TESTGSS/FW_TreeVisualAssessment.json");
-        insertForm("/home/hydrologis/TMP/TESTGSS/DATA/gss_database.mv.db", "/home/hydrologis/TMP/TESTGSS/tags.json");
+        insertForm("/home/hydrologis/TMP/TESTGSS/DATA/gss_database.mv.db", "/home/hydrologis/TMP/TESTGSS/tags.json"); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     private static void insertForm( String dbPath, String formPath ) throws Exception {
@@ -50,7 +50,7 @@ public class FormDatabaseUtilis {
             String formString = FileUtilities.readFile(formPath);
             String formName = FileUtilities.getNameWithoutExtention(new File(formPath));
 
-            Forms form = new Forms(formName, formString, "god", FormStatus.VISIBLE.getStatusCode());
+            Forms form = new Forms(formName, formString, "god", FormStatus.VISIBLE.getStatusCode()); //$NON-NLS-1$
             formsDao.create(form);
 
         }

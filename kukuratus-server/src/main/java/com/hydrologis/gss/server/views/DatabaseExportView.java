@@ -22,9 +22,9 @@ import java.io.File;
 import java.io.FileInputStream;
 
 import org.hortonmachine.gears.libs.modules.HMConstants;
-import org.hortonmachine.gears.utils.files.FileUtilities;
 import org.joda.time.DateTime;
 
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.spi.DbProvider;
 import com.hydrologis.kukuratus.libs.spi.ExportPage;
@@ -47,17 +47,17 @@ public class DatabaseExportView extends VerticalLayout implements View, ExportPa
     @Override
     public void enter( ViewChangeEvent event ) {
         try {
-            DbProvider dbProvider = SpiHandler.INSTANCE.getDbProviderSingleton();
+            DbProvider dbProvider = SpiHandler.getDbProviderSingleton();
             DatabaseHandler dbHandler = dbProvider.getDatabaseHandler().get();
 
-            String ext = ".mv.db";
+            String ext = ".mv.db"; //$NON-NLS-1$
             String databasePath = dbHandler.getDb().getDatabasePath();
             databasePath += ext;
             File dbFile = new File(databasePath);
             String downloadName = dbFile.getName().replaceFirst(ext,
-                    "_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ext);
+                    "_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ext); //$NON-NLS-1$
 
-            Button button = new Button("Download Database file", VaadinIcons.DOWNLOAD_ALT);
+            Button button = new Button(Messages.getString("DatabaseExportView.download_db"), VaadinIcons.DOWNLOAD_ALT); //$NON-NLS-1$
             button.addStyleName(ValoTheme.BUTTON_PRIMARY);
             FileInputStream fileInputStream = new FileInputStream(databasePath);
             FileDownloader downloader = new FileDownloader(new StreamResource(() -> {
@@ -85,7 +85,12 @@ public class DatabaseExportView extends VerticalLayout implements View, ExportPa
 
     @Override
     public String getLabel() {
-        return "Database";
+        return Messages.getString("DatabaseExportView.database_label"); //$NON-NLS-1$
+    }
+    
+    @Override
+    public String getPagePath() {
+        return "dbexport"; //$NON-NLS-1$
     }
 
     @Override

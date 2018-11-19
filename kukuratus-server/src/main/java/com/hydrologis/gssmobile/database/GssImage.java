@@ -34,7 +34,7 @@ import java.io.IOException;
  */
 public class GssImage implements Externalizable {
 
-    public static final String OBJID = "image";
+    public static final String OBJID = "image"; //$NON-NLS-1$
     public static final int VERSION = 1;
 
     public long id;
@@ -73,7 +73,7 @@ public class GssImage implements Externalizable {
     @Override
     public void internalize( int version, DataInputStream in ) throws IOException {
         if (version != VERSION) {
-            throw new IllegalArgumentException("Wrong version: " + version + " vs " + VERSION);
+            throw new IllegalArgumentException("Wrong version: " + version + " vs " + VERSION); //$NON-NLS-1$ //$NON-NLS-2$
         }
         id = in.readLong();
         longitude = in.readDouble();

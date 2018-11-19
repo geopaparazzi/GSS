@@ -62,6 +62,7 @@ import com.hydrologis.gss.server.database.objects.GpsLogsProperties;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.KukuratusLibs;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
@@ -129,11 +130,11 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
     private List<String> allDates;
 
-    private DecimalFormat elevFormatter = new DecimalFormat("0");
+    private DecimalFormat elevFormatter = new DecimalFormat("0"); //$NON-NLS-1$
 
     @Override
     public void enter( ViewChangeEvent event ) {
-        dbh = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+        dbh = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
         try {
             notesDao = dbh.getDao(Notes.class);
             imagesDao = dbh.getDao(Images.class);
@@ -141,8 +142,8 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             logsPropertiesDao = dbh.getDao(GpsLogsProperties.class);
 
             File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
-            File notesFile = new File(dataFolder, "notes.png");
-            File imagesFile = new File(dataFolder, "images.png");
+            File notesFile = new File(dataFolder, "notes.png"); //$NON-NLS-1$
+            File imagesFile = new File(dataFolder, "images.png"); //$NON-NLS-1$
             notesResource = new FileResource(notesFile);
             imagesResource = new FileResource(imagesFile);
 
@@ -153,10 +154,10 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             mainSplitPanel.setSplitPosition(20, Unit.PERCENTAGE);
 
             createSurveyorsGrid();
-            surveyorsLayout.setStyleName("layout-border", true);
+            surveyorsLayout.setStyleName("layout-border", true); //$NON-NLS-1$
             mainSplitPanel.setFirstComponent(surveyorsLayout);
             createMap();
-            leafletMap.setStyleName("layout-border", true);
+            leafletMap.setStyleName("layout-border", true); //$NON-NLS-1$
             mainSplitPanel.setSecondComponent(leafletMap);
 
             leafletMap.setSizeFull();
@@ -195,7 +196,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         surveyorsLayout = new VerticalLayout();
 
         reloadBtn = new Button(VaadinIcons.REFRESH);
-        reloadBtn.setDescription("Refresh surveyors data.");
+        reloadBtn.setDescription(Messages.getString("MapPage.refresh_data")); //$NON-NLS-1$
         reloadBtn.addClickListener(e -> {
             Set<GpapUsers> selectedUsers = surveyorsGrid.getSelectedItems();
             if (selectedUsers.size() == 0) {
@@ -208,7 +209,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         });
 
         zoomToBtn = new Button(VaadinIcons.SEARCH);
-        zoomToBtn.setDescription("Zoom to the whole extend of the surveyor.");
+        zoomToBtn.setDescription(Messages.getString("MapPage.zoom_to_all")); //$NON-NLS-1$
         zoomToBtn.addClickListener(e -> {
             Set<GpapUsers> selectedUsers = surveyorsGrid.getSelectedItems();
             if (selectedUsers.size() == 0) {
@@ -235,7 +236,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         enableSelectButtons(enable);
 
         Button reloadSurveyorsListBtn = new Button(VaadinIcons.FILE_REFRESH);
-        reloadSurveyorsListBtn.setDescription("Reload the surveyors list.");
+        reloadSurveyorsListBtn.setDescription(Messages.getString("MapPage.reload_surveyors")); //$NON-NLS-1$
         reloadSurveyorsListBtn.addClickListener(e -> {
             reloadDevices();
 
@@ -259,7 +260,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         surveyorsGrid.setItems(allDevices);
         surveyorsGrid.setSelectionMode(SelectionMode.MULTI);
         surveyorsGrid.setColumns();
-        surveyorsGrid.addColumn(GpapUsers::getName).setCaption("Surveyors");
+        surveyorsGrid.addColumn(GpapUsers::getName).setCaption(Messages.getString("MapPage.surveyors")); //$NON-NLS-1$
         surveyorsGrid.asMultiSelect().addValueChangeListener(e -> {
             Set<GpapUsers> selectedUsers = e.getValue();
             enableSelectButtons(!selectedUsers.isEmpty());
@@ -285,10 +286,10 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         try {
 
             fromDateBox = new ComboBox<>();
-            fromDateBox.setPlaceholder("Start date filter");
+            fromDateBox.setPlaceholder(Messages.getString("MapPage.start_filter")); //$NON-NLS-1$
 
             toDateBox = new ComboBox<>();
-            toDateBox.setPlaceholder("End date filter");
+            toDateBox.setPlaceholder(Messages.getString("MapPage.end_filter")); //$NON-NLS-1$
 
             fromDateBox.setSelectedItem(null);
             toDateBox.setSelectedItem(null);
@@ -314,8 +315,8 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
                 renderUserData();
             });
 
-            fromDateBox.setWidth("100%");
-            toDateBox.setWidth("100%");
+            fromDateBox.setWidth("100%"); //$NON-NLS-1$
+            toDateBox.setWidth("100%"); //$NON-NLS-1$
             surveyorsLayout.addComponent(fromDateBox);
             surveyorsLayout.addComponent(toDateBox);
         } catch (Exception e1) {
@@ -327,29 +328,29 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
     private List<String> getCurrentAllDates() throws Exception {
         Set<GpapUsers> selectedItems = surveyorsGrid.asMultiSelect().getSelectedItems();
-        String whereStr = "";
+        String whereStr = ""; //$NON-NLS-1$
         if (selectedItems.size() > 0) {
-            String collect = selectedItems.stream().map(u -> String.valueOf(u.id)).collect(Collectors.joining(","));
-            whereStr = "where gpapusersid in (" + collect + ")";
+            String collect = selectedItems.stream().map(u -> String.valueOf(u.id)).collect(Collectors.joining(",")); //$NON-NLS-1$
+            whereStr = "where gpapusersid in (" + collect + ")"; //$NON-NLS-1$ //$NON-NLS-2$
         }
         ASpatialDb db = dbh.getDb();
 
         String _whereStr = whereStr;
         return db.execOnConnection(connection -> {
             ASqlTemplates sqlTemplates = db.getType().getSqlTemplates();
-            String notesTime = sqlTemplates.getFormatTimeSyntax(Notes.TIMESTAMP_FIELD_NAME, "yyyy-MM-dd");
-            String imagesTime = sqlTemplates.getFormatTimeSyntax(Images.TIMESTAMP_FIELD_NAME, "yyyy-MM-dd");
-            String logStartTime = sqlTemplates.getFormatTimeSyntax(GpsLogs.STARTTS_FIELD_NAME, "yyyy-MM-dd");
+            String notesTime = sqlTemplates.getFormatTimeSyntax(Notes.TIMESTAMP_FIELD_NAME, "yyyy-MM-dd"); //$NON-NLS-1$
+            String imagesTime = sqlTemplates.getFormatTimeSyntax(Images.TIMESTAMP_FIELD_NAME, "yyyy-MM-dd"); //$NON-NLS-1$
+            String logStartTime = sqlTemplates.getFormatTimeSyntax(GpsLogs.STARTTS_FIELD_NAME, "yyyy-MM-dd"); //$NON-NLS-1$
 //            String logEndTime = sqlTemplates.getFormatTimeSyntax(GpsLogs.ENDTS_FIELD_NAME, "YYYY-mm-dd");
 
-            String selectAllDates = "select distinct " + notesTime + " as ts from " + DatabaseHandler.getTableName(Notes.class)
-                    + " " + _whereStr //
-                    + " union " //
-                    + "select distinct " + imagesTime + " as ts from " + DatabaseHandler.getTableName(Images.class) + " "
+            String selectAllDates = "select distinct " + notesTime + " as ts from " + DatabaseHandler.getTableName(Notes.class) //$NON-NLS-1$ //$NON-NLS-2$
+                    + " " + _whereStr // //$NON-NLS-1$
+                    + " union " // //$NON-NLS-1$
+                    + "select distinct " + imagesTime + " as ts from " + DatabaseHandler.getTableName(Images.class) + " " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                     + _whereStr //
-                    + " union " //
-                    + "select distinct " + logStartTime + " as ts from " + DatabaseHandler.getTableName(GpsLogs.class) + " "
-                    + _whereStr + " order by ts;";
+                    + " union " // //$NON-NLS-1$
+                    + "select distinct " + logStartTime + " as ts from " + DatabaseHandler.getTableName(GpsLogs.class) + " " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                    + _whereStr + " order by ts;"; //$NON-NLS-1$
             try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(selectAllDates)) {
                 List<String> datesList = new ArrayList<>();
                 while( rs.next() ) {
@@ -363,17 +364,17 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
     private void renderUserData() {
         try {
-            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //$NON-NLS-1$
             String fromValue = fromDateBox.getValue();
             if (fromValue != null) {
-                String fromDate = fromValue + " 00:00:00";
+                String fromDate = fromValue + " 00:00:00"; //$NON-NLS-1$
                 from = f.parse(fromDate).getTime();
             } else {
                 from = null;
             }
             String toValue = toDateBox.getValue();
             if (toValue != null) {
-                String toDate = toValue + " 23:59:00";
+                String toDate = toValue + " 23:59:00"; //$NON-NLS-1$
                 to = f.parse(toDate).getTime();
             } else {
                 to = null;
@@ -473,7 +474,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
                             Dao<ImageData, ? > imageDao = dbh.getDao(ImageData.class);
                             ImageData imageData = imageDao.queryForSameId(imageDataTmp);
 
-                            String title = image.text + " ( " + formatDate(image.timestamp) + " )";
+                            String title = image.text + " ( " + formatDate(image.timestamp) + " )"; //$NON-NLS-1$ //$NON-NLS-2$
                             BufferedImage bufferedImage = ImageIO.read(new ByteArrayInputStream(imageData.data));
                             BufferedImage scaleImage = ImageUtilities.scaleImage(bufferedImage, 1000);
 
@@ -524,23 +525,23 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
     }
 
     private String getNotesHtml( Notes note ) {
-        StringBuilder sb = new StringBuilder("<h2>" + note.text + "</h2>");
-        sb.append("<table style='width:100%' border='0' cellpadding='5'>");
-        sb.append("<tr><td><b>Timestamp</b></td><td>").append(formatDate(note.timestamp)).append("</td></tr>");
+        StringBuilder sb = new StringBuilder("<h2>" + note.text + "</h2>"); //$NON-NLS-1$ //$NON-NLS-2$
+        sb.append("<table style='width:100%' border='0' cellpadding='5'>"); //$NON-NLS-1$
+        sb.append("<tr><td><b>Timestamp</b></td><td>").append(formatDate(note.timestamp)).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
         if (note.altimetry != 0.0) {
             String elev = elevFormatter.format(note.altimetry);
-            sb.append("<tr><td><b>Elevation</b></td><td>").append(elev).append("</td></tr>");
+            sb.append("<tr><td><b>Elevation</b></td><td>").append(elev).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
         }
-        sb.append("</table>");
+        sb.append("</table>"); //$NON-NLS-1$
         return sb.toString();
     }
 
     private String getLogsHtml( GpsLogs log ) {
-        StringBuilder sb = new StringBuilder("<h2>" + log.name + "</h2>");
-        sb.append("<table style='width:100%' border='0' cellpadding='5'>");
-        sb.append("<tr><td><b>Start timestamp</b></td><td>").append(formatDate(log.startTs)).append("</td></tr>");
-        sb.append("<tr><td><b>End timestamp</b></td><td>").append(formatDate(log.endTs)).append("</td></tr>");
-        sb.append("</table>");
+        StringBuilder sb = new StringBuilder("<h2>" + log.name + "</h2>"); //$NON-NLS-1$ //$NON-NLS-2$
+        sb.append("<table style='width:100%' border='0' cellpadding='5'>"); //$NON-NLS-1$
+        sb.append("<tr><td><b>Start timestamp</b></td><td>").append(formatDate(log.startTs)).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+        sb.append("<tr><td><b>End timestamp</b></td><td>").append(formatDate(log.endTs)).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+        sb.append("</table>"); //$NON-NLS-1$
         return sb.toString();
     }
 
@@ -556,8 +557,8 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
     private void reloadDevices() {
         try {
             allDevices.clear();
-            allDevices.addAll(SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class)
-                    .queryForAll());
+            allDevices
+                    .addAll(SpiHandler.getDbProviderSingleton().getDatabaseHandler().get().getDao(GpapUsers.class).queryForAll());
             deviceNamesMap.clear();
             deviceNamesMap.putAll(allDevices.stream().collect(Collectors.toMap(gu -> getUserName(gu), Function.identity())));
         } catch (SQLException e1) {
@@ -575,14 +576,14 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
             leafletMap.setCenter(41.8919, 12.5113);
             leafletMap.setZoomLevel(15);
         }
-        List<String> selectedTileSourcesNames = RegistryHandler.INSTANCE
-                .getSelectedTileSourcesNames(AuthService.INSTANCE.getAuthenticatedUsername());
+        List<String> selectedTileSourcesNames = RegistryHandler
+                .getSelectedTileSourcesNames(AuthService.getAuthenticatedUsername());
         for( String name : selectedTileSourcesNames ) {
             LTileLayer tmpLayer;
             if (name.equals(RegistryHandler.MAPSFORGE)) {
                 tmpLayer = new LTileLayer();
-                tmpLayer.setUrl("./mapsforge?z={z}&x={x}&y={y}");
-                tmpLayer.setAttributionString("Mapsforge");
+                tmpLayer.setUrl("./mapsforge?z={z}&x={x}&y={y}"); //$NON-NLS-1$
+                tmpLayer.setAttributionString("Mapsforge"); //$NON-NLS-1$
                 tmpLayer.setMaxZoom(22);
             } else {
                 EOnlineTileSources source = EOnlineTileSources.getByName(name);
@@ -619,9 +620,14 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 
     @Override
     public String getLabel() {
-        return "Map View";
+        return Messages.getString("MapPage.mapview_label"); //$NON-NLS-1$
     }
 
+    @Override
+    public String getPagePath() {
+        return "mapview"; //$NON-NLS-1$
+    }
+    
     @Override
     public int getOrder() {
         return 1;

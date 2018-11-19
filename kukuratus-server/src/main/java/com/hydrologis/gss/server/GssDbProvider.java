@@ -52,14 +52,14 @@ import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
  */
 public class GssDbProvider implements DbProvider {
 
-    private static final String TCP_LOCALHOST = "tcp://localhost:9092";
+    private static final String TCP_LOCALHOST = "tcp://localhost:9092"; //$NON-NLS-1$
     private static final String TCP_PASSWORD = null;
-    private static final String DB_PREFIX = "gss_database";
-    public static String USERNAME = "gss";
-    public static final String PWD = "gss";
+    private static final String DB_PREFIX = "gss_database"; //$NON-NLS-1$
+    public static String USERNAME = "gss"; //$NON-NLS-1$
+    public static final String PWD = "gss"; //$NON-NLS-1$
 
     private static boolean doPostgis = false;
-    private static final String PG_URL = "localhost:5432/gss";
+    private static final String PG_URL = "localhost:5432/gss"; //$NON-NLS-1$
 
     private ASpatialDb db;
     private File databaseFile;
@@ -89,7 +89,7 @@ public class GssDbProvider implements DbProvider {
             if (doPostgis) {
                 dbToUse = EDb.POSTGIS;
                 dburl = PG_URL;
-                KukuratusLogger.logDebug(this, "Connecting to database: " + dburl);
+                KukuratusLogger.logDebug(this, "Connecting to database: " + dburl); //$NON-NLS-1$
             } else {
                 USERNAME = null;
                 databaseFile = getDatabaseFile();
@@ -98,27 +98,27 @@ public class GssDbProvider implements DbProvider {
                 } else if (databaseFile.getName().endsWith(EDb.H2GIS.getExtension())) {
                     dbToUse = EDb.H2GIS;
                 } else {
-                    throw new IllegalArgumentException("Can't understand db file: " + databaseFile);
+                    throw new IllegalArgumentException("Can't understand db file: " + databaseFile); //$NON-NLS-1$
                 }
                 dburl = databaseFile.getAbsolutePath();
                 boolean dbExistedAlready = databaseFile.exists();
                 if (!dbExistedAlready) {
-                    KukuratusLogger.logDebug(this, "Create database (wasn't existing): " + dburl);
+                    KukuratusLogger.logDebug(this, "Create database (wasn't existing): " + dburl); //$NON-NLS-1$
                     try (ASpatialDb tmpDb = dbToUse.getSpatialDb()) {
                         // db.setCredentials(USERNAME, PWD);
                         tmpDb.open(dburl);
                     }
                 } else {
-                    KukuratusLogger.logDebug(this, "Connecting to database: " + dburl);
+                    KukuratusLogger.logDebug(this, "Connecting to database: " + dburl); //$NON-NLS-1$
                 }
 
                 if (doServer && dbToUse == EDb.H2GIS) {
                     if (server == null) {
-                        server = H2GisServer.startTcpServerMode("9092", false, TCP_PASSWORD, true,
+                        server = H2GisServer.startTcpServerMode("9092", false, TCP_PASSWORD, true, //$NON-NLS-1$
                                 databaseFile.getParentFile().getAbsolutePath());
                     }
                     if (server.isRunning(false)) {
-                        dburl = TCP_LOCALHOST + "/" + databaseFile.getAbsolutePath();
+                        dburl = TCP_LOCALHOST + "/" + databaseFile.getAbsolutePath(); //$NON-NLS-1$
                     }
                 }
             }
@@ -142,12 +142,12 @@ public class GssDbProvider implements DbProvider {
         for( Class< ? > tClass : tableClasses ) {
             String tableName = DatabaseHandler.getTableName(tClass);
             if (dbHandler.getDb().hasTable(tableName)) {
-                KukuratusLogger.logDebug(this, "Table exists already: " + tableName);
+                KukuratusLogger.logDebug(this, "Table exists already: " + tableName); //$NON-NLS-1$
                 continue;
             }
-            KukuratusLogger.logDebug(this, "Creating table: " + tableName);
+            KukuratusLogger.logDebug(this, "Creating table: " + tableName); //$NON-NLS-1$
             dbHandler.createTableIfNotExists(tClass);
-            KukuratusLogger.logDebug(this, "Done creating table: " + tableName);
+            KukuratusLogger.logDebug(this, "Done creating table: " + tableName); //$NON-NLS-1$
         }
     }
 
@@ -165,8 +165,8 @@ public class GssDbProvider implements DbProvider {
         }
 
         // create a new database
-        KukuratusLogger.logInfo(this, "No database present in folder, creating one.");
-        File dbFile = new File(dataFolderFile, "gss_database.mv.db");
+        KukuratusLogger.logInfo(this, "No database present in folder, creating one."); //$NON-NLS-1$
+        File dbFile = new File(dataFolderFile, "gss_database.mv.db"); //$NON-NLS-1$
         return dbFile;
     }
 

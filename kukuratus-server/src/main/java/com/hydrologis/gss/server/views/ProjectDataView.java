@@ -22,11 +22,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 
 import com.hydrologis.gss.server.GssWorkspace;
 import com.hydrologis.gss.server.utils.BaseMap;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.gss.server.utils.Overlays;
 import com.hydrologis.gss.server.utils.Projects;
 import com.hydrologis.kukuratus.libs.spi.DefaultPage;
@@ -64,7 +66,7 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         Optional<File> overlaysFolder = GssWorkspace.INSTANCE.getOverlaysFolder();
         Optional<File> projectsFolder = GssWorkspace.INSTANCE.getProjectsFolder();
         if (!basemapsFolder.isPresent() || !overlaysFolder.isPresent() || !projectsFolder.isPresent()) {
-            Notification.show("There is a problem with the data folders of your workspace. Contact your admin.",
+            Notification.show(Messages.getString("ProjectDataView.problem_datafolders"), //$NON-NLS-1$
                     Notification.Type.WARNING_MESSAGE);
             return;
         }
@@ -77,7 +79,7 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         // base maps
         VerticalLayout basemapsLayout = new VerticalLayout();
 
-        Label basemapsLabel = new Label("Basemaps");
+        Label basemapsLabel = new Label(Messages.getString("ProjectDataView.basemaps")); //$NON-NLS-1$
         basemapsLayout.addComponent(basemapsLabel);
         basemapsLayout.setComponentAlignment(basemapsLabel, Alignment.MIDDLE_CENTER);
 
@@ -97,7 +99,7 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         // overlays
         VerticalLayout overlaysLayout = new VerticalLayout();
 
-        Label overlaysLabel = new Label("Overlays");
+        Label overlaysLabel = new Label(Messages.getString("ProjectDataView.overlays")); //$NON-NLS-1$
         overlaysLayout.addComponent(overlaysLabel);
         overlaysLabel.setSizeUndefined();
         overlaysLayout.setComponentAlignment(overlaysLabel, Alignment.MIDDLE_CENTER);
@@ -119,7 +121,7 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         // projects
         VerticalLayout projectsLayout = new VerticalLayout();
 
-        Label projectsLabel = new Label("Projects");
+        Label projectsLabel = new Label(Messages.getString("ProjectDataView.projects")); //$NON-NLS-1$
         projectsLayout.addComponent(projectsLabel);
         projectsLayout.setComponentAlignment(projectsLabel, Alignment.MIDDLE_CENTER);
 
@@ -139,7 +141,7 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
 
         mainDataLayout.setSizeFull();
 
-        final Label infoLabel = new Label("<b>Drop data to upload here.</b>", ContentMode.HTML);
+        final Label infoLabel = new Label(Messages.getString("ProjectDataView.drop_data"), ContentMode.HTML); //$NON-NLS-1$
         infoLabel.setSizeUndefined();
 
         dropPane = new VerticalLayout(infoLabel);
@@ -151,8 +153,8 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         progressBar.setVisible(false);
         dropPane.addComponent(progressBar);
 
-        dropPane.setWidth("40%");
-        dropPane.setHeight("40%");
+        dropPane.setWidth("40%"); //$NON-NLS-1$
+        dropPane.setHeight("40%"); //$NON-NLS-1$
 
         addComponent(mainDataLayout);
         addComponent(dropPane);
@@ -169,6 +171,7 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         addDropFunctionality();
     }
 
+    @SuppressWarnings("serial")
     private void addDropFunctionality() {
         new FileDropTarget<>(dropPane, fileDropEvent -> {
             final int fileSizeLimit = 200 * 1024 * 1024; // 200MB
@@ -184,18 +187,18 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
                 } else if (GssWorkspace.isProject(fileName)) {
                     outputFile = new File(projectsFolderFile, fileName);
                 } else {
-                    Notification.show("File " + fileName + " will be ignored. Format not supported.",
+                    Notification.show(MessageFormat.format(Messages.getString("ProjectDataView.format_not_supported"), fileName), //$NON-NLS-1$
                             Notification.Type.WARNING_MESSAGE);
                     return;
                 }
 
                 final File _outputFile = outputFile;
                 if (html5File.getFileSize() > fileSizeLimit) {
-                    Notification.show("File rejected. Max " + fileSizeLimit
-                            + "MB files are accepted. If you need to make larger files available, place them into the proper folder of the server filesystem.",
-                            Notification.Type.WARNING_MESSAGE);
+                    Notification.show(MessageFormat.format(Messages.getString("ProjectDataView.file_rejected"), //$NON-NLS-1$
+                            fileSizeLimit), Notification.Type.WARNING_MESSAGE);
                 } else if (outputFile.exists()) {
-                    Notification.show("Not overwriting existing file: " + fileName, Notification.Type.WARNING_MESSAGE);
+                    Notification.show(Messages.getString("ProjectDataView.not_overwriting") + fileName, //$NON-NLS-1$
+                            Notification.Type.WARNING_MESSAGE);
                 } else {
                     final StreamVariable streamVariable = new StreamVariable(){
 
@@ -274,7 +277,12 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
 
     @Override
     public String getLabel() {
-        return "Project Data";
+        return Messages.getString("ProjectDataView.projectdata_label"); //$NON-NLS-1$
+    }
+    
+    @Override
+    public String getPagePath() {
+        return "projectdata"; //$NON-NLS-1$
     }
 
     @Override

@@ -18,6 +18,7 @@
  ******************************************************************************/
 package com.hydrologis.gss.server;
 
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.gss.server.views.DashboardPage;
 import com.hydrologis.kukuratus.libs.spi.ThemeHandler;
 import com.vaadin.navigator.View;
@@ -28,20 +29,20 @@ public class GssThemeHandler implements ThemeHandler {
 
     @Override
     public String getApplicationTitle() {
-        return "Geopaparazzi Survey Server";
+        return Messages.getString("server.name"); //$NON-NLS-1$
     }
     
     @Override
     public Image getLoginImage() {
-        ThemeResource resource = new ThemeResource("images/gss_logo.png");
-        Image image = new Image("", resource);
+        ThemeResource resource = new ThemeResource("images/gss_logo.png"); //$NON-NLS-1$
+        Image image = new Image("", resource); //$NON-NLS-1$
         return image;
     }
 
     @Override
     public Image getMenuImage() {
-        ThemeResource resource = new ThemeResource("images/logo.png");
-        Image image = new Image("", resource);
+        ThemeResource resource = new ThemeResource("images/logo.png"); //$NON-NLS-1$
+        Image image = new Image("", resource); //$NON-NLS-1$
         return image;
     }
 

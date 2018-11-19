@@ -18,12 +18,15 @@
  ******************************************************************************/
 package com.hydrologis.gss.server;
 
+import java.util.Locale;
+
+import com.hydrologis.kukuratus.libs.KukuratusSession;
 import com.vaadin.server.VaadinSession;
 
 public class GssSession {
 
-    public static final String KEY_LOADED_GPAPUSERS = "GSS_KEY_LOADED_GPAPUSERS";
-    public static final String KEY_LAST_MAP_POSITION = "GSS_KEY_LAST_MAP_POSITION";
+    public static final String KEY_LOADED_GPAPUSERS = "GSS_KEY_LOADED_GPAPUSERS"; //$NON-NLS-1$
+    public static final String KEY_LAST_MAP_POSITION = "GSS_KEY_LAST_MAP_POSITION"; //$NON-NLS-1$
 
     public static String[] getLoadedGpapUsers() {
         return (String[]) VaadinSession.getCurrent().getAttribute(KEY_LOADED_GPAPUSERS);
@@ -39,5 +42,13 @@ public class GssSession {
 
     public static double[] getLastMapPosition() {
         return (double[]) VaadinSession.getCurrent().getAttribute(KEY_LAST_MAP_POSITION);
+    }
+
+    public static Locale getLocale() {
+        return KukuratusSession.getLocale();
+    }
+
+    public static void setLocale( Locale locale ) {
+        KukuratusSession.setLocale(locale);
     }
 }

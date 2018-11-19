@@ -30,10 +30,10 @@ import org.locationtech.jts.geom.Point;
  */
 @DatabaseTable(tableName = "gpslogsdata")
 public class GpsLogsData implements ISpatialTable {
-    public static final String ID_FIELD_NAME = "id";
-    public static final String ALTIM_FIELD_NAME = "altim";
-    public static final String TIMESTAMP_FIELD_NAME = "ts";
-    public static final String GPSLOGS_FIELD_NAME = "gpslogsid";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String ALTIM_FIELD_NAME = "altim"; //$NON-NLS-1$
+    public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
+    public static final String GPSLOGS_FIELD_NAME = "gpslogsid"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;

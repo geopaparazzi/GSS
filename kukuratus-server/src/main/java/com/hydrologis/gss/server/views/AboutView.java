@@ -18,6 +18,7 @@
  ******************************************************************************/
 package com.hydrologis.gss.server.views;
 
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.spi.AboutPage;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.navigator.View;
@@ -29,7 +30,7 @@ import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.VerticalLayout;
 
-public class AboutView extends VerticalLayout implements View , AboutPage{
+public class AboutView extends VerticalLayout implements View, AboutPage {
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -37,18 +38,16 @@ public class AboutView extends VerticalLayout implements View , AboutPage{
 
         VerticalLayout layout = new VerticalLayout();
 
-        ThemeResource resource = new ThemeResource("images/gss_logo.png");
-        Image image = new Image("", resource);
+        ThemeResource resource = new ThemeResource("images/gss_logo.png"); //$NON-NLS-1$
+        Image image = new Image("", resource); //$NON-NLS-1$
 
         layout.addComponent(image);
 
-        String gssText = "<b>Geopaparazzi Survey Server</b> is brought to you by <a href='http://www.hydrologis.com'>HydroloGIS</a>.";
-        gssText += "<br/><br/>It is built with <a href='https://vaadin.com/'>Vaadin</a>. The application is released under the "
-                + "<a href='https://www.gnu.org/licenses/gpl-3.0.en.html'>GPL3</a>. <br/>The source code is shipped with the application.";
+        String gssText = Messages.getString("AboutView.gss_info_text"); //$NON-NLS-1$
         Label label1 = new Label(gssText);
         label1.setContentMode(com.vaadin.shared.ui.ContentMode.HTML);
 
-        String gpapText = "Information about <b>Geopaparazzi</b> can be found <a href='http://www.geopaparazzi.eu'>here</a>.";
+        String gpapText = Messages.getString("AboutView.gpap_info_text"); //$NON-NLS-1$
         Label label2 = new Label(gpapText);
         label2.setContentMode(com.vaadin.shared.ui.ContentMode.HTML);
 
@@ -61,7 +60,7 @@ public class AboutView extends VerticalLayout implements View , AboutPage{
         setComponentAlignment(layout, Alignment.MIDDLE_CENTER);
 
     }
-    
+
     @Override
     public VaadinIcons getIcon() {
         return VaadinIcons.INFO_CIRCLE_O;
@@ -69,7 +68,12 @@ public class AboutView extends VerticalLayout implements View , AboutPage{
 
     @Override
     public String getLabel() {
-        return "About";
+        return Messages.getString("AboutView.about_label"); //$NON-NLS-1$
+    }
+    
+    @Override
+    public String getPagePath() {
+        return "about"; //$NON-NLS-1$
     }
 
     @Override

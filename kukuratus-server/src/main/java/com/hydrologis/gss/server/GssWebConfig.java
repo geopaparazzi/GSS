@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Optional;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -49,17 +48,17 @@ public class GssWebConfig {
         public void contextInitialized( ServletContextEvent sce ) {
             /// called when the system starts up and the servlet context is initialized
             try {
-                SpiHandler.INSTANCE.getDbProviderSingleton().init();
+                SpiHandler.getDbProviderSingleton().init();
 
                 File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
-                File notesOutFile = new File(dataFolder, "notes.png");
-                File imagesOutFile = new File(dataFolder, "images.png");
+                File notesOutFile = new File(dataFolder, "notes.png"); //$NON-NLS-1$
+                File imagesOutFile = new File(dataFolder, "images.png"); //$NON-NLS-1$
                 if (!notesOutFile.exists()) {
-                    InputStream notesIs = GssWebConfig.class.getResourceAsStream("/images/notes.png");
+                    InputStream notesIs = GssWebConfig.class.getResourceAsStream("/images/notes.png"); //$NON-NLS-1$
                     Files.copy(notesIs, notesOutFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
                 if (!imagesOutFile.exists()) {
-                    InputStream imagesIs = GssWebConfig.class.getResourceAsStream("/images/images.png");
+                    InputStream imagesIs = GssWebConfig.class.getResourceAsStream("/images/images.png"); //$NON-NLS-1$
                     Files.copy(imagesIs, imagesOutFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
 
@@ -71,7 +70,7 @@ public class GssWebConfig {
         @Override
         public void contextDestroyed( ServletContextEvent sce ) {
             try {
-                SpiHandler.INSTANCE.getDbProviderSingleton().close();
+                SpiHandler.getDbProviderSingleton().close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

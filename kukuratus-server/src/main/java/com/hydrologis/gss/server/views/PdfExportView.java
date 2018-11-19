@@ -37,6 +37,7 @@ import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.ImageData;
 import com.hydrologis.gss.server.database.objects.Images;
 import com.hydrologis.gss.server.database.objects.Notes;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.auth.AuthService;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
@@ -66,7 +67,6 @@ import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.server.FileDownloader;
 import com.vaadin.server.FileResource;
 import com.vaadin.server.StreamResource;
-import com.vaadin.server.VaadinService;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Embedded;
@@ -94,8 +94,8 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
     @Override
     public void enter( ViewChangeEvent event ) {
         try {
-            authenticatedUsername = AuthService.INSTANCE.getAuthenticatedUsername();
-            DbProvider dbProvider = SpiHandler.INSTANCE.getDbProviderSingleton();
+            authenticatedUsername = AuthService.getAuthenticatedUsername();
+            DbProvider dbProvider = SpiHandler.getDbProviderSingleton();
             DatabaseHandler dbHandler = dbProvider.getDatabaseHandler().get();
             imagesDAO = dbHandler.getDao(Images.class);
             imageDataDAO = dbHandler.getDao(ImageData.class);
@@ -103,11 +103,11 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
             MenuBar menuBar = new MenuBar();
             menuBar.addStyleName(ValoTheme.MENUBAR_BORDERLESS);
 
-            reportsMenuItem = menuBar.addItem("Surveyors", VaadinIcons.SPECIALIST, null);
+            reportsMenuItem = menuBar.addItem(Messages.getString("PdfExportView.surveyors"), VaadinIcons.SPECIALIST, null); //$NON-NLS-1$
 
             Dao<GpapUsers, ? > usersDAO = dbProvider.getDatabaseHandler().get().getDao(GpapUsers.class);
             List<GpapUsers> users = usersDAO.queryForAll();
-            reportsMenuItem.addItem("ALL", VaadinIcons.GROUP, i -> {
+            reportsMenuItem.addItem(Messages.getString("PdfExportView.ALL"), VaadinIcons.GROUP, i -> { //$NON-NLS-1$
                 try {
                     calcForUser(null);
                 } catch (Exception e) {
@@ -139,9 +139,10 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void calcForUser( GpapUsers user ) throws Exception {
 
-        Dao<Notes, ? > notesDAO = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get().getDao(Notes.class);
+        Dao<Notes, ? > notesDAO = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get().getDao(Notes.class);
         List<Notes> allNotes;
         if (user == null) {
             allNotes = notesDAO.queryForAll();
@@ -150,17 +151,17 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
         }
 
         if (allNotes.isEmpty()) {
-            Notification.show("No notes available for the PDF export.", Notification.Type.WARNING_MESSAGE);
+            Notification.show(Messages.getString("PdfExportView.no_notes"), Notification.Type.WARNING_MESSAGE); //$NON-NLS-1$
             return;
         }
 
-        Notification.show("Report generation started", "You'll be notified once the report is ready.",
+        Notification.show(Messages.getString("PdfExportView.report_gen_started"), Messages.getString("PdfExportView.will_notify"), //$NON-NLS-1$ //$NON-NLS-2$
                 Notification.Type.TRAY_NOTIFICATION);
         reportsMenuItem.setEnabled(false);
 
         File tmpFolder = KukuratusWorkspace.getInstance().getTmpFolder();
         File outFile = new File(tmpFolder,
-                "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".pdf");
+                "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".pdf"); //$NON-NLS-1$ //$NON-NLS-2$
 
         new Thread(() -> {
             try {
@@ -168,12 +169,12 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
                 FileInputStream fileInputStream = new FileInputStream(outFile);
                 getUI().access(() -> {
                     Embedded pdf = new Embedded(null, new FileResource(outFile));
-                    pdf.setMimeType("application/pdf");
+                    pdf.setMimeType("application/pdf"); //$NON-NLS-1$
                     pdf.setType(Embedded.TYPE_BROWSER);
                     pdf.setSizeFull();
                     panel.setContent(pdf);
 
-                    Button button = new Button("Download PDF", VaadinIcons.DOWNLOAD_ALT);
+                    Button button = new Button(Messages.getString("PdfExportView.download_pdf"), VaadinIcons.DOWNLOAD_ALT); //$NON-NLS-1$
                     button.addStyleName(ValoTheme.BUTTON_PRIMARY);
                     header.addComponent(button);
 
@@ -181,10 +182,10 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
                         header.removeComponent(button);
                         reportsMenuItem.setEnabled(true);
                         return fileInputStream;
-                    }, "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".pdf"));
+                    }, "gss_export_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact) + ".pdf")); //$NON-NLS-1$ //$NON-NLS-2$
                     downloader.extend(button);
 
-                    Notification.show("PDF ready for download", Notification.Type.TRAY_NOTIFICATION);
+                    Notification.show(Messages.getString("PdfExportView.pdf_ready"), Notification.Type.TRAY_NOTIFICATION); //$NON-NLS-1$
                 });
             } catch (Exception e) {
                 KukuratusLogger.logError(this, e);
@@ -199,16 +200,16 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
         PdfWriter.getInstance(document, new FileOutputStream(outFile));
         document.open();
 
-        String titleStr = "Geopaparazzi Survey Server PDF Export";
+        String titleStr = Messages.getString("PdfExportView.gss_pdf_export"); //$NON-NLS-1$
         document.addTitle(titleStr);
-        document.addSubject("Geopaparazzi Survey Server PDF Export");
-        document.addKeywords("geopaparazzi, export, notes");
+        document.addSubject(Messages.getString("PdfExportView.gss_pdf_export")); //$NON-NLS-1$
+        document.addKeywords(Messages.getString("PdfExportView.keywords")); //$NON-NLS-1$
 
         User user = RegistryHandler.INSTANCE.getUserByUniqueName(authenticatedUsername);
-        document.addAuthor("User: " + user.getName());
-        document.addCreator("Geopaparazzi  Survey Server - http://www.geopaparazzi.eu");
+        document.addAuthor(Messages.getString("PdfExportView.user") + user.getName()); //$NON-NLS-1$
+        document.addCreator(Messages.getString("PdfExportView.gss_info")); //$NON-NLS-1$
 
-        InputStream is = SimpleTablePdfReport.class.getClassLoader().getResourceAsStream("/images/logo_login.png");
+        InputStream is = SimpleTablePdfReport.class.getClassLoader().getResourceAsStream("/images/logo_login.png"); //$NON-NLS-1$
         if (is != null) {
             try {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -247,11 +248,11 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
         document.add(title);
         addEmptyLine(document);
         Paragraph author = new Paragraph(
-                new Phrase(10f, "Author: " + user.getName(), FontFactory.getFont(FontFactory.COURIER, 10)));
+                new Phrase(10f, Messages.getString("PdfExportView.author") + user.getName(), FontFactory.getFont(FontFactory.COURIER, 10))); //$NON-NLS-1$
         author.setAlignment(Element.ALIGN_CENTER);
         document.add(author);
         Paragraph dateTime = new Paragraph(
-                new Phrase(10f, "Date: " + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMM),
+                new Phrase(10f, Messages.getString("PdfExportView.date") + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMM), //$NON-NLS-1$
                         FontFactory.getFont(FontFactory.COURIER, 10)));
         dateTime.setAlignment(Element.ALIGN_CENTER);
         document.add(dateTime);
@@ -266,7 +267,7 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
     }
 
     private void addEmptyLine( Document document ) throws DocumentException {
-        document.add(new Paragraph(" "));
+        document.add(new Paragraph(" ")); //$NON-NLS-1$
     }
 
     public void processNote( Document document, Notes note, int count ) throws Exception {
@@ -287,9 +288,9 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
             infoTable.setWidthPercentage(90);
             currentChapter.add(infoTable);
 
-            addKeyValueToTableRow(infoTable, "Timestamp", new Date(note.timestamp).toString());
-            addKeyValueToTableRow(infoTable, "Latitude", note.the_geom.getY() + "");
-            addKeyValueToTableRow(infoTable, "Longitude", note.the_geom.getX() + "");
+            addKeyValueToTableRow(infoTable, "Timestamp", new Date(note.timestamp).toString()); //$NON-NLS-1$
+            addKeyValueToTableRow(infoTable, "Latitude", note.the_geom.getY() + ""); //$NON-NLS-1$ //$NON-NLS-2$
+            addKeyValueToTableRow(infoTable, "Longitude", note.the_geom.getX() + ""); //$NON-NLS-1$ //$NON-NLS-2$
 
             addEmptyLine(currentChapter, 3);
 
@@ -432,9 +433,9 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
             infoTable.setWidthPercentage(90);
             currentChapter.add(infoTable);
 
-            addKeyValueToTableRow(infoTable, "Timestamp", new Date(note.timestamp).toString());
-            addKeyValueToTableRow(infoTable, "Latitude", note.the_geom.getY() + "");
-            addKeyValueToTableRow(infoTable, "Longitude", note.the_geom.getX() + "");
+            addKeyValueToTableRow(infoTable, "Timestamp", new Date(note.timestamp).toString()); //$NON-NLS-1$
+            addKeyValueToTableRow(infoTable, "Latitude", note.the_geom.getY() + ""); //$NON-NLS-1$ //$NON-NLS-2$
+            addKeyValueToTableRow(infoTable, "Longitude", note.the_geom.getX() + ""); //$NON-NLS-1$ //$NON-NLS-2$
 
             addEmptyLine(currentChapter, 3);
             document.add(currentChapter);
@@ -457,7 +458,7 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
 
     public void addEmptyLine( Chapter element, int number ) throws DocumentException {
         for( int i = 0; i < number; i++ ) {
-            Paragraph p = new Paragraph(" ");
+            Paragraph p = new Paragraph(" "); //$NON-NLS-1$
             element.add(p);
         }
     }
@@ -469,9 +470,14 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
 
     @Override
     public String getLabel() {
-        return "PDF";
+        return Messages.getString("PdfExportView.pdf_label"); //$NON-NLS-1$
     }
 
+    @Override
+    public String getPagePath() {
+        return "pdfexport"; //$NON-NLS-1$
+    }
+    
     @Override
     public int getOrder() {
         return 1;

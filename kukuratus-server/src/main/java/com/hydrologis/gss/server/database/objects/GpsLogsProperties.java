@@ -27,10 +27,10 @@ import com.j256.ormlite.table.DatabaseTable;
  */
 @DatabaseTable(tableName = "gpslogsproperties")
 public class GpsLogsProperties {
-    public static final String ID_FIELD_NAME = "id";
-    public static final String COLOR_FIELD_NAME = "color";
-    public static final String WIDTH_FIELD_NAME = "width";
-    public static final String GPSLOGS_FIELD_NAME = "gpslogsid";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String COLOR_FIELD_NAME = "color"; //$NON-NLS-1$
+    public static final String WIDTH_FIELD_NAME = "width"; //$NON-NLS-1$
+    public static final String GPSLOGS_FIELD_NAME = "gpslogsid"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;

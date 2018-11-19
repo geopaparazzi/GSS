@@ -27,13 +27,13 @@ import com.j256.ormlite.table.DatabaseTable;
  */
 @DatabaseTable(tableName = "gpapusers")
 public class GpapUsers {
-    public static final String ID_FIELD_NAME = "id";
-    public static final String DEVICE_FIELD_NAME = "deviceid";
-    public static final String NAME_FIELD_NAME = "name";
-    public static final String PASSWORD_FIELD_NAME = "password";
-    public static final String CONTACT_FIELD_NAME = "contact";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String DEVICE_FIELD_NAME = "deviceid"; //$NON-NLS-1$
+    public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
+    public static final String PASSWORD_FIELD_NAME = "password"; //$NON-NLS-1$
+    public static final String CONTACT_FIELD_NAME = "contact"; //$NON-NLS-1$
 
-    public static final String usersFKColumnDefinition = "bigint references gpapusers(id) on delete cascade";
+    public static final String usersFKColumnDefinition = "bigint references gpapusers(id) on delete cascade"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;

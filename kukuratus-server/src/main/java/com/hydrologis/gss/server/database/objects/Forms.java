@@ -28,12 +28,12 @@ import com.j256.ormlite.table.DatabaseTable;
  */
 @DatabaseTable(tableName = "forms")
 public class Forms {
-    public static final String ID_FIELD_NAME = "id";
-    public static final String TIMESTAMP_FIELD_NAME = "ts";
-    public static final String NAME_FIELD_NAME = "name";
-    public static final String FORM_FIELD_NAME = "form";
-    public static final String WEBUSER_FIELD_NAME = "webuseruniquename";
-    public static final String STATUS_FIELD_NAME = "status";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
+    public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
+    public static final String FORM_FIELD_NAME = "form"; //$NON-NLS-1$
+    public static final String WEBUSER_FIELD_NAME = "webuseruniquename"; //$NON-NLS-1$
+    public static final String STATUS_FIELD_NAME = "status"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;

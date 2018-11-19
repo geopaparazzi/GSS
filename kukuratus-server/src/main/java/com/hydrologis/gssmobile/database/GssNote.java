@@ -28,7 +28,7 @@ import java.io.IOException;
  */
 public class GssNote implements Externalizable {
 
-    public static final String OBJID = "note";
+    public static final String OBJID = "note"; //$NON-NLS-1$
     public static final int VERSION = 1;
 
     public long id;
@@ -36,10 +36,10 @@ public class GssNote implements Externalizable {
     public double latitude;
     public double altitude;
     public long timeStamp;
-    public String description = "";
-    public String text = "";
-    public String form = "";
-    public String style = "";
+    public String description = ""; //$NON-NLS-1$
+    public String text = ""; //$NON-NLS-1$
+    public String form = ""; //$NON-NLS-1$
+    public String style = ""; //$NON-NLS-1$
 
     @Override
     public int getVersion() {
@@ -53,16 +53,16 @@ public class GssNote implements Externalizable {
         out.writeDouble(latitude);
         out.writeDouble(altitude);
         out.writeLong(timeStamp);
-        out.writeUTF(description == null ? "" : description);
-        out.writeUTF(text == null ? "" : text);
-        out.writeUTF(form == null ? "" : form);
-        out.writeUTF(style == null ? "" : style);
+        out.writeUTF(description == null ? "" : description); //$NON-NLS-1$
+        out.writeUTF(text == null ? "" : text); //$NON-NLS-1$
+        out.writeUTF(form == null ? "" : form); //$NON-NLS-1$
+        out.writeUTF(style == null ? "" : style); //$NON-NLS-1$
     }
 
     @Override
     public void internalize(int version, DataInputStream in) throws IOException {
         if (version != VERSION) {
-            throw new IllegalArgumentException("Wrong version: " + version + " vs " + VERSION);
+            throw new IllegalArgumentException("Wrong version: " + version + " vs " + VERSION); //$NON-NLS-1$ //$NON-NLS-2$
         }
         id = in.readLong();
         longitude = in.readDouble();

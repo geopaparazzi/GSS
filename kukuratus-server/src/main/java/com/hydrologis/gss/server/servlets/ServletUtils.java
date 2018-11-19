@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.hydrologis.gss.server.database.objects.GpapUsers;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
 import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
@@ -36,22 +37,24 @@ import com.j256.ormlite.dao.Dao;
 
 public class ServletUtils {
     private static boolean DEBUG = false;
-    private static final String NO_PERMISSION = "No permission to access the server! Are you signed up as surveyor? Contact your system administrator to make sure.";
+    private static final String NO_PERMISSION = Messages.getString("ServletUtils.no_permission"); //$NON-NLS-1$
 
     public static String canProceed( HttpServletRequest request, HttpServletResponse response, String tag ) throws Exception {
-        String tagPart = "";
+        String tagPart = ""; //$NON-NLS-1$
         if (tag != null)
-            tagPart = " (" + tag + ")";
+            tagPart = " (" + tag + ")"; //$NON-NLS-1$ //$NON-NLS-2$
         String ipAddress = NetworkUtilities.getIpAddress(request);
 
-        String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization"); //$NON-NLS-1$
         String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
-        if (userPwd == null || !userPwd[1].equals("gss_Master_Survey_Forever_2018")) {
-            String msg = "";
+        if (userPwd == null || !userPwd[1].equals("gss_Master_Survey_Forever_2018")) { //$NON-NLS-1$
+            String msg = ""; //$NON-NLS-1$
             if (userPwd != null && userPwd[0] != null && userPwd[1] != null) {
-                msg = "PERMISSION DENIED: on connection ip: " + ipAddress + " for user " + userPwd[0] + " with pwd " + userPwd[1];
+                msg = Messages.getString("ServletUtils.permission_denied") + ipAddress //$NON-NLS-1$
+                        + Messages.getString("ServletUtils.for_user") + userPwd[0] + Messages.getString("ServletUtils.with_pwd") //$NON-NLS-1$ //$NON-NLS-2$
+                        + userPwd[1];
             } else {
-                msg = "PERMISSION DENIED: on connection ip: " + ipAddress;
+                msg = Messages.getString("ServletUtils.permission_denied") + ipAddress; //$NON-NLS-1$
             }
             logAccess(msg);
             KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
@@ -61,24 +64,25 @@ public class ServletUtils {
         }
         String deviceId = userPwd[0];
 
-        DatabaseHandler dbHandler = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get();
+        DatabaseHandler dbHandler = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get();
         Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
         GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
         if (gpapUser == null) {
-            logAccess("PERMISSION DENIED: on connection ip: " + ipAddress + " for device " + deviceId + tagPart
-                    + " NO PERMISSION ERROR");
+            logAccess(Messages.getString("ServletUtils.permission_denied") + ipAddress //$NON-NLS-1$
+                    + Messages.getString("ServletUtils.for_device") + deviceId + tagPart //$NON-NLS-1$
+                    + Messages.getString("ServletUtils.no_permission_error")); //$NON-NLS-1$
             KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
                     new RuntimeException());
             errStatus.sendTo(response);
             return null;
         }
 
-        debug("Connection from: " + gpapUser.name + tagPart);
+        debug("Connection from: " + gpapUser.name + tagPart); //$NON-NLS-1$
         return deviceId;
     }
 
     public static void sendJsonString( HttpServletResponse response, String jsonToSend ) throws IOException {
-        response.setHeader("Content-Type", "application/json");
+        response.setHeader("Content-Type", "application/json"); //$NON-NLS-1$ //$NON-NLS-2$
         PrintWriter writer = response.getWriter();
         writer.print(jsonToSend);
         writer.flush();
@@ -88,36 +92,36 @@ public class ServletUtils {
         if (length <= Integer.MAX_VALUE) {
             response.setContentLength((int) length);
         } else {
-            response.addHeader("Content-Length", Long.toString(length));
+            response.addHeader("Content-Length", Long.toString(length)); //$NON-NLS-1$
         }
     }
 
     public static void debug( String msg ) {
         if (DEBUG) {
-            KukuratusLogger.logDebug("ServletUtils", msg);
+            KukuratusLogger.logDebug("ServletUtils", msg); //$NON-NLS-1$
         }
     }
     public static void logAccess( String msg ) {
-        KukuratusLogger.logAccess("ServletUtils", msg);
+        KukuratusLogger.logAccess("ServletUtils", msg); //$NON-NLS-1$
     }
 
     public static void printHeaders( HttpServletRequest request, HttpServletResponse response ) {
         if (DEBUG) {
             Enumeration<String> headerNames = request.getHeaderNames();
-            KukuratusLogger.logDebug("ServletUtils", "REQUEST HEADERS");
+            KukuratusLogger.logDebug("ServletUtils", "REQUEST HEADERS"); //$NON-NLS-1$ //$NON-NLS-2$
             while( headerNames.hasMoreElements() ) {
                 String headerName = headerNames.nextElement();
                 if (headerName != null) {
                     String header = request.getHeader(headerName);
-                    KukuratusLogger.logDebug("ServletUtils", "\t#--> " + headerName + "=" + header);
+                    KukuratusLogger.logDebug("ServletUtils", "\t#--> " + headerName + "=" + header); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 }
             }
             Collection<String> headerNames1 = response.getHeaderNames();
-            KukuratusLogger.logDebug("ServletUtils", "RESPONSE HEADERS");
+            KukuratusLogger.logDebug("ServletUtils", "RESPONSE HEADERS"); //$NON-NLS-1$ //$NON-NLS-2$
             for( String headerName : headerNames1 ) {
                 if (headerName != null) {
                     String header = request.getHeader(headerName);
-                    KukuratusLogger.logDebug("ServletUtils", "\t*--> " + headerName + "=" + header);
+                    KukuratusLogger.logDebug("ServletUtils", "\t*--> " + headerName + "=" + header); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 }
             }
         }

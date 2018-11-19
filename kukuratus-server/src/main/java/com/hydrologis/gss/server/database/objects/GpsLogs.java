@@ -39,13 +39,13 @@ import org.locationtech.jts.geom.LineString;
 @DatabaseTable(tableName = "gpslogs")
 public class GpsLogs implements ISpatialTable, KmlRepresenter {
     private static final long serialVersionUID = 1L;
-    public static final String ID_FIELD_NAME = "id";
-    public static final String NAME_FIELD_NAME = "name";
-    public static final String STARTTS_FIELD_NAME = "startts";
-    public static final String ENDTS_FIELD_NAME = "endts";
-    public static final String GPAPUSER_FIELD_NAME = "gpapusersid";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
+    public static final String STARTTS_FIELD_NAME = "startts"; //$NON-NLS-1$
+    public static final String ENDTS_FIELD_NAME = "endts"; //$NON-NLS-1$
+    public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
 
-    public static final String gpslogFKColumnDefinition = "bigint references gpslogs(id) on delete cascade";
+    public static final String gpslogFKColumnDefinition = "bigint references gpslogs(id) on delete cascade"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
@@ -82,17 +82,17 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
     }
 
     public String toKmlString() {
-        String hexColor = "#FF0000";
+        String hexColor = "#FF0000"; //$NON-NLS-1$
         float width = 3;
         try {
-            Dao<GpsLogsProperties, ? > logPropDAO = SpiHandler.INSTANCE.getDbProviderSingleton().getDatabaseHandler().get()
+            Dao<GpsLogsProperties, ? > logPropDAO = SpiHandler.getDbProviderSingleton().getDatabaseHandler().get()
                     .getDao(GpsLogsProperties.class);
 
             GpsLogsProperties props = logPropDAO.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, this)
                     .queryForFirst();
             hexColor = props.color;
-            if (!hexColor.startsWith("#")) {
-                hexColor = "#FF0000";
+            if (!hexColor.startsWith("#")) { //$NON-NLS-1$
+                hexColor = "#FF0000"; //$NON-NLS-1$
             }
             width = props.width;
         } catch (Exception e) {
@@ -101,29 +101,29 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
 
         String name = makeXmlSafe(this.name);
         StringBuilder sB = new StringBuilder();
-        sB.append("<Placemark>\n");
-        sB.append("<name>" + name + "</name>\n");
-        sB.append("<visibility>1</visibility>\n");
-        sB.append("<LineString>\n");
-        sB.append("<tessellate>1</tessellate>\n");
-        sB.append("<coordinates>\n");
+        sB.append("<Placemark>\n"); //$NON-NLS-1$
+        sB.append("<name>" + name + "</name>\n"); //$NON-NLS-1$ //$NON-NLS-2$
+        sB.append("<visibility>1</visibility>\n"); //$NON-NLS-1$
+        sB.append("<LineString>\n"); //$NON-NLS-1$
+        sB.append("<tessellate>1</tessellate>\n"); //$NON-NLS-1$
+        sB.append("<coordinates>\n"); //$NON-NLS-1$
         Coordinate[] coords = ((LineString) the_geom).getCoordinates();
         for( int i = 0; i < coords.length; i++ ) {
             double lon = coords[i].x;
             double lat = coords[i].y;
-            sB.append(lon).append(",").append(lat).append(",1 \n");
+            sB.append(lon).append(",").append(lat).append(",1 \n"); //$NON-NLS-1$ //$NON-NLS-2$
         }
-        sB.append("</coordinates>\n");
-        sB.append("</LineString>\n");
-        sB.append("<Style>\n");
-        sB.append("<LineStyle>\n");
+        sB.append("</coordinates>\n"); //$NON-NLS-1$
+        sB.append("</LineString>\n"); //$NON-NLS-1$
+        sB.append("<Style>\n"); //$NON-NLS-1$
+        sB.append("<LineStyle>\n"); //$NON-NLS-1$
 
-        String aabbggrr = "#FF" + new StringBuilder(hexColor.substring(1)).reverse().toString();
-        sB.append("<color>").append(aabbggrr).append("</color>\n");
-        sB.append("<width>").append(width).append("</width>\n");
-        sB.append("</LineStyle>\n");
-        sB.append("</Style>\n");
-        sB.append("</Placemark>\n");
+        String aabbggrr = "#FF" + new StringBuilder(hexColor.substring(1)).reverse().toString(); //$NON-NLS-1$
+        sB.append("<color>").append(aabbggrr).append("</color>\n"); //$NON-NLS-1$ //$NON-NLS-2$
+        sB.append("<width>").append(width).append("</width>\n"); //$NON-NLS-1$ //$NON-NLS-2$
+        sB.append("</LineStyle>\n"); //$NON-NLS-1$
+        sB.append("</Style>\n"); //$NON-NLS-1$
+        sB.append("</Placemark>\n"); //$NON-NLS-1$
 
         return sB.toString();
     }

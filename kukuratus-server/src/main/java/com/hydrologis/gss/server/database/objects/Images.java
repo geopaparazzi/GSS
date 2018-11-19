@@ -30,14 +30,14 @@ import org.locationtech.jts.geom.Point;
  */
 @DatabaseTable(tableName = "images")
 public class Images implements ISpatialTable {
-    public static final String ID_FIELD_NAME = "id";
-    public static final String ALTIM_FIELD_NAME = "altim";
-    public static final String TIMESTAMP_FIELD_NAME = "ts";
-    public static final String AZIMUTH_FIELD_NAME = "azimuth";
-    public static final String TEXT_FIELD_NAME = "text";
-    public static final String NOTE_FIELD_NAME = "notesid";
-    public static final String IMAGEDATA_FIELD_NAME = "imagedataid";
-    public static final String GPAPUSER_FIELD_NAME = "gpapusersid";
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String ALTIM_FIELD_NAME = "altim"; //$NON-NLS-1$
+    public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
+    public static final String AZIMUTH_FIELD_NAME = "azimuth"; //$NON-NLS-1$
+    public static final String TEXT_FIELD_NAME = "text"; //$NON-NLS-1$
+    public static final String NOTE_FIELD_NAME = "notesid"; //$NON-NLS-1$
+    public static final String IMAGEDATA_FIELD_NAME = "imagedataid"; //$NON-NLS-1$
+    public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;

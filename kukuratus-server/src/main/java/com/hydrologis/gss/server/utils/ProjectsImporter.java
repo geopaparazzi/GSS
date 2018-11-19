@@ -103,18 +103,18 @@ public class ProjectsImporter {
     public ProjectsImporter() throws Exception {
 
         String[] dbsToImport = {
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170216_075147_compleanno_hydrologis.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170205_130453_valencia_geopap.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20180317_091712_bonn_codesprint.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170120_123422_skiri.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20161221_092537_torino_arcobaleno.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160816_172638_bonn_foss4g.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160210_092652_hydrologis_11.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20121127_075920_sopraluogo_helsinki.gpap",
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap"};
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170216_075147_compleanno_hydrologis.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170205_130453_valencia_geopap.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20180317_091712_bonn_codesprint.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170120_123422_skiri.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20161221_092537_torino_arcobaleno.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160816_172638_bonn_foss4g.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160210_092652_hydrologis_11.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20121127_075920_sopraluogo_helsinki.gpap", //$NON-NLS-1$
+                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap"}; //$NON-NLS-1$
 
-        String dbPath = "/media/hydrologis/Samsung_T3/GSS/DATA/gss_database.mv.db";
+        String dbPath = "/media/hydrologis/Samsung_T3/GSS/DATA/gss_database.mv.db"; //$NON-NLS-1$
         File dbFile = new File(dbPath);
         dbFile.delete();
 
@@ -140,7 +140,7 @@ public class ProjectsImporter {
             for( String tmpDbPath : dbsToImport ) {
                 String dummyDeviceId = FileUtilities.getNameWithoutExtention(new File(tmpDbPath));
 
-                System.out.println("Importing db: " + dummyDeviceId);
+                System.out.println("Importing db: " + dummyDeviceId); //$NON-NLS-1$
 
                 GpapUsers user = new GpapUsers(dummyDeviceId, dummyDeviceId, null, null);
                 gpapUsersDao.create(user);
@@ -171,7 +171,7 @@ public class ProjectsImporter {
     private void createTables( DatabaseHandler dbHandler ) throws Exception {
         ASpatialDb db = dbHandler.getDb();
         for( Class< ? > tClass : tableClasses ) {
-            System.out.println("Create if not exists: " + DatabaseHandler.getTableName(tClass));
+            System.out.println("Create if not exists: " + DatabaseHandler.getTableName(tClass)); //$NON-NLS-1$
             dbHandler.createTableIfNotExists(tClass);
             if (ISpatialTable.class.isAssignableFrom(tClass)) {
                 if (db instanceof H2GisDb) {
@@ -186,13 +186,13 @@ public class ProjectsImporter {
                     db.execOnConnection(conn -> {
                         // SELECT RecoverGeometryColumn('pipespieces', 'the_geom', 4326,
                         // 'LINESTRING', 'XY')
-                        String sql = "SELECT RecoverGeometryColumn('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "', "
-                                + DatabaseHandler.TABLES_EPSG + ", '" + geometryType + "', 'XY')";
+                        String sql = "SELECT RecoverGeometryColumn('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "', " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                                + DatabaseHandler.TABLES_EPSG + ", '" + geometryType + "', 'XY')"; //$NON-NLS-1$ //$NON-NLS-2$
                         try (IHMStatement stmt = conn.createStatement()) {
                             stmt.execute(sql);
                         }
                         // SELECT CreateSpatialIndex('pipespieces','the_geom');
-                        sql = "SELECT CreateSpatialIndex('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "')";
+                        sql = "SELECT CreateSpatialIndex('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "')"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                         try (IHMStatement stmt = conn.createStatement()) {
                             stmt.execute(sql);
                         }
@@ -225,10 +225,10 @@ public class ProjectsImporter {
             }
             logsDataDao.create(dataList);
 
-            String sql = "select " + //
-                    logPropColorFN + "," + //
-                    logPropWidthFN + " from " + //
-                    TABLE_GPSLOG_PROPERTIES + " where " + logPropIdFN + "=" + log.id;
+            String sql = "select " + // //$NON-NLS-1$
+                    logPropColorFN + "," + // //$NON-NLS-1$
+                    logPropWidthFN + " from " + // //$NON-NLS-1$
+                    TABLE_GPSLOG_PROPERTIES + " where " + logPropIdFN + "=" + log.id; //$NON-NLS-1$ //$NON-NLS-2$
             try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {
                 if (rs.next()) {
                     String color = rs.getString(1);
@@ -244,16 +244,16 @@ public class ProjectsImporter {
 
     private void importNotes( IHMConnection gpapConnection, Dao<Notes, ? > notesDao, Dao<Images, ? > imagesDao,
             Dao<ImageData, ? > imageDataDao, GpapUsers user ) throws Exception {
-        String sql = "select " + //
-                idFN + "," + //
-                latFN + "," + //
-                lonFN + "," + //
-                altimFN + "," + //
-                tsFN + "," + //
-                textFN + "," + //
-                descFN + "," + //
-                styleFN + "," + //
-                formFN + " from " + //
+        String sql = "select " + // //$NON-NLS-1$
+                idFN + "," + // //$NON-NLS-1$
+                latFN + "," + // //$NON-NLS-1$
+                lonFN + "," + // //$NON-NLS-1$
+                altimFN + "," + // //$NON-NLS-1$
+                tsFN + "," + // //$NON-NLS-1$
+                textFN + "," + // //$NON-NLS-1$
+                descFN + "," + // //$NON-NLS-1$
+                styleFN + "," + // //$NON-NLS-1$
+                formFN + " from " + // //$NON-NLS-1$
                 TABLE_NOTES;
 
         try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {
@@ -267,7 +267,7 @@ public class ProjectsImporter {
                 String text = rs.getString(textFN);
                 String descr = rs.getString(descFN);
                 if (descr == null)
-                    descr = "";
+                    descr = ""; //$NON-NLS-1$
                 String style = rs.getString(styleFN);
                 if (lat == 0 || lon == 0) {
                     continue;
@@ -293,22 +293,22 @@ public class ProjectsImporter {
     private void insertImage( GpapUsers user, IHMConnection gpapConnection, Long gpapNoteId, Long newNoteId,
             Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao ) throws Exception {
 
-        String sql = "select " + //
-                imgLonFN + "," + //
-                imgLatFN + "," + //
-                imgAltimFN + "," + //
-                imgTsFN + "," + //
-                imgAzimFN + "," + //
-                imgTextFN + "," + //
-                imgdImadedataDataFN + "," + //
+        String sql = "select " + // //$NON-NLS-1$
+                imgLonFN + "," + // //$NON-NLS-1$
+                imgLatFN + "," + // //$NON-NLS-1$
+                imgAltimFN + "," + // //$NON-NLS-1$
+                imgTsFN + "," + // //$NON-NLS-1$
+                imgAzimFN + "," + // //$NON-NLS-1$
+                imgTextFN + "," + // //$NON-NLS-1$
+                imgdImadedataDataFN + "," + // //$NON-NLS-1$
                 imgdImadedataThumbFN + //
-                " from " + TABLE_IMAGES + " i, " + TABLE_IMAGE_DATA + " id  where " + //
-                "i." + imgImagedataidFN + "=" + "id." + imgdImadedataidFN + " and "; //
+                " from " + TABLE_IMAGES + " i, " + TABLE_IMAGE_DATA + " id  where " + // //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                "i." + imgImagedataidFN + "=" + "id." + imgdImadedataidFN + " and "; // //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 
         if (gpapNoteId != null) {
-            sql += imgNoteidFN + "=" + gpapNoteId;
+            sql += imgNoteidFN + "=" + gpapNoteId; //$NON-NLS-1$
         } else {
-            sql += " (" + imgNoteidFN + " is null or " + imgNoteidFN + "=-1)";
+            sql += " (" + imgNoteidFN + " is null or " + imgNoteidFN + "=-1)"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         }
 
         try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {

@@ -36,6 +36,7 @@ import javax.servlet.http.HttpSession;
 import org.hortonmachine.dbs.log.Logger;
 
 import com.hydrologis.gss.server.GssWorkspace;
+import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 
@@ -51,14 +52,14 @@ public class DataDownloadServlet extends HttpServlet {
         session.setMaxInactiveInterval(60 * 10);
 
         Logger logDb = KukuratusWorkspace.getInstance().getLogDb();
-        String deviceId = "unknown";
+        String deviceId = "unknown"; //$NON-NLS-1$
         try {
             ServletUtils.printHeaders(request, response);
             
-            String fileName = request.getParameter("name");
-            String tag = "data download";
+            String fileName = request.getParameter("name"); //$NON-NLS-1$
+            String tag = "data download"; //$NON-NLS-1$
             if (fileName == null) {
-                tag = "data list download";
+                tag = "data list download"; //$NON-NLS-1$
             }
             if ((deviceId = ServletUtils.canProceed(request, response, tag)) == null) {
                 return;
@@ -69,8 +70,8 @@ public class DataDownloadServlet extends HttpServlet {
                 String mapsListJson = GssWorkspace.INSTANCE.getMapsListJson();
                 ServletUtils.sendJsonString(response, mapsListJson);
             } else {
-                response.setContentType("application/octet-stream");
-                response.setHeader("Content-disposition", "attachment; filename=" + fileName);
+                response.setContentType("application/octet-stream"); //$NON-NLS-1$
+                response.setHeader("Content-disposition", "attachment; filename=" + fileName); //$NON-NLS-1$ //$NON-NLS-2$
 
                 Optional<File> mapFileOpt = GssWorkspace.INSTANCE.getMapFile(fileName);
                 if (mapFileOpt.isPresent()) {
@@ -90,12 +91,12 @@ public class DataDownloadServlet extends HttpServlet {
 
         } catch (Exception ex) {
             try {
-                logDb.insertError(TAG, "Data download connection from '" + deviceId + "' errored with:\n",
+                logDb.insertError(TAG, "Data download connection from '" + deviceId + "' errored with:\n", //$NON-NLS-1$ //$NON-NLS-2$
                         ex);
                 /*
                  * if there are problems, return some information.
                  */
-                String msg = "An error occurred while downloading data from the server.";
+                String msg = Messages.getString("DataDownloadServlet.error_downloading");  //$NON-NLS-1$
                 KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, msg, ex);
                 errStatus.sendTo(response);
             } catch (Exception e) {
