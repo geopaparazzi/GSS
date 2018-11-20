@@ -26,9 +26,11 @@ import java.util.Enumeration;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.hydrologis.gss.server.GssWebConfig;
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.utils.Messages;
 import com.hydrologis.kukuratus.libs.database.DatabaseHandler;
+import com.hydrologis.kukuratus.libs.registry.RegistryHandler;
 import com.hydrologis.kukuratus.libs.servlets.KukuratusStatus;
 import com.hydrologis.kukuratus.libs.spi.SpiHandler;
 import com.hydrologis.kukuratus.libs.utils.KukuratusLogger;
@@ -68,13 +70,24 @@ public class ServletUtils {
         Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
         GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
         if (gpapUser == null) {
-            logAccess(Messages.getString("ServletUtils.permission_denied") + ipAddress //$NON-NLS-1$
-                    + Messages.getString("ServletUtils.for_device") + deviceId + tagPart //$NON-NLS-1$
-                    + Messages.getString("ServletUtils.no_permission_error")); //$NON-NLS-1$
-            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
-                    new RuntimeException());
-            errStatus.sendTo(response);
-            return null;
+            String limitStr = RegistryHandler.INSTANCE.getGlobalSettingByKey(GssWebConfig.KEY_AUTOMATIC_REGISTRATION, "0"); //$NON-NLS-1$
+            long limit = Long.parseLong(limitStr);
+            long now = System.currentTimeMillis();
+            double deltaMinutes = (now - limit) / 60.0 / 1000.0;
+            if (deltaMinutes < GssWebConfig.timerMinutes) {
+                // register the device automatically
+                gpapUser = new GpapUsers(deviceId, deviceId, "", ""); //$NON-NLS-1$//$NON-NLS-2$
+                usersDao.create(gpapUser);
+            } else {
+
+                logAccess(Messages.getString("ServletUtils.permission_denied") + ipAddress //$NON-NLS-1$
+                        + Messages.getString("ServletUtils.for_device") + deviceId + tagPart //$NON-NLS-1$
+                        + Messages.getString("ServletUtils.no_permission_error")); //$NON-NLS-1$
+                KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
+                        new RuntimeException());
+                errStatus.sendTo(response);
+                return null;
+            }
         }
 
         debug("Connection from: " + gpapUser.name + tagPart); //$NON-NLS-1$

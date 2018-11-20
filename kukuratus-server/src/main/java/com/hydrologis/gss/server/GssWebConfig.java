@@ -35,6 +35,8 @@ import com.vaadin.server.VaadinServlet;
 
 @SuppressWarnings("serial")
 public class GssWebConfig {
+    public static final String KEY_AUTOMATIC_REGISTRATION = "GSS_KEY_AUTOMATIC_REGISTRATION"; //$NON-NLS-1$
+    public static final int timerMinutes = 5;
 
     @WebServlet(value = "/*", asyncSupported = true)
     @VaadinServletConfiguration(ui = GssApplication.class, productionMode = true)
