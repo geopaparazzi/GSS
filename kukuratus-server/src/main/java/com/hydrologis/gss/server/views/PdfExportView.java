@@ -247,13 +247,13 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
         title.setAlignment(Element.ALIGN_CENTER);
         document.add(title);
         addEmptyLine(document);
-        Paragraph author = new Paragraph(
-                new Phrase(10f, Messages.getString("PdfExportView.author") + user.getName(), FontFactory.getFont(FontFactory.COURIER, 10))); //$NON-NLS-1$
+        Paragraph author = new Paragraph(new Phrase(10f, Messages.getString("PdfExportView.author") + user.getName(), //$NON-NLS-1$
+                FontFactory.getFont(FontFactory.COURIER, 10)));
         author.setAlignment(Element.ALIGN_CENTER);
         document.add(author);
-        Paragraph dateTime = new Paragraph(
-                new Phrase(10f, Messages.getString("PdfExportView.date") + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMM), //$NON-NLS-1$
-                        FontFactory.getFont(FontFactory.COURIER, 10)));
+        Paragraph dateTime = new Paragraph(new Phrase(10f,
+                Messages.getString("PdfExportView.date") + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMM), //$NON-NLS-1$
+                FontFactory.getFont(FontFactory.COURIER, 10)));
         dateTime.setAlignment(Element.ALIGN_CENTER);
         document.add(dateTime);
         document.newPage();
@@ -328,8 +328,42 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
                         }
                         String[] imageIdsSplit = value.split(Utilities.IMAGES_SEPARATOR);
                         for( String imageId : imageIdsSplit ) {
-                            if (imageId != null && imageId.trim().length() > 0) {
+                            try {
+                                if (imageId != null && imageId.trim().length() > 0) {
 
+                                    Images images = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
+                                    ImageData imageData = imageDataDAO.queryForSameId(images.imageData);
+
+                                    String imgName = images.text;
+                                    byte[] imageDataArray = imageData.data;
+                                    Image itextImage = Image.getInstance(imageDataArray);
+                                    Paragraph caption = new Paragraph(imgName);
+                                    caption.setAlignment(Element.ALIGN_CENTER);
+
+                                    PdfPCell keyCell = new PdfPCell(new Phrase(label));
+                                    keyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                                    keyCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                                    keyCell.setPadding(10);
+                                    currentTable.addCell(keyCell);
+                                    PdfPCell valueCell = new PdfPCell();
+                                    valueCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                                    valueCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                                    valueCell.setPadding(10);
+                                    valueCell.addElement(itextImage);
+                                    valueCell.addElement(caption);
+                                    currentTable.addCell(valueCell);
+                                }
+                            } catch (Exception e) {
+                                KukuratusLogger.logError(this, e);
+                            }
+                        }
+                    } else if (type.equals(Utilities.TYPE_MAP)) {
+                        if (value.trim().length() == 0) {
+                            continue;
+                        }
+                        try {
+                            String imageId = value.trim();
+                            if (imageId != null && imageId.trim().length() > 0) {
                                 Images images = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
                                 ImageData imageData = imageDataDAO.queryForSameId(images.imageData);
 
@@ -352,34 +386,8 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
                                 valueCell.addElement(caption);
                                 currentTable.addCell(valueCell);
                             }
-                        }
-                    } else if (type.equals(Utilities.TYPE_MAP)) {
-                        if (value.trim().length() == 0) {
-                            continue;
-                        }
-                        String imageId = value.trim();
-                        if (imageId != null && imageId.trim().length() > 0) {
-                            Images images = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
-                            ImageData imageData = imageDataDAO.queryForSameId(images.imageData);
-
-                            String imgName = images.text;
-                            byte[] imageDataArray = imageData.data;
-                            Image itextImage = Image.getInstance(imageDataArray);
-                            Paragraph caption = new Paragraph(imgName);
-                            caption.setAlignment(Element.ALIGN_CENTER);
-
-                            PdfPCell keyCell = new PdfPCell(new Phrase(label));
-                            keyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                            keyCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-                            keyCell.setPadding(10);
-                            currentTable.addCell(keyCell);
-                            PdfPCell valueCell = new PdfPCell();
-                            valueCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                            valueCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-                            valueCell.setPadding(10);
-                            valueCell.addElement(itextImage);
-                            valueCell.addElement(caption);
-                            currentTable.addCell(valueCell);
+                        } catch (Exception e) {
+                            KukuratusLogger.logError(this, e);
                         }
                     } else if (type.equals(Utilities.TYPE_SKETCH)) {
                         if (value.trim().length() == 0) {
@@ -387,29 +395,33 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
                         }
                         String[] imageIdsSplit = value.split(Utilities.IMAGES_SEPARATOR);
                         for( String imageId : imageIdsSplit ) {
-                            if (imageId != null && imageId.trim().length() > 0) {
-                                Images images = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
-                                ImageData imageData = imageDataDAO.queryForSameId(images.imageData);
+                            try {
+                                if (imageId != null && imageId.trim().length() > 0) {
+                                    Images images = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
+                                    ImageData imageData = imageDataDAO.queryForSameId(images.imageData);
 
-                                String imgName = images.text;
-                                byte[] imageDataArray = imageData.data;
-                                Image itextImage = Image.getInstance(imageDataArray);
+                                    String imgName = images.text;
+                                    byte[] imageDataArray = imageData.data;
+                                    Image itextImage = Image.getInstance(imageDataArray);
 
-                                Paragraph caption = new Paragraph(imgName);
-                                caption.setAlignment(Element.ALIGN_CENTER);
+                                    Paragraph caption = new Paragraph(imgName);
+                                    caption.setAlignment(Element.ALIGN_CENTER);
 
-                                PdfPCell keyCell = new PdfPCell(new Phrase(label));
-                                keyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                                keyCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-                                keyCell.setPadding(10);
-                                currentTable.addCell(keyCell);
-                                PdfPCell valueCell = new PdfPCell();
-                                valueCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                                valueCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-                                valueCell.setPadding(10);
-                                valueCell.addElement(itextImage);
-                                valueCell.addElement(caption);
-                                currentTable.addCell(valueCell);
+                                    PdfPCell keyCell = new PdfPCell(new Phrase(label));
+                                    keyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                                    keyCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                                    keyCell.setPadding(10);
+                                    currentTable.addCell(keyCell);
+                                    PdfPCell valueCell = new PdfPCell();
+                                    valueCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                                    valueCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+                                    valueCell.setPadding(10);
+                                    valueCell.addElement(itextImage);
+                                    valueCell.addElement(caption);
+                                    currentTable.addCell(valueCell);
+                                }
+                            } catch (Exception e) {
+                                KukuratusLogger.logError(this, e);
                             }
                         }
                     } else {
@@ -477,7 +489,7 @@ public class PdfExportView extends VerticalLayout implements View, ExportPage {
     public String getPagePath() {
         return "pdfexport"; //$NON-NLS-1$
     }
-    
+
     @Override
     public int getOrder() {
         return 1;
