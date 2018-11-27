@@ -30,6 +30,7 @@
 
 		<kukuratus.libs.version>0.1.6</kukuratus.libs.version>
 
+		<vleaflet.version>2.0.9</vleaflet.version>
 		<jetty.plugin.version>9.4.12.v20180830</jetty.plugin.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,6 +46,11 @@
 			<groupId>com.hydrologis.kukuratus</groupId>
 			<artifactId>kukuratus-libs</artifactId>
 			<version>${kukuratus.libs.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.vaadin.addon</groupId>
+			<artifactId>v-leaflet</artifactId>
+			<version>${vleaflet.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.byteowls</groupId>
