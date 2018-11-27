@@ -28,8 +28,8 @@
 		<vaadin.version>8.6.0</vaadin.version>
 		<vaadin.plugin.version>8.6.0</vaadin.plugin.version>
 
-		<kukuratus.libs.version>0.1.4</kukuratus.libs.version>
-		<vleaflet.version>2.0.9</vleaflet.version>
+		<kukuratus.libs.version>0.1.6</kukuratus.libs.version>
+
 		<jetty.plugin.version>9.4.12.v20180830</jetty.plugin.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -39,6 +39,32 @@
 			"cdn" -->
 		<vaadin.widgetset.mode>local</vaadin.widgetset.mode>
 	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.hydrologis.kukuratus</groupId>
+			<artifactId>kukuratus-libs</artifactId>
+			<version>${kukuratus.libs.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.byteowls</groupId>
+			<artifactId>vaadin-chartjs</artifactId>
+			<version>1.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.lowagie</groupId>
+			<artifactId>itext</artifactId>
+			<version>2.1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.0.1</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+
 
 	<repositories>
 		<repository>
@@ -58,51 +84,6 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-	<dependencies>
-
-		<dependency>
-			<groupId>com.byteowls</groupId>
-			<artifactId>vaadin-chartjs</artifactId>
-			<version>1.3.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.lowagie</groupId>
-			<artifactId>itext</artifactId>
-			<version>2.1.7</version>
-		</dependency>
-		<dependency>
-			<groupId>com.hydrologis.kukuratus</groupId>
-			<artifactId>kukuratus-libs</artifactId>
-			<version>${kukuratus.libs.version}</version>
-		</dependency>
-
-
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<version>3.0.1</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-server</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-push</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-client-compiled</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-themes</artifactId>
-		</dependency>
-
-	</dependencies>
 
 	<build>
 		<plugins>
@@ -172,48 +153,6 @@
 		</plugins>
 	</build>
 
-	<profiles>
-		<profile>
-			<!-- Vaadin pre-release repositories -->
-			<id>vaadin-prerelease</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-
-			<repositories>
-				<repository>
-					<id>vaadin-prereleases</id>
-					<url>http://maven.vaadin.com/vaadin-prereleases</url>
-				</repository>
-				<repository>
-					<id>vaadin-snapshots</id>
-					<url>https://oss.sonatype.org/content/repositories/vaadin-snapshots/</url>
-					<releases>
-						<enabled>false</enabled>
-					</releases>
-					<snapshots>
-						<enabled>true</enabled>
-					</snapshots>
-				</repository>
-			</repositories>
-			<pluginRepositories>
-				<pluginRepository>
-					<id>vaadin-prereleases</id>
-					<url>http://maven.vaadin.com/vaadin-prereleases</url>
-				</pluginRepository>
-				<pluginRepository>
-					<id>vaadin-snapshots</id>
-					<url>https://oss.sonatype.org/content/repositories/vaadin-snapshots/</url>
-					<releases>
-						<enabled>false</enabled>
-					</releases>
-					<snapshots>
-						<enabled>true</enabled>
-					</snapshots>
-				</pluginRepository>
-			</pluginRepositories>
-		</profile>
-	</profiles>
 
 </project>
 
