@@ -87,7 +87,7 @@ public abstract class KukuratusConnectionRequest extends ConnectionRequest {
     
     @Override
     protected void readHeaders(Object connection) throws IOException {
-        if (HyLog.DO_DEBUG) {
+        if (HyLog.DO_TEST) {
             String[] headerNames = getHeaderFieldNames(connection);
             for (String headerName : headerNames) {
                 if (headerName == null) {

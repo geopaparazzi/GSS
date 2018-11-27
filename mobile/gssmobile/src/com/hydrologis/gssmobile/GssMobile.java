@@ -81,7 +81,7 @@ public class GssMobile {
                 HyLog.e(error);
             }
             Form currentForm = CN.getCurrentForm();
-            
+
             Dialog.show("Connection Error", "There was a networking error in the connection to " + err.getConnectionRequest().getUrl(), "OK", null);
         });
     }
@@ -166,6 +166,9 @@ public class GssMobile {
 
         try {
             String sdcard = FileUtilities.INSTANCE.getSdcard();
+            if (sdcard.startsWith("file://")) {
+                sdcard = sdcard.substring(7);
+            }
             ToastBar.showInfoMessage("The disk space used is: " + sdcard);
         } catch (IOException ex) {
             HyDialogs.showErrorDialog("The application has not been able to define the right disk space to use. The application will be malfunctioning. Please send a debug log to the developers to help them to solve the issue.");

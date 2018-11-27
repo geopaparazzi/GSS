@@ -89,6 +89,9 @@ public enum FileUtilities {
             HyLog.d("Using root: " + path);
             sdcardPath = FILE_PREFIX + fsStorage.toNativePath(path);
             HyLog.d("As native path: " + sdcardPath);
+
+            final boolean customPathSupported = isCustomPathSupported();
+            HyLog.d("Is database custom path supported: " + customPathSupported);
         }
         return sdcardPath;
     }
@@ -126,7 +129,6 @@ public enum FileUtilities {
             HyLog.d("Found 0 files in parent: " + parent);
         }
         final boolean customPathSupported = isCustomPathSupported();
-        HyLog.d("customPathSupported: " + customPathSupported);
         if (customPathSupported && listFiles != null) {
             String[] newList = new String[listFiles.length];
             for (int i = 0; i < newList.length; i++) {
