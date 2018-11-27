@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Author: Antonello Andrea (http://www.hydrologis.com)
- *****************************************************************************
+ * ****************************************************************************
  */
 package com.hydrologis.cn1.libs;
 
@@ -39,6 +39,8 @@ public enum FileUtilities {
 
     final FileSystemStorage fsStorage;
 
+    private String sdcardPath = null;
+
     private FileUtilities() {
         fsStorage = FileSystemStorage.getInstance();
     }
@@ -59,13 +61,29 @@ public enum FileUtilities {
     }
 
     public String getSdcard() {
-        List<String> rootTypes = getRootTypes();
-        int indexOfSdcard = rootTypes.indexOf(SDCARD);
-        if (indexOfSdcard == -1) {
-            indexOfSdcard = 0;
+        if (sdcardPath == null) {
+            HyLog.d("Looking for sdcard to use");
+
+            List<String> rootTypes = getRootTypes();
+            HyLog.d("Root types found:");
+            for (String rootType : rootTypes) {
+                HyLog.d("->" + rootType);
+            }
+            int indexOfSdcard = rootTypes.indexOf(SDCARD);
+            if (indexOfSdcard == -1) {
+                indexOfSdcard = 0;
+            }
+            HyLog.d("Roots found:");
+            List<String> roots = getRoots();
+            for (String root : roots) {
+                HyLog.d("->" + root);
+            }
+            String path = roots.get(indexOfSdcard);
+            HyLog.d("Using root: " + path);
+            sdcardPath = FILE_PREFIX + fsStorage.toNativePath(path);
+            HyLog.d("As native path: " + sdcardPath);
         }
-        String path = getRoots().get(indexOfSdcard);
-        return FILE_PREFIX + fsStorage.toNativePath(path);
+        return sdcardPath;
     }
 
     public List<String> getRoots() {

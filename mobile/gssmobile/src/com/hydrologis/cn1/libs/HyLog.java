@@ -25,7 +25,7 @@ import com.codename1.io.Log;
  * @author hydrologis
  */
 public class HyLog {
-    public static final boolean DO_DEBUG = false; // disable in production
+    public static final boolean DO_DEBUG = true; // disable in production
 
 
     /**

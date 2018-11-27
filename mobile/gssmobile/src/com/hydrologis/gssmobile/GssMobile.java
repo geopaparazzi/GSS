@@ -76,6 +76,9 @@ public class GssMobile {
                 HyLog.p(error.getMessage());
                 HyLog.e(error);
             }
+            if (current != null) {
+                current.show();
+            }
             Dialog.show("Connection Error", "There was a networking error in the connection to " + err.getConnectionRequest().getUrl(), "OK", null);
         });
     }

@@ -134,13 +134,16 @@ public class DataSynchForm extends Form {
             ComponentGroup cg = new ComponentGroup();
             try {
                 String sdcard = FileUtilities.INSTANCE.getSdcard();
-                HyLog.p("sdcard: " + sdcard);
                 List<String> gpapFiles = FileUtilities.INSTANCE.findFilesByExtension(sdcard, ".gpap");
                 addGpapProjects(gpapFiles, cg);
             } catch (IOException ex) {
                 HyLog.e(ex);
             }
             projectForm.add(cg);
+            Toolbar ptb = projectForm.getToolbar();
+            ptb.setBackCommand("Back", (ev) -> {
+                DataSynchForm.this.showBack();
+            });
             projectForm.show();
 //
 //            }
@@ -207,8 +210,9 @@ public class DataSynchForm extends Form {
     }
 
     private void addGpapProjects(List<String> gpapFiles, ComponentGroup cg) {
+        HyLog.p("Projects found: ");
         for (String file : gpapFiles) {
-            HyLog.p("Found: " + file);
+            HyLog.p("-> " + file);
             File gpapFile = new File(file);
             final Button pButton = new Button(gpapFile.getName());
             pButton.setName(file);
