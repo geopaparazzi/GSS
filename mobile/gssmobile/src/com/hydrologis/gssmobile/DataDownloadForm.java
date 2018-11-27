@@ -202,7 +202,7 @@ public class DataDownloadForm extends Form {
 
             String serverUrl = Preferences.get(GssUtilities.SERVER_URL, "");
             if (serverUrl.trim().length() == 0) {
-                HyDialogs.showErrorDialog("No server url has been define. Please set the proper url from the side menu.");
+                HyDialogs.showErrorDialog("No server url has been defined. Please set the proper url from the side menu.");
                 return;
             }
             serverUrl = serverUrl + GssUtilities.DATA_DOWNLOAD_PATH + "?" + GssUtilities.DATA_DOWNLOAD_NAME + "=" + name;

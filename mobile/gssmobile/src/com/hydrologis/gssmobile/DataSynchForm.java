@@ -30,11 +30,13 @@ import com.codename1.io.Preferences;
 import com.codename1.io.Util;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
+import static com.codename1.ui.CN.addNetworkErrorListener;
 import static com.codename1.ui.CN.callSerially;
 import static com.codename1.ui.CN.getCurrentForm;
 import com.codename1.ui.Component;
 import com.codename1.ui.ComponentGroup;
 import com.codename1.ui.Container;
+import com.codename1.ui.Dialog;
 import com.codename1.ui.Display;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
@@ -99,7 +101,6 @@ public class DataSynchForm extends Form {
             previous.showBack();
         });
         setTitle("Synchronization");
-
         init();
     }
 
@@ -204,6 +205,7 @@ public class DataSynchForm extends Form {
             } else if (dbExists) {
                 refreshData(lastDbPath);
             }
+
         } catch (Exception ex) {
             HyLog.e(ex);
         }
@@ -252,20 +254,19 @@ public class DataSynchForm extends Form {
             loadedDbParentLabel.setVisible(true);
             loadedDbLabel.setText("Name: " + dbName);
 
-            ToastBar.showInfoMessage("Loading database: " + dbName);
+            Preferences.set(GssUtilities.LAST_DB_PATH, dbPath);
+            refreshContainers();
         } catch (Exception e) {
             HyLog.e(e);
             String errMsg = e.getMessage();
             if (errMsg.toLowerCase().contains("in read/write mode")) {
-                HyDialogs.showInfoDialog("An error occurred while opening: " + dbPath + " It is inside a supported folder?");
+                HyDialogs.showErrorDialog("An error occurred while opening: " + dbPath + " It is inside a supported folder?");
             } else {
                 HyDialogs.showErrorDialog("An error occurred while opening the selected database: " + errMsg);
             }
             return;
         }
 
-        Preferences.set(GssUtilities.LAST_DB_PATH, dbPath);
-        refreshContainers();
     }
 
     private void refreshContainers() {

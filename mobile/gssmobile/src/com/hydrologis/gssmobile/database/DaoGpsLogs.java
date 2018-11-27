@@ -22,7 +22,6 @@ import com.codename1.db.Cursor;
 import com.codename1.db.Database;
 import com.codename1.db.Row;
 import com.codename1.io.Util;
-import com.hydrologis.cn1.libs.HyLog;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,7 +91,6 @@ public class DaoGpsLogs {
 
                     Cursor cursorLogData = null;
                     try {
-                        HyLog.p(queryData);
                         cursorLogData = db.executeQuery(queryData);
                         while (cursorLogData.next()) {
                             Row dataRow = cursorLogData.getRow();

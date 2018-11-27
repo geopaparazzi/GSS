@@ -49,7 +49,7 @@ public enum FileUtilities {
         return Database.isCustomPathSupported();
     }
 
-    public String getSdcardFile(String file) {
+    public String getSdcardFile(String file) throws IOException {
         String sdcard = getSdcard();
         String sep = getFileSeparator(sdcard);
         String f = sdcard + sep + file;
@@ -60,7 +60,7 @@ public enum FileUtilities {
         }
     }
 
-    public String getSdcard() {
+    public String getSdcard() throws IOException {
         if (sdcardPath == null) {
             HyLog.d("Looking for sdcard to use");
 
@@ -78,6 +78,13 @@ public enum FileUtilities {
             for (String root : roots) {
                 HyLog.d("->" + root);
             }
+
+            int rootsSize = roots.size();
+            if (indexOfSdcard > rootsSize) {
+                HyLog.d("Unable to get sdcard. (" + indexOfSdcard + " vs. " + rootsSize + ")");
+                throw new IOException();
+            }
+
             String path = roots.get(indexOfSdcard);
             HyLog.d("Using root: " + path);
             sdcardPath = FILE_PREFIX + fsStorage.toNativePath(path);
@@ -115,7 +122,12 @@ public enum FileUtilities {
         String sep = getFileSeparator(parent);
 
         final String[] listFiles = fsStorage.listFiles(parent);
-        if (isCustomPathSupported() && listFiles != null) {
+        if (listFiles == null) {
+            HyLog.d("Found 0 files in parent: " + parent);
+        }
+        final boolean customPathSupported = isCustomPathSupported();
+        HyLog.d("customPathSupported: " + customPathSupported);
+        if (customPathSupported && listFiles != null) {
             String[] newList = new String[listFiles.length];
             for (int i = 0; i < newList.length; i++) {
                 String newFile = parent + sep + listFiles[i];
@@ -156,17 +168,19 @@ public enum FileUtilities {
             parent = getSdcard();
         }
         String[] listFiles = listFiles(parent);
-        for (String file : listFiles) {
-            if (new File(file).isDirectory()) {
-                String[] filesInFolders = listFiles(file);
-                for (String fileInFolder : filesInFolders) {
-                    if (!new File(fileInFolder).isDirectory() && fileInFolder.endsWith(ext)) {
-                        files.add(fileInFolder);
+        if (listFiles != null) {
+            for (String file : listFiles) {
+                if (new File(file).isDirectory()) {
+                    String[] filesInFolders = listFiles(file);
+                    for (String fileInFolder : filesInFolders) {
+                        if (!new File(fileInFolder).isDirectory() && fileInFolder.endsWith(ext)) {
+                            files.add(fileInFolder);
+                        }
                     }
-                }
-            } else {
-                if (file.endsWith(ext)) {
-                    files.add(file);
+                } else {
+                    if (file.endsWith(ext)) {
+                        files.add(file);
+                    }
                 }
             }
         }

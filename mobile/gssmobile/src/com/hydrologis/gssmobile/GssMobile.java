@@ -20,6 +20,7 @@
 package com.hydrologis.gssmobile;
 
 import com.codename1.components.InfiniteProgress;
+import com.codename1.components.ToastBar;
 import com.hydrologis.gssmobile.utils.GssUtilities;
 import static com.codename1.ui.CN.*;
 import com.codename1.ui.Dialog;
@@ -31,11 +32,13 @@ import com.codename1.ui.Toolbar;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.io.Preferences;
 import com.codename1.system.NativeLookup;
+import com.codename1.ui.CN;
 import com.codename1.ui.Container;
 import com.codename1.ui.Image;
 import com.codename1.ui.Label;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.tree.Tree;
+import com.hydrologis.cn1.libs.FileUtilities;
 import com.hydrologis.cn1.libs.HyDialogs;
 import com.hydrologis.cn1.libs.HyLog;
 import com.hydrologis.cn1.libs.HyNativeUtils;
@@ -43,6 +46,7 @@ import com.hydrologis.cn1.libs.HyUtilities;
 import com.hydrologis.cn1.libs.LogCommentDialog;
 import com.hydrologis.gssmobile.utils.ServerUrlDialog;
 import com.hydrologis.gssmobile.utils.UdidDialog;
+import java.io.IOException;
 
 public class GssMobile {
 
@@ -76,9 +80,8 @@ public class GssMobile {
                 HyLog.p(error.getMessage());
                 HyLog.e(error);
             }
-            if (current != null) {
-                current.show();
-            }
+            Form currentForm = CN.getCurrentForm();
+            
             Dialog.show("Connection Error", "There was a networking error in the connection to " + err.getConnectionRequest().getUrl(), "OK", null);
         });
     }
@@ -160,6 +163,13 @@ public class GssMobile {
         mainForm.add(BorderLayout.CENTER, logoContainer);
 
         mainForm.show();
+
+        try {
+            String sdcard = FileUtilities.INSTANCE.getSdcard();
+            ToastBar.showInfoMessage("The disk space used is: " + sdcard);
+        } catch (IOException ex) {
+            HyDialogs.showErrorDialog("The application has not been able to define the right disk space to use. The application will be malfunctioning. Please send a debug log to the developers to help them to solve the issue.");
+        }
     }
 
     public void stop() {
