@@ -1,7 +1,8 @@
 = The Geopaparazzi Survey Server
 HydroloGIS S.r.l.
-v2.12, 2018-10-15
-:gss_version: v2.12
+2018-12-05
+:gss_version: 2.15
+:tomcat_version: 9.0.13
 :doctype: article
 :description: A description
 :encoding: utf-8
@@ -46,39 +47,6 @@ mobile app is available under GPL v3.0.
 
 == The server
 
-=== Installation
-
-The GSS server available as docker image from the https://hub.docker.com/r/moovida/gss/[docker hub]. As such
-it works only on linux systems that have docker installed. Describing the installation of docker goes beyond this
-documentation. Many tutorials are available in the net to install docker.
-
-.GSS on hub.docker.com.
-image::images/01_hub.png[scaledwidth=70%, width=70%, align="center"]
-
-To install the docker image just open a terminal and type in from shell:
-
-[source,bash,subs="attributes+"]
-----
-docker pull moovida/gss:{gss_version}
-----
-
-This will download the server image and install it on your machine.
-
-The installation process should reveal something similar to the following (the version number will most probably be different):
-
-.GSS installation process.
-image::images/02_install.png[scaledwidth=70%, width=70%, align="center"]
-
-
-[NOTE]
-====
-And once finished, the image should be visible with the command:
-[source,bash]
-----
-docker images
-----
-====
-
 === Preparing the data folder
 
 To run GSS you can prepare the data folder for the server, which will contain 
@@ -103,7 +71,91 @@ Where **images.png** and **notes.png** are the images that will be used in the m
 geopaparazzi notes and media notes.
 
 
+=== Installation
+
+==== Installation with docker (linux)
+
+The GSS server available as docker image from the https://hub.docker.com/r/moovida/gss/[docker hub]. As such
+it works best on linux systems that have docker installed. 
+
+Installing docker is resumed in the following steps on ubuntu and similar systems:
+
+
+[source,bash]
+----
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get update
+sudo apt install docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+docker --version
+sudo usermod -a -G docker $USER
+----
+
+You can test the installation running the hello world application:
+
+[source,bash]
+----
+docker run hello-world
+----
+
+If it works you are ready to get the GSS from the docker hub.
+
+.GSS on hub.docker.com.
+image::images/01_hub.png[scaledwidth=70%, width=70%, align="center"]
+
+To install the docker image just open a terminal and type in from shell:
+
+[source,bash,subs="attributes+"]
+----
+docker pull moovida/gss:v{gss_version}
+----
+
+This will download the server image and install it on your machine.
+
+The installation process should reveal something similar to the following (the version number will most probably be different):
+
+.GSS installation process.
+image::images/02_install.png[scaledwidth=70%, width=70%, align="center"]
+
+
+[NOTE]
+====
+And once finished, the image should be visible with the command:
+[source,bash]
+----
+docker images
+----
+====
+
+==== Installation with Tomcat (windows)
+
+The docker installation takes a lot of space (around 1Gb at the time of writing). Moreover
+docker might be a bit tricky to get running properly on windows. Therefore we provide 
+an alternative installation the good old java way: through tomcat.
+
+The installation process in this case will be done on windows.
+
+To install tomcat on windows and tweak it to be used with GSS:
+
+* Download tomcat 9. At the time of writing the latest version is https://www-eu.apache.org/dist/tomcat/tomcat-9/v9.0.13/bin/apache-tomcat-9.0.13-windows-x64.zip[{tomcat_version}]. Unzio the archive to your disk.
+* enter the folder **apache-tomcat-{tomcat_version}/conf/** and add to the file **server.xml** the attribute ```URIEncoding="UTF-8”``` to the line that contains ```<Connector port="8080" protocol=…```
+* to have access to the admin gui, in the same conf folder add a user to `tomcat-users.xml`. For example: 
+
+    <role rolename="manager-gui"/>
+    <user username="tomcat" password="qweasdzxcpoilkjmnb123098" roles="manager-gui"/>
+
+* set the neccessary environmental variables in file `apache-tomcat-{tomcat_version}/bin/setenv.bat`.
+    
+    set JAVA_OPTS=-Xms1256m -Xmx4g -Dstage.globalfolder=/path_to/TESTGSS/
+
+* copy the file of the Geopaparazzi Survey Server (currently gss-{gss_version}.war) into the folder webapps and rename it as ROOT.war
+
+
 === Run the server
+
+==== Run the server with docker
 
 To run the GSS server, it is necessary to define a few things:
 
@@ -116,7 +168,7 @@ the command to run the application is:
 
 [source,bash,subs="attributes+"]
 ----
-docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -e JAVA_OPTS="-Xms1256m -Xmx4g -Dstage.globalfolder=/home/basefolder/" -p 8080:8080 moovida/gss:{gss_version}
+docker run -v /media/hydrologis/Samsung_T3/TESTGSS:/home/basefolder -e JAVA_OPTS="-Xms1256m -Xmx4g -Dstage.globalfolder=/home/basefolder/" -p 8080:8080 moovida/gss:v{gss_version}
 ----
 
 Open your favorite browser and enter the url:
