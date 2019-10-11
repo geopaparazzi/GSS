@@ -38,6 +38,10 @@ dependencies:
     git:
       url: https://github.com/johnpryan/flutter_map.git
 
+#  animated_floatactionbuttons: ^0.1.0
+  speed_dial: 0.0.1
+#    fab_circular_menu 0.1.1
+
 #  mapsforge_flutter:
 #    git:
 #      url: https://github.com/moovida/mapsforge_flutter.git

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:latlong/latlong.dart';
 
-const TITLE = 'The Lamp';
+const TITLE = 'Geopaparazzi Survey Server';
 const Color MAIN_COLOR = Colors.green;
 final Color MAIN_COLOR_BACKGROUND = Colors.green[200];
 const DEFAULT_PADDING = 15.0;
@@ -25,27 +28,41 @@ final DateFormat ISO8601_TS_TIME_FORMATTER = DateFormat("HH:mm:ss");
 /// An ISO8601 day formatter (yyyy-MM-dd).
 final DateFormat ISO8601_TS_DAY_FORMATTER = DateFormat("yyyy-MM-dd");
 
-class DataModel extends ChangeNotifier {
-  int _selectedSector = 1;
-  int _currentVisiblePage = 0;
+final DEFAULT_TILELAYER = TileLayerOptions(
+  tms: false,
+  urlTemplate: 'http://localhost:8080/tiles/mapsforge/{z}/{x}/{y}',
+  tileProvider: NonCachingNetworkTileProvider(),
+);
 
-  int get selectedSector => _selectedSector;
+class MapstateModel extends ChangeNotifier {
+  TileLayerOptions _backgroundLayer = DEFAULT_TILELAYER;
 
-  int get currentVisiblePage => _currentVisiblePage;
+  double _centerLon = 11.0;
+  double _centerLat = 46.0;
+  double _currentZoom = 13;
 
-  void setPageAndSector(int page, int sector) {
-    _selectedSector = sector;
-    _currentVisiblePage = page;
+  TileLayerOptions get backgroundLayer => _backgroundLayer;
+
+  set backgroundLayer(TileLayerOptions backgroundLayer) {
+    _backgroundLayer = backgroundLayer;
     notifyListeners();
   }
 
-  set selectedSector(int sector) {
-    _selectedSector = sector;
+  get centerLat => _centerLat;
+
+  get centerLon => _centerLon;
+
+  get currentZoom => _currentZoom;
+
+  void setMapPosition(double lon, double lat, double zoom) {
+    _centerLat = lat;
+    _centerLon = lon;
+    _currentZoom = zoom;
     notifyListeners();
   }
 
-  set currentVisiblePage(int page) {
-    _currentVisiblePage = page;
+  void reset() {
+    _backgroundLayer = DEFAULT_TILELAYER;
     notifyListeners();
   }
 }
