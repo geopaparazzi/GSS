@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:latlong/latlong.dart';
 import 'package:provider/provider.dart';
 import 'com/hydrologis/gss/variables.dart';
 import 'com/hydrologis/gss/layers.dart';
 import 'com/hydrologis/gss/utils.dart';
-//import 'package:animated_floatactionbuttons/animated_floatactionbuttons.dart';
+import 'package:fab_circular_menu/fab_circular_menu.dart';
+import 'package:community_material_icon/community_material_icon.dart';
 
 void main() {
   runApp(GssApp());
@@ -39,14 +39,6 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   MapController _mapController;
   bool _layerFabOpened = false;
-
-//  @override
-//  void initState() {
-//    _mapController = MapController();
-//
-//    super.initState();
-////    WidgetsBinding.instance.addObserver(this);
-//  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,68 +86,92 @@ class _MainPageState extends State<MainPage> {
       ),
     ];
 
-    return Consumer<MapstateModel>(
-      builder: (context, model, _) => Scaffold(
+    return Stack(
+      children: <Widget>[
+        Consumer<MapstateModel>(
+          builder: (context, model, _) => Scaffold(
 //      appBar: AppBar(
 //        title: Text("GSS"),
 //      ),
-        body: FlutterMap(
-          options: new MapOptions(
-            center: new LatLng(model.centerLat, model.centerLon),
-            zoom: model.currentZoom,
-            minZoom: MINZOOM,
-            maxZoom: MAXZOOM,
+            body: FlutterMap(
+              options: new MapOptions(
+                center: new LatLng(model.centerLat, model.centerLon),
+                zoom: model.currentZoom,
+                minZoom: MINZOOM,
+                maxZoom: MAXZOOM,
 //          plugins: [
 //            MarkerClusterPlugin(),
 //          ],
+              ),
+              layers: [
+                model.backgroundLayer,
+                MarkerLayerOptions(markers: markers),
+              ],
+              mapController: _mapController,
+            ),
+            floatingActionButton: SelectMapLayerButton(
+              fabButtons: getButtons(model),
+              colorStartAnimation: Colors.green,
+              colorEndAnimation: Colors.red,
+              key: Key("layerMenu"),
+              animatedIconData: AnimatedIcons.menu_close,
+            ),
           ),
-          layers: [
-            model.backgroundLayer,
-            MarkerLayerOptions(markers: markers),
-          ],
-          mapController: _mapController,
         ),
-        floatingActionButton: SelectMapLayerButton(
-          fabButtons: getButtons(model),
-          colorStartAnimation: Colors.green,
-          colorEndAnimation: Colors.red,
-          key: Key("layerMenu"),
-          animatedIconData:  AnimatedIcons.menu_close,
-        ),
+        Scaffold(
 
-//        FloatingActionButton(
-//          onPressed: () async {
-//            var namesList = ["mapsforge"]..addAll(ONLINE_LAYERS_MAP.keys);
-//            print("blah");
-//            List<SimpleDialogOption> dialogs = namesList.map((name) {
-//              return SimpleDialogOption(
-//                child: Text(name),
-//                onPressed: () {
-//                  if (name == MAPSFORGE) {
-//                    model.reset();
-//                  } else {
-//                    model.backgroundLayer = ONLINE_LAYERS_MAP[name];
-//                  }
-//                },
-//              );
-//            }).toList();
-//
-//            SimpleDialog dialog = SimpleDialog(
-//              title: const Text('Choose an animal'),
-//              children: dialogs,
-//            );
-//            // show the dialog
-//            showDialog(
-//              context: context,
-//              builder: (BuildContext context) {
-//                return dialog;
-//              },
-//            );
-//          },
-//          tooltip: 'Select layer',
-//          child: Icon(FontAwesomeIcons.layerGroup),
-//        ),
-      ),
+          body: Align(
+            alignment: Alignment.bottomLeft,
+            child: FabCircularMenu(
+              child: Container(
+//                color: Colors.transparent,
+//                child:  Center(
+//                    child: Padding(
+//                  padding: const EdgeInsets.only(bottom: 8.0),
+//                  child: Text('FAB Circle Menu Example',
+//                      textAlign: TextAlign.center,
+//                      style: TextStyle(color: Colors.red, fontSize: 36.0)),
+//                )),
+                  ),
+              ringColor: Colors.white30,
+              fabCloseIcon: Icon(
+                CommunityMaterialIcons.close,
+//                color: Colors.blueGrey,
+              ),
+              fabOpenIcon: Icon(
+                CommunityMaterialIcons.settings,
+//                color: Colors.red,
+              ),
+              options: <Widget>[
+                IconButton(
+                    icon: Icon(CommunityMaterialIcons.worker),
+                    tooltip: "Manage Surveyors",
+                    onPressed: () {},
+                    iconSize: 48.0,
+                    color: Colors.deepOrange),
+                IconButton(
+                    icon: Icon(CommunityMaterialIcons.account_group),
+                    tooltip: "Manage Webusers",
+                    onPressed: () {},
+                    iconSize: 48.0,
+                    color: Colors.deepOrange),
+                IconButton(
+                    icon: Icon(CommunityMaterialIcons.export),
+                    tooltip: "Export",
+                    onPressed: () {},
+                    iconSize: 48.0,
+                    color: Colors.deepOrange),
+                IconButton(
+                    icon: Icon(CommunityMaterialIcons.bug),
+                    tooltip: "Log View",
+                    onPressed: () {},
+                    iconSize: 48.0,
+                    color: Colors.deepOrange),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

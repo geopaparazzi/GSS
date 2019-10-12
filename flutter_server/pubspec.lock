@@ -71,6 +71,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.14.11"
+  community_material_icon:
+    dependency: "direct main"
+    description:
+      name: community_material_icon
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.5.95"
   console_log_handler:
     dependency: transitive
     description:
@@ -99,6 +106,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2"
+  fab_circular_menu:
+    dependency: "direct main"
+    description:
+      name: fab_circular_menu
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.1.1"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -132,13 +146,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  font_awesome_flutter:
-    dependency: "direct main"
-    description:
-      name: font_awesome_flutter
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "8.5.0"
   http:
     dependency: transitive
     description:
