@@ -115,12 +115,12 @@ class _MainPageState extends State<MainPage> {
           ],
           mapController: _mapController,
         ),
-        floatingActionButton: AnimatedFloatingActionButton(
+        floatingActionButton: SelectMapLayerButton(
           fabButtons: getButtons(model),
           colorStartAnimation: Colors.green,
           colorEndAnimation: Colors.red,
           key: Key("layerMenu"),
-          animatedIconData:  AnimatedIcons.view_list,
+          animatedIconData:  AnimatedIcons.menu_close,
         ),
 
 //        FloatingActionButton(

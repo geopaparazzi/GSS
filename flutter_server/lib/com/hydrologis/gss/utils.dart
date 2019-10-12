@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:flutter/material.dart';
-
-class AnimatedFloatingActionButton extends StatefulWidget {
+class SelectMapLayerButton extends StatefulWidget {
   final List<Widget> fabButtons;
   final Color colorStartAnimation;
   final Color colorEndAnimation;
   final AnimatedIconData animatedIconData;
 
-  AnimatedFloatingActionButton(
+  SelectMapLayerButton(
       {Key key,
       this.fabButtons,
       this.colorStartAnimation,
@@ -19,12 +17,10 @@ class AnimatedFloatingActionButton extends StatefulWidget {
       : super(key: key);
 
   @override
-  _AnimatedFloatingActionButtonState createState() =>
-      _AnimatedFloatingActionButtonState();
+  _SelectMapLayerButtonState createState() => _SelectMapLayerButtonState();
 }
 
-class _AnimatedFloatingActionButtonState
-    extends State<AnimatedFloatingActionButton>
+class _SelectMapLayerButtonState extends State<SelectMapLayerButton>
     with SingleTickerProviderStateMixin {
   bool isOpened = false;
   AnimationController _animationController;
@@ -100,7 +96,7 @@ class _AnimatedFloatingActionButtonState
   List<Widget> _setFabButtons() {
     List<Widget> processButtons = List<Widget>();
     for (int i = 0; i < widget.fabButtons.length; i++) {
-      processButtons.add(TransformFloatButton(
+      processButtons.add(TransformMapLayerButton(
         floatButton: widget.fabButtons[i],
         translateValue: _translateButton.value * (widget.fabButtons.length - i),
         isVisbile: isOpened,
@@ -120,12 +116,13 @@ class _AnimatedFloatingActionButtonState
   }
 }
 
-class TransformFloatButton extends StatelessWidget {
+class TransformMapLayerButton extends StatelessWidget {
   final Widget floatButton;
   final double translateValue;
   final bool isVisbile;
 
-  TransformFloatButton({this.floatButton, this.translateValue, this.isVisbile})
+  TransformMapLayerButton(
+      {this.floatButton, this.translateValue, this.isVisbile})
       : super(key: ObjectKey(floatButton));
 
   @override
@@ -147,76 +144,3 @@ class TransformFloatButton extends StatelessWidget {
     );
   }
 }
-
-//
-//class SpeedDial extends StatefulWidget {
-//  final List<Widget> minimisedFABOptions;
-//  bool opened;
-//
-//  SpeedDial({this.minimisedFABOptions, this.opened = false});
-//
-//  @override
-//  State<StatefulWidget> createState() {
-//    return _SpeedDialState(opened);
-//  }
-//}
-//
-//class _SpeedDialState extends State<SpeedDial> {
-//  Widget closeSpeedDialFAB;
-//  bool opened;
-//
-//  _SpeedDialState(this.opened);
-//
-//  @override
-//  void initState() {
-//    closeSpeedDialFAB = Padding(
-//      padding: const EdgeInsets.all(8.0),
-//      child: FloatingActionButton(
-//        child: Icon(Icons.close),
-//        onPressed: () {
-//          setState(() {
-//            opened = false;
-//          });
-//        },
-//      ),
-//    );
-//    widget.minimisedFABOptions.insert(0, closeSpeedDialFAB);
-//
-//    super.initState();
-//  }
-//
-//  @override
-//  Widget build(BuildContext context) {
-//    if (opened == null) opened = false;
-//    return Stack(
-//      alignment: Alignment.bottomRight,
-//      fit: StackFit.passthrough,
-//      overflow: Overflow.visible,
-//      children: getFABs(),
-//    );
-//  }
-//
-//  List<Widget> getFABs() {
-//    print("getFabs: ${opened}");
-//    if (opened) {
-//      return <Widget>[
-//        Column(
-//          verticalDirection: VerticalDirection.up,
-//          crossAxisAlignment: CrossAxisAlignment.end,
-//          children: widget.minimisedFABOptions,
-//        ),
-//      ];
-//    } else {
-//      return <Widget>[
-//        FloatingActionButton(
-//          child: Icon(FontAwesomeIcons.layerGroup),
-//          onPressed: () {
-//            setState(() {
-//              opened = true;
-//            });
-//          },
-//        ),
-//      ];
-//    }
-//  }
-//}
