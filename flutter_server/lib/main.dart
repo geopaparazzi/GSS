@@ -86,92 +86,98 @@ class _MainPageState extends State<MainPage> {
       ),
     ];
 
-    return Stack(
-      children: <Widget>[
-        Consumer<MapstateModel>(
-          builder: (context, model, _) => Scaffold(
-//      appBar: AppBar(
-//        title: Text("GSS"),
-//      ),
-            body: FlutterMap(
-              options: new MapOptions(
-                center: new LatLng(model.centerLat, model.centerLon),
-                zoom: model.currentZoom,
-                minZoom: MINZOOM,
-                maxZoom: MAXZOOM,
+    var ringDiameter = MediaQuery.of(context).size.width * 0.4;
+    var ringWidth = ringDiameter / 3;
+
+    return Scaffold(
+      body: Stack(
+        children: <Widget>[
+          Consumer<MapstateModel>(
+            builder: (context, model, _) => Stack(
+              children: <Widget>[
+                FlutterMap(
+                  options: new MapOptions(
+                    center: new LatLng(model.centerLat, model.centerLon),
+                    zoom: model.currentZoom,
+                    minZoom: MINZOOM,
+                    maxZoom: MAXZOOM,
 //          plugins: [
 //            MarkerClusterPlugin(),
 //          ],
-              ),
-              layers: [
-                model.backgroundLayer,
-                MarkerLayerOptions(markers: markers),
-              ],
-              mapController: _mapController,
-            ),
-            floatingActionButton: SelectMapLayerButton(
-              fabButtons: getButtons(model),
-              colorStartAnimation: Colors.green,
-              colorEndAnimation: Colors.red,
-              key: Key("layerMenu"),
-              animatedIconData: AnimatedIcons.menu_close,
-            ),
-          ),
-        ),
-        Scaffold(
-
-          body: Align(
-            alignment: Alignment.bottomLeft,
-            child: FabCircularMenu(
-              child: Container(
-//                color: Colors.transparent,
-//                child:  Center(
-//                    child: Padding(
-//                  padding: const EdgeInsets.only(bottom: 8.0),
-//                  child: Text('FAB Circle Menu Example',
-//                      textAlign: TextAlign.center,
-//                      style: TextStyle(color: Colors.red, fontSize: 36.0)),
-//                )),
                   ),
-              ringColor: Colors.white30,
-              fabCloseIcon: Icon(
-                CommunityMaterialIcons.close,
-//                color: Colors.blueGrey,
-              ),
-              fabOpenIcon: Icon(
-                CommunityMaterialIcons.settings,
-//                color: Colors.red,
-              ),
-              options: <Widget>[
-                IconButton(
-                    icon: Icon(CommunityMaterialIcons.worker),
-                    tooltip: "Manage Surveyors",
-                    onPressed: () {},
-                    iconSize: 48.0,
-                    color: Colors.deepOrange),
-                IconButton(
-                    icon: Icon(CommunityMaterialIcons.account_group),
-                    tooltip: "Manage Webusers",
-                    onPressed: () {},
-                    iconSize: 48.0,
-                    color: Colors.deepOrange),
-                IconButton(
-                    icon: Icon(CommunityMaterialIcons.export),
-                    tooltip: "Export",
-                    onPressed: () {},
-                    iconSize: 48.0,
-                    color: Colors.deepOrange),
-                IconButton(
-                    icon: Icon(CommunityMaterialIcons.bug),
-                    tooltip: "Log View",
-                    onPressed: () {},
-                    iconSize: 48.0,
-                    color: Colors.deepOrange),
+                  layers: [
+                    model.backgroundLayer,
+                    MarkerLayerOptions(markers: markers),
+                  ],
+                  mapController: _mapController,
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: SelectMapLayerButton(
+                      fabButtons: getButtons(model),
+                      colorStartAnimation: Colors.green,
+                      colorEndAnimation: Colors.red,
+                      key: Key("layerMenu"),
+                      animatedIconData: AnimatedIcons.menu_close,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-      ],
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: FloatingActionButton(
+                onPressed: () {},
+
+                child: Icon(CommunityMaterialIcons.logout),
+              ),
+            ),
+          ),
+          FabCircularMenu(
+            ringDiameter: ringDiameter,
+            ringWidth: ringWidth,
+            child: Container(),
+            ringColor: Colors.white30,
+            fabCloseIcon: Icon(
+              CommunityMaterialIcons.close,
+            ),
+            fabOpenIcon: Icon(
+              CommunityMaterialIcons.settings,
+            ),
+            options: <Widget>[
+              IconButton(
+                  icon: Icon(CommunityMaterialIcons.worker),
+                  tooltip: "Manage Surveyors",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: Colors.deepOrange),
+              IconButton(
+                  icon: Icon(CommunityMaterialIcons.account_group),
+                  tooltip: "Manage Webusers",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: Colors.deepOrange),
+              IconButton(
+                  icon: Icon(CommunityMaterialIcons.export),
+                  tooltip: "Export",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: Colors.deepOrange),
+              IconButton(
+                  icon: Icon(CommunityMaterialIcons.bug),
+                  tooltip: "Log View",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: Colors.deepOrange),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

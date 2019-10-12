@@ -109,7 +109,7 @@ class _SelectMapLayerButtonState extends State<SelectMapLayerButton>
   Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: _setFabButtons(),
     );
   }
