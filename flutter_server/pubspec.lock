@@ -141,6 +141,15 @@ packages:
       url: "https://github.com/johnpryan/flutter_map.git"
     source: git
     version: "0.7.3"
+  flutter_map_marker_cluster:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "0cf45eda520de1da55b968a813e7db1c619e4029"
+      url: "https://github.com/moovida/flutter_map_marker_cluster.git"
+    source: git
+    version: "0.2.3"
   flutter_test:
     dependency: "direct dev"
     description: flutter

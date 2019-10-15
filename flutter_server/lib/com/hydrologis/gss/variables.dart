@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong/latlong.dart';
+import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 
 const TITLE = 'Geopaparazzi Survey Server';
 const Color MAIN_COLOR = Colors.green;
@@ -11,6 +12,8 @@ const DEFAULT_FONTSIZE = 48.0;
 const CHART_FONTSIZE = 24;
 const NOVALUE = " - ";
 const ABOUTPAGE_INDEX = 1000;
+
+const WEBAPP = 'http://localhost:8080';
 
 const DEFAULT_GREY_COLOR = Colors.grey;
 final TextStyle DEFAULT_GREYSTYLE =
@@ -27,23 +30,48 @@ final DateFormat ISO8601_TS_TIME_FORMATTER = DateFormat("HH:mm:ss");
 /// An ISO8601 day formatter (yyyy-MM-dd).
 final DateFormat ISO8601_TS_DAY_FORMATTER = DateFormat("yyyy-MM-dd");
 
-final DEFAULT_TILELAYER = TileLayerOptions(
-  tms: false,
-  urlTemplate: 'http://localhost:8080/tiles/mapsforge/{z}/{x}/{y}',
-  tileProvider: NonCachingNetworkTileProvider(),
-);
+
+// API VARS START
+final String Y = "y";
+final String X = "x";
+final String COORDS = "coords";
+final String ENDTS = "endts";
+final String STARTTS = "startts";
+final String NAME = "name";
+final String WIDTH = "width";
+final String COLOR = "color";
+final String ID = "id";
+final String DATAID = "dataid";
+final String DATA = "data";
+final String LOGS = "logs";
+final String NOTES = "notes";
+final String IMAGES = "images";
+final String TS = "ts";
+
+
+// API VARS END
+
+
+
+
+final ColorExt mainBackground = ColorExt("#ffFFFFFF");
+final ColorExt mainDecorations = ColorExt("#ff1976d2");
+final ColorExt mainDecorationsDark = ColorExt("#ff004ba0");
+
+final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP[MAPSFORGE];//'Openstreetmap'];
 
 class MapstateModel extends ChangeNotifier {
   TileLayerOptions _backgroundLayer = DEFAULT_TILELAYER;
 
   double _centerLon = 11.0;
   double _centerLat = 46.0;
-  double _currentZoom = 13;
+  double _currentZoom = 8;
 
   TileLayerOptions get backgroundLayer => _backgroundLayer;
 
   set backgroundLayer(TileLayerOptions backgroundLayer) {
     _backgroundLayer = backgroundLayer;
+    print("event backgroundLayer");
     notifyListeners();
   }
 
@@ -57,11 +85,13 @@ class MapstateModel extends ChangeNotifier {
     _centerLat = lat;
     _centerLon = lon;
     _currentZoom = zoom;
+    print("event setMapPosition");
     notifyListeners();
   }
 
   void reset() {
     _backgroundLayer = DEFAULT_TILELAYER;
+    print("event reset");
     notifyListeners();
   }
 }

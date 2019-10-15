@@ -18,6 +18,7 @@
  ******************************************************************************/
 package com.hydrologis.kukuratus.tiles;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -29,12 +30,17 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
 
 @WebServlet(urlPatterns = "/mapsforge")
 public class MapsforgeWorkspaceGeneratorServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static ITilesGenerator tilesGenerator;
+    
+//    private static final int CACHE_SIZE = 200;
 
     @Override
     public void doGet( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -84,11 +90,23 @@ public class MapsforgeWorkspaceGeneratorServlet extends HttpServlet {
             e.printStackTrace();
         }
         tilesGenerator = generator;
+        
         return tilesGenerator;
     }
 
     protected ITilesGenerator getGenerator() {
         return tilesGenerator;
     }
+    
+    
+//    public LoadingCache<String, BufferedImage> getImageCache( int maxSize ) {
+//        LoadingCache<String, BufferedImage> imageCache = CacheBuilder.newBuilder().initialCapacity(maxSize).maximumSize(maxSize)
+//                .build(new CacheLoader<String, BufferedImage>(){
+//                    public BufferedImage load( String tileDef ) throws Exception {
+//                        return null;//createImageForTile(tileDef);
+//                    }
+//                });
+//        return imageCache;
+//    }
 
 }

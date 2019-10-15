@@ -37,6 +37,7 @@ import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.tiles.MapsforgeTilesGenerator;
 import com.hydrologis.kukuratus.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
+import com.j256.ormlite.dao.Dao;
 
 /**
  * Deploy:
@@ -131,50 +132,71 @@ public class GssServer implements Vars {
             return res;
         });
 
-        get("/data/:sectorid/:from/:to", ( req, res ) -> {
-            try {
-                String sectorId = req.params(":sectorid");
-                int id = Integer.parseInt(sectorId);
-                String from = req.params(":from");
-                String to = req.params(":to");
-                SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
-                long fromDate = dateFormatter.parse(from + " 00:00:00").getTime();
-                long toDate = dateFormatter.parse(to + " 23:59:59").getTime();
+//        get("/data/:sectorid/:from/:to", ( req, res ) -> {
+//            try {
+//                String sectorId = req.params(":sectorid");
+//                int id = Integer.parseInt(sectorId);
+//                String from = req.params(":from");
+//                String to = req.params(":to");
+//                SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+//                long fromDate = dateFormatter.parse(from + " 00:00:00").getTime();
+//                long toDate = dateFormatter.parse(to + " 23:59:59").getTime();
+//
+//                String sql = "select  type_id,timestamp, value from measures where sectorid=" + id + " and timestamp between "
+//                        + fromDate + " and " + toDate + " group by  type_id, timestamp order by  type_id, timestamp";
+//                JSONObject root = new JSONObject();
+//                JSONArray temperatureArray = new JSONArray();
+//                JSONArray humidityArray = new JSONArray();
+//                root.put(TEMPERATURE_ID, temperatureArray);
+//                root.put(HUMIDITY_ID, humidityArray);
+//                String json = db.execOnConnection(connection -> {
+//                    try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(sql)) {
+//                        while( rs.next() ) {
+//                            int type = rs.getInt(1);
+//                            long ts = rs.getLong(2);
+//                            double value = rs.getDouble(3);
+//
+//                            if (type == 0) {
+//                                JSONObject valueObj = new JSONObject();
+//                                valueObj.put("ts", ts);
+//                                valueObj.put("v", value);
+//                                temperatureArray.put(valueObj);
+//                            } else {
+//                                JSONObject valueObj = new JSONObject();
+//                                valueObj.put("ts", ts);
+//                                valueObj.put("v", value);
+//                                humidityArray.put(valueObj);
+//                            }
+//                        }
+//                        return root.toString();
+//                    }
+//                });
+//                return json;
+//            } catch (Exception e) {
+//                Logger.INSTANCE.insertError("get status", "error", e);
+//            }
+//            return "{ERROR}";
+//        });
 
-                String sql = "select  type_id,timestamp, value from measures where sectorid=" + id + " and timestamp between "
-                        + fromDate + " and " + toDate + " group by  type_id, timestamp order by  type_id, timestamp";
-                JSONObject root = new JSONObject();
-                JSONArray temperatureArray = new JSONArray();
-                JSONArray humidityArray = new JSONArray();
-                root.put(TEMPERATURE_ID, temperatureArray);
-                root.put(HUMIDITY_ID, humidityArray);
-                String json = db.execOnConnection(connection -> {
-                    try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(sql)) {
-                        while( rs.next() ) {
-                            int type = rs.getInt(1);
-                            long ts = rs.getLong(2);
-                            double value = rs.getDouble(3);
+        get("/data", ( req, res ) -> {
+            JSONObject root = new JSONObject();
+            Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
 
-                            if (type == 0) {
-                                JSONObject valueObj = new JSONObject();
-                                valueObj.put("ts", ts);
-                                valueObj.put("v", value);
-                                temperatureArray.put(valueObj);
-                            } else {
-                                JSONObject valueObj = new JSONObject();
-                                valueObj.put("ts", ts);
-                                valueObj.put("v", value);
-                                humidityArray.put(valueObj);
-                            }
-                        }
-                        return root.toString();
-                    }
-                });
-                return json;
-            } catch (Exception e) {
-                Logger.INSTANCE.insertError("get status", "error", e);
-            }
-            return "{ERROR}";
+            // TODO parameterize users, from and to
+            List<GpapUsers> users = userDao.queryForAll();
+            Long from = null;
+            Long to = null;
+
+//            Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+//            Dao<GpsLogsProperties, ? > logPropDao = DatabaseHandler.instance().getDao(GpsLogsProperties.class);
+//            GssDatabaseUtilities.getLogs(root, logsDao, logPropDao, users, from, to);
+
+            Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
+            GssDatabaseUtilities.getNotes(root, notesDao, users, from, to);
+
+            GssDatabaseUtilities.getImages(root, DatabaseHandler.instance().getDb(), users, from, to);
+
+            return root.toString();
         });
 
         get("/", ( req, res ) -> {
