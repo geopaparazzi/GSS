@@ -18,6 +18,8 @@ const WEBAPP = 'http://localhost:8080';
 const DEFAULT_GREY_COLOR = Colors.grey;
 final TextStyle DEFAULT_GREYSTYLE =
     TextStyle(fontSize: DEFAULT_FONTSIZE, color: DEFAULT_GREY_COLOR);
+final TextStyle DEFAULT_BLACKSTYLE =
+    TextStyle(fontSize: DEFAULT_FONTSIZE, color: Colors.black);
 final TextStyle DEFAULT_GREYSTYLE_SMALL =
     TextStyle(fontSize: DEFAULT_FONTSIZE / 2, color: DEFAULT_GREY_COLOR);
 
@@ -29,7 +31,6 @@ final DateFormat ISO8601_TS_TIME_FORMATTER = DateFormat("HH:mm:ss");
 
 /// An ISO8601 day formatter (yyyy-MM-dd).
 final DateFormat ISO8601_TS_DAY_FORMATTER = DateFormat("yyyy-MM-dd");
-
 
 // API VARS START
 final String Y = "y";
@@ -48,17 +49,13 @@ final String NOTES = "notes";
 final String IMAGES = "images";
 final String TS = "ts";
 
-
 // API VARS END
-
-
-
 
 final ColorExt mainBackground = ColorExt("#ffFFFFFF");
 final ColorExt mainDecorations = ColorExt("#ff1976d2");
 final ColorExt mainDecorationsDark = ColorExt("#ff004ba0");
 
-final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP[MAPSFORGE];//'Openstreetmap'];
+final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP[MAPSFORGE]; //'Openstreetmap'];
 
 class MapstateModel extends ChangeNotifier {
   TileLayerOptions _backgroundLayer = DEFAULT_TILELAYER;

@@ -47,8 +47,7 @@ dependencies:
     git:
       url: https://github.com/moovida/flutter_map_marker_cluster.git
 
-#  flutter_map_marker_cluster: ^0.2.3
-
+  transparent_image: 1.0.0
 
 dev_dependencies:
   flutter_test:

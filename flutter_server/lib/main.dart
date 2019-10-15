@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -12,6 +13,7 @@ import 'com/hydrologis/gss/utils.dart';
 import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:community_material_icon/community_material_icon.dart';
 export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 void main() {
   runApp(GssApp());
@@ -42,9 +44,12 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   MapController _mapController;
   PolylineLayerOptions _logs;
   List<Marker> _markers;
+  double _screenWidth;
+  double _screenHeight;
 
   @override
   void initState() {
@@ -95,10 +100,15 @@ class _MainPageState extends State<MainPage> {
       layers.add(markerCluster);
     }
 
-    var ringDiameter = MediaQuery.of(context).size.width * 0.4;
+    var size = MediaQuery.of(context).size;
+    _screenWidth = size.width;
+    _screenHeight = size.height;
+
+    var ringDiameter = _screenWidth * 0.4;
     var ringWidth = ringDiameter / 3;
 
     return Scaffold(
+      key: _scaffoldKey,
       body: Stack(
         children: <Widget>[
           Consumer<MapstateModel>(
@@ -365,14 +375,80 @@ class _MainPageState extends State<MainPage> {
   }
 
   Marker buildImage(var x, var y, String name, var dataId, var data) {
-    var imageWidget = Image.memory(data, scale: 2.0,);
+    var imageWidget = Image.memory(
+      data,
+      scale: 2.0,
+    );
 
+    double snackWidth = _screenWidth / 3;
+    print(snackWidth);
     return Marker(
       width: 180,
       height: 180,
       point: new LatLng(y, x),
       builder: (ctx) => new Container(
-        child: imageWidget,
+        child: GestureDetector(
+          onTap: () async {
+            _scaffoldKey.currentState.showSnackBar(SnackBar(
+              backgroundColor: Colors.white.withAlpha(128),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 20),
+                          child: Text(
+                            name,
+                            style: DEFAULT_BLACKSTYLE,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      FloatingActionButton(
+                        mini: true,
+                        child: Icon(
+                          Icons.close,
+                        ),
+                        onPressed: () {
+                          _scaffoldKey.currentState.hideCurrentSnackBar();
+                        },
+                      ),
+                    ],
+                  ),
+                  Container(
+                    child: Center(
+                      child: Stack(
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          Center(
+                            child: Container(
+                              height: _screenHeight / 2.0,
+                              decoration: BoxDecoration(
+                                  border: Border.all(color: MAIN_COLOR)),
+                              padding: EdgeInsets.all(5),
+                              child: FadeInImage.memoryNetwork(
+                                  placeholder: kTransparentImage,
+                                  image: "$API_IMAGE/$dataId",
+                                  fit: BoxFit.contain),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              duration: Duration(seconds: 50),
+            ));
+          },
+          child: imageWidget,
+        ),
       ),
     );
   }

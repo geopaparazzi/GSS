@@ -179,6 +179,8 @@ public class GssServer implements Vars {
 //        });
 
         get("/data", ( req, res ) -> {
+            KukuratusLogger.logDebug("GssServer#get(/data", "Received request from " + req.raw().getRemoteAddr());
+
             JSONObject root = new JSONObject();
             Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
 
@@ -197,6 +199,29 @@ public class GssServer implements Vars {
             GssDatabaseUtilities.getImages(root, DatabaseHandler.instance().getDb(), users, from, to);
 
             return root.toString();
+        });
+
+        get("/data/:type/:id", ( req, res ) -> {
+            KukuratusLogger.logDebug("GssServer#get(/data/:type/:id", "Received request from " + req.raw().getRemoteAddr());
+
+            try {
+                String type = req.params(":type");
+                // images or notes are requested
+                if (type.equals(GssDatabaseUtilities.IMAGES)) {
+                    String id = req.params(":id");
+                    if (id != null) {
+                        long idLong = Long.parseLong(id);
+                        ImageData idObj = new ImageData(idLong);
+                        Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
+                        ImageData result = dao.queryForSameId(idObj);
+                        return result.data;
+                    }
+                }
+                return "";
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/data/:type/:id", e);
+                return "{ERROR}";
+            }
         });
 
         get("/", ( req, res ) -> {

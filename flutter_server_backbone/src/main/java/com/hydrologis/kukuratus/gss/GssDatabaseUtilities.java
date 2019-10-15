@@ -24,21 +24,21 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.Where;
 
 public class GssDatabaseUtilities {
-    private static final String NOTES = "notes";
-    private static final String IMAGES = "images";
-    private static final String Y = "y";
-    private static final String X = "x";
-    private static final String COORDS = "coords";
-    private static final String ENDTS = "endts";
-    private static final String TS = "ts";
-    private static final String STARTTS = "startts";
-    private static final String NAME = "name";
-    private static final String WIDTH = "width";
-    private static final String COLOR = "color";
-    private static final String ID = "id";
-    private static final String DATAID = "dataid";
-    private static final String DATA = "data";
-    private static final String LOGS = "logs";
+    public static final String NOTES = "notes";
+    public static final String IMAGES = "images";
+    public static final String Y = "y";
+    public static final String X = "x";
+    public static final String COORDS = "coords";
+    public static final String ENDTS = "endts";
+    public static final String TS = "ts";
+    public static final String STARTTS = "startts";
+    public static final String NAME = "name";
+    public static final String WIDTH = "width";
+    public static final String COLOR = "color";
+    public static final String ID = "id";
+    public static final String DATAID = "dataid";
+    public static final String DATA = "data";
+    public static final String LOGS = "logs";
 
 //    public static String formatDate( long dateLong ) {
 //        return new DateTime(dateLong).toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS);
