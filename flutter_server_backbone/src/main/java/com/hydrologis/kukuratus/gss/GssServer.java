@@ -196,6 +196,7 @@ public class GssServer implements Vars {
             return root.toString();
         });
 
+        // get data from the server by type and the primary key id
         get("/data/:type/:id", ( req, res ) -> {
             KukuratusLogger.logDebug("GssServer#get(/data/:type/:id", "Received request from " + req.raw().getRemoteAddr());
 
@@ -216,6 +217,26 @@ public class GssServer implements Vars {
             } catch (Exception e) {
                 KukuratusLogger.logError("GssServer#get(/data/:type/:id", e);
                 return "{ERROR}";
+            }
+        });
+
+        // get an image by the original project id and the userid
+        get("/imagedata/:userid/:originalid", ( req, res ) -> {
+            KukuratusLogger.logDebug("GssServer#get(/imagedata/:userid/:originalid",
+                    "Received request from " + req.raw().getRemoteAddr());
+
+            try {
+                String userId = req.params(":userid");
+                String originalImageDataId = req.params(":originalid");
+                long userIdLong = Long.parseLong(userId);
+                long originalImageDataIdLong = Long.parseLong(originalImageDataId);
+                Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
+                ImageData imageData = dao.queryBuilder().where().eq(ImageData.ORIGINALID_FIELD_NAME, originalImageDataIdLong)
+                        .and().eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
+                return imageData.data;
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/imagedata/:userid/:originalid", e);
+                return "{'ERROR':  }";
             }
         });
 

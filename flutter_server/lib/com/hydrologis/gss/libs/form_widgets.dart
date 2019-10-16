@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/forms.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/ui.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/colors.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/screen.dart';
@@ -38,7 +39,7 @@ class FormSectionsWidgetState extends State<FormSectionsWidget> {
       itemBuilder: (context, position) {
         return Ink(
           color: _selectedPosition == position && widget.isLargeScreen
-              ? MAIN_COLOR.withAlpha(50)
+              ? SmashColors.mainDecorations.withAlpha(50)
               : null,
           child: ListTile(
             onTap: () {
@@ -63,10 +64,18 @@ class FormDetailWidget extends StatefulWidget {
   bool onlyDetail;
   dynamic _position;
   int _noteId;
+  int _userId;
   Map<String, dynamic> sectionMap;
 
-  FormDetailWidget(this._noteId, this.sectionMap, this.sectionName,
-      this.formName, this.isLargeScreen, this.onlyDetail, this._position);
+  FormDetailWidget(
+      this._noteId,
+      this._userId,
+      this.sectionMap,
+      this.sectionName,
+      this.formName,
+      this.isLargeScreen,
+      this.onlyDetail,
+      this._position);
 
   @override
   State<StatefulWidget> createState() {
@@ -96,8 +105,8 @@ class FormDetailWidgetState extends State<FormDetailWidget> {
     List<dynamic> formItems = TagsManager.getFormItems(form4name);
 
     for (int i = 0; i < formItems.length; i++) {
-      Widget w =
-          getWidget(context, widget._noteId, formItems[i], widget._position);
+      Widget w = getWidget(context, widget._noteId, widget._userId,
+          formItems[i], widget._position);
       if (w != null) {
         widgetsList.add(w);
       }
@@ -134,9 +143,10 @@ class MasterDetailPage extends StatefulWidget {
   dynamic _position;
   int _noteId;
   Map<String, dynamic> sectionMap;
+  int _userId;
 
   MasterDetailPage(this.sectionMap, this.title, this.sectionName,
-      this._position, this._noteId);
+      this._position, this._noteId, this._userId);
 
   @override
   _MasterDetailPageState createState() => _MasterDetailPageState();
@@ -175,6 +185,7 @@ class _MasterDetailPageState extends State<MasterDetailPage> {
                         builder: (context) {
                           return FormDetailWidget(
                               widget._noteId,
+                              widget._userId,
                               widget.sectionMap,
                               widget.sectionName,
                               formName,
@@ -192,6 +203,7 @@ class _MasterDetailPageState extends State<MasterDetailPage> {
                   flex: 6,
                   child: FormDetailWidget(
                       widget._noteId,
+                      widget._userId,
                       widget.sectionMap,
                       widget.sectionName,
                       selectedForm,
@@ -205,7 +217,7 @@ class _MasterDetailPageState extends State<MasterDetailPage> {
   }
 }
 
-ListTile getWidget(BuildContext context, int noteId,
+ListTile getWidget(BuildContext context, int noteId, int userId,
     final Map<String, dynamic> itemMap, dynamic position) {
   String key = "-"; //$NON-NLS-1$
   if (itemMap.containsKey(TAG_KEY)) {
@@ -431,7 +443,7 @@ ListTile getWidget(BuildContext context, int noteId,
       {
         return ListTile(
           leading: icon,
-          title: PicturesWidget(noteId, itemMap, label, position),
+          title: PicturesWidget(noteId, userId, itemMap, label, position),
         );
         break;
       }
@@ -439,7 +451,7 @@ ListTile getWidget(BuildContext context, int noteId,
       {
         return ListTile(
           leading: icon,
-          title: PicturesWidget(noteId, itemMap, label, position,
+          title: PicturesWidget(noteId, userId, itemMap, label, position,
               fromGallery: true),
         );
         break;
@@ -810,9 +822,11 @@ class PicturesWidget extends StatefulWidget {
   final String _label;
   dynamic _position;
   int _noteId;
+  int _userId;
   bool fromGallery;
 
-  PicturesWidget(this._noteId, this._itemMap, this._label, this._position,
+  PicturesWidget(
+      this._noteId, this._userId, this._itemMap, this._label, this._position,
       {this.fromGallery = false});
 
   @override
@@ -820,144 +834,38 @@ class PicturesWidget extends StatefulWidget {
 }
 
 class PicturesWidgetState extends State<PicturesWidget> {
-  String IMAGE_ID_SEPARATOR = ";";
-  List<String> imageSplit = [];
-
-  Future<List<Widget>> getThumbnails() async {
-    print("IMPLEMENT ME");
-    // TODO handle with network images
-//    var db = await GPProject().getDatabase();
-//    String value = ""; //$NON-NLS-1$
-//    if (widget._itemMap.containsKey(TAG_VALUE)) {
-//      value = widget._itemMap[TAG_VALUE].trim();
-//    }
-//    if (value.isNotEmpty) {
-//      imageSplit = value.split(IMAGE_ID_SEPARATOR);
-//    }
-
-    List<Widget> thumbList = [];
-//    for (int i = 0; i < imageSplit.length; i++) {
-//      var id = int.parse(imageSplit[i]);
-//      Widget thumbnail = await db.getThumbnail(id);
-//      Widget withBorder = Container(
-//        padding: SmashUI.defaultPadding(),
-//        child: thumbnail,
-//      );
-//      thumbList.add(withBorder);
-//    }
-    return thumbList;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: getThumbnails(),
-      builder: (BuildContext context, AsyncSnapshot<List<Widget>> snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.none:
-            return Center(child: CircularProgressIndicator());
-          case ConnectionState.waiting:
-            return Center(child: CircularProgressIndicator());
-          default:
-            if (snapshot.hasError) {
-              return new Text(
-                'Error: ${snapshot.error}',
-                style: TextStyle(
-                    color: SmashColors.mainSelection,
-                    fontWeight: FontWeight.bold),
-              );
-            } else {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-//                    FlatButton(
-//                        onPressed: () async {
-//                          DbImage dbImage = DbImage()
-//                            ..timeStamp = DateTime.now().millisecondsSinceEpoch
-//                            ..isDirty = 1;
-//
-//                          var position = widget._position;
-//                          if (position is Position) {
-//                            dbImage.lon = position.longitude;
-//                            dbImage.lat = position.latitude;
-//                            dbImage.altim = position.altitude;
-//                            dbImage.azim = position.heading;
-//                          } else {
-//                            dbImage.lon = position.longitude;
-//                            dbImage.lat = position.latitude;
-//                            dbImage.altim = -1;
-//                            dbImage.azim = -1;
-//                          }
-//                          if (widget._noteId != null) {
-//                            dbImage.noteId = widget._noteId;
-//                          }
-//
-//                          int imageId;
-//                          var imagePath = widget.fromGallery
-//                              ? await Camera.loadImageFromGallery()
-//                              : await Camera.takePicture();
-//                          if (imagePath != null) {
-//                            var imageName =
-//                                FileUtilities.nameFromFile(imagePath, true);
-//                            dbImage.text =
-//                                "IMG_${TimeUtilities.DATE_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(dbImage.timeStamp))}.jpg";
-//                            imageId =
-//                                await ImageWidgetUtilities.saveImageToSmashDb(
-//                                    imagePath, dbImage);
-//                            if (imageId != null) {
-//                              imageSplit.add(imageId.toString());
-//                              var value = imageSplit.join(IMAGE_ID_SEPARATOR);
-//                              setState(() {
-//                                widget._itemMap[TAG_VALUE] = value;
-//                              });
-//                              File file = File(imagePath);
-//                              if (file.existsSync()) {
-//                                await file.delete();
-//                              }
-//                            } else {
-//                              showWarningDialog(
-//                                  context, "Could not save image in database.");
-//                            }
-//                          }
-//                        },
-//                        child: Center(
-//                          child: Padding(
-//                            padding: SmashUI.defaultPadding(),
-//                            child: Row(
-//                              mainAxisSize: MainAxisSize.min,
-//                              children: <Widget>[
-//                                Padding(
-//                                  padding: SmashUI.defaultRigthPadding(),
-//                                  child: Icon(
-//                                    Icons.camera_alt,
-//                                    color: SmashColors.mainDecorations,
-//                                  ),
-//                                ),
-//                                SmashUI.normalText(
-//                                    widget.fromGallery
-//                                        ? "Load image"
-//                                        : "Take a picture",
-//                                    color: SmashColors.mainDecorations,
-//                                    bold: true),
-//                              ],
-//                            ),
-//                          ),
-//                        )),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: snapshot.data != null ? snapshot.data : [],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-        }
-      },
+    String IMAGE_ID_SEPARATOR = ";";
+    List<String> imageSplit = [];
+    String value = ""; //$NON-NLS-1$
+    if (widget._itemMap.containsKey(TAG_VALUE)) {
+      value = widget._itemMap[TAG_VALUE].trim();
+    }
+    if (value.isNotEmpty) {
+      imageSplit = value.split(IMAGE_ID_SEPARATOR);
+    }
+
+    List<Widget> thumbList = [];
+    for (int i = 0; i < imageSplit.length; i++) {
+      var originalImageDataId = int.parse(imageSplit[i]);
+
+      String url = "$API_IMAGEDATA/${widget._userId}/$originalImageDataId";
+      NetworkImageWidget niW = NetworkImageWidget(url, 400);
+
+      thumbList.add(Padding(
+        padding: const EdgeInsets.all(5.0),
+        child: niW,
+      ));
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: thumbList,
+      ),
     );
   }
 }

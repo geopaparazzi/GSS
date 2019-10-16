@@ -5,25 +5,10 @@ import 'package:latlong/latlong.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 
 const TITLE = 'Geopaparazzi Survey Server';
-const Color MAIN_COLOR = Colors.green;
-final Color MAIN_COLOR_BACKGROUND = Colors.green[200];
-const DEFAULT_PADDING = 15.0;
-const DEFAULT_FONTSIZE = 36.0;
-const CHART_FONTSIZE = 18;
 const NOVALUE = " - ";
 const ABOUTPAGE_INDEX = 1000;
 
 const WEBAPP = 'http://localhost:8080';
-
-const DEFAULT_GREY_COLOR = Colors.grey;
-final TextStyle DEFAULT_GREYSTYLE = TextStyle(
-    fontSize: DEFAULT_FONTSIZE, color: DEFAULT_GREY_COLOR, fontFamily: "Arial");
-final TextStyle DEFAULT_BLACKSTYLE = TextStyle(
-    fontSize: DEFAULT_FONTSIZE, color: Colors.black, fontFamily: "Arial");
-final TextStyle DEFAULT_GREYSTYLE_SMALL = TextStyle(
-    fontSize: DEFAULT_FONTSIZE / 2,
-    color: DEFAULT_GREY_COLOR,
-    fontFamily: "Arial");
 
 /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
 final DateFormat ISO8601_TS_FORMATTER = DateFormat("yyyy-MM-dd HH:mm:ss");
@@ -50,6 +35,7 @@ final String LOGS = "logs";
 final String NOTES = "notes";
 final String FORMS = "forms";
 final String FORM = "form";
+final String USER = "user";
 final String IMAGES = "images";
 final String TS = "ts";
 

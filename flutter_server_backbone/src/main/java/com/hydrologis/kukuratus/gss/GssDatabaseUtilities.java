@@ -24,6 +24,7 @@ public class GssDatabaseUtilities {
     public static final String FORMS = "forms";
     public static final String IMAGES = "images";
     public static final String FORM = "form";
+    public static final String USER = "user";
     public static final String Y = "y";
     public static final String X = "x";
     public static final String COORDS = "coords";
@@ -129,6 +130,7 @@ public class GssDatabaseUtilities {
                 noteObject.put(ID, note.id);
                 noteObject.put(NAME, note.text);
                 noteObject.put(TS, note.timestamp);
+                noteObject.put(USER, note.gpapUser.id);
                 if (typeForm) {
                     noteObject.put(FORM, note.form);
                 }

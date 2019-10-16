@@ -5,7 +5,8 @@
  */
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'colors.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/colors.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 const double SIMPLE_DIALOGS_HEIGHT = 150;
 const double SIMPLE_DIALOGS_ICONSIZE = 80;
@@ -23,16 +24,18 @@ class SmashUI {
   static const double MEDIUM_ICON_SIZE = 36;
   static const double LARGE_ICON_SIZE = 48;
 
+  static const String DEFAULT_FONTFAMILY = "Arial";
+
   /// Create a text widget with size and color for normal text in pages.
   ///
   /// Allows to choose bold or color/neutral, [underline], [textAlign] and [overflow] (example TextOverflow.ellipsis).
   static Text normalText(String text,
       {useColor = false,
-        bold = false,
-        color,
-        textAlign = TextAlign.start,
-        underline = false,
-        overflow}) {
+      bold = false,
+      color,
+      textAlign = TextAlign.start,
+      underline = false,
+      overflow}) {
     Color c;
     if (useColor || color != null) {
       if (color == null) {
@@ -44,7 +47,7 @@ class SmashUI {
       c = SmashColors.mainTextColorNeutral;
     }
     var textDecoration =
-    underline ? TextDecoration.underline : TextDecoration.none;
+        underline ? TextDecoration.underline : TextDecoration.none;
     return Text(
       text,
       textAlign: textAlign,
@@ -54,6 +57,7 @@ class SmashUI {
         decoration: textDecoration,
         fontWeight: bold ? FontWeight.bold : FontWeight.normal,
         fontSize: NORMAL_SIZE,
+        fontFamily: DEFAULT_FONTFAMILY,
       ),
     );
   }
@@ -80,6 +84,7 @@ class SmashUI {
       style: TextStyle(
           color: c,
           fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+          fontFamily: DEFAULT_FONTFAMILY,
           fontSize: BIG_SIZE),
     );
   }
@@ -104,6 +109,41 @@ class SmashUI {
 
   static getTransparentIcon() {
     return Icon(Icons.clear, color: Colors.white.withAlpha(0));
+  }
+}
+
+class NetworkImageWidget extends StatelessWidget {
+  double _height;
+  String _imageUrl;
+
+  NetworkImageWidget(this._imageUrl, this._height);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Stack(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            Center(
+              child: Container(
+                height: _height,
+                decoration: BoxDecoration(
+                    border: Border.all(color: SmashColors.mainDecorations)),
+                padding: EdgeInsets.all(5),
+                child: FadeInImage.memoryNetwork(
+                    placeholder: kTransparentImage,
+                    image: _imageUrl,
+                    fit: BoxFit.contain),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -227,8 +267,8 @@ void showErrorDialog(BuildContext context, String prompt,
 /// Show an info dialog, adding an optional [title] and a [prompt] for the user.
 void showInfoDialog(BuildContext context, String prompt,
     {String title,
-      double dialogHeight: SIMPLE_DIALOGS_HEIGHT,
-      List<Widget> widgets}) async {
+    double dialogHeight: SIMPLE_DIALOGS_HEIGHT,
+    List<Widget> widgets}) async {
   await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -236,9 +276,9 @@ void showInfoDialog(BuildContext context, String prompt,
           title: title == null
               ? null
               : Text(
-            title,
-            textAlign: TextAlign.center,
-          ),
+                  title,
+                  textAlign: TextAlign.center,
+                ),
           content: Container(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -275,16 +315,16 @@ void showInfoDialog(BuildContext context, String prompt,
 /// If the user pushes the cancel button, null will be returned, if user pushes ok without entering anything the empty string '' is returned.
 Future<String> showInputDialog(BuildContext context, String title, String label,
     {defaultText: '',
-      hintText: '',
-      okText: 'Ok',
-      cancelText: 'Cancel',
-      Function validationFunction}) async {
+    hintText: '',
+    okText: 'Ok',
+    cancelText: 'Cancel',
+    Function validationFunction}) async {
   String userInput = defaultText;
   String errorText;
 
   var textEditingController = new TextEditingController(text: defaultText);
   var inputDecoration =
-  new InputDecoration(labelText: label, hintText: hintText);
+      new InputDecoration(labelText: label, hintText: hintText);
   var _textWidget = new TextFormField(
     controller: textEditingController,
     autofocus: true,

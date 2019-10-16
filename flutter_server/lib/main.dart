@@ -35,8 +35,43 @@ class GssApp extends StatelessWidget {
         title: TITLE,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: MAIN_COLOR,
-        ),
+            primarySwatch: SmashColors.mainDecorationsMc,
+            accentColor: SmashColors.mainSelectionMc,
+            canvasColor: SmashColors.mainBackground,
+            brightness: Brightness.light,
+            inputDecorationTheme: InputDecorationTheme(
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(
+                    color: Color.fromARGB(
+                        255,
+                        SmashColors.mainDecorationsDarkR,
+                        SmashColors.mainDecorationsDarkG,
+                        SmashColors.mainDecorationsDarkB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                    color: Color.fromARGB(
+                        255,
+                        SmashColors.mainDecorationsDarkR,
+                        SmashColors.mainDecorationsDarkG,
+                        SmashColors.mainDecorationsDarkB)),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderSide:
+                    BorderSide(color: Color.fromARGB(255, 128, 128, 128)),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(
+                    color: Color.fromARGB(
+                        255,
+                        SmashColors.mainSelectionBorderR,
+                        SmashColors.mainSelectionBorderG,
+                        SmashColors.mainSelectionBorderB)),
+              ),
+//            labelStyle: const TextStyle(
+//              color: Color.fromARGB(255, 128, 128, 128),
+//            ),
+            )),
         home: MainPage(), //LoginScreen(),
       ),
     );
@@ -308,13 +343,14 @@ class _MainPageState extends State<MainPage> {
     List<dynamic> formNotesList = json[FORMS];
     for (int i = 0; i < formNotesList.length; i++) {
       dynamic formItem = formNotesList[i];
-      var id = formItem[ID];
+      var noteId = formItem[ID];
       var name = formItem[NAME];
       var form = formItem[FORM];
+      var userId = formItem[USER];
       //      var ts = noteItem[TS];
       var x = formItem[X];
       var y = formItem[Y];
-      markers.add(buildFormNote(x, y, name, form, id));
+      markers.add(buildFormNote(x, y, name, form, noteId, userId));
     }
 
     List<dynamic> imagesList = json[IMAGES];
@@ -414,35 +450,12 @@ class _MainPageState extends State<MainPage> {
               onTap: (e) {
                 Navigator.of(context).pop();
               },
-              titleText: Text(
+              titleText: SmashUI.titleText(
                 name,
-                style: DEFAULT_BLACKSTYLE,
                 textAlign: TextAlign.center,
               ),
-              messageText: Container(
-                child: Center(
-                  child: Stack(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                      Center(
-                        child: Container(
-                          height: _screenHeight / 2.0,
-                          decoration: BoxDecoration(
-                              border: Border.all(color: MAIN_COLOR)),
-                          padding: EdgeInsets.all(5),
-                          child: FadeInImage.memoryNetwork(
-                              placeholder: kTransparentImage,
-                              image: "$API_IMAGE/$dataId",
-                              fit: BoxFit.contain),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              messageText:
+                  NetworkImageWidget("$API_IMAGE/$dataId", _screenHeight / 2.0),
             )..show(context);
           },
           child: imageWidget,
@@ -451,7 +464,8 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Marker buildFormNote(var x, var y, String name, String form, var id) {
+  Marker buildFormNote(
+      var x, var y, String name, String form, var noteId, var userId) {
     LatLng p = LatLng(y, x);
     return Marker(
       width: 180,
@@ -470,11 +484,6 @@ class _MainPageState extends State<MainPage> {
               onTap: (e) {
                 Navigator.of(context).pop();
               },
-              titleText: Text(
-                name,
-                style: DEFAULT_BLACKSTYLE,
-                textAlign: TextAlign.center,
-              ),
               messageText: Container(
                 height: 600,
                 child: Center(
@@ -484,7 +493,8 @@ class _MainPageState extends State<MainPage> {
                         color: SmashColors.mainBackground, bold: true),
                     sectionName,
                     p,
-                    id,
+                    noteId,
+                    userId,
                   ),
                 ),
               ),

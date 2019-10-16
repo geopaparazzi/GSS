@@ -12,6 +12,7 @@ const WEBAPP_URL = "http://localhost:8080";
 
 const API_DATA = "$WEBAPP_URL/data";
 const API_IMAGE = "$API_DATA/images";
+const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
 
 //const SERVER_IP = "172.26.181.138"; // office hydrologis
 
