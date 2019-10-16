@@ -1,19 +1,26 @@
 import 'dart:convert';
+
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:fab_circular_menu/fab_circular_menu.dart';
+import 'package:flushbar/flushbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:flutter_server/com/hydrologis/gss/layers.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/colors.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/ui.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/form_widgets.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/forms.dart';
 import 'package:flutter_server/com/hydrologis/gss/network.dart';
+import 'package:flutter_server/com/hydrologis/gss/utils.dart';
+import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:latlong/latlong.dart';
 import 'package:provider/provider.dart';
-import 'com/hydrologis/gss/variables.dart';
-import 'com/hydrologis/gss/layers.dart';
-import 'com/hydrologis/gss/utils.dart';
-import 'package:fab_circular_menu/fab_circular_menu.dart';
-import 'package:community_material_icon/community_material_icon.dart';
-export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:transparent_image/transparent_image.dart';
+
+export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
 void main() {
   runApp(GssApp());
@@ -92,8 +99,8 @@ class _MainPageState extends State<MainPage> {
           return FloatingActionButton(
             child: Text(markers.length.toString()),
             onPressed: null,
-            backgroundColor: mainDecorationsDark,
-            foregroundColor: mainBackground,
+            backgroundColor: SmashColors.mainDecorationsDark,
+            foregroundColor: SmashColors.mainBackground,
             heroTag: null,
           );
         },
@@ -151,7 +158,7 @@ class _MainPageState extends State<MainPage> {
               padding: const EdgeInsets.all(24.0),
               child: FloatingActionButton(
                 onPressed: () {},
-                child: Icon(CommunityMaterialIcons.logout),
+                child: Icon(MdiIcons.logout),
               ),
             ),
           ),
@@ -172,7 +179,7 @@ class _MainPageState extends State<MainPage> {
                         _mapController.move(_mapController.center, zoom);
                       });
                     },
-                    child: Icon(CommunityMaterialIcons.magnify_minus),
+                    child: Icon(MdiIcons.magnifyMinus),
                   ),
                   FloatingActionButton(
                     mini: true,
@@ -183,7 +190,7 @@ class _MainPageState extends State<MainPage> {
                         _mapController.move(_mapController.center, zoom);
                       });
                     },
-                    child: Icon(CommunityMaterialIcons.magnify_plus),
+                    child: Icon(MdiIcons.magnifyPlus),
                   ),
                 ],
               ),
@@ -195,32 +202,32 @@ class _MainPageState extends State<MainPage> {
             child: Container(),
             ringColor: Colors.white30,
             fabCloseIcon: Icon(
-              CommunityMaterialIcons.close,
+              MdiIcons.close,
             ),
             fabOpenIcon: Icon(
-              CommunityMaterialIcons.settings,
+              MdiIcons.settings,
             ),
             options: <Widget>[
               IconButton(
-                  icon: Icon(CommunityMaterialIcons.worker),
+                  icon: Icon(MdiIcons.worker),
                   tooltip: "Manage Surveyors",
                   onPressed: () {},
                   iconSize: 48.0,
                   color: Colors.deepOrange),
               IconButton(
-                  icon: Icon(CommunityMaterialIcons.account_group),
+                  icon: Icon(MdiIcons.accountGroup),
                   tooltip: "Manage Webusers",
                   onPressed: () {},
                   iconSize: 48.0,
                   color: Colors.deepOrange),
               IconButton(
-                  icon: Icon(CommunityMaterialIcons.export),
+                  icon: Icon(MdiIcons.export),
                   tooltip: "Export",
                   onPressed: () {},
                   iconSize: 48.0,
                   color: Colors.deepOrange),
               IconButton(
-                  icon: Icon(CommunityMaterialIcons.bug),
+                  icon: Icon(MdiIcons.bug),
                   tooltip: "Log View",
                   onPressed: () {},
                   iconSize: 48.0,
@@ -359,7 +366,7 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           children: <Widget>[
             Icon(
-              CommunityMaterialIcons.note_text,
+              MdiIcons.noteText,
               size: 48,
               color: Colors.indigo,
             ),
@@ -398,63 +405,45 @@ class _MainPageState extends State<MainPage> {
       builder: (ctx) => new Container(
         child: GestureDetector(
           onTap: () async {
-            _scaffoldKey.currentState.showSnackBar(SnackBar(
+            Flushbar(
+              flushbarPosition: FlushbarPosition.BOTTOM,
+              flushbarStyle: FlushbarStyle.GROUNDED,
               backgroundColor: Colors.white.withAlpha(128),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Row(
+//              isDismissible: true,
+//              dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+              onTap: (e) {
+                Navigator.of(context).pop();
+              },
+              titleText: Text(
+                name,
+                style: DEFAULT_BLACKSTYLE,
+                textAlign: TextAlign.center,
+              ),
+              messageText: Container(
+                child: Center(
+                  child: Stack(
                     children: <Widget>[
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 20),
-                          child: Text(
-                            name,
-                            style: DEFAULT_BLACKSTYLE,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Center(child: CircularProgressIndicator()),
                       ),
-                      FloatingActionButton(
-                        mini: true,
-                        child: Icon(
-                          Icons.close,
+                      Center(
+                        child: Container(
+                          height: _screenHeight / 2.0,
+                          decoration: BoxDecoration(
+                              border: Border.all(color: MAIN_COLOR)),
+                          padding: EdgeInsets.all(5),
+                          child: FadeInImage.memoryNetwork(
+                              placeholder: kTransparentImage,
+                              image: "$API_IMAGE/$dataId",
+                              fit: BoxFit.contain),
                         ),
-                        onPressed: () {
-                          _scaffoldKey.currentState.hideCurrentSnackBar();
-                        },
                       ),
                     ],
                   ),
-                  Container(
-                    child: Center(
-                      child: Stack(
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                          Center(
-                            child: Container(
-                              height: _screenHeight / 2.0,
-                              decoration: BoxDecoration(
-                                  border: Border.all(color: MAIN_COLOR)),
-                              padding: EdgeInsets.all(5),
-                              child: FadeInImage.memoryNetwork(
-                                  placeholder: kTransparentImage,
-                                  image: "$API_IMAGE/$dataId",
-                                  fit: BoxFit.contain),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              duration: Duration(seconds: 50),
-            ));
+            )..show(context);
           },
           child: imageWidget,
         ),
@@ -463,6 +452,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   Marker buildFormNote(var x, var y, String name, String form, var id) {
+    LatLng p = LatLng(y, x);
     return Marker(
       width: 180,
       height: 180,
@@ -470,12 +460,40 @@ class _MainPageState extends State<MainPage> {
       builder: (ctx) => new Container(
         child: GestureDetector(
           onTap: () async {
-            // TODO open form
+            var sectionMap = jsonDecode(form);
+            var sectionName = sectionMap[ATTR_SECTIONNAME];
+
+            Flushbar(
+              flushbarPosition: FlushbarPosition.BOTTOM,
+              flushbarStyle: FlushbarStyle.GROUNDED,
+              backgroundColor: Colors.white.withAlpha(128),
+              onTap: (e) {
+                Navigator.of(context).pop();
+              },
+              titleText: Text(
+                name,
+                style: DEFAULT_BLACKSTYLE,
+                textAlign: TextAlign.center,
+              ),
+              messageText: Container(
+                height: 600,
+                child: Center(
+                  child: MasterDetailPage(
+                    sectionMap,
+                    SmashUI.titleText(sectionName,
+                        color: SmashColors.mainBackground, bold: true),
+                    sectionName,
+                    p,
+                    id,
+                  ),
+                ),
+              ),
+            )..show(context);
           },
           child: Column(
             children: <Widget>[
               Icon(
-                CommunityMaterialIcons.notebook,
+                MdiIcons.notebook,
                 size: 48,
                 color: Colors.deepOrange,
               ),
