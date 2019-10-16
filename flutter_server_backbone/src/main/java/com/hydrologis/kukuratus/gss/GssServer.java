@@ -198,13 +198,14 @@ public class GssServer implements Vars {
 
         // get data from the server by type and the primary key id
         get("/data/:type/:id", ( req, res ) -> {
-            KukuratusLogger.logDebug("GssServer#get(/data/:type/:id", "Received request from " + req.raw().getRemoteAddr());
+            String type = req.params(":type");
+            String id = req.params(":id");
+            KukuratusLogger.logDebug("GssServer#get(/data/" + type + "/" + id,
+                    "Received request from " + req.raw().getRemoteAddr());
 
             try {
-                String type = req.params(":type");
                 // images or notes are requested
                 if (type.equals(GssDatabaseUtilities.IMAGES)) {
-                    String id = req.params(":id");
                     if (id != null) {
                         long idLong = Long.parseLong(id);
                         ImageData idObj = new ImageData(idLong);
@@ -222,12 +223,12 @@ public class GssServer implements Vars {
 
         // get an image by the original project id and the userid
         get("/imagedata/:userid/:originalid", ( req, res ) -> {
-            KukuratusLogger.logDebug("GssServer#get(/imagedata/:userid/:originalid",
+            String userId = req.params(":userid");
+            String originalImageDataId = req.params(":originalid");
+            KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + originalImageDataId,
                     "Received request from " + req.raw().getRemoteAddr());
 
             try {
-                String userId = req.params(":userid");
-                String originalImageDataId = req.params(":originalid");
                 long userIdLong = Long.parseLong(userId);
                 long originalImageDataIdLong = Long.parseLong(originalImageDataId);
                 Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
