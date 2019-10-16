@@ -46,6 +46,8 @@ final String DATAID = "dataid";
 final String DATA = "data";
 final String LOGS = "logs";
 final String NOTES = "notes";
+final String FORMS = "forms";
+final String FORM = "form";
 final String IMAGES = "images";
 final String TS = "ts";
 

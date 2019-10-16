@@ -21,6 +21,7 @@ import org.locationtech.jts.geom.Point;
 
 import com.hydrologis.kukuratus.database.ISpatialTable;
 import com.hydrologis.kukuratus.database.ormlite.KukuratusPointType;
+import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
@@ -32,16 +33,23 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "images")
 public class Images implements ISpatialTable {
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$ s
     public static final String ALTIM_FIELD_NAME = "altim"; //$NON-NLS-1$
     public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
+    public static final String UPLOADTIMESTAMP_FIELD_NAME = "uploadts"; //$NON-NLS-1$
     public static final String AZIMUTH_FIELD_NAME = "azimuth"; //$NON-NLS-1$
     public static final String TEXT_FIELD_NAME = "text"; //$NON-NLS-1$
     public static final String NOTE_FIELD_NAME = "notesid"; //$NON-NLS-1$
     public static final String IMAGEDATA_FIELD_NAME = "imagedataid"; //$NON-NLS-1$
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
+    public static final String GPAPPROJECT_FIELD_NAME = "gpapprojectid"; //$NON-NLS-1$
+    public static final String THUMB_FIELD_NAME = "thumbnail"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
+
+    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
+    public long originalId;
 
     @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusPointType.class)
     public Point the_geom;
@@ -51,6 +59,9 @@ public class Images implements ISpatialTable {
 
     @DatabaseField(columnName = TIMESTAMP_FIELD_NAME, canBeNull = false, index = true)
     public long timestamp;
+
+    @DatabaseField(columnName = UPLOADTIMESTAMP_FIELD_NAME, canBeNull = false, index = true)
+    public long uploadTimestamp;
 
     @DatabaseField(columnName = AZIMUTH_FIELD_NAME, canBeNull = false)
     public double azimuth;
@@ -64,8 +75,14 @@ public class Images implements ISpatialTable {
     @DatabaseField(columnName = IMAGEDATA_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = ImageData.imagedataFKColumnDefinition)
     public ImageData imageData;
 
+    @DatabaseField(columnName = THUMB_FIELD_NAME, canBeNull = true, dataType = DataType.BYTE_ARRAY)
+    public byte[] thumbnail;
+
     @DatabaseField(columnName = GPAPUSER_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapUsers.usersFKColumnDefinition)
     public GpapUsers gpapUser;
+
+    @DatabaseField(columnName = GPAPPROJECT_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapProject.projectsFKColumnDefinition)
+    public GpapProject gpapProject;
 
     Images() {
     }
@@ -74,9 +91,10 @@ public class Images implements ISpatialTable {
         this.id = id;
     }
 
-    public Images( Point the_geom, double altimetry, long timestamp, double azimuth, String text, Notes notes,
-            ImageData imageData, GpapUsers gpapUser ) {
+    public Images( Point the_geom, long originalId, double altimetry, long timestamp, double azimuth, String text, Notes notes,
+            ImageData imageData, GpapUsers gpapUser, byte[] thumbnail, GpapProject gpapProject, long uploadTimestamp ) {
         this.the_geom = the_geom;
+        this.originalId = originalId;
         this.altimetry = altimetry;
         this.timestamp = timestamp;
         this.azimuth = azimuth;
@@ -84,6 +102,9 @@ public class Images implements ISpatialTable {
         this.notes = notes;
         this.imageData = imageData;
         this.gpapUser = gpapUser;
+        this.gpapProject = gpapProject;
+        this.thumbnail = thumbnail;
+        this.uploadTimestamp = uploadTimestamp;
         the_geom.setSRID(ISpatialTable.SRID);
     }
 

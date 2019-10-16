@@ -46,18 +46,31 @@ import com.j256.ormlite.table.DatabaseTable;
 public class Notes implements ISpatialTable, KmlRepresenter {
     private static final long serialVersionUID = 1L;
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+
+    public static final String PREVIOUSID_FIELD_NAME = "previd"; //$NON-NLS-1$
+    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$
     public static final String ALTIM_FIELD_NAME = "altim"; //$NON-NLS-1$
     public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
+
+    public static final String UPLOADTIMESTAMP_FIELD_NAME = "uploadts"; //$NON-NLS-1$
     public static final String DESCRIPTION_FIELD_NAME = "description"; //$NON-NLS-1$
     public static final String TEXT_FIELD_NAME = "text"; //$NON-NLS-1$
     public static final String FORM_FIELD_NAME = "form"; //$NON-NLS-1$
     public static final String STYLE_FIELD_NAME = "style"; //$NON-NLS-1$
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
 
+    public static final String GPAPPROJECT_FIELD_NAME = "gpapprojectid"; //$NON-NLS-1$
+
     public static final String notesFKColumnDefinition = "bigint references notes(id) on delete cascade"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
+
+    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
+    public long originalId;
+
+    @DatabaseField(columnName = PREVIOUSID_FIELD_NAME, canBeNull = true, index = true)
+    public Long previousId;
 
     @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusPointType.class)
     public Point the_geom;
@@ -67,6 +80,9 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     @DatabaseField(columnName = TIMESTAMP_FIELD_NAME, canBeNull = false, index = true)
     public long timestamp;
+
+    @DatabaseField(columnName = UPLOADTIMESTAMP_FIELD_NAME, canBeNull = false, index = true)
+    public long uploadTimestamp;
 
     @DatabaseField(columnName = DESCRIPTION_FIELD_NAME, canBeNull = false)
     public String description;
@@ -83,6 +99,9 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     @DatabaseField(columnName = GPAPUSER_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapUsers.usersFKColumnDefinition)
     public GpapUsers gpapUser;
 
+    @DatabaseField(columnName = GPAPPROJECT_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapProject.projectsFKColumnDefinition)
+    public GpapProject gpapProject;
+
     private List<String> images;
 
     Notes() {
@@ -92,10 +111,11 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         this.id = id;
     }
 
-    public Notes( Point the_geom, double altimetry, long timestamp, String description, String text, String form, String style,
-            GpapUsers gpapUser ) {
+    public Notes( Point the_geom, long originalId, double altimetry, long timestamp, String description, String text, String form,
+            String style, GpapUsers gpapUser, GpapProject gpapProject, Long previousId, long uploadTimestamp ) {
         super();
         this.the_geom = the_geom;
+        this.originalId = originalId;
         this.altimetry = altimetry;
         this.timestamp = timestamp;
         this.description = description;
@@ -103,20 +123,29 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         this.form = form;
         this.style = style;
         this.gpapUser = gpapUser;
+        this.gpapProject = gpapProject;
+        if (previousId != null)
+            this.previousId = previousId;
+        this.uploadTimestamp = uploadTimestamp;
         the_geom.setSRID(ISpatialTable.SRID);
     }
 
-    public Notes( Point the_geom, double altimetry, Date timestamp, String description, String text, String form, String style,
-            GpapUsers gpapUser ) {
+    public Notes( Point the_geom, long originalId, double altimetry, Date timestamp, String description, String text, String form,
+            String style, GpapUsers gpapUser, GpapProject gpapProject, Long previousId, long uploadTimestamp ) {
         super();
         this.the_geom = the_geom;
+        this.originalId = originalId;
         this.altimetry = altimetry;
+        this.gpapProject = gpapProject;
         this.timestamp = timestamp.getTime();
         this.description = description;
         this.text = text;
         this.form = form;
         this.style = style;
         this.gpapUser = gpapUser;
+        if (previousId != null)
+            this.previousId = previousId;
+        this.uploadTimestamp = uploadTimestamp;
     }
 
     public long getId() {
@@ -125,6 +154,22 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     public void setId( long id ) {
         this.id = id;
+    }
+
+    public long getOriginalId() {
+        return originalId;
+    }
+
+    public void setOriginalId( long originalId ) {
+        this.originalId = originalId;
+    }
+
+    public Long getPreviousId() {
+        return previousId;
+    }
+
+    public void setPreviousId( Long previousId ) {
+        this.previousId = previousId;
     }
 
     public Point getThe_geom() {
@@ -149,6 +194,14 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     public void setTimestamp( long timestamp ) {
         this.timestamp = timestamp;
+    }
+
+    public long getUploadTimestamp() {
+        return uploadTimestamp;
+    }
+
+    public void setUploadTimestamp( long uploadTimestamp ) {
+        this.uploadTimestamp = uploadTimestamp;
     }
 
     public String getDescription() {
@@ -189,6 +242,14 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     public void setGpapUser( GpapUsers gpapUser ) {
         this.gpapUser = gpapUser;
+    }
+
+    public GpapProject getGpapProject() {
+        return gpapProject;
+    }
+
+    public void setGpapProject( GpapProject gpapProject ) {
+        this.gpapProject = gpapProject;
     }
 
     public String toKmlString() throws Exception {

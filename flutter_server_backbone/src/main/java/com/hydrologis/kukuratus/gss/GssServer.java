@@ -9,7 +9,6 @@ import static spark.Spark.staticFiles;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -18,10 +17,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
-import org.hortonmachine.dbs.compat.IHMResultSet;
-import org.hortonmachine.dbs.compat.IHMStatement;
-import org.hortonmachine.dbs.log.Logger;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
@@ -29,7 +24,6 @@ import com.hydrologis.kukuratus.gss.database.Forms;
 import com.hydrologis.kukuratus.gss.database.GpapUsers;
 import com.hydrologis.kukuratus.gss.database.GpsLogs;
 import com.hydrologis.kukuratus.gss.database.GpsLogsData;
-import com.hydrologis.kukuratus.gss.database.GpsLogsProperties;
 import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
@@ -60,7 +54,6 @@ public class GssServer implements Vars {
             Images.class, //
             GpsLogs.class, //
             GpsLogsData.class, //
-            GpsLogsProperties.class, //
             Forms.class);
 
     private ITilesGenerator mapsforgeTilesGenerator;
@@ -189,12 +182,14 @@ public class GssServer implements Vars {
             Long from = null;
             Long to = null;
 
-//            Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
-//            Dao<GpsLogsProperties, ? > logPropDao = DatabaseHandler.instance().getDao(GpsLogsProperties.class);
-//            GssDatabaseUtilities.getLogs(root, logsDao, logPropDao, users, from, to);
+            Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+            GssDatabaseUtilities.getLogs(root, logsDao, users, from, to);
 
             Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
-            GssDatabaseUtilities.getNotes(root, notesDao, users, from, to);
+            // simple notes
+            GssDatabaseUtilities.getNotes(root, notesDao, users, from, to, false);
+            // form notes
+            GssDatabaseUtilities.getNotes(root, notesDao, users, from, to, true);
 
             GssDatabaseUtilities.getImages(root, DatabaseHandler.instance().getDb(), users, from, to);
 

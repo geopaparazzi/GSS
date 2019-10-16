@@ -18,7 +18,6 @@ const API_IMAGE = "$API_DATA/images";
 class ServerApi {
   static Future<String> getData({users, from, to}) async {
     String apiCall = "$API_DATA";
-    print(apiCall);
     String values = await HttpRequest.getString(apiCall);
     return values;
   }

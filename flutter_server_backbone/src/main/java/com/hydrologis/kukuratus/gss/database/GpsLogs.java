@@ -23,12 +23,9 @@ import java.util.List;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.LineString;
 
-import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.database.ISpatialTable;
 import com.hydrologis.kukuratus.database.ormlite.KukuratusLineStringType;
-import com.hydrologis.kukuratus.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.utils.export.KmlRepresenter;
-import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
@@ -41,15 +38,23 @@ import com.j256.ormlite.table.DatabaseTable;
 public class GpsLogs implements ISpatialTable, KmlRepresenter {
     private static final long serialVersionUID = 1L;
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$ s
     public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
     public static final String STARTTS_FIELD_NAME = "startts"; //$NON-NLS-1$
     public static final String ENDTS_FIELD_NAME = "endts"; //$NON-NLS-1$
+    public static final String UPLOADTIMESTAMP_FIELD_NAME = "uploadts"; //$NON-NLS-1$
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
+    public static final String GPAPPROJECT_FIELD_NAME = "gpapprojectid"; //$NON-NLS-1$
+    public static final String COLOR_FIELD_NAME = "color"; //$NON-NLS-1$
+    public static final String WIDTH_FIELD_NAME = "width"; //$NON-NLS-1$
 
     public static final String gpslogFKColumnDefinition = "bigint references gpslogs(id) on delete cascade"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
+
+    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
+    public long originalId;
 
     @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
     public String name;
@@ -60,11 +65,23 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
     @DatabaseField(columnName = ENDTS_FIELD_NAME, canBeNull = false)
     public long endTs;
 
+    @DatabaseField(columnName = UPLOADTIMESTAMP_FIELD_NAME, canBeNull = false, index = true)
+    public long uploadTimestamp;
+
     @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusLineStringType.class)
     public LineString the_geom;
 
     @DatabaseField(columnName = GPAPUSER_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapUsers.usersFKColumnDefinition)
     public GpapUsers gpapUser;
+
+    @DatabaseField(columnName = GPAPPROJECT_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapProject.projectsFKColumnDefinition)
+    public GpapProject gpapProject;
+
+    @DatabaseField(columnName = COLOR_FIELD_NAME, canBeNull = false)
+    public String color;
+
+    @DatabaseField(columnName = WIDTH_FIELD_NAME, canBeNull = false)
+    public float width;
 
     GpsLogs() {
     }
@@ -73,30 +90,25 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
         this.id = id;
     }
 
-    public GpsLogs( String name, long startTs, long endTs, LineString the_geom, GpapUsers gpapUser ) {
+    public GpsLogs( long originalId, String name, long startTs, long endTs, LineString the_geom, String color, float width,
+            GpapUsers gpapUser, GpapProject gpapProject, long uploadTimestamp ) {
+        this.originalId = originalId;
         this.name = name;
         this.startTs = startTs;
         this.endTs = endTs;
         this.the_geom = the_geom;
         this.gpapUser = gpapUser;
+        this.color = color;
+        this.width = width;
+        this.gpapProject = gpapProject;
+        this.uploadTimestamp = uploadTimestamp;
         the_geom.setSRID(ISpatialTable.SRID);
     }
 
     public String toKmlString() {
-        String hexColor = "#FF0000"; //$NON-NLS-1$
-        float width = 3;
-        try {
-            Dao<GpsLogsProperties, ? > logPropDAO = DatabaseHandler.instance().getDao(GpsLogsProperties.class);
-
-            GpsLogsProperties props = logPropDAO.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, this)
-                    .queryForFirst();
-            hexColor = props.color;
-            if (!hexColor.startsWith("#")) { //$NON-NLS-1$
-                hexColor = "#FF0000"; //$NON-NLS-1$
-            }
-            width = props.width;
-        } catch (Exception e) {
-            KukuratusLogger.logError(this, e);
+        String hexColor = "#FF0000"; //$NON-NLS-1$ ;
+        if (color.startsWith("#")) { //$NON-NLS-1$
+            hexColor = color;
         }
 
         String name = makeXmlSafe(this.name);

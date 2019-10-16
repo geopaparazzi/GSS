@@ -68,9 +68,10 @@ class _MainPageState extends State<MainPage> {
 //    html.IdbFactory fac = html.window.indexedDB;
 
     var layers = <LayerOptions>[];
-    if (_logs != null) {
-      layers.add(_logs);
-    }
+
+//    if (_logs != null) {
+//      layers.add(_logs);
+//    }
     if (_markers != null && _markers.length > 0) {
       var markerCluster = MarkerClusterLayerOptions(
         maxClusterRadius: 40,
@@ -281,30 +282,42 @@ class _MainPageState extends State<MainPage> {
       }
       _logs = PolylineLayerOptions(
         polylines: lines,
+//        rebuild: true
       );
     }
 
     List<Marker> markers = <Marker>[];
-    List<dynamic> notesList = json[NOTES];
-
-    for (int i = 0; i < notesList.length; i++) {
-      dynamic noteItem = notesList[i];
-//      var id = noteItem[ID];
+    List<dynamic> simpleNotesList = json[NOTES];
+    for (int i = 0; i < simpleNotesList.length; i++) {
+      dynamic noteItem = simpleNotesList[i];
+      //      var id = noteItem[ID];
       var name = noteItem[NAME];
-//      var ts = noteItem[TS];
+      //      var ts = noteItem[TS];
       var x = noteItem[X];
       var y = noteItem[Y];
-      markers.add(buildNote(x, y, name));
+      markers.add(buildSimpleNote(x, y, name));
+    }
+
+    List<dynamic> formNotesList = json[FORMS];
+    for (int i = 0; i < formNotesList.length; i++) {
+      dynamic formItem = formNotesList[i];
+      var id = formItem[ID];
+      var name = formItem[NAME];
+      var form = formItem[FORM];
+      //      var ts = noteItem[TS];
+      var x = formItem[X];
+      var y = formItem[Y];
+      markers.add(buildFormNote(x, y, name, form, id));
     }
 
     List<dynamic> imagesList = json[IMAGES];
     for (int i = 0; i < imagesList.length; i++) {
       dynamic imageItem = imagesList[i];
-//      var id = imageItem[ID];
+      //      var id = imageItem[ID];
       var dataId = imageItem[DATAID];
       var data = imageItem[DATA];
       var name = imageItem[NAME];
-//      var ts = imageItem[TS];
+      //      var ts = imageItem[TS];
       var x = imageItem[X];
       var y = imageItem[Y];
 
@@ -313,14 +326,12 @@ class _MainPageState extends State<MainPage> {
     }
 
     _markers = markers;
-//    _mapController.move(p, 13);
-
-    // TODO add clickable notes, that could show also forms!
+    //    _mapController.move(p, 13);
 
     setState(() {});
   }
 
-  Marker buildNote(var x, var y, String name) {
+  Marker buildSimpleNote(var x, var y, String name) {
     final constraints = BoxConstraints(
       maxWidth: 800.0, // maxwidth calculated
       minHeight: 0.0,
@@ -380,8 +391,6 @@ class _MainPageState extends State<MainPage> {
       scale: 2.0,
     );
 
-    double snackWidth = _screenWidth / 3;
-    print(snackWidth);
     return Marker(
       width: 180,
       height: 180,
@@ -448,6 +457,46 @@ class _MainPageState extends State<MainPage> {
             ));
           },
           child: imageWidget,
+        ),
+      ),
+    );
+  }
+
+  Marker buildFormNote(var x, var y, String name, String form, var id) {
+    return Marker(
+      width: 180,
+      height: 180,
+      point: new LatLng(y, x),
+      builder: (ctx) => new Container(
+        child: GestureDetector(
+          onTap: () async {
+            // TODO open form
+          },
+          child: Column(
+            children: <Widget>[
+              Icon(
+                CommunityMaterialIcons.notebook,
+                size: 48,
+                color: Colors.deepOrange,
+              ),
+              Container(
+                decoration: new BoxDecoration(
+                    color: Colors.deepOrange,
+                    borderRadius:
+                        new BorderRadius.all(const Radius.circular(10.0))),
+                child: new Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

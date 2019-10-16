@@ -29,30 +29,35 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "imagedata")
 public class ImageData {
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
+    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$ s
     public static final String DATA_FIELD_NAME = "data"; //$NON-NLS-1$
-    public static final String THUMB_FIELD_NAME = "thumbnail"; //$NON-NLS-1$
-    
-    public static final String imagedataFKColumnDefinition = "bigint references imagedata(id) on delete cascade"; //$NON-NLS-1$
 
+    public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
+
+    public static final String imagedataFKColumnDefinition = "bigint references imagedata(id) on delete cascade"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
-    
-    @DatabaseField(columnName = THUMB_FIELD_NAME, canBeNull = true, dataType = DataType.BYTE_ARRAY)
-    public byte[] thumbnail;
+
+    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
+    public long originalId;
 
     @DatabaseField(columnName = DATA_FIELD_NAME, canBeNull = false, dataType = DataType.BYTE_ARRAY)
     public byte[] data;
 
-    ImageData(){
+    @DatabaseField(columnName = GPAPUSER_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapUsers.usersFKColumnDefinition)
+    public GpapUsers gpapUser;
+
+    ImageData() {
     }
 
     public ImageData( long id ) {
         this.id = id;
     }
 
-    public ImageData( byte[] thumbnail, byte[] data ) {
-        this.thumbnail = thumbnail;
+    public ImageData( long originalId, byte[] data, GpapUsers gpapUser ) {
+        this.originalId = originalId;
         this.data = data;
+        this.gpapUser = gpapUser;
     }
 }

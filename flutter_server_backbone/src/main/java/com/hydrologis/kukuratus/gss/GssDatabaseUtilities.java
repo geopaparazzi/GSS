@@ -7,8 +7,6 @@ import java.util.List;
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.IHMResultSet;
 import org.hortonmachine.dbs.compat.IHMStatement;
-import org.hortonmachine.gears.libs.modules.HMConstants;
-import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
@@ -16,8 +14,6 @@ import org.locationtech.jts.geom.Coordinate;
 import com.hydrologis.kukuratus.database.ISpatialTable;
 import com.hydrologis.kukuratus.gss.database.GpapUsers;
 import com.hydrologis.kukuratus.gss.database.GpsLogs;
-import com.hydrologis.kukuratus.gss.database.GpsLogsProperties;
-import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
 import com.j256.ormlite.dao.Dao;
@@ -25,7 +21,9 @@ import com.j256.ormlite.stmt.Where;
 
 public class GssDatabaseUtilities {
     public static final String NOTES = "notes";
+    public static final String FORMS = "forms";
     public static final String IMAGES = "images";
+    public static final String FORM = "form";
     public static final String Y = "y";
     public static final String X = "x";
     public static final String COORDS = "coords";
@@ -56,8 +54,8 @@ public class GssDatabaseUtilities {
      * @return the root object that was used.
      * @throws SQLException
      */
-    public static JSONObject getLogs( JSONObject root, Dao<GpsLogs, ? > logsDao, Dao<GpsLogsProperties, ? > logsPropertiesDao,
-            List<GpapUsers> users, Long from, Long to ) throws SQLException {
+    public static JSONObject getLogs( JSONObject root, Dao<GpsLogs, ? > logsDao, List<GpapUsers> users, Long from, Long to )
+            throws SQLException {
         Where<GpsLogs, ? > eq = logsDao.queryBuilder().where().in(GpsLogs.GPAPUSER_FIELD_NAME, users);
         if (from != null) {
             eq = eq.and().ge(GpsLogs.STARTTS_FIELD_NAME, from);
@@ -76,13 +74,11 @@ public class GssDatabaseUtilities {
         List<GpsLogs> gpsLogs = eq.query();
         if (gpsLogs.size() > 0) {
             for( GpsLogs log : gpsLogs ) {
-                GpsLogsProperties props = logsPropertiesDao.queryBuilder().where().eq(GpsLogsProperties.GPSLOGS_FIELD_NAME, log)
-                        .queryForFirst();
                 JSONObject logObject = new JSONObject();
                 jsonLogs.put(logObject);
                 logObject.put(ID, log.id);
-                logObject.put(COLOR, props.color);
-                logObject.put(WIDTH, props.width);
+                logObject.put(COLOR, log.color);
+                logObject.put(WIDTH, log.width);
                 logObject.put(NAME, log.name);
                 logObject.put(STARTTS, log.startTs);
                 logObject.put(ENDTS, log.endTs);
@@ -101,8 +97,8 @@ public class GssDatabaseUtilities {
         return root;
     }
 
-    public static JSONObject getNotes( JSONObject root, Dao<Notes, ? > notesDao, List<GpapUsers> users, Long from, Long to )
-            throws SQLException {
+    public static JSONObject getNotes( JSONObject root, Dao<Notes, ? > notesDao, List<GpapUsers> users, Long from, Long to,
+            boolean typeForm ) throws SQLException {
         if (root == null) {
             root = new JSONObject();
         }
@@ -116,16 +112,26 @@ public class GssDatabaseUtilities {
         }
 
         JSONArray jsonNotes = new JSONArray();
-        root.put(NOTES, jsonNotes);
-        List<Notes> notesList = eq.query();
-        if (notesList.size() > 0) {
+        if (typeForm) {
+            eq = eq.and().ne(Notes.FORM_FIELD_NAME, "");
+            root.put(FORMS, jsonNotes);
+        } else {
+            eq = eq.and().eq(Notes.FORM_FIELD_NAME, "");
+            root.put(NOTES, jsonNotes);
+        }
 
+        List<Notes> notesList = eq.query();
+
+        if (notesList.size() > 0) {
             for( Notes note : notesList ) {
                 JSONObject noteObject = new JSONObject();
                 jsonNotes.put(noteObject);
                 noteObject.put(ID, note.id);
                 noteObject.put(NAME, note.text);
                 noteObject.put(TS, note.timestamp);
+                if (typeForm) {
+                    noteObject.put(FORM, note.form);
+                }
                 Coordinate c = note.the_geom.getCoordinate();
                 noteObject.put(X, c.x);
                 noteObject.put(Y, c.y);
@@ -140,16 +146,15 @@ public class GssDatabaseUtilities {
             root = new JSONObject();
         }
 
-        String sql = "SELECT i." + Images.ID_FIELD_NAME + ", st_x(i." + ISpatialTable.GEOM_FIELD_NAME + "), st_y(i."
-                + ISpatialTable.GEOM_FIELD_NAME + "), i." + Images.TIMESTAMP_FIELD_NAME + ", i." + Images.TEXT_FIELD_NAME + ", i."
-                + Images.IMAGEDATA_FIELD_NAME + ", id." + ImageData.THUMB_FIELD_NAME + " "
-                + "FROM images i, imagedata id WHERE i." + Images.NOTE_FIELD_NAME + " is null and i."
-                + Images.IMAGEDATA_FIELD_NAME + "=id." + ImageData.ID_FIELD_NAME;
+        String sql = "SELECT " + Images.ID_FIELD_NAME + ", st_x(" + ISpatialTable.GEOM_FIELD_NAME + "), st_y("
+                + ISpatialTable.GEOM_FIELD_NAME + "), " + Images.TIMESTAMP_FIELD_NAME + ", " + Images.TEXT_FIELD_NAME + ", "
+                + Images.IMAGEDATA_FIELD_NAME + ", " + Images.THUMB_FIELD_NAME + " FROM images WHERE " + Images.NOTE_FIELD_NAME
+                + " is null";
         if (from != null) {
-            sql += " and i." + Images.TIMESTAMP_FIELD_NAME + ">" + from;
+            sql += " and " + Images.TIMESTAMP_FIELD_NAME + ">" + from;
         }
         if (to != null) {
-            sql += " and i." + Images.TIMESTAMP_FIELD_NAME + "<" + to;
+            sql += " and " + Images.TIMESTAMP_FIELD_NAME + "<" + to;
         }
         String _sql = sql;
 

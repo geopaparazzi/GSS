@@ -21,40 +21,48 @@ import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
 /**
- * The gps log properties table.
+ * The geopaparazzi project class.
  * 
  * @author Andrea Antonello (www.hydrologis.com)
  */
-@DatabaseTable(tableName = "gpslogsproperties")
-public class GpsLogsProperties {
+@DatabaseTable(tableName = "gpapproject")
+public class GpapProject {
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
-    public static final String COLOR_FIELD_NAME = "color"; //$NON-NLS-1$
-    public static final String WIDTH_FIELD_NAME = "width"; //$NON-NLS-1$
-    public static final String GPSLOGS_FIELD_NAME = "gpslogsid"; //$NON-NLS-1$
+    public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
+
+    public static final String projectsFKColumnDefinition = "bigint references gpapproject(id) on delete cascade"; //$NON-NLS-1$
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
 
-    @DatabaseField(columnName = COLOR_FIELD_NAME, canBeNull = false)
-    public String color;
+    @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
+    public String name;
 
-    @DatabaseField(columnName = WIDTH_FIELD_NAME, canBeNull = false)
-    public float width;
-
-    @DatabaseField(columnName = GPSLOGS_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpsLogs.gpslogFKColumnDefinition)
-    public GpsLogs gpsLog;
-
-    GpsLogsProperties() {
+    public GpapProject() {
     }
 
-    public GpsLogsProperties( long id ) {
+    public GpapProject( long id ) {
         this.id = id;
     }
 
-    public GpsLogsProperties( String color, float width, GpsLogs gpsLog ) {
-        this.color = color;
-        this.width = width;
-        this.gpsLog = gpsLog;
+    public GpapProject( String name ) {
+        this.name = name;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId( long id ) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName( String name ) {
+        this.name = name;
     }
 
 }
