@@ -108,13 +108,13 @@ public class ProjectsImporter {
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170216_075147_compleanno_hydrologis.gpap", //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170205_130453_valencia_geopap.gpap", //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20180317_091712_bonn_codesprint.gpap", //$NON-NLS-1$
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap", //$NON-NLS-1$
+//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap", //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170120_123422_skiri.gpap", //$NON-NLS-1$
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20161221_092537_torino_arcobaleno.gpap", //$NON-NLS-1$
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160816_172638_bonn_foss4g.gpap", //$NON-NLS-1$
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160210_092652_hydrologis_11.gpap", //$NON-NLS-1$
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20121127_075920_sopraluogo_helsinki.gpap", //$NON-NLS-1$
-                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap", //$NON-NLS-1$
+//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20161221_092537_torino_arcobaleno.gpap", //$NON-NLS-1$
+//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160816_172638_bonn_foss4g.gpap", //$NON-NLS-1$
+//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160210_092652_hydrologis_11.gpap", //$NON-NLS-1$
+//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20121127_075920_sopraluogo_helsinki.gpap", //$NON-NLS-1$
+//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap", //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20150712_143343_foss4g_como.gpap", //$NON-NLS-1$
         };
 

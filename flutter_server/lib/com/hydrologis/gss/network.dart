@@ -8,7 +8,7 @@ import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
 const VALUE_KEY = "v";
-const WEBAPP_URL = "http://localhost:8080";
+const WEBAPP_URL = "http://localhost:8080"; // TODO make empty for release
 
 const API_DATA = "$WEBAPP_URL/data";
 const API_IMAGE = "$API_DATA/images";

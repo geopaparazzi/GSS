@@ -4,19 +4,23 @@ import static spark.Spark.before;
 import static spark.Spark.get;
 import static spark.Spark.options;
 import static spark.Spark.port;
-import static spark.Spark.staticFiles;
+import static spark.Spark.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
+import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.hortonmachine.gears.utils.files.FileUtilities;
+import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
@@ -57,8 +61,11 @@ public class GssServer implements Vars {
             Forms.class);
 
     private ITilesGenerator mapsforgeTilesGenerator;
-
     public void start() throws Exception {
+        start(null, null);
+    }
+
+    public void start( String keyStorePath, String keyStorePassword ) throws Exception {
         KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
         File dataFolder = workspace.getDataFolder();
         File dbFile = new File(dataFolder, "gss_database.mv.db"); //$NON-NLS-1$
@@ -66,7 +73,7 @@ public class GssServer implements Vars {
             KukuratusLogger.logInfo(this, "No database present in folder, creating one."); //$NON-NLS-1$
         }
 
-        // TODO handel dbs
+        // TODO handle dbs
         ASpatialDb db = EDb.H2GIS.getSpatialDb();
         db.open(dbFile.getAbsolutePath());
         DatabaseHandler.init(db);
@@ -75,8 +82,16 @@ public class GssServer implements Vars {
         /*
          * THE SERVER
          */
+        if (keyStorePath != null && keyStorePassword != null) {
+            KukuratusLogger.logInfo(this, "Using ssl with keystore: " + keyStorePath); //$NON-NLS-1$
+            secure(keyStorePath, keyStorePassword, null, null);
+        }
+
         port(WEBAPP_PORT);
         staticFiles.location("/public");
+
+        // TODO Cache/Expire time -> default is no caching
+        // staticFiles.expireTime(600); // ten minutes
 
         // ENABLE CORS START
         options("/*", ( request, response ) -> {
@@ -96,6 +111,10 @@ public class GssServer implements Vars {
 
         // ROUTES START
         activateMapsforge();
+
+        get("/check", ( req, res ) -> {
+            return "It works. " + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS);
+        });
 
         get("/tiles/:source/:z/:x/:y", ( req, res ) -> {
             String source = req.params(":source");
@@ -282,7 +301,7 @@ public class GssServer implements Vars {
 
     public static void main( String[] args ) throws Exception {
 
-        args = new String[]{"/home/hydrologis/TMP/TESTGSS/"}; // TODO remove after testing
+//        args = new String[]{"/home/hydrologis/TMP/TESTGSS/"}; // TODO remove after testing
 
         if (args.length == 0) {
             System.err.println("The workspace folder needs to be supplied as argument.");
@@ -296,8 +315,27 @@ public class GssServer implements Vars {
         }
         KukuratusWorkspace.setWorkspaceFolderPath(workspacePath);
 
+        String keyStorePath = null;
+        String keyStorePassword = null;
+        if (args.length == 2) {
+            File keyStorInfo = new File(args[1]);
+            if (keyStorInfo.exists()) {
+                keyStorePath = keyStorInfo.getAbsolutePath();
+                // ask for the password at startup
+                System.out.println("Please enter the keystore passord and press return:");
+                try (Scanner in = new Scanner(System.in)) {
+                    keyStorePassword = in.nextLine();
+
+                }
+
+            } else {
+                System.err.println("Keystore file doesn't exist.");
+                System.exit(1);
+            }
+        }
+
         GssServer lampServer = new GssServer();
-        lampServer.start();
+        lampServer.start(keyStorePath, keyStorePassword);
     }
 
 }

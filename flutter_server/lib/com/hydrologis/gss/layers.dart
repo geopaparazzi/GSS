@@ -1,11 +1,12 @@
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_server/com/hydrologis/gss/network.dart';
 
 const MAPSFORGE = "Mapsforge";
 
 final AVAILABLE_LAYERS_MAP = {
   '${MAPSFORGE}': TileLayerOptions(
     tms: false,
-    urlTemplate: 'http://localhost:8080/tiles/mapsforge/{z}/{x}/{y}',
+    urlTemplate: '$WEBAPP_URL/tiles/mapsforge/{z}/{x}/{y}',
     tileProvider: NonCachingNetworkTileProvider(),
   ),
   'Openstreetmap': TileLayerOptions(
