@@ -325,7 +325,11 @@ public class GssServer implements Vars {
                 System.out.println("Please enter the keystore passord and press return:");
                 try (Scanner in = new Scanner(System.in)) {
                     keyStorePassword = in.nextLine();
-
+                    if(keyStorePassword.trim().length()==0) {
+                        System.out.println("Disabling keystore use due to empty password.");
+                        keyStorePassword = null;
+                        keyStorePath = null;
+                    }
                 }
 
             } else {

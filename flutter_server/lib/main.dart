@@ -39,6 +39,7 @@ class GssApp extends StatelessWidget {
             accentColor: SmashColors.mainSelectionMc,
             canvasColor: SmashColors.mainBackground,
             brightness: Brightness.light,
+            fontFamily: 'Arial',
             inputDecorationTheme: InputDecorationTheme(
               border: const OutlineInputBorder(
                 borderSide: BorderSide(
@@ -68,11 +69,12 @@ class GssApp extends StatelessWidget {
                         SmashColors.mainSelectionBorderG,
                         SmashColors.mainSelectionBorderB)),
               ),
+
 //            labelStyle: const TextStyle(
 //              color: Color.fromARGB(255, 128, 128, 128),
 //            ),
             )),
-        home: MainPage(), //LoginScreen(),
+        home: MainPage(), //LoginScreen(), //
       ),
     );
   }
@@ -92,6 +94,7 @@ class _MainPageState extends State<MainPage> {
   List<Marker> _markers;
   double _screenWidth;
   double _screenHeight;
+  int _heroCount;
 
   @override
   void initState() {
@@ -106,6 +109,7 @@ class _MainPageState extends State<MainPage> {
     }
     final MAXZOOM = 22.0;
     final MINZOOM = 1.0;
+    _heroCount = 0;
 
 //    html.IdbFactory fac = html.window.indexedDB;
 
@@ -136,7 +140,7 @@ class _MainPageState extends State<MainPage> {
             onPressed: null,
             backgroundColor: SmashColors.mainDecorationsDark,
             foregroundColor: SmashColors.mainBackground,
-            heroTag: null,
+            heroTag: "${_heroCount++}",
           );
         },
       );
@@ -188,16 +192,6 @@ class _MainPageState extends State<MainPage> {
             ),
           ),
           Align(
-            alignment: Alignment.topRight,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: FloatingActionButton(
-                onPressed: () {},
-                child: Icon(MdiIcons.logout),
-              ),
-            ),
-          ),
-          Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -206,6 +200,8 @@ class _MainPageState extends State<MainPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   FloatingActionButton(
+                    heroTag: "zoomin",
+                    backgroundColor: SmashColors.mainDecorations,
                     mini: true,
                     onPressed: () {
                       setState(() {
@@ -217,6 +213,17 @@ class _MainPageState extends State<MainPage> {
                     child: Icon(MdiIcons.magnifyMinus),
                   ),
                   FloatingActionButton(
+                    backgroundColor: SmashColors.mainDecorations,
+                    heroTag: "zoomdata",
+                    mini: true,
+                    onPressed: () {
+                      setState(() {});
+                    },
+                    child: Icon(MdiIcons.layers),
+                  ),
+                  FloatingActionButton(
+                    backgroundColor: SmashColors.mainDecorations,
+                    heroTag: "zoomout",
                     mini: true,
                     onPressed: () {
                       setState(() {
@@ -240,38 +247,173 @@ class _MainPageState extends State<MainPage> {
               MdiIcons.close,
             ),
             fabOpenIcon: Icon(
-              MdiIcons.settings,
+              MdiIcons.filterMenuOutline,
             ),
             options: <Widget>[
               IconButton(
-                  icon: Icon(MdiIcons.worker),
-                  tooltip: "Manage Surveyors",
-                  onPressed: () {},
-                  iconSize: 48.0,
-                  color: Colors.deepOrange),
+                key: Key("filter1"),
+                icon: Icon(MdiIcons.worker),
+                tooltip: "Filter by Surveyor",
+                onPressed: () {},
+                iconSize: 48.0,
+                color: SmashColors.mainDecorationsDark,
+              ),
               IconButton(
-                  icon: Icon(MdiIcons.accountGroup),
-                  tooltip: "Manage Webusers",
-                  onPressed: () {},
-                  iconSize: 48.0,
-                  color: Colors.deepOrange),
+                key: Key("filter2"),
+                icon: Icon(MdiIcons.mapClock),
+                tooltip: "Filter by Date",
+                onPressed: () {},
+                iconSize: 48.0,
+                color: SmashColors.mainDecorationsDark,
+              ),
               IconButton(
-                  icon: Icon(MdiIcons.export),
-                  tooltip: "Export",
-                  onPressed: () {},
-                  iconSize: 48.0,
-                  color: Colors.deepOrange),
-              IconButton(
-                  icon: Icon(MdiIcons.bug),
-                  tooltip: "Log View",
-                  onPressed: () {},
-                  iconSize: 48.0,
-                  color: Colors.deepOrange),
+                key: Key("filter3"),
+                icon: Icon(MdiIcons.textbox),
+                tooltip: "Filter by Text",
+                onPressed: () {},
+                iconSize: 48.0,
+                color: SmashColors.mainDecorationsDark,
+              ),
             ],
           ),
         ],
       ),
+      drawer: Drawer(
+          child: ListView(
+        children: _getDrawerWidgets(context),
+      )),
     );
+  }
+
+  _getDrawerWidgets(BuildContext context) {
+    double iconSize = 48;
+    double textSize = iconSize / 2;
+    return [
+      new Container(
+        margin: EdgeInsets.only(bottom: 20),
+        child: new DrawerHeader(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.asset("assets/smash_logo.png"),
+          ),
+        ),
+        color: SmashColors.mainDecorations.withAlpha(70),
+      ),
+      new Container(
+        child: new Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.worker,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Surveyors"),
+                onTap: () {
+                  // TODO
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.accountGroup,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Web Users"),
+                onTap: () {
+                  // TODO
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.notebook,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Form Builder"),
+                onTap: () {
+                  // TODO
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.databaseExport,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Export"),
+                onTap: () {
+                  // TODO
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+//            Expanded(
+//              child: Container(),
+//            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.bug,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Log"),
+                onTap: () {
+                  // TODO
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.informationOutline,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("About"),
+                onTap: () {
+                  // TODO
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.logout,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Logout"),
+                onTap: () {
+                  // TODO
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
   }
 
   List<Widget> getButtons(var model) {
@@ -290,6 +432,7 @@ class _MainPageState extends State<MainPage> {
               }
             },
             key: Key(name),
+            heroTag: name,
 //          tooltip: name,
 //          icon: Icon(Icons.map),
           ),
@@ -528,5 +671,94 @@ class _MainPageState extends State<MainPage> {
         ),
       ),
     );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  LoginScreen({Key key}) : super(key: key);
+
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  TextStyle style = TextStyle(fontFamily: 'Arial', fontSize: 20.0);
+
+  @override
+  Widget build(BuildContext context) {
+    final emailField = TextField(
+      obscureText: false,
+      style: style,
+      decoration: InputDecoration(
+          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          hintText: "Username",
+          border:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(32.0))),
+    );
+
+    final passwordField = TextField(
+      obscureText: true,
+      style: style,
+      decoration: InputDecoration(
+          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          hintText: "Password",
+          border:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(32.0))),
+    );
+
+    final loginButon = Material(
+      elevation: 5.0,
+      borderRadius: BorderRadius.circular(30.0),
+      color: SmashColors.mainDecorationsDark,
+      child: MaterialButton(
+        minWidth: MediaQuery.of(context).size.width,
+        padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+        onPressed: () {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => MainPage()));
+        },
+        child: Text("Login",
+            textAlign: TextAlign.center,
+            style: style.copyWith(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+    );
+
+    return Scaffold(
+        body: SingleChildScrollView(
+      child: Center(
+        child: Container(
+          color: Colors.white,
+          constraints: BoxConstraints(maxWidth: 400.0),
+          child: Padding(
+            padding: const EdgeInsets.all(36.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(
+                  height: 200.0,
+                  child: Image.asset(
+                    "assets/smash_logo.png",
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                SizedBox(height: 45.0),
+                emailField,
+                SizedBox(height: 25.0),
+                passwordField,
+                SizedBox(
+                  height: 35.0,
+                ),
+                loginButon,
+                SizedBox(
+                  height: 15.0,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ));
   }
 }
