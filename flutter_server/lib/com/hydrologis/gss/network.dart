@@ -12,6 +12,7 @@ const WEBAPP_URL = "http://localhost:8080"; // TODO make empty for release
 
 const API_DATA = "$WEBAPP_URL/data";
 const API_LOGIN = "$WEBAPP_URL/login";
+const API_USERSETTINGS = "$WEBAPP_URL/usersettings";
 const API_IMAGE = "$API_DATA/images";
 const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
 
@@ -28,9 +29,32 @@ class ServerApi {
     String apiCall = "$API_LOGIN";
 
     Map<String, String> formData = {
-      "user": user,
-      "pwd": pwd,
+      KEY_USER: user,
+      KEY_PWD: pwd,
     };
+
+    HttpRequest request = await HttpRequest.postFormData(apiCall, formData);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<String> logout(String user, String pwd,
+      {basemap = "Mapsforge", mapCenter = "0;0;6"}) async {
+    String apiCall = "$API_USERSETTINGS";
+
+    Map<String, String> formData = {
+      KEY_USER: user,
+      KEY_PWD: pwd,
+    };
+    if (basemap != null) {
+      formData[KEY_BASEMAP] = basemap;
+    }
+    if (mapCenter != null) {
+      formData[KEY_MAPCENTER] = mapCenter;
+    }
 
     HttpRequest request = await HttpRequest.postFormData(apiCall, formData);
     if (request.status == 200) {

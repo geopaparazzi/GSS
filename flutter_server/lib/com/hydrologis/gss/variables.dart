@@ -10,12 +10,12 @@ const ABOUTPAGE_INDEX = 1000;
 
 const WEBAPP = 'http://localhost:8080';
 
-const KEY_USERNAME = "key_username";
-
 final String KEY_HASPERMISSION = "hasPermission";
 final String KEY_ISADMIN = "isAdmin";
 final String KEY_USER = "user";
-final String KEY_PWD = "PWD";
+final String KEY_PWD = "pwd";
+final String KEY_BASEMAP = "basemap";
+final String KEY_MAPCENTER = "mapcenter_xyz";
 
 /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
 final DateFormat ISO8601_TS_FORMATTER = DateFormat("yyyy-MM-dd HH:mm:ss");
@@ -65,6 +65,11 @@ class MapstateModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  setBackgroundLayerNoevent(String name) {
+    _backgroundLayer = AVAILABLE_LAYERS_MAP[name];
+    notifyListeners();
+  }
+
   get centerLat => _centerLat;
 
   get centerLon => _centerLon;
@@ -77,6 +82,12 @@ class MapstateModel extends ChangeNotifier {
     _currentZoom = zoom;
     print("event setMapPosition");
     notifyListeners();
+  }
+
+  void setMapPositionNoEvent(double lon, double lat, double zoom) {
+    _centerLat = lat;
+    _centerLon = lon;
+    _currentZoom = zoom;
   }
 
   void reset() {

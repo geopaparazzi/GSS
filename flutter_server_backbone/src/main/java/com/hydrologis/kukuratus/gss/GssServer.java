@@ -32,6 +32,7 @@ import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
 import com.hydrologis.kukuratus.registry.RegistryHandler;
+import com.hydrologis.kukuratus.registry.Settings;
 import com.hydrologis.kukuratus.registry.User;
 import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.tiles.MapsforgeTilesGenerator;
@@ -266,18 +267,52 @@ public class GssServer implements Vars {
             String userName = req.queryParams(KEY_USER);
             String pwd = req.queryParams(KEY_PWD);
             if (userName != null && pwd != null) {
+                KukuratusLogger.logDebug("GssServer#post(/login for " + userName,
+                        "Received request from " + req.raw().getRemoteAddr());
                 User loggedUser = RegistryHandler.INSTANCE.isLoginOk(userName, pwd);
                 if (loggedUser != null) {
                     boolean admin = RegistryHandler.INSTANCE.isAdmin(loggedUser);
                     JSONObject response = new JSONObject();
                     response.put(KEY_HASPERMISSION, true);
                     response.put(KEY_ISADMIN, admin);
+
+                    // also get last used map background and map position
+                    String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge", userName);
+                    response.put(KEY_BASEMAP, baseMap);
+                    String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6", userName);
+                    response.put(KEY_MAPCENTER, xyz);
+
                     return response.toString();
                 }
             }
             JSONObject response = new JSONObject();
             response.put(KEY_HASPERMISSION, false);
             return response.toString();
+        });
+
+        post("/usersettings", ( req, res ) -> {
+            String userName = req.queryParams(KEY_USER);
+            String pwd = req.queryParams(KEY_PWD);
+            if (userName != null && pwd != null) {
+                KukuratusLogger.logDebug("GssServer#post(/usersettings for " + userName,
+                        "Received request from " + req.raw().getRemoteAddr());
+                User loggedUser = RegistryHandler.INSTANCE.isLoginOk(userName, pwd);
+                if (loggedUser != null) {
+                    String baseMap = req.queryParams(KEY_BASEMAP);
+                    if (baseMap != null) {
+                        Settings s = new Settings(KEY_BASEMAP, baseMap, userName);
+                        RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+                    }
+                    String mapCenter = req.queryParams(KEY_MAPCENTER);
+                    if (mapCenter != null) {
+                        Settings s = new Settings(KEY_MAPCENTER, mapCenter, userName);
+                        RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+                    }
+
+                    return "OK";
+                }
+            }
+            return "ERROR";
         });
 
         get("/", ( req, res ) -> {

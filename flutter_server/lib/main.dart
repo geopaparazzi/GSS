@@ -98,16 +98,16 @@ class _MainPageState extends State<MainPage> {
   int _heroCount;
   bool _isLogged = false;
 
+  bool _doFirstDataLoading = true;
+
   @override
   void initState() {
-    getData();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    String userName = html.window.sessionStorage[KEY_USERNAME];
-    _isLogged = userName != null;
+    _isLogged = SmashSession.isLogged();
 
     if (_isLogged) {
       if (_mapController == null) {
@@ -116,6 +116,11 @@ class _MainPageState extends State<MainPage> {
       final MAXZOOM = 22.0;
       final MINZOOM = 1.0;
       _heroCount = 0;
+
+      if (_doFirstDataLoading) {
+        _doFirstDataLoading = false;
+        getData();
+      }
 
 //    html.IdbFactory fac = html.window.indexedDB;
 
@@ -202,7 +207,7 @@ class _MainPageState extends State<MainPage> {
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Text(
-                  "User: ${SmashSession.getSessionUser()}",
+                  "User: ${SmashSession.getSessionUserName()}",
                   style: TextStyle(color: Colors.blueGrey),
                 ),
               ),
@@ -360,8 +365,19 @@ class _MainPageState extends State<MainPage> {
           onPressed: () async {
             String user = userNameController.text;
             String password = passwordController.text;
-
+            print(password);
             await SmashSession.login(user, password);
+            MapstateModel mapstateModel = Provider.of<MapstateModel>(context);
+            var baseLayer = AVAILABLE_LAYERS_MAP[SmashSession.getBasemap()];
+            if (baseLayer != null) {
+              mapstateModel
+                  .setBackgroundLayerNoevent(SmashSession.getBasemap());
+            }
+            var mapcenterXYZ = SmashSession.getMapcenter();
+            if (mapcenterXYZ != null) {
+              mapstateModel.setMapPositionNoEvent(
+                  mapcenterXYZ[0], mapcenterXYZ[1], mapcenterXYZ[2]);
+            }
             setState(() {});
           },
           child: Text("Login",
@@ -539,7 +555,10 @@ class _MainPageState extends State<MainPage> {
                 onTap: () {
                   Navigator.of(context).pop();
                   setState(() {
-                    SmashSession.logout();
+                    SmashSession.logout(
+                      mapCenter:
+                          "${_mapController.center.longitude};${_mapController.center.latitude};${_mapController.zoom}",
+                    );
                   });
                 },
               ),

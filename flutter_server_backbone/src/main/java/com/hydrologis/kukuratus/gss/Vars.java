@@ -16,4 +16,6 @@ public interface Vars {
     final static String KEY_ISADMIN = "isAdmin";
     final static String KEY_USER = "user";
     final static String KEY_PWD = "pwd";
+    final static String KEY_BASEMAP = "basemap";
+    final static String KEY_MAPCENTER = "mapcenter_xyz";
 }
