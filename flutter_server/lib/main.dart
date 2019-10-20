@@ -17,6 +17,7 @@ import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
+import 'package:flutter_server/com/hydrologis/gss/widgets.dart';
 import 'package:latlong/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
@@ -176,7 +177,7 @@ class _MainPageState extends State<MainPage> {
         key: _scaffoldKey,
         body: Stack(
           children: <Widget>[
-            Consumer<MapstateModel>(
+            Consumer<FilterStateModel>(
               builder: (context, model, _) => Stack(
                 children: <Widget>[
                   FlutterMap(
@@ -198,7 +199,7 @@ class _MainPageState extends State<MainPage> {
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: SelectMapLayerButton(
-                        fabButtons: getButtons(model),
+                        fabButtons: getButtons(),
                         colorStartAnimation: Colors.green,
                         colorEndAnimation: Colors.red,
                         key: Key("layerMenu"),
@@ -297,7 +298,24 @@ class _MainPageState extends State<MainPage> {
                   key: Key("filter1"),
                   icon: Icon(MdiIcons.worker),
                   tooltip: "Filter by Surveyor",
-                  onPressed: () {},
+                  onPressed: () {
+                    FilterStateModel filterStateModel =
+                        Provider.of<FilterStateModel>(context);
+                    Flushbar(
+                      flushbarPosition: FlushbarPosition.BOTTOM,
+                      flushbarStyle: FlushbarStyle.GROUNDED,
+                      backgroundColor: Colors.white.withAlpha(128),
+                      onTap: (e) {
+                        Navigator.of(context).pop();
+                      },
+                      messageText: Container(
+                        height: 600,
+                        child: Center(
+                          child: FilterSurveyor(filterStateModel, getData),
+                        ),
+                      ),
+                    )..show(context);
+                  },
                   iconSize: 48.0,
                   color: SmashColors.mainDecorationsDark,
                 ),
@@ -565,7 +583,7 @@ class _MainPageState extends State<MainPage> {
     ];
   }
 
-  List<Widget> getButtons(MapstateModel model) {
+  List<Widget> getButtons() {
     return AVAILABLE_LAYERS_MAP.keys.map((name) {
       return Padding(
         padding: const EdgeInsets.all(8.0),
@@ -588,10 +606,12 @@ class _MainPageState extends State<MainPage> {
   }
 
   void getData(BuildContext context) async {
+    print("Data reload called");
     _dataBounds = LatLngBounds();
 
-    FilterStateModel filterStateModel = Provider.of<FilterStateModel>(context);
+    FilterStateModel  filterStateModel = Provider.of<FilterStateModel>(context);
     var userPwd = SmashSession.getSessionUser();
+    print(filterStateModel.surveyors);
 
     var data = await ServerApi.getData(
       userPwd[0],

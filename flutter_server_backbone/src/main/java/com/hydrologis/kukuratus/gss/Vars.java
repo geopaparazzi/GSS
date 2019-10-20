@@ -18,4 +18,9 @@ public interface Vars {
     final static String KEY_PWD = "pwd";
     final static String KEY_BASEMAP = "basemap";
     final static String KEY_MAPCENTER = "mapcenter_xyz";
+
+    static final String SURVEYORS = "surveyors";
+
+    static final String AUTHORIZATION = "Authorization";
+
 }

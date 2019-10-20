@@ -15,7 +15,7 @@ class FilterStateModel extends ChangeNotifier {
 
   List<String> get surveyors => _surveyors;
 
-  void setSurveyors(List<String> _surveyors) {
+  void setSurveyors(List<String> surveyors) {
     _surveyors = surveyors;
     notifyListeners();
   }
