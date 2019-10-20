@@ -238,6 +238,23 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: FloatingActionButton(
+                heroTag: "opendrawer",
+                elevation: 1,
+
+                backgroundColor: Colors.transparent,
+                foregroundColor: SmashColors.mainDecorationsDark,
+                onPressed: () {
+                  _scaffoldKey.currentState.openDrawer();
+                },
+                child: Icon(MdiIcons.menu),
+              ),
+            ),
+          ),
           FabCircularMenu(
             ringDiameter: ringDiameter,
             ringWidth: ringWidth,
