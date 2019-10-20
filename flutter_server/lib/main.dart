@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -180,19 +181,29 @@ class _MainPageState extends State<MainPage> {
             Consumer<FilterStateModel>(
               builder: (context, model, _) => Stack(
                 children: <Widget>[
-                  FlutterMap(
-                    options: new MapOptions(
-                      center: new LatLng(xyz[1], xyz[0]),
-                      zoom: xyz[2],
-                      minZoom: MINZOOM,
-                      maxZoom: MAXZOOM,
-                      plugins: [
-                        MarkerClusterPlugin(),
-                      ],
-                      // TODO check interaction possibilities
+                  Listener(
+                    // listen to mouse scroll
+                    onPointerSignal: (e) {
+                      if (e is PointerScrollEvent) {
+                        var delta = e.scrollDelta.direction;
+                        _mapController.move(_mapController.center,
+                            _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
+                      }
+                    },
+                    child: FlutterMap(
+                      options: new MapOptions(
+                        center: new LatLng(xyz[1], xyz[0]),
+                        zoom: xyz[2],
+                        minZoom: MINZOOM,
+                        maxZoom: MAXZOOM,
+                        plugins: [
+                          MarkerClusterPlugin(),
+                        ],
+                        // TODO check interaction possibilities
+                      ),
+                      layers: [AVAILABLE_LAYERS_MAP[basemap]]..addAll(layers),
+                      mapController: _mapController,
                     ),
-                    layers: [AVAILABLE_LAYERS_MAP[basemap]]..addAll(layers),
-                    mapController: _mapController,
                   ),
                   Align(
                     alignment: Alignment.bottomLeft,
