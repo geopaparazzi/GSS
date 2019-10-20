@@ -72,11 +72,11 @@ class SmashSession {
     return html.window.sessionStorage[KEY_USER];
   }
 
-  static void logout({baseMap, mapCenter}) async {
+  static void logout({mapCenter}) async {
     String user = html.window.sessionStorage.remove(KEY_USER);
     String pwd = html.window.sessionStorage.remove(KEY_PWD);
     html.window.sessionStorage.remove(KEY_ISADMIN);
-    html.window.sessionStorage.remove(KEY_BASEMAP);
+    String baseMap = html.window.sessionStorage.remove(KEY_BASEMAP);
     html.window.sessionStorage.remove(KEY_MAPCENTER);
 
     await ServerApi.logout(user, pwd, basemap: baseMap, mapCenter: mapCenter);

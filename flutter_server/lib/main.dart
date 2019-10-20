@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:html' as html;
 
 import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:flushbar/flushbar.dart';
@@ -99,6 +98,7 @@ class _MainPageState extends State<MainPage> {
   bool _isLogged = false;
 
   bool _doFirstDataLoading = true;
+  LatLngBounds _dataBounds = LatLngBounds();
 
   @override
   void initState() {
@@ -165,6 +165,9 @@ class _MainPageState extends State<MainPage> {
       var ringDiameter = _screenWidth * 0.4;
       var ringWidth = ringDiameter / 3;
 
+      var xyz = SmashSession.getMapcenter();
+      var basemap = SmashSession.getBasemap();
+
       return Scaffold(
         key: _scaffoldKey,
         body: Stack(
@@ -174,8 +177,8 @@ class _MainPageState extends State<MainPage> {
                 children: <Widget>[
                   FlutterMap(
                     options: new MapOptions(
-                      center: new LatLng(model.centerLat, model.centerLon),
-                      zoom: model.currentZoom,
+                      center: new LatLng(xyz[1], xyz[0]),
+                      zoom: xyz[2],
                       minZoom: MINZOOM,
                       maxZoom: MAXZOOM,
                       plugins: [
@@ -183,7 +186,7 @@ class _MainPageState extends State<MainPage> {
                       ],
                       // TODO check interaction possibilities
                     ),
-                    layers: [model.getBackgroundLayerOption()]..addAll(layers),
+                    layers: [AVAILABLE_LAYERS_MAP[basemap]]..addAll(layers),
                     mapController: _mapController,
                   ),
                   Align(
@@ -225,11 +228,9 @@ class _MainPageState extends State<MainPage> {
                       backgroundColor: SmashColors.mainDecorations,
                       mini: true,
                       onPressed: () {
-                        setState(() {
-                          var zoom = _mapController.zoom - 1;
-                          if (zoom < MINZOOM) zoom = MINZOOM;
-                          _mapController.move(_mapController.center, zoom);
-                        });
+                        var zoom = _mapController.zoom - 1;
+                        if (zoom < MINZOOM) zoom = MINZOOM;
+                        _mapController.move(_mapController.center, zoom);
                       },
                       child: Icon(MdiIcons.magnifyMinus),
                     ),
@@ -237,8 +238,11 @@ class _MainPageState extends State<MainPage> {
                       backgroundColor: SmashColors.mainDecorations,
                       heroTag: "zoomdata",
                       mini: true,
+                      tooltip: "Zoom to data",
                       onPressed: () {
-                        setState(() {});
+                        if (_dataBounds.isValid) {
+                          _mapController.fitBounds(_dataBounds);
+                        }
                       },
                       child: Icon(MdiIcons.layers),
                     ),
@@ -247,11 +251,9 @@ class _MainPageState extends State<MainPage> {
                       heroTag: "zoomout",
                       mini: true,
                       onPressed: () {
-                        setState(() {
-                          var zoom = _mapController.zoom + 1;
-                          if (zoom > MAXZOOM) zoom = MAXZOOM;
-                          _mapController.move(_mapController.center, zoom);
-                        });
+                        var zoom = _mapController.zoom + 1;
+                        if (zoom > MAXZOOM) zoom = MAXZOOM;
+                        _mapController.move(_mapController.center, zoom);
                       },
                       child: Icon(MdiIcons.magnifyPlus),
                     ),
@@ -363,20 +365,10 @@ class _MainPageState extends State<MainPage> {
           minWidth: MediaQuery.of(context).size.width,
           padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
           onPressed: () async {
-            String user = userNameController.text;
-            String password = passwordController.text;
+            // TODO change when not testing
+            String user = "god"; //userNameController.text;
+            String password = "god"; //passwordController.text;
             await SmashSession.login(user, password);
-            MapstateModel mapstateModel = Provider.of<MapstateModel>(context);
-            var baseLayer = AVAILABLE_LAYERS_MAP[SmashSession.getBasemap()];
-            if (baseLayer != null) {
-              mapstateModel
-                  .setBackgroundLayerNoevent(SmashSession.getBasemap());
-            }
-            var mapcenterXYZ = SmashSession.getMapcenter();
-            if (mapcenterXYZ != null) {
-              mapstateModel.setMapPositionNoEvent(
-                  mapcenterXYZ[0], mapcenterXYZ[1], mapcenterXYZ[2]);
-            }
             setState(() {});
           },
           child: Text("Login",
@@ -558,7 +550,6 @@ class _MainPageState extends State<MainPage> {
                     SmashSession.logout(
                       mapCenter:
                           "${_mapController.center.longitude};${_mapController.center.latitude};${_mapController.zoom}",
-                      baseMap: model.backgroundLayer,
                     );
                   });
                 },
@@ -570,7 +561,7 @@ class _MainPageState extends State<MainPage> {
     ];
   }
 
-  List<Widget> getButtons(var model) {
+  List<Widget> getButtons(MapstateModel model) {
     return AVAILABLE_LAYERS_MAP.keys.map((name) {
       return Padding(
         padding: const EdgeInsets.all(8.0),
@@ -579,11 +570,8 @@ class _MainPageState extends State<MainPage> {
           child: FloatingActionButton.extended(
             label: Text(name),
             onPressed: () {
-              if (name == MAPSFORGE) {
-                model.reset();
-              } else {
-                model.backgroundLayer = name;
-              }
+              SmashSession.setBasemap(name);
+              setState(() {});
             },
             key: Key(name),
             heroTag: name,
@@ -596,34 +584,40 @@ class _MainPageState extends State<MainPage> {
   }
 
   void getData() async {
+    _dataBounds = LatLngBounds();
+
     var data = await ServerApi.getData();
     Map<String, dynamic> json = jsonDecode(data);
-    List<dynamic> logsList = json[LOGS];
 
-    if (logsList != null) {
-      List<Polyline> lines = [];
-      for (int i = 0; i < logsList.length; i++) {
-        dynamic logItem = logsList[i];
-//        var id = logItem[ID];
-//        var name = logItem[NAME];
-        var colorHex = logItem[COLOR];
-        var width = logItem[WIDTH];
-        var coords = logItem[COORDS];
-
-        List<LatLng> points = [];
-        for (int j = 0; j < coords.length; j++) {
-          var coord = coords[j];
-          points.add(LatLng(coord[Y], coord[X]));
-        }
-
-        lines.add(Polyline(
-            points: points, strokeWidth: width, color: ColorExt(colorHex)));
-      }
-      _logs = PolylineLayerOptions(
-        polylines: lines,
-//        rebuild: true
-      );
-    }
+    // TODO add back also logs
+//    List<dynamic> logsList = json[LOGS];
+//
+//    if (logsList != null) {
+//      List<Polyline> lines = [];
+//      for (int i = 0; i < logsList.length; i++) {
+//        dynamic logItem = logsList[i];
+////        var id = logItem[ID];
+////        var name = logItem[NAME];
+//        var colorHex = logItem[COLOR];
+//        var width = logItem[WIDTH];
+//        var coords = logItem[COORDS];
+//
+//        List<LatLng> points = [];
+//        for (int j = 0; j < coords.length; j++) {
+//          var coord = coords[j];
+//          var latLng = LatLng(coord[Y], coord[X]);
+//          _dataBounds.extend(latLng);
+//          points.add(latLng);
+//        }
+//
+//        lines.add(Polyline(
+//            points: points, strokeWidth: width, color: ColorExt(colorHex)));
+//      }
+//      _logs = PolylineLayerOptions(
+//        polylines: lines,
+////        rebuild: true
+//      );
+//    }
 
     List<Marker> markers = <Marker>[];
     List<dynamic> simpleNotesList = json[NOTES];
@@ -634,6 +628,8 @@ class _MainPageState extends State<MainPage> {
       //      var ts = noteItem[TS];
       var x = noteItem[X];
       var y = noteItem[Y];
+      var latLng = LatLng(y, x);
+      _dataBounds.extend(latLng);
       markers.add(buildSimpleNote(x, y, name));
     }
 
@@ -647,6 +643,8 @@ class _MainPageState extends State<MainPage> {
       //      var ts = noteItem[TS];
       var x = formItem[X];
       var y = formItem[Y];
+      var latLng = LatLng(y, x);
+      _dataBounds.extend(latLng);
       markers.add(buildFormNote(x, y, name, form, noteId, userId));
     }
 
@@ -660,7 +658,8 @@ class _MainPageState extends State<MainPage> {
       //      var ts = imageItem[TS];
       var x = imageItem[X];
       var y = imageItem[Y];
-
+      var latLng = LatLng(y, x);
+      _dataBounds.extend(latLng);
       var imgData = Base64Decoder().convert(data);
       markers.add(buildImage(x, y, name, dataId, imgData));
     }
