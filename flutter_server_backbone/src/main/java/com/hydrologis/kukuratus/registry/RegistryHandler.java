@@ -115,23 +115,41 @@ public enum RegistryHandler implements IDbVisitor {
     }
 
     /**
+     * Checks the login and returns the logged user if ok.
+     * 
+     * @param uniqueUserName the username to test.
+     * @param pwd the pwd of the user.
+     * @return the user if login was ok, else <code>null</code>.
+     * @throws Exception
+     */
+    public User isLoginOk( String uniqueUserName, String pwd ) throws Exception {
+        User user = getUserByUniqueName(uniqueUserName);
+        if (user != null && BCrypt.checkpw(pwd, user.getPwd())) {
+            return user;
+        }
+        return null;
+    }
+
+    /**
      * Get a USer by its unique name.
      * 
      * @param uniqueUserName the unique name.
      * @return the user or <code>null</code>, if none exists for the given username.
      * @throws Exception
      */
-    public List<User> getUserByUniqueName( String uniqueUserName ) throws Exception {
+    public User getUserByUniqueName( String uniqueUserName ) throws Exception {
         checkInit();
         if (uniqueUserName.indexOf(' ') != -1) {
             // user name can't have spaces
             return null;
         }
         QueryBuilder<User, Integer> queryBuilder = userDao.queryBuilder();
-        queryBuilder.where().like(User.UNIQUENAME_FIELD_NAME, uniqueUserName);
+        queryBuilder.where().eq(User.UNIQUENAME_FIELD_NAME, uniqueUserName);
         List<User> users = userDao.query(queryBuilder.prepare());
-        if (users.size() > 0) {
-            return users;
+        if (users.size() == 1) {
+            return users.get(0);
+        } else if (users.size() > 1) {
+            throw new IllegalArgumentException("Foudn more than one user by the given unique name!");
         }
         return null;
     }
@@ -273,7 +291,7 @@ public enum RegistryHandler implements IDbVisitor {
     }
 
     /**
-     * @return teh list of authorizations.
+     * @return the list of authorizations.
      * @throws SQLException
      */
     public List<Authorization> getAuthorizations() throws SQLException {

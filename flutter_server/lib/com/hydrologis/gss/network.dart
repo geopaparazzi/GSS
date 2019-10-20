@@ -11,6 +11,7 @@ const VALUE_KEY = "v";
 const WEBAPP_URL = "http://localhost:8080"; // TODO make empty for release
 
 const API_DATA = "$WEBAPP_URL/data";
+const API_LOGIN = "$WEBAPP_URL/login";
 const API_IMAGE = "$API_DATA/images";
 const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
 
@@ -21,6 +22,22 @@ class ServerApi {
     String apiCall = "$API_DATA";
     String values = await HttpRequest.getString(apiCall);
     return values;
+  }
+
+  static Future<String> login(String user, String pwd) async {
+    String apiCall = "$API_LOGIN";
+
+    Map<String, String> formData = {
+      "user": user,
+      "pwd": pwd,
+    };
+
+    HttpRequest request = await HttpRequest.postFormData(apiCall, formData);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
   }
 
   static Future<String> getImageBytesById(int id) async {

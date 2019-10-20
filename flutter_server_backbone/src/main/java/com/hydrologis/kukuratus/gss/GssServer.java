@@ -31,6 +31,8 @@ import com.hydrologis.kukuratus.gss.database.GpsLogsData;
 import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
+import com.hydrologis.kukuratus.registry.RegistryHandler;
+import com.hydrologis.kukuratus.registry.User;
 import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.tiles.MapsforgeTilesGenerator;
 import com.hydrologis.kukuratus.utils.KukuratusLogger;
@@ -260,6 +262,24 @@ public class GssServer implements Vars {
             }
         });
 
+        post("/login", ( req, res ) -> {
+            String userName = req.queryParams(KEY_USER);
+            String pwd = req.queryParams(KEY_PWD);
+            if (userName != null && pwd != null) {
+                User loggedUser = RegistryHandler.INSTANCE.isLoginOk(userName, pwd);
+                if (loggedUser != null) {
+                    boolean admin = RegistryHandler.INSTANCE.isAdmin(loggedUser);
+                    JSONObject response = new JSONObject();
+                    response.put(KEY_HASPERMISSION, true);
+                    response.put(KEY_ISADMIN, admin);
+                    return response.toString();
+                }
+            }
+            JSONObject response = new JSONObject();
+            response.put(KEY_HASPERMISSION, false);
+            return response.toString();
+        });
+
         get("/", ( req, res ) -> {
             res.redirect("index.html");
             return null;
@@ -325,7 +345,7 @@ public class GssServer implements Vars {
                 System.out.println("Please enter the keystore passord and press return:");
                 try (Scanner in = new Scanner(System.in)) {
                     keyStorePassword = in.nextLine();
-                    if(keyStorePassword.trim().length()==0) {
+                    if (keyStorePassword.trim().length() == 0) {
                         System.out.println("Disabling keystore use due to empty password.");
                         keyStorePassword = null;
                         keyStorePath = null;

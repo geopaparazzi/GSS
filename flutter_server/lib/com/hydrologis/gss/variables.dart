@@ -10,6 +10,13 @@ const ABOUTPAGE_INDEX = 1000;
 
 const WEBAPP = 'http://localhost:8080';
 
+const KEY_USERNAME = "key_username";
+
+final String KEY_HASPERMISSION = "hasPermission";
+final String KEY_ISADMIN = "isAdmin";
+final String KEY_USER = "user";
+final String KEY_PWD = "PWD";
+
 /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
 final DateFormat ISO8601_TS_FORMATTER = DateFormat("yyyy-MM-dd HH:mm:ss");
 

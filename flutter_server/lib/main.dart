@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'dart:html' as html;
 
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:fab_circular_menu/fab_circular_menu.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,15 +10,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/colors.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/ui.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/form_widgets.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/forms.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/ui.dart';
 import 'package:flutter_server/com/hydrologis/gss/network.dart';
+import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:latlong/latlong.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:transparent_image/transparent_image.dart';
 
 export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
@@ -95,6 +96,7 @@ class _MainPageState extends State<MainPage> {
   double _screenWidth;
   double _screenHeight;
   int _heroCount;
+  bool _isLogged = false;
 
   @override
   void initState() {
@@ -104,202 +106,308 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_mapController == null) {
-      _mapController = MapController();
-    }
-    final MAXZOOM = 22.0;
-    final MINZOOM = 1.0;
-    _heroCount = 0;
+    String userName = html.window.sessionStorage[KEY_USERNAME];
+    _isLogged = userName != null;
+
+    if (_isLogged) {
+      if (_mapController == null) {
+        _mapController = MapController();
+      }
+      final MAXZOOM = 22.0;
+      final MINZOOM = 1.0;
+      _heroCount = 0;
 
 //    html.IdbFactory fac = html.window.indexedDB;
 
-    var layers = <LayerOptions>[];
+      var layers = <LayerOptions>[];
 
 //    if (_logs != null) {
 //      layers.add(_logs);
 //    }
-    if (_markers != null && _markers.length > 0) {
-      var markerCluster = MarkerClusterLayerOptions(
-        maxClusterRadius: 40,
+      if (_markers != null && _markers.length > 0) {
+        var markerCluster = MarkerClusterLayerOptions(
+          maxClusterRadius: 40,
 //        height: 40,
 //        width: 40,
-        size: Size(40, 40),
-        fitBoundsOptions: FitBoundsOptions(
-          padding: EdgeInsets.all(50),
-        ),
-        markers: _markers,
-        showPolygon: false,
-        zoomToBoundsOnClick: true,
+          size: Size(40, 40),
+          fitBoundsOptions: FitBoundsOptions(
+            padding: EdgeInsets.all(50),
+          ),
+          markers: _markers,
+          showPolygon: false,
+          zoomToBoundsOnClick: true,
 //        polygonOptions: PolygonOptions(
 //            borderColor: mainDecorationsDark,
 //            color: mainDecorations.withOpacity(0.2),
 //            borderStrokeWidth: 3),
-        builder: (context, markers) {
-          return FloatingActionButton(
-            child: Text(markers.length.toString()),
-            onPressed: null,
-            backgroundColor: SmashColors.mainDecorationsDark,
-            foregroundColor: SmashColors.mainBackground,
-            heroTag: "${_heroCount++}",
-          );
-        },
-      );
-      layers.add(markerCluster);
-    }
+          builder: (context, markers) {
+            return FloatingActionButton(
+              child: Text(markers.length.toString()),
+              onPressed: null,
+              backgroundColor: SmashColors.mainDecorationsDark,
+              foregroundColor: SmashColors.mainBackground,
+              heroTag: "${_heroCount++}",
+            );
+          },
+        );
+        layers.add(markerCluster);
+      }
 
-    var size = MediaQuery.of(context).size;
-    _screenWidth = size.width;
-    _screenHeight = size.height;
+      var size = MediaQuery.of(context).size;
+      _screenWidth = size.width;
+      _screenHeight = size.height;
 
-    var ringDiameter = _screenWidth * 0.4;
-    var ringWidth = ringDiameter / 3;
+      var ringDiameter = _screenWidth * 0.4;
+      var ringWidth = ringDiameter / 3;
 
-    return Scaffold(
-      key: _scaffoldKey,
-      body: Stack(
-        children: <Widget>[
-          Consumer<MapstateModel>(
-            builder: (context, model, _) => Stack(
-              children: <Widget>[
-                FlutterMap(
-                  options: new MapOptions(
-                    center: new LatLng(model.centerLat, model.centerLon),
-                    zoom: model.currentZoom,
-                    minZoom: MINZOOM,
-                    maxZoom: MAXZOOM,
-                    plugins: [
-                      MarkerClusterPlugin(),
-                    ],
-                    // TODO check interaction possibilities
+      return Scaffold(
+        key: _scaffoldKey,
+        body: Stack(
+          children: <Widget>[
+            Consumer<MapstateModel>(
+              builder: (context, model, _) => Stack(
+                children: <Widget>[
+                  FlutterMap(
+                    options: new MapOptions(
+                      center: new LatLng(model.centerLat, model.centerLon),
+                      zoom: model.currentZoom,
+                      minZoom: MINZOOM,
+                      maxZoom: MAXZOOM,
+                      plugins: [
+                        MarkerClusterPlugin(),
+                      ],
+                      // TODO check interaction possibilities
+                    ),
+                    layers: [model.backgroundLayer]..addAll(layers),
+                    mapController: _mapController,
                   ),
-                  layers: [model.backgroundLayer]..addAll(layers),
-                  mapController: _mapController,
-                ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: SelectMapLayerButton(
-                      fabButtons: getButtons(model),
-                      colorStartAnimation: Colors.green,
-                      colorEndAnimation: Colors.red,
-                      key: Key("layerMenu"),
-                      animatedIconData: AnimatedIcons.menu_close,
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: SelectMapLayerButton(
+                        fabButtons: getButtons(model),
+                        colorStartAnimation: Colors.green,
+                        colorEndAnimation: Colors.red,
+                        key: Key("layerMenu"),
+                        animatedIconData: AnimatedIcons.menu_close,
+                      ),
                     ),
                   ),
+                ],
+              ),
+            ),
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Text(
+                  "User: ${SmashSession.getSessionUser()}",
+                  style: TextStyle(color: Colors.blueGrey),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    FloatingActionButton(
+                      heroTag: "zoomin",
+                      backgroundColor: SmashColors.mainDecorations,
+                      mini: true,
+                      onPressed: () {
+                        setState(() {
+                          var zoom = _mapController.zoom - 1;
+                          if (zoom < MINZOOM) zoom = MINZOOM;
+                          _mapController.move(_mapController.center, zoom);
+                        });
+                      },
+                      child: Icon(MdiIcons.magnifyMinus),
+                    ),
+                    FloatingActionButton(
+                      backgroundColor: SmashColors.mainDecorations,
+                      heroTag: "zoomdata",
+                      mini: true,
+                      onPressed: () {
+                        setState(() {});
+                      },
+                      child: Icon(MdiIcons.layers),
+                    ),
+                    FloatingActionButton(
+                      backgroundColor: SmashColors.mainDecorations,
+                      heroTag: "zoomout",
+                      mini: true,
+                      onPressed: () {
+                        setState(() {
+                          var zoom = _mapController.zoom + 1;
+                          if (zoom > MAXZOOM) zoom = MAXZOOM;
+                          _mapController.move(_mapController.center, zoom);
+                        });
+                      },
+                      child: Icon(MdiIcons.magnifyPlus),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: FloatingActionButton(
+                  heroTag: "opendrawer",
+                  elevation: 1,
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: SmashColors.mainDecorationsDark,
+                  onPressed: () {
+                    _scaffoldKey.currentState.openDrawer();
+                  },
+                  child: Icon(MdiIcons.menu),
+                ),
+              ),
+            ),
+            FabCircularMenu(
+              ringDiameter: ringDiameter,
+              ringWidth: ringWidth,
+              child: Container(),
+              ringColor: Colors.white30,
+              fabCloseIcon: Icon(
+                MdiIcons.close,
+              ),
+              fabOpenIcon: Icon(
+                MdiIcons.filterMenuOutline,
+              ),
+              options: <Widget>[
+                IconButton(
+                  key: Key("filter1"),
+                  icon: Icon(MdiIcons.worker),
+                  tooltip: "Filter by Surveyor",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: SmashColors.mainDecorationsDark,
+                ),
+                IconButton(
+                  key: Key("filter4"),
+                  icon: Icon(MdiIcons.folderOutline),
+                  tooltip: "Filter by Project",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: SmashColors.mainDecorationsDark,
+                ),
+                IconButton(
+                  key: Key("filter2"),
+                  icon: Icon(MdiIcons.calendar),
+                  tooltip: "Filter by Date",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: SmashColors.mainDecorationsDark,
+                ),
+                IconButton(
+                  key: Key("filter3"),
+                  icon: Icon(MdiIcons.textbox),
+                  tooltip: "Filter by Text",
+                  onPressed: () {},
+                  iconSize: 48.0,
+                  color: SmashColors.mainDecorationsDark,
                 ),
               ],
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
+          ],
+        ),
+        drawer: Drawer(
+            child: ListView(
+          children: _getDrawerWidgets(context),
+        )),
+      );
+    } else {
+      TextStyle loginTextStyle = TextStyle(fontFamily: 'Arial', fontSize: 20.0);
+
+      TextEditingController userNameController = new TextEditingController();
+      final userNameField = TextField(
+        controller: userNameController,
+        obscureText: false,
+        style: loginTextStyle,
+        decoration: InputDecoration(
+            contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+            hintText: "Username",
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(32.0))),
+      );
+
+      TextEditingController passwordController = new TextEditingController();
+      final passwordField = TextField(
+        controller: passwordController,
+        obscureText: true,
+        style: loginTextStyle,
+        decoration: InputDecoration(
+            contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+            hintText: "Password",
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(32.0))),
+      );
+
+      final loginButon = Material(
+        elevation: 5.0,
+        borderRadius: BorderRadius.circular(30.0),
+        color: SmashColors.mainDecorationsDark,
+        child: MaterialButton(
+          minWidth: MediaQuery.of(context).size.width,
+          padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+          onPressed: () async {
+            String user = userNameController.text;
+            String password = passwordController.text;
+
+            await SmashSession.login(user, password);
+            setState(() {});
+          },
+          child: Text("Login",
+              textAlign: TextAlign.center,
+              style: loginTextStyle.copyWith(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
+      );
+
+      return Scaffold(
+          body: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            color: Colors.white,
+            constraints: BoxConstraints(maxWidth: 400.0),
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
+              padding: const EdgeInsets.all(36.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  FloatingActionButton(
-                    heroTag: "zoomin",
-                    backgroundColor: SmashColors.mainDecorations,
-                    mini: true,
-                    onPressed: () {
-                      setState(() {
-                        var zoom = _mapController.zoom - 1;
-                        if (zoom < MINZOOM) zoom = MINZOOM;
-                        _mapController.move(_mapController.center, zoom);
-                      });
-                    },
-                    child: Icon(MdiIcons.magnifyMinus),
+                  SizedBox(
+                    height: 200.0,
+                    child: Image.asset(
+                      "assets/smash_logo.png",
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  FloatingActionButton(
-                    backgroundColor: SmashColors.mainDecorations,
-                    heroTag: "zoomdata",
-                    mini: true,
-                    onPressed: () {
-                      setState(() {});
-                    },
-                    child: Icon(MdiIcons.layers),
+                  SizedBox(height: 45.0),
+                  userNameField,
+                  SizedBox(height: 25.0),
+                  passwordField,
+                  SizedBox(
+                    height: 35.0,
                   ),
-                  FloatingActionButton(
-                    backgroundColor: SmashColors.mainDecorations,
-                    heroTag: "zoomout",
-                    mini: true,
-                    onPressed: () {
-                      setState(() {
-                        var zoom = _mapController.zoom + 1;
-                        if (zoom > MAXZOOM) zoom = MAXZOOM;
-                        _mapController.move(_mapController.center, zoom);
-                      });
-                    },
-                    child: Icon(MdiIcons.magnifyPlus),
+                  loginButon,
+                  SizedBox(
+                    height: 15.0,
                   ),
                 ],
               ),
             ),
           ),
-          Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: FloatingActionButton(
-                heroTag: "opendrawer",
-                elevation: 1,
-
-                backgroundColor: Colors.transparent,
-                foregroundColor: SmashColors.mainDecorationsDark,
-                onPressed: () {
-                  _scaffoldKey.currentState.openDrawer();
-                },
-                child: Icon(MdiIcons.menu),
-              ),
-            ),
-          ),
-          FabCircularMenu(
-            ringDiameter: ringDiameter,
-            ringWidth: ringWidth,
-            child: Container(),
-            ringColor: Colors.white30,
-            fabCloseIcon: Icon(
-              MdiIcons.close,
-            ),
-            fabOpenIcon: Icon(
-              MdiIcons.filterMenuOutline,
-            ),
-            options: <Widget>[
-              IconButton(
-                key: Key("filter1"),
-                icon: Icon(MdiIcons.worker),
-                tooltip: "Filter by Surveyor",
-                onPressed: () {},
-                iconSize: 48.0,
-                color: SmashColors.mainDecorationsDark,
-              ),
-              IconButton(
-                key: Key("filter2"),
-                icon: Icon(MdiIcons.mapClock),
-                tooltip: "Filter by Date",
-                onPressed: () {},
-                iconSize: 48.0,
-                color: SmashColors.mainDecorationsDark,
-              ),
-              IconButton(
-                key: Key("filter3"),
-                icon: Icon(MdiIcons.textbox),
-                tooltip: "Filter by Text",
-                onPressed: () {},
-                iconSize: 48.0,
-                color: SmashColors.mainDecorationsDark,
-              ),
-            ],
-          ),
-        ],
-      ),
-      drawer: Drawer(
-          child: ListView(
-        children: _getDrawerWidgets(context),
-      )),
-    );
+        ),
+      ));
+    }
   }
 
   _getDrawerWidgets(BuildContext context) {
@@ -309,9 +417,16 @@ class _MainPageState extends State<MainPage> {
       new Container(
         margin: EdgeInsets.only(bottom: 20),
         child: new DrawerHeader(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Image.asset("assets/smash_logo.png"),
+          child: Stack(
+            children: <Widget>[
+              Align(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Image.asset("assets/smash_logo.png"),
+                ),
+                alignment: Alignment.center,
+              ),
+            ],
           ),
         ),
         color: SmashColors.mainDecorations.withAlpha(70),
@@ -422,8 +537,10 @@ class _MainPageState extends State<MainPage> {
                 ),
                 title: Text("Logout"),
                 onTap: () {
-                  // TODO
                   Navigator.of(context).pop();
+                  setState(() {
+                    SmashSession.logout();
+                  });
                 },
               ),
             ),
@@ -699,83 +816,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  TextStyle style = TextStyle(fontFamily: 'Arial', fontSize: 20.0);
-
   @override
-  Widget build(BuildContext context) {
-    final emailField = TextField(
-      obscureText: false,
-      style: style,
-      decoration: InputDecoration(
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-          hintText: "Username",
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(32.0))),
-    );
-
-    final passwordField = TextField(
-      obscureText: true,
-      style: style,
-      decoration: InputDecoration(
-          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-          hintText: "Password",
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(32.0))),
-    );
-
-    final loginButon = Material(
-      elevation: 5.0,
-      borderRadius: BorderRadius.circular(30.0),
-      color: SmashColors.mainDecorationsDark,
-      child: MaterialButton(
-        minWidth: MediaQuery.of(context).size.width,
-        padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-        onPressed: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => MainPage()));
-        },
-        child: Text("Login",
-            textAlign: TextAlign.center,
-            style: style.copyWith(
-                color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-    );
-
-    return Scaffold(
-        body: SingleChildScrollView(
-      child: Center(
-        child: Container(
-          color: Colors.white,
-          constraints: BoxConstraints(maxWidth: 400.0),
-          child: Padding(
-            padding: const EdgeInsets.all(36.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  height: 200.0,
-                  child: Image.asset(
-                    "assets/smash_logo.png",
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                SizedBox(height: 45.0),
-                emailField,
-                SizedBox(height: 25.0),
-                passwordField,
-                SizedBox(
-                  height: 35.0,
-                ),
-                loginButon,
-                SizedBox(
-                  height: 15.0,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ));
-  }
+  Widget build(BuildContext context) {}
 }
