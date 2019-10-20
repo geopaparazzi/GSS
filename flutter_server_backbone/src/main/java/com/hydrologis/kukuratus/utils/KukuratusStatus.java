@@ -64,6 +64,10 @@ public class KukuratusStatus {
         this.message = message;
         this.throwable = throwable;
     }
+    
+    public int getCode() {
+        return code;
+    }
 
     public String toJson() {
         JSONObject root = new JSONObject();

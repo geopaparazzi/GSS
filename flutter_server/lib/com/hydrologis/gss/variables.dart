@@ -1,8 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
+import 'package:intl/intl.dart';
 
 const TITLE = 'Geopaparazzi Survey Server';
 const NOVALUE = " - ";
@@ -50,51 +47,3 @@ final String TS = "ts";
 
 final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP[MAPSFORGE]; //'Openstreetmap'];
 
-class MapstateModel extends ChangeNotifier {
-//  String _backgroundLayer = MAPSFORGE;
-//
-//  double _centerLon = 11.0;
-//  double _centerLat = 46.0;
-//  double _currentZoom = 8;
-//
-//  String get backgroundLayer => _backgroundLayer;
-//
-//  set backgroundLayer(String backgroundLayer) {
-//    _backgroundLayer = backgroundLayer;
-//    notifyListeners();
-//  }
-//
-//  setBackgroundLayerNoevent(String backgroundLayer) {
-//    _backgroundLayer = backgroundLayer;
-//    notifyListeners();
-//  }
-//
-//  TileLayerOptions getBackgroundLayerOption() {
-//    return AVAILABLE_LAYERS_MAP[_backgroundLayer] ??=
-//        AVAILABLE_LAYERS_MAP[MAPSFORGE];
-//  }
-//
-//  get centerLat => _centerLat;
-//
-//  get centerLon => _centerLon;
-//
-//  get currentZoom => _currentZoom;
-//
-//  void setMapPosition(double lon, double lat, double zoom) {
-//    _centerLat = lat;
-//    _centerLon = lon;
-//    _currentZoom = zoom;
-//    notifyListeners();
-//  }
-//
-//  void setMapPositionNoEvent(double lon, double lat, double zoom) {
-//    _centerLat = lat;
-//    _centerLon = lon;
-//    _currentZoom = zoom;
-//  }
-//
-//  void reset() {
-//    _backgroundLayer = MAPSFORGE;
-//    notifyListeners();
-//  }
-}

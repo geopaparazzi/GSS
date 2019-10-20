@@ -16,6 +16,7 @@ import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:latlong/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
@@ -29,8 +30,11 @@ void main() {
 class GssApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MapstateModel>(
-      builder: (context) => MapstateModel(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(builder: (_) => MapstateModel()),
+        ChangeNotifierProvider(builder: (_) => FilterStateModel()),
+      ],
       child: MaterialApp(
         title: TITLE,
         debugShowCheckedModeBanner: false,
@@ -119,7 +123,7 @@ class _MainPageState extends State<MainPage> {
 
       if (_doFirstDataLoading) {
         _doFirstDataLoading = false;
-        getData();
+        getData(context);
       }
 
 //    html.IdbFactory fac = html.window.indexedDB;
@@ -210,7 +214,7 @@ class _MainPageState extends State<MainPage> {
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Text(
-                  "User: ${SmashSession.getSessionUserName()}",
+                  "User: ${SmashSession.getSessionUser()[0]}",
                   style: TextStyle(color: Colors.blueGrey),
                 ),
               ),
@@ -583,10 +587,20 @@ class _MainPageState extends State<MainPage> {
     }).toList();
   }
 
-  void getData() async {
+  void getData(BuildContext context) async {
     _dataBounds = LatLngBounds();
 
-    var data = await ServerApi.getData();
+    FilterStateModel filterStateModel = Provider.of<FilterStateModel>(context);
+    var userPwd = SmashSession.getSessionUser();
+
+    var data = await ServerApi.getData(
+      userPwd[0],
+      userPwd[1],
+      surveyors: filterStateModel.surveyors,
+      projects: filterStateModel.projects,
+      matchString: filterStateModel.matchingText,
+      fromTo: filterStateModel.fromToTimestamp,
+    );
     Map<String, dynamic> json = jsonDecode(data);
 
     // TODO add back also logs

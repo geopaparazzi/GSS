@@ -22,7 +22,6 @@ import java.io.DataOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.StringTokenizer;

@@ -68,8 +68,11 @@ class SmashSession {
     ];
   }
 
-  static String getSessionUserName() {
-    return html.window.sessionStorage[KEY_USER];
+  static List<String> getSessionUser() {
+    return [
+      html.window.sessionStorage[KEY_USER],
+      html.window.sessionStorage[KEY_PWD]
+    ];
   }
 
   static void logout({mapCenter}) async {

@@ -1,6 +1,5 @@
-import 'dart:convert' as JSON;
+import 'dart:convert';
 import 'dart:html';
-import 'dart:html' as HTML;
 
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
@@ -19,21 +18,27 @@ const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
 //const SERVER_IP = "172.26.181.138"; // office hydrologis
 
 class ServerApi {
-  static Future<String> getData({users, from, to}) async {
+  static Future<String> getData(String user, String pwd,
+      {surveyors, projects, fromTo, matchString}) async {
     String apiCall = "$API_DATA";
-    String values = await HttpRequest.getString(apiCall);
-    return values;
+
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: {"authorization": basicAuth});
+
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
   }
 
   static Future<String> login(String user, String pwd) async {
     String apiCall = "$API_LOGIN";
 
-    Map<String, String> formData = {
-      KEY_USER: user,
-      KEY_PWD: pwd,
-    };
-
-    HttpRequest request = await HttpRequest.postFormData(apiCall, formData);
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: {"authorization": basicAuth});
     if (request.status == 200) {
       return request.response;
     } else {
@@ -45,18 +50,16 @@ class ServerApi {
       {basemap = "Mapsforge", mapCenter = "0;0;6"}) async {
     String apiCall = "$API_USERSETTINGS";
 
-    Map<String, String> formData = {
-      KEY_USER: user,
-      KEY_PWD: pwd,
-    };
+    Map<String, String> formData = {};
     if (basemap != null) {
       formData[KEY_BASEMAP] = basemap;
     }
     if (mapCenter != null) {
       formData[KEY_MAPCENTER] = mapCenter;
     }
-
-    HttpRequest request = await HttpRequest.postFormData(apiCall, formData);
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
+        requestHeaders: {"authorization": basicAuth});
     if (request.status == 200) {
       return request.response;
     } else {
@@ -64,10 +67,12 @@ class ServerApi {
     }
   }
 
-  static Future<String> getImageBytesById(int id) async {
+  static Future<String> getImageBytesById(
+      String user, String pwd, int id) async {
     String apiCall = "$API_IMAGE/$id";
-
-    HttpRequest request = await HttpRequest.request(apiCall, method: 'GET');
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: {"authorization": basicAuth});
     if (request.status == 200) {
       print(request.response.runtimeType);
       return request.response;
