@@ -240,7 +240,7 @@ public class GssServer implements Vars {
 
         // get data from the server by type and the primary key id
         get("/data/:type/:id", ( req, res ) -> {
-            if (hasPermission(req)) {
+//            if (hasPermission(req)) {
                 String type = req.params(":type");
                 String id = req.params(":id");
                 KukuratusLogger.logDebug("GssServer#get(/data/" + type + "/" + id,
@@ -264,16 +264,16 @@ public class GssServer implements Vars {
                     res.status(ks.getCode());
                     return ks.toJson();
                 }
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-                res.status(ks.getCode());
-                return ks.toJson();
-            }
+//            } else {
+//                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
+//                res.status(ks.getCode());
+//                return ks.toJson();
+//            }
         });
 
         // get an image by the original project id and the userid
         get("/imagedata/:userid/:originalid", ( req, res ) -> {
-            if (!hasPermission(req)) {
+//            if (!hasPermission(req)) {
                 String userId = req.params(":userid");
                 String originalImageDataId = req.params(":originalid");
                 KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + originalImageDataId,
@@ -292,11 +292,11 @@ public class GssServer implements Vars {
                     res.status(ks.getCode());
                     return ks.toJson();
                 }
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-                res.status(ks.getCode());
-                return ks.toJson();
-            }
+//            } else {
+//                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
+//                res.status(ks.getCode());
+//                return ks.toJson();
+//            }
         });
 
         get("/login", ( req, res ) -> {
