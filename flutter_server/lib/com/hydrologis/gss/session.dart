@@ -7,12 +7,9 @@ import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 class SmashSession {
   static Future<void> login(String user, String password) async {
     var responsJson = await ServerApi.login(user, password);
-    print(responsJson);
     var jsonMap = JSON.jsonDecode(responsJson);
     var hasPermission = jsonMap[KEY_HASPERMISSION];
     if (hasPermission) {
-      print("has perm");
-
       setSessionUser(user, password);
     }
     var isAdmin = jsonMap[KEY_ISADMIN];

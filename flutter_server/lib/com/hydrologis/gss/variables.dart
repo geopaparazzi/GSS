@@ -51,23 +51,27 @@ final String TS = "ts";
 final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP[MAPSFORGE]; //'Openstreetmap'];
 
 class MapstateModel extends ChangeNotifier {
-  TileLayerOptions _backgroundLayer = DEFAULT_TILELAYER;
+  String _backgroundLayer = MAPSFORGE;
 
   double _centerLon = 11.0;
   double _centerLat = 46.0;
   double _currentZoom = 8;
 
-  TileLayerOptions get backgroundLayer => _backgroundLayer;
+  String get backgroundLayer => _backgroundLayer;
 
-  set backgroundLayer(TileLayerOptions backgroundLayer) {
+  set backgroundLayer(String backgroundLayer) {
     _backgroundLayer = backgroundLayer;
-    print("event backgroundLayer");
     notifyListeners();
   }
 
-  setBackgroundLayerNoevent(String name) {
-    _backgroundLayer = AVAILABLE_LAYERS_MAP[name];
+  setBackgroundLayerNoevent(String backgroundLayer) {
+    _backgroundLayer = backgroundLayer;
     notifyListeners();
+  }
+
+  TileLayerOptions getBackgroundLayerOption() {
+    return AVAILABLE_LAYERS_MAP[_backgroundLayer] ??=
+        AVAILABLE_LAYERS_MAP[MAPSFORGE];
   }
 
   get centerLat => _centerLat;
@@ -80,7 +84,6 @@ class MapstateModel extends ChangeNotifier {
     _centerLat = lat;
     _centerLon = lon;
     _currentZoom = zoom;
-    print("event setMapPosition");
     notifyListeners();
   }
 
@@ -91,8 +94,7 @@ class MapstateModel extends ChangeNotifier {
   }
 
   void reset() {
-    _backgroundLayer = DEFAULT_TILELAYER;
-    print("event reset");
+    _backgroundLayer = MAPSFORGE;
     notifyListeners();
   }
 }

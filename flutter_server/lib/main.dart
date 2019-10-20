@@ -183,7 +183,7 @@ class _MainPageState extends State<MainPage> {
                       ],
                       // TODO check interaction possibilities
                     ),
-                    layers: [model.backgroundLayer]..addAll(layers),
+                    layers: [model.getBackgroundLayerOption()]..addAll(layers),
                     mapController: _mapController,
                   ),
                   Align(
@@ -365,7 +365,6 @@ class _MainPageState extends State<MainPage> {
           onPressed: () async {
             String user = userNameController.text;
             String password = passwordController.text;
-            print(password);
             await SmashSession.login(user, password);
             MapstateModel mapstateModel = Provider.of<MapstateModel>(context);
             var baseLayer = AVAILABLE_LAYERS_MAP[SmashSession.getBasemap()];
@@ -554,10 +553,12 @@ class _MainPageState extends State<MainPage> {
                 title: Text("Logout"),
                 onTap: () {
                   Navigator.of(context).pop();
+                  MapstateModel model = Provider.of<MapstateModel>(context);
                   setState(() {
                     SmashSession.logout(
                       mapCenter:
                           "${_mapController.center.longitude};${_mapController.center.latitude};${_mapController.zoom}",
+                      baseMap: model.backgroundLayer,
                     );
                   });
                 },
@@ -581,7 +582,7 @@ class _MainPageState extends State<MainPage> {
               if (name == MAPSFORGE) {
                 model.reset();
               } else {
-                model.backgroundLayer = AVAILABLE_LAYERS_MAP[name];
+                model.backgroundLayer = name;
               }
             },
             key: Key(name),
