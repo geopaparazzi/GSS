@@ -223,12 +223,14 @@ public class GssServer implements Vars {
                 GssDatabaseUtilities.getLogs(root, logsDao, users, from, to);
 
                 Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
+
                 // simple notes
                 GssDatabaseUtilities.getNotes(root, notesDao, users, from, to, false);
                 // form notes
                 GssDatabaseUtilities.getNotes(root, notesDao, users, from, to, true);
 
-                GssDatabaseUtilities.getImages(root, DatabaseHandler.instance().getDb(), users, from, to);
+                Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
+                GssDatabaseUtilities.getImages(root, imagesDao, users, from, to);
 
                 return root.toString();
             } else {
@@ -241,29 +243,29 @@ public class GssServer implements Vars {
         // get data from the server by type and the primary key id
         get("/data/:type/:id", ( req, res ) -> {
 //            if (hasPermission(req)) {
-                String type = req.params(":type");
-                String id = req.params(":id");
-                KukuratusLogger.logDebug("GssServer#get(/data/" + type + "/" + id,
-                        "Received request from " + req.raw().getRemoteAddr());
+            String type = req.params(":type");
+            String id = req.params(":id");
+            KukuratusLogger.logDebug("GssServer#get(/data/" + type + "/" + id,
+                    "Received request from " + req.raw().getRemoteAddr());
 
-                try {
-                    // images or notes are requested
-                    if (type.equals(GssDatabaseUtilities.IMAGES)) {
-                        if (id != null) {
-                            long idLong = Long.parseLong(id);
-                            ImageData idObj = new ImageData(idLong);
-                            Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
-                            ImageData result = dao.queryForSameId(idObj);
-                            return result.data;
-                        }
+            try {
+                // images or notes are requested
+                if (type.equals(GssDatabaseUtilities.IMAGES)) {
+                    if (id != null) {
+                        long idLong = Long.parseLong(id);
+                        ImageData idObj = new ImageData(idLong);
+                        Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
+                        ImageData result = dao.queryForSameId(idObj);
+                        return result.data;
                     }
-                    return "";
-                } catch (Exception e) {
-                    KukuratusLogger.logError("GssServer#get(/data/:type/:id", e);
-                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
-                    res.status(ks.getCode());
-                    return ks.toJson();
                 }
+                return "";
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/data/:type/:id", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
 //            } else {
 //                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
 //                res.status(ks.getCode());
@@ -274,24 +276,24 @@ public class GssServer implements Vars {
         // get an image by the original project id and the userid
         get("/imagedata/:userid/:originalid", ( req, res ) -> {
 //            if (!hasPermission(req)) {
-                String userId = req.params(":userid");
-                String originalImageDataId = req.params(":originalid");
-                KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + originalImageDataId,
-                        "Received request from " + req.raw().getRemoteAddr());
+            String userId = req.params(":userid");
+            String originalImageDataId = req.params(":originalid");
+            KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + originalImageDataId,
+                    "Received request from " + req.raw().getRemoteAddr());
 
-                try {
-                    long userIdLong = Long.parseLong(userId);
-                    long originalImageDataIdLong = Long.parseLong(originalImageDataId);
-                    Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
-                    ImageData imageData = dao.queryBuilder().where().eq(ImageData.ORIGINALID_FIELD_NAME, originalImageDataIdLong)
-                            .and().eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
-                    return imageData.data;
-                } catch (Exception e) {
-                    KukuratusLogger.logError("GssServer#get(/imagedata/:userid/:originalid", e);
-                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
-                    res.status(ks.getCode());
-                    return ks.toJson();
-                }
+            try {
+                long userIdLong = Long.parseLong(userId);
+                long originalImageDataIdLong = Long.parseLong(originalImageDataId);
+                Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
+                ImageData imageData = dao.queryBuilder().where().eq(ImageData.ORIGINALID_FIELD_NAME, originalImageDataIdLong)
+                        .and().eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
+                return imageData.data;
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/imagedata/:userid/:originalid", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
 //            } else {
 //                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
 //                res.status(ks.getCode());

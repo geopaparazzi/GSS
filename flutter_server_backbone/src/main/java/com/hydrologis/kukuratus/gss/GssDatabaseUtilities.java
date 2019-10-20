@@ -5,13 +5,10 @@ import java.util.Base64;
 import java.util.List;
 
 import org.hortonmachine.dbs.compat.ASpatialDb;
-import org.hortonmachine.dbs.compat.IHMResultSet;
-import org.hortonmachine.dbs.compat.IHMStatement;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
 
-import com.hydrologis.kukuratus.database.ISpatialTable;
 import com.hydrologis.kukuratus.gss.database.GpapUsers;
 import com.hydrologis.kukuratus.gss.database.GpsLogs;
 import com.hydrologis.kukuratus.gss.database.Images;
@@ -123,7 +120,7 @@ public class GssDatabaseUtilities {
 
         List<Notes> notesList = eq.query();
 
-        if (notesList.size() > 0) {
+        if (notesList != null) {
             for( Notes note : notesList ) {
                 JSONObject noteObject = new JSONObject();
                 jsonNotes.put(noteObject);
@@ -137,52 +134,47 @@ public class GssDatabaseUtilities {
                 Coordinate c = note.the_geom.getCoordinate();
                 noteObject.put(X, c.x);
                 noteObject.put(Y, c.y);
+
+//                System.out.println((typeForm ? "form: " : "simple ") + c.x + "/" + c.y + ": " + note.text);
+
             }
         }
         return root;
     }
 
-    public static JSONObject getImages( JSONObject root, ASpatialDb db, List<GpapUsers> users, Long from, Long to )
+    public static JSONObject getImages( JSONObject root, Dao<Images, ? > imagesDao, List<GpapUsers> users, Long from, Long to )
             throws Exception {
         if (root == null) {
             root = new JSONObject();
         }
 
-        String sql = "SELECT " + Images.ID_FIELD_NAME + ", st_x(" + ISpatialTable.GEOM_FIELD_NAME + "), st_y("
-                + ISpatialTable.GEOM_FIELD_NAME + "), " + Images.TIMESTAMP_FIELD_NAME + ", " + Images.TEXT_FIELD_NAME + ", "
-                + Images.IMAGEDATA_FIELD_NAME + ", " + Images.THUMB_FIELD_NAME + " FROM images WHERE " + Images.NOTE_FIELD_NAME
-                + " is null";
+        Where<Images, ? > eq = imagesDao.queryBuilder().where().in(Images.GPAPUSER_FIELD_NAME, users);
         if (from != null) {
-            sql += " and " + Images.TIMESTAMP_FIELD_NAME + ">" + from;
+            eq = eq.and().ge(Notes.TIMESTAMP_FIELD_NAME, from);
         }
         if (to != null) {
-            sql += " and " + Images.TIMESTAMP_FIELD_NAME + "<" + to;
+            eq = eq.and().le(Notes.TIMESTAMP_FIELD_NAME, to);
         }
-        String _sql = sql;
-
+        List<Images> imagesList = eq.query();
         JSONArray jsonImages = new JSONArray();
         root.put(IMAGES, jsonImages);
-        db.execOnConnection(connection -> {
+        if (imagesList != null) {
+            for( Images image : imagesList ) {
+                JSONObject imageObject = new JSONObject();
+                jsonImages.put(imageObject);
+                imageObject.put(ID, image.id);
+                Coordinate c = image.the_geom.getCoordinate();
+                imageObject.put(X, c.x);
+                imageObject.put(Y, c.y);
+                imageObject.put(TS, image.timestamp);
+                imageObject.put(NAME, image.text);
+                imageObject.put(DATAID, image.imageData.id);
+                byte[] thumbBytes = image.thumbnail;
+                String encodedThumb = Base64.getEncoder().encodeToString(thumbBytes);
+                imageObject.put(DATA, encodedThumb);
 
-            try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(_sql)) {
-                while( rs.next() ) {
-                    int i = 1;
-                    JSONObject imageObject = new JSONObject();
-                    jsonImages.put(imageObject);
-
-                    imageObject.put(ID, rs.getLong(i++));
-                    imageObject.put(X, rs.getDouble(i++));
-                    imageObject.put(Y, rs.getDouble(i++));
-                    imageObject.put(TS, rs.getLong(i++));
-                    imageObject.put(NAME, rs.getString(i++));
-                    imageObject.put(DATAID, rs.getLong(i++));
-                    byte[] thumbBytes = rs.getBytes(i++);
-                    String encodedThumb = Base64.getEncoder().encodeToString(thumbBytes);
-                    imageObject.put(DATA, encodedThumb);
-                }
             }
-            return null;
-        });
+        }
         return root;
     }
 

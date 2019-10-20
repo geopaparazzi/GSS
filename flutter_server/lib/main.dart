@@ -609,7 +609,7 @@ class _MainPageState extends State<MainPage> {
     print("Data reload called");
     _dataBounds = LatLngBounds();
 
-    FilterStateModel  filterStateModel = Provider.of<FilterStateModel>(context);
+    FilterStateModel filterStateModel = Provider.of<FilterStateModel>(context);
     var userPwd = SmashSession.getSessionUser();
     print(filterStateModel.surveyors);
 
@@ -657,12 +657,14 @@ class _MainPageState extends State<MainPage> {
     List<dynamic> simpleNotesList = json[NOTES];
     for (int i = 0; i < simpleNotesList.length; i++) {
       dynamic noteItem = simpleNotesList[i];
+//      print(noteItem);
       //      var id = noteItem[ID];
       var name = noteItem[NAME];
       //      var ts = noteItem[TS];
       var x = noteItem[X];
       var y = noteItem[Y];
       var latLng = LatLng(y, x);
+//      print("$latLng : $name");
       _dataBounds.extend(latLng);
       markers.add(buildSimpleNote(x, y, name));
     }
@@ -670,6 +672,7 @@ class _MainPageState extends State<MainPage> {
     List<dynamic> formNotesList = json[FORMS];
     for (int i = 0; i < formNotesList.length; i++) {
       dynamic formItem = formNotesList[i];
+//      print(formItem);
       var noteId = formItem[ID];
       var name = formItem[NAME];
       var form = formItem[FORM];
@@ -678,6 +681,8 @@ class _MainPageState extends State<MainPage> {
       var x = formItem[X];
       var y = formItem[Y];
       var latLng = LatLng(y, x);
+//      print("$latLng : $name");
+//      print(latLng);
       _dataBounds.extend(latLng);
       markers.add(buildFormNote(x, y, name, form, noteId, userId));
     }
@@ -693,6 +698,7 @@ class _MainPageState extends State<MainPage> {
       var x = imageItem[X];
       var y = imageItem[Y];
       var latLng = LatLng(y, x);
+//      print("$latLng : $name");
       _dataBounds.extend(latLng);
       var imgData = Base64Decoder().convert(data);
       markers.add(buildImage(x, y, name, dataId, imgData));
