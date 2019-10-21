@@ -125,7 +125,7 @@ class _MainPageState extends State<MainPage> {
 
       if (_doFirstDataLoading) {
         _doFirstDataLoading = false;
-        getData(context);
+        getData(null);
       }
 
 //    html.IdbFactory fac = html.window.indexedDB;
@@ -173,6 +173,9 @@ class _MainPageState extends State<MainPage> {
 
       var xyz = SmashSession.getMapcenter();
       var basemap = SmashSession.getBasemap();
+
+      FilterStateModel filterStateModel =
+          Provider.of<FilterStateModel>(context);
 
       return Scaffold(
         key: _scaffoldKey,
@@ -310,8 +313,6 @@ class _MainPageState extends State<MainPage> {
                   icon: Icon(MdiIcons.worker),
                   tooltip: "Filter by Surveyor",
                   onPressed: () {
-                    FilterStateModel filterStateModel =
-                        Provider.of<FilterStateModel>(context);
                     Flushbar(
                       flushbarPosition: FlushbarPosition.BOTTOM,
                       flushbarStyle: FlushbarStyle.GROUNDED,
@@ -328,15 +329,34 @@ class _MainPageState extends State<MainPage> {
                     )..show(context);
                   },
                   iconSize: 48.0,
-                  color: SmashColors.mainDecorationsDark,
+                  color: filterStateModel.surveyors != null
+                      ? SmashColors.mainSelectionBorder
+                      : SmashColors.mainDecorationsDark,
                 ),
                 IconButton(
                   key: Key("filter4"),
                   icon: Icon(MdiIcons.folderOutline),
                   tooltip: "Filter by Project",
-                  onPressed: () {},
+                  onPressed: () {
+                    Flushbar(
+                      flushbarPosition: FlushbarPosition.BOTTOM,
+                      flushbarStyle: FlushbarStyle.GROUNDED,
+                      backgroundColor: Colors.white.withAlpha(128),
+                      onTap: (e) {
+                        Navigator.of(context).pop();
+                      },
+                      messageText: Container(
+                        height: 600,
+                        child: Center(
+                          child: FilterProject(filterStateModel, getData),
+                        ),
+                      ),
+                    )..show(context);
+                  },
                   iconSize: 48.0,
-                  color: SmashColors.mainDecorationsDark,
+                  color: filterStateModel.projects != null
+                      ? SmashColors.mainSelectionBorder
+                      : SmashColors.mainDecorationsDark,
                 ),
                 IconButton(
                   key: Key("filter2"),
@@ -348,9 +368,12 @@ class _MainPageState extends State<MainPage> {
                 ),
                 IconButton(
                   key: Key("filter3"),
-                  icon: Icon(MdiIcons.textbox),
-                  tooltip: "Filter by Text",
-                  onPressed: () {},
+                  icon: Icon(MdiIcons.filterRemove),
+                  tooltip: "Remove all Filters",
+                  onPressed: () {
+                    filterStateModel.reset();
+                    getData(filterStateModel);
+                  },
                   iconSize: 48.0,
                   color: SmashColors.mainDecorationsDark,
                 ),
@@ -616,13 +639,16 @@ class _MainPageState extends State<MainPage> {
     }).toList();
   }
 
-  void getData(BuildContext context) async {
+  void getData(FilterStateModel filterStateModel) async {
     print("Data reload called");
     _dataBounds = LatLngBounds();
 
-    FilterStateModel filterStateModel = Provider.of<FilterStateModel>(context);
+    if (filterStateModel == null) {
+      filterStateModel = Provider.of<FilterStateModel>(context);
+    }
+
     var userPwd = SmashSession.getSessionUser();
-    print(filterStateModel.surveyors);
+    print("Projects: ${filterStateModel.projects}");
 
     var data = await ServerApi.getData(
       userPwd[0],

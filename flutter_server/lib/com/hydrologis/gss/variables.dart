@@ -15,6 +15,7 @@ final String KEY_BASEMAP = "basemap";
 final String KEY_MAPCENTER = "mapcenter_xyz";
 
 final String KEY_SURVEYORS = "surveyors";
+final String KEY_PROJECTS = "projects";
 
 /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
 final DateFormat ISO8601_TS_FORMATTER = DateFormat("yyyy-MM-dd HH:mm:ss");

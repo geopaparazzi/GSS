@@ -52,6 +52,41 @@ class _FilterSurveyorState extends State<FilterSurveyor> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Filter by Surveyors"),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(MdiIcons.checkBoxOutline),
+            tooltip: "Select all",
+            onPressed: () {
+              setState(() {
+                _surveyorsToActive.forEach((k, v) {
+                  _surveyorsToActive[k] = true;
+                });
+              });
+            },
+          ),
+          IconButton(
+            icon: Icon(MdiIcons.checkboxIntermediate),
+            tooltip: "Invert selection",
+            onPressed: () {
+              setState(() {
+                _surveyorsToActive.forEach((k, v) {
+                  _surveyorsToActive[k] = !v;
+                });
+              });
+            },
+          ),
+          IconButton(
+            icon: Icon(MdiIcons.checkboxBlankOutline),
+            tooltip: "Unselect all",
+            onPressed: () {
+              setState(() {
+                _surveyorsToActive.forEach((k, v) {
+                  _surveyorsToActive[k] = false;
+                });
+              });
+            },
+          )
+        ],
       ),
       body: _surveyorsToActive == null
           ? Center(child: CircularProgressIndicator())
@@ -79,7 +114,123 @@ class _FilterSurveyorState extends State<FilterSurveyor> {
             }
           });
           widget._filterStateModel.setSurveyors(filtered);
-          widget._reloadDataFunction(context);
+          widget._reloadDataFunction(widget._filterStateModel);
+          Navigator.pop(context);
+        },
+        child: Icon(MdiIcons.contentSave),
+      ),
+    );
+  }
+}
+
+class FilterProject extends StatefulWidget {
+  FilterStateModel _filterStateModel;
+  Function _reloadDataFunction;
+
+  FilterProject(this._filterStateModel, this._reloadDataFunction);
+
+  @override
+  _FilterProjectState createState() => _FilterProjectState();
+}
+
+class _FilterProjectState extends State<FilterProject> {
+  Map<String, bool> _projectsToActive;
+
+  @override
+  void initState() {
+    getProjects();
+    super.initState();
+  }
+
+  Future<void> getProjects() async {
+    var sessionUser = SmashSession.getSessionUser();
+    String responsJson =
+        await ServerApi.getProjects(sessionUser[0], sessionUser[1]);
+
+    var jsonMap = JSON.jsonDecode(responsJson);
+
+    List<dynamic> projects = jsonMap[KEY_PROJECTS];
+    List<String> filterProjects = widget._filterStateModel.projects;
+
+    Map<String, bool> tmp = {};
+    projects.forEach((name) {
+      tmp[name] = filterProjects != null ? filterProjects.contains(name) : true;
+    });
+
+    setState(() {
+      _projectsToActive = tmp;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Filter by Project"),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(MdiIcons.checkBoxOutline),
+            tooltip: "Select all",
+            onPressed: () {
+              setState(() {
+                _projectsToActive.forEach((k, v) {
+                  _projectsToActive[k] = true;
+                });
+              });
+            },
+          ),
+          IconButton(
+            icon: Icon(MdiIcons.checkboxIntermediate),
+            tooltip: "Invert selection",
+            onPressed: () {
+              setState(() {
+                _projectsToActive.forEach((k, v) {
+                  _projectsToActive[k] = !v;
+                });
+              });
+            },
+          ),
+          IconButton(
+            icon: Icon(MdiIcons.checkboxBlankOutline),
+            tooltip: "Unselect all",
+            onPressed: () {
+              setState(() {
+                _projectsToActive.forEach((k, v) {
+                  _projectsToActive[k] = false;
+                });
+              });
+            },
+          )
+        ],
+      ),
+      body: _projectsToActive == null
+          ? Center(child: CircularProgressIndicator())
+          : ListView(
+              children: _projectsToActive.keys.map((name) {
+                return CheckboxListTile(
+                  title: SmashUI.normalText(name),
+                  value: _projectsToActive[name],
+                  onChanged: (bool isActive) {
+                    setState(() {
+                      _projectsToActive[name] = isActive;
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: "FilterProjectsave",
+        mini: true,
+        onPressed: () async {
+          List<String> filtered = [];
+          _projectsToActive.forEach((name, active) {
+            if (active) {
+              filtered.add(name);
+            }
+          });
+          print(filtered);
+          widget._filterStateModel.setProjects(filtered);
+          widget._reloadDataFunction(widget._filterStateModel);
           Navigator.pop(context);
         },
         child: Icon(MdiIcons.contentSave),

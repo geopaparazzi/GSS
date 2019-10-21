@@ -20,6 +20,7 @@ public interface Vars {
     final static String KEY_MAPCENTER = "mapcenter_xyz";
 
     static final String SURVEYORS = "surveyors";
+    static final String PROJECTS = "projects";
 
     static final String AUTHORIZATION = "Authorization";
 

@@ -12,6 +12,7 @@ const WEBAPP_URL = "http://localhost:8080"; // TODO make empty for release
 const API_DATA = "$WEBAPP_URL/data";
 const API_LIST = "$WEBAPP_URL/list";
 const API_LIST_SURVEYORS = "$API_LIST/surveyors";
+const API_LIST_PROJECTS = "$API_LIST/projects";
 const API_LOGIN = "$WEBAPP_URL/login";
 const API_USERSETTINGS = "$WEBAPP_URL/usersettings";
 const API_IMAGE = "$API_DATA/images";
@@ -21,12 +22,15 @@ const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
 
 class ServerApi {
   static Future<String> getData(String user, String pwd,
-      {List<String> surveyors, projects, fromTo, matchString}) async {
+      {List<String> surveyors, List<String>  projects, fromTo, matchString}) async {
     String apiCall = "$API_DATA";
 
     Map<String, String> formData = {};
     if (surveyors != null) {
       formData[KEY_SURVEYORS] = surveyors.join(";");
+    }
+    if (projects != null) {
+      formData[KEY_PROJECTS] = projects.join(";");
     }
 
     String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
@@ -93,6 +97,19 @@ class ServerApi {
 
   static Future<String> getSurveyors(String user, String pwd) async {
     String apiCall = "$API_LIST_SURVEYORS";
+
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: {"authorization": basicAuth});
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<String> getProjects(String user, String pwd) async {
+    String apiCall = "$API_LIST_PROJECTS";
 
     String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
     HttpRequest request = await HttpRequest.request(apiCall,

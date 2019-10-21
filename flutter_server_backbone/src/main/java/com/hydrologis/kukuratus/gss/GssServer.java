@@ -27,6 +27,7 @@ import org.json.JSONObject;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
+import com.hydrologis.kukuratus.gss.database.GpapProject;
 import com.hydrologis.kukuratus.gss.database.GpapUsers;
 import com.hydrologis.kukuratus.gss.database.GpsLogs;
 import com.hydrologis.kukuratus.gss.database.GpsLogsData;
@@ -203,16 +204,23 @@ public class GssServer implements Vars {
             KukuratusLogger.logDebug("GssServer#post(/data", "Received request from " + req.raw().getRemoteAddr());
             if (hasPermission(req)) {
                 String surveyors = req.queryParams(SURVEYORS);
+                String projects = req.queryParams(PROJECTS);
 
                 JSONObject root = new JSONObject();
-                Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
 
-                List<GpapUsers> users;
+                Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                List<GpapUsers> users = null;;
                 if (surveyors != null) {
                     String[] surveyorsArray = surveyors.split(";");
                     users = userDao.queryBuilder().where().in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray)).query();
-                } else {
-                    users = userDao.queryForAll();
+                }
+
+                Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                List<GpapProject> projectsList = null;
+                if (projects != null) {
+                    String[] projectsArray = projects.split(";");
+                    projectsList = projectDao.queryBuilder().where().in(GpapProject.NAME_FIELD_NAME, Arrays.asList(projectsArray))
+                            .query();
                 }
 
                 // TODO parameterize users, from and to
@@ -220,17 +228,17 @@ public class GssServer implements Vars {
                 Long to = null;
 
                 Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
-                GssDatabaseUtilities.getLogs(root, logsDao, users, from, to);
+                GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
 
                 Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
 
                 // simple notes
-                GssDatabaseUtilities.getNotes(root, notesDao, users, from, to, false);
+                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, false);
                 // form notes
-                GssDatabaseUtilities.getNotes(root, notesDao, users, from, to, true);
+                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, true);
 
                 Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                GssDatabaseUtilities.getImages(root, imagesDao, users, from, to);
+                GssDatabaseUtilities.getImages(root, imagesDao, users, projectsList, null, null);
 
                 return root.toString();
             } else {
@@ -365,9 +373,19 @@ public class GssServer implements Vars {
                         usersArray.put(gpapUsers.name);
                     }
                     return root.toString();
+                } else if (type.equals(PROJECTS)) {
+                    Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                    List<GpapProject> users = projectDao.queryForAll();
+                    JSONObject root = new JSONObject();
+                    JSONArray usersArray = new JSONArray();
+                    root.put(PROJECTS, usersArray);
+                    for( GpapProject gpapProject : users ) {
+                        usersArray.put(gpapProject.name);
+                    }
+                    return root.toString();
                 }
 
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recugnised.");
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recognised.");
                 res.status(ks.getCode());
                 return ks.toJson();
             } else {
