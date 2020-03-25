@@ -37,34 +37,21 @@ import com.hydrologis.kukuratus.libs.workspace.KukuratusWorkspace;
 public enum GssWorkspace {
     INSTANCE;
 
-    public static final String BASEMAP = "basemaps"; //$NON-NLS-1$
-    public static final String OVERLAYS = "overlays"; //$NON-NLS-1$
+    public static final String MAPS = "maps"; //$NON-NLS-1$
     public static final String PROJECTS = "projects"; //$NON-NLS-1$
     public static final String NAME = "name"; //$NON-NLS-1$
     private Optional<File> basemapsFolder;
-    private Optional<File> overlaysFolder;
     private Optional<File> projectsFolder;
 
     public Optional<File> getBasemapsFolder() {
         File workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
-        File baseMapsFolder = new File(workspaceFolder, BASEMAP);
+        File baseMapsFolder = new File(workspaceFolder, MAPS);
         if (!baseMapsFolder.exists()) {
             if (!baseMapsFolder.mkdirs()) {
                 return Optional.empty();
             }
         }
         return Optional.of(baseMapsFolder);
-    }
-
-    public Optional<File> getOverlaysFolder() {
-        File workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
-        File overlaysFolder = new File(workspaceFolder, OVERLAYS);
-        if (!overlaysFolder.exists()) {
-            if (!overlaysFolder.mkdirs()) {
-                return Optional.empty();
-            }
-        }
-        return Optional.of(overlaysFolder);
     }
 
     public Optional<File> getProjectsFolder() {
@@ -80,7 +67,6 @@ public enum GssWorkspace {
 
     private void checkFolders() {
         basemapsFolder = GssWorkspace.INSTANCE.getBasemapsFolder();
-        overlaysFolder = GssWorkspace.INSTANCE.getOverlaysFolder();
         projectsFolder = GssWorkspace.INSTANCE.getProjectsFolder();
     }
 
@@ -98,26 +84,6 @@ public enum GssWorkspace {
             maps = Arrays.asList(baseMaps).stream().map(file -> {
                 BaseMap m = new BaseMap();
                 m.setMapName(file.getName());
-                return m;
-            }).collect(Collectors.toList());
-        }
-        return maps;
-    }
-
-    public List<Overlays> getOverlays() {
-        checkFolders();
-        List<Overlays> maps = Collections.emptyList();
-        if (overlaysFolder.isPresent()) {
-            File[] overlayMaps = overlaysFolder.get().listFiles(new FilenameFilter(){
-                @Override
-                public boolean accept( File dir, String name ) {
-                    return isOverlay(name);
-                }
-            });
-
-            maps = Arrays.asList(overlayMaps).stream().map(file -> {
-                Overlays m = new Overlays();
-                m.setName(file.getName());
                 return m;
             }).collect(Collectors.toList());
         }
@@ -146,25 +112,16 @@ public enum GssWorkspace {
 
     public String getMapsListJson() {
         List<BaseMap> basemaps = getBasemaps();
-        List<Overlays> overlays = getOverlays();
         List<Projects> projects = getProjects();
 
         JSONObject root = new JSONObject();
 
         JSONArray bmArray = new JSONArray();
-        root.put(BASEMAP, bmArray);
+        root.put(MAPS, bmArray);
         for( BaseMap bm : basemaps ) {
             JSONObject bmObj = new JSONObject();
             bmObj.put(NAME, bm.getMapName());
             bmArray.put(bmObj);
-        }
-
-        JSONArray ovArray = new JSONArray();
-        root.put(OVERLAYS, ovArray);
-        for( Overlays ov : overlays ) {
-            JSONObject ovObj = new JSONObject();
-            ovObj.put(NAME, ov.getName());
-            ovArray.put(ovObj);
         }
 
         JSONArray pArray = new JSONArray();
@@ -179,11 +136,8 @@ public enum GssWorkspace {
     }
 
     public static boolean isBaseMap( String name ) {
-        return name.toLowerCase().endsWith(".map") || name.toLowerCase().endsWith(".mbtiles"); //$NON-NLS-1$ //$NON-NLS-2$
-    }
-
-    public static boolean isOverlay( String name ) {
-        return name.toLowerCase().endsWith(".sqlite"); //$NON-NLS-1$
+        return name.toLowerCase().endsWith(".map") || name.toLowerCase().endsWith(".mbtiles")
+                || name.toLowerCase().endsWith(".sqlite") || name.toLowerCase().endsWith(".gpkg"); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     public static boolean isProject( String name ) {
@@ -193,8 +147,6 @@ public enum GssWorkspace {
     public Optional<File> getMapFile( String fileName ) {
         if (isBaseMap(fileName) && basemapsFolder.isPresent()) {
             return Optional.of(new File(basemapsFolder.get(), fileName));
-        } else if (isOverlay(fileName) && overlaysFolder.isPresent()) {
-            return Optional.of(new File(overlaysFolder.get(), fileName));
         } else if (isProject(fileName) && projectsFolder.isPresent()) {
             return Optional.of(new File(projectsFolder.get(), fileName));
         }

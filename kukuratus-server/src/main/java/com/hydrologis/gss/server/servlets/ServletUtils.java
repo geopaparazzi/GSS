@@ -41,6 +41,12 @@ public class ServletUtils {
     private static boolean DEBUG = false;
     private static final String NO_PERMISSION = Messages.getString("ServletUtils.no_permission"); //$NON-NLS-1$
 
+    public static final int MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB
+    public static String tmpDir;
+    static {
+        tmpDir = System.getProperty("java.io.tmpdir");
+    }
+    
     public static String canProceed( HttpServletRequest request, HttpServletResponse response, String tag ) throws Exception {
         String tagPart = ""; //$NON-NLS-1$
         if (tag != null)

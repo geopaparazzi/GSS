@@ -29,7 +29,6 @@ import java.util.Optional;
 import com.hydrologis.gss.server.GssWorkspace;
 import com.hydrologis.gss.server.utils.BaseMap;
 import com.hydrologis.gss.server.utils.Messages;
-import com.hydrologis.gss.server.utils.Overlays;
 import com.hydrologis.gss.server.utils.Projects;
 import com.hydrologis.kukuratus.libs.spi.DefaultPage;
 import com.vaadin.icons.VaadinIcons;
@@ -53,25 +52,21 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
     private static final long serialVersionUID = 1L;
     private ProgressBar progressBar;
     private Grid<BaseMap> basemapsGrid;
-    private Grid<Overlays> overlaysGrid;
     private Grid<Projects> projectsGrid;
     private VerticalLayout dropPane;
     private File basemapsFolderFile;
-    private File overlayFolderFile;
     private File projectsFolderFile;
 
     @Override
     public void enter( ViewChangeEvent event ) {
         Optional<File> basemapsFolder = GssWorkspace.INSTANCE.getBasemapsFolder();
-        Optional<File> overlaysFolder = GssWorkspace.INSTANCE.getOverlaysFolder();
         Optional<File> projectsFolder = GssWorkspace.INSTANCE.getProjectsFolder();
-        if (!basemapsFolder.isPresent() || !overlaysFolder.isPresent() || !projectsFolder.isPresent()) {
+        if (!basemapsFolder.isPresent() || !projectsFolder.isPresent()) {
             Notification.show(Messages.getString("ProjectDataView.problem_datafolders"), //$NON-NLS-1$
                     Notification.Type.WARNING_MESSAGE);
             return;
         }
         basemapsFolderFile = basemapsFolder.get();
-        overlayFolderFile = overlaysFolder.get();
         projectsFolderFile = projectsFolder.get();
 
         HorizontalLayout mainDataLayout = new HorizontalLayout();
@@ -95,28 +90,6 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         basemapsLayout.setExpandRatio(basemapsLabel, 1);
         basemapsLayout.setExpandRatio(basemapsGrid, 20);
         mainDataLayout.addComponent(basemapsLayout);
-
-        // overlays
-        VerticalLayout overlaysLayout = new VerticalLayout();
-
-        Label overlaysLabel = new Label(Messages.getString("ProjectDataView.overlays")); //$NON-NLS-1$
-        overlaysLayout.addComponent(overlaysLabel);
-        overlaysLabel.setSizeUndefined();
-        overlaysLayout.setComponentAlignment(overlaysLabel, Alignment.MIDDLE_CENTER);
-
-        overlaysGrid = new Grid<>();
-        overlaysGrid.setSelectionMode(SelectionMode.NONE);
-        overlaysGrid.setHeaderVisible(false);
-        overlaysGrid.setColumns();
-        overlaysGrid.addColumn(Overlays::getName);
-        overlaysGrid.setSizeFull();
-        overlaysLayout.addComponent(overlaysGrid);
-        overlaysLayout.setSizeFull();
-
-        overlaysLayout.setExpandRatio(overlaysLabel, 1);
-        overlaysLayout.setExpandRatio(overlaysGrid, 20);
-
-        mainDataLayout.addComponent(overlaysLayout);
 
         // projects
         VerticalLayout projectsLayout = new VerticalLayout();
@@ -182,8 +155,6 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
                 File outputFile = null;
                 if (GssWorkspace.isBaseMap(fileName)) {
                     outputFile = new File(basemapsFolderFile, fileName);
-                } else if (GssWorkspace.isOverlay(fileName)) {
-                    outputFile = new File(overlayFolderFile, fileName);
                 } else if (GssWorkspace.isProject(fileName)) {
                     outputFile = new File(projectsFolderFile, fileName);
                 } else {
@@ -254,12 +225,6 @@ public class ProjectDataView extends VerticalLayout implements View, DefaultPage
         basemapsFolder.ifPresent(folder -> {
             List<BaseMap> maps = GssWorkspace.INSTANCE.getBasemaps();
             basemapsGrid.setItems(maps);
-        });
-
-        Optional<File> overlaysFolder = GssWorkspace.INSTANCE.getOverlaysFolder();
-        overlaysFolder.ifPresent(folder -> {
-            List<Overlays> maps = GssWorkspace.INSTANCE.getOverlays();
-            overlaysGrid.setItems(maps);
         });
 
         Optional<File> projectsFolder = GssWorkspace.INSTANCE.getProjectsFolder();

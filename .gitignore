@@ -19,4 +19,5 @@ CodenameOne_SRC.zip
 
 /mobile/gssmobile/dist/
 *.pdf
+.DS_Store
 *.html
