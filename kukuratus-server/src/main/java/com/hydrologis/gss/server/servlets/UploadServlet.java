@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.HashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -36,7 +37,9 @@ import javax.servlet.http.Part;
 import org.hortonmachine.dbs.log.EMessageType;
 import org.hortonmachine.dbs.log.Logger;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
 
 import com.hydrologis.gss.server.database.objects.GpapUsers;
 import com.hydrologis.gss.server.database.objects.GpsLogs;
@@ -58,6 +61,61 @@ import com.j256.ormlite.dao.Dao;
 public class UploadServlet extends HttpServlet {
     private static final String TAG = UploadServlet.class.getSimpleName();
     private static final long serialVersionUID = 1L;
+
+    static final String NOTE_OBJID = "note";
+    static final String IMAGE_OBJID = "image";
+    static final String LOG_OBJID = "gpslog";
+    static final String TYPE_KEY = "type";
+
+    static final String TABLE_NOTES = "notes";
+    static final String TABLE_NOTESEXT = "notesext";
+    static final String NOTES_COLUMN_ID = "_id";
+    static final String NOTES_COLUMN_LON = "lon";
+    static final String NOTES_COLUMN_LAT = "lat";
+    static final String NOTES_COLUMN_ALTIM = "altim";
+    static final String NOTES_COLUMN_TS = "ts";
+    static final String NOTES_COLUMN_DESCRIPTION = "description";
+    static final String NOTES_COLUMN_TEXT = "text";
+    static final String NOTES_COLUMN_FORM = "form";
+    static final String NOTES_COLUMN_ISDIRTY = "isdirty";
+    static final String NOTES_COLUMN_STYLE = "style";
+
+    static final String TABLE_IMAGES = "images";
+    static final String TABLE_IMAGE_DATA = "imagedata";
+    static final String IMAGES_COLUMN_ID = "_id";
+    static final String IMAGES_COLUMN_LON = "lon";
+    static final String IMAGES_COLUMN_LAT = "lat";
+    static final String IMAGES_COLUMN_ALTIM = "altim";
+    static final String IMAGES_COLUMN_TS = "ts";
+    static final String IMAGES_COLUMN_AZIM = "azim";
+    static final String IMAGES_COLUMN_TEXT = "text";
+    static final String IMAGES_COLUMN_ISDIRTY = "isdirty";
+    static final String IMAGES_COLUMN_NOTE_ID = "note_id";
+    static final String IMAGES_COLUMN_IMAGEDATA_ID = "imagedata_id";
+    static final String IMAGESDATA_COLUMN_ID = "_id";
+    static final String IMAGESDATA_COLUMN_IMAGE = "data";
+    static final String IMAGESDATA_COLUMN_THUMBNAIL = "thumbnail";
+
+    static final String TABLE_GPSLOGS = "gpslogs";
+    static final String TABLE_GPSLOG_DATA = "gpslogsdata";
+    static final String TABLE_GPSLOG_PROPERTIES = "gpslogsproperties";
+    static final String LOGS_COLUMN_ID = "_id";
+    static final String LOGS_COLUMN_STARTTS = "startts";
+    static final String LOGS_COLUMN_ENDTS = "endts";
+    static final String LOGS_COLUMN_LENGTHM = "lengthm";
+    static final String LOGS_COLUMN_ISDIRTY = "isdirty";
+    static final String LOGS_COLUMN_TEXT = "text";
+    static final String LOGSPROP_COLUMN_ID = "_id";
+    static final String LOGSPROP_COLUMN_VISIBLE = "visible";
+    static final String LOGSPROP_COLUMN_WIDTH = "width";
+    static final String LOGSPROP_COLUMN_COLOR = "color";
+    static final String LOGSPROP_COLUMN_LOGID = "logid";
+    static final String LOGSDATA_COLUMN_ID = "_id";
+    static final String LOGSDATA_COLUMN_LON = "lon";
+    static final String LOGSDATA_COLUMN_LAT = "lat";
+    static final String LOGSDATA_COLUMN_ALTIM = "altim";
+    static final String LOGSDATA_COLUMN_TS = "ts";
+    static final String LOGSDATA_COLUMN_LOGID = "logid";
 
     @Override
     protected void doPost( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
@@ -86,22 +144,62 @@ public class UploadServlet extends HttpServlet {
 
             String sessionId = session.getId();
             Collection<Part> parts = request.getParts();
-            for( Part part : parts ) {
-                String filename = getFilename(part);
-                if (filename == null) {
-                    String value = getValue(part);
-                    String partName = part.getName();
-                    System.out.println(sessionId + ": " + partName + ": " + value);
-                } else {
-                    System.out.println(sessionId + ": file: " + filename);
-                }
 
-//                try (InputStream is = part.getInputStream()) {
-//                    // store or do something with the input stream
-//                }
+            HashMap<String, String> partData = new HashMap<String, String>();
+            for( Part part : parts ) {
+                String partName = part.getName();
+                String value = getValue(part);
+                partData.put(partName, value);
             }
 
-            int[] notesLogsImagesCounts = new int[]{0, 0, 0};
+            String type = partData.get(TYPE_KEY);
+
+            switch( type ) {
+            case NOTE_OBJID:
+                // long id = getLong(partData, NOTES_COLUMN_ID);
+                String text = partData.get(NOTES_COLUMN_TEXT);
+                String descr = partData.get(NOTES_COLUMN_DESCRIPTION);
+                long ts = getLong(partData, NOTES_COLUMN_TS);
+                double lon = getDouble(partData, NOTES_COLUMN_LON);
+                double lat = getDouble(partData, NOTES_COLUMN_LAT);
+                double altim = getDouble(partData, NOTES_COLUMN_ALTIM);
+                String style = partData.get(NOTES_COLUMN_STYLE);
+                String form = partData.get(NOTES_COLUMN_FORM);
+                Point point = gf.createPoint(new Coordinate(lon, lat));
+                Notes serverNote = new Notes(point, altim, ts, descr, text, form, style, gpapUser);
+                notesDao.create(serverNote);
+                if(form!=null) {
+                    // TODO load images if there are
+                    
+                }
+                ServletUtils.debug("Uploaded note: " + serverNote.text);
+                break;
+            case IMAGE_OBJID:
+
+                break;
+            case LOG_OBJID:
+
+                break;
+
+            default:
+                break;
+            }
+
+//            for( Part part : parts ) {
+//                String filename = getFilename(part);
+//                if (filename == null) {
+//                    String value = getValue(part);
+//                    String partName = part.getName();
+//                    System.out.println(sessionId + ": " + partName + ": " + value);
+//                } else {
+//                    System.out.println(sessionId + ": file: " + filename);
+//                }
+//
+////                try (InputStream is = part.getInputStream()) {
+////                    // store or do something with the input stream
+////                }
+//            }
+
 
 //
 //      
@@ -202,10 +300,7 @@ public class UploadServlet extends HttpServlet {
 //                return null;
 //            });
 
-            logDb.insert(EMessageType.ACCESS, TAG, "Upload connection from '" + deviceId + "' completed properly."); //$NON-NLS-1$//$NON-NLS-2$
-            String message = MessageFormat.format(Messages.getString("UploadServlet.data_uploaded"), //$NON-NLS-1$
-                    notesLogsImagesCounts[0], notesLogsImagesCounts[1], notesLogsImagesCounts[2]);
-
+            String message = Messages.getString("UploadServlet.data_uploaded");
             ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message); //$NON-NLS-1$
             KukuratusStatus okStatus = new KukuratusStatus(KukuratusStatus.CODE_200_OK, message);
             okStatus.sendTo(response);
@@ -222,6 +317,15 @@ public class UploadServlet extends HttpServlet {
                 e.printStackTrace();
             }
         }
+    }
+
+    private long getLong( HashMap<String, String> partData, String key ) {
+        String value = partData.get(key);
+        return Long.parseLong(value);
+    }
+    private double getDouble( HashMap<String, String> partData, String key ) {
+        String value = partData.get(key);
+        return Double.parseDouble(value);
     }
 
     private static String getFilename( Part part ) {
