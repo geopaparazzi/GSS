@@ -19,11 +19,14 @@
 package com.hydrologis.gss.server.servlets;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -34,11 +37,14 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
-import org.hortonmachine.dbs.log.EMessageType;
 import org.hortonmachine.dbs.log.Logger;
+import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 
 import com.hydrologis.gss.server.database.objects.GpapUsers;
@@ -142,43 +148,109 @@ public class UploadServlet extends HttpServlet {
             Dao<ImageData, ? > imageDataDao = dbHandler.getDao(ImageData.class);
             Dao<Images, ? > imagesDao = dbHandler.getDao(Images.class);
 
-            String sessionId = session.getId();
             Collection<Part> parts = request.getParts();
 
-            HashMap<String, String> partData = new HashMap<String, String>();
+            HashMap<String, Object> partData = new HashMap<String, Object>();
             for( Part part : parts ) {
                 String partName = part.getName();
-                String value = getValue(part);
-                partData.put(partName, value);
+                if (partName.startsWith(TABLE_IMAGE_DATA)) {
+                    byte[] byteArray = getByteArray(part);
+                    partData.put(partName, byteArray);
+                } else {
+                    String value = getValue(part);
+                    partData.put(partName, value);
+                }
             }
 
-            String type = partData.get(TYPE_KEY);
+            String type = (String) partData.get(TYPE_KEY);
 
             switch( type ) {
             case NOTE_OBJID:
                 // long id = getLong(partData, NOTES_COLUMN_ID);
-                String text = partData.get(NOTES_COLUMN_TEXT);
-                String descr = partData.get(NOTES_COLUMN_DESCRIPTION);
+                String text = (String) partData.get(NOTES_COLUMN_TEXT);
+                String descr = (String) partData.get(NOTES_COLUMN_DESCRIPTION);
                 long ts = getLong(partData, NOTES_COLUMN_TS);
                 double lon = getDouble(partData, NOTES_COLUMN_LON);
                 double lat = getDouble(partData, NOTES_COLUMN_LAT);
                 double altim = getDouble(partData, NOTES_COLUMN_ALTIM);
-                String style = partData.get(NOTES_COLUMN_STYLE);
-                String form = partData.get(NOTES_COLUMN_FORM);
+                String style = (String) partData.get(NOTES_COLUMN_STYLE);
+                String form = (String) partData.get(NOTES_COLUMN_FORM);
                 Point point = gf.createPoint(new Coordinate(lon, lat));
                 Notes serverNote = new Notes(point, altim, ts, descr, text, form, style, gpapUser);
                 notesDao.create(serverNote);
-                if(form!=null) {
-                    // TODO load images if there are
-                    
+                if (form != null) {
+                    List<String> imageIds = Utilities.getImageIds(form);
+                    if (!imageIds.isEmpty()) {
+                        for( String imageId : imageIds ) {
+                            byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + imageId);
+                            ImageData imgData = new ImageData(null, imageData);
+                            imageDataDao.create(imgData);
+                            Point imgPoint = gf.createPoint(new Coordinate(lon, lat));
+                            Images img = new Images(imgPoint, altim, ts, -1, imageId, serverNote, imgData, gpapUser);
+                            imagesDao.create(img);
+                        }
+                    }
+
                 }
                 ServletUtils.debug("Uploaded note: " + serverNote.text);
                 break;
             case IMAGE_OBJID:
+                // long id = getLong(partData, NOTES_COLUMN_ID);
+                String imgText = (String) partData.get(IMAGES_COLUMN_TEXT);
+                long imgTs = getLong(partData, IMAGES_COLUMN_TS);
+                double imgLon = getDouble(partData, IMAGES_COLUMN_LON);
+                double imgLat = getDouble(partData, IMAGES_COLUMN_LAT);
+                double imgAltim = getDouble(partData, IMAGES_COLUMN_ALTIM);
 
+                byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA);
+
+                ImageData imgData = new ImageData(null, imageData);
+                imageDataDao.create(imgData);
+                Point imgPoint = gf.createPoint(new Coordinate(imgLon, imgLat));
+                Images img = new Images(imgPoint, imgAltim, imgTs, -1, imgText, null, imgData, gpapUser);
+                imagesDao.create(img);
+
+                ServletUtils.debug("Uploaded image: " + imgText);
                 break;
             case LOG_OBJID:
+                String logText = (String) partData.get(LOGS_COLUMN_TEXT);
+                long startts = getLong(partData, LOGS_COLUMN_STARTTS);
+                long endts = getLong(partData, LOGS_COLUMN_ENDTS);
+                double width = getDouble(partData, LOGSPROP_COLUMN_WIDTH);
+                String color = (String) partData.get(LOGSPROP_COLUMN_COLOR);
+                if (color.length() == 9) {
+                    // has also alpha, remove it
+                    color = "#" + color.substring(3);
+                }
 
+                String logDataJson = (String) partData.get(TABLE_GPSLOG_DATA);
+                JSONArray root = new JSONArray(logDataJson);
+                int length = root.length();
+                Coordinate[] coords = new Coordinate[length];
+                List<GpsLogsData> logsData = new ArrayList<>();
+                for( int i = 0; i < coords.length; i++ ) {
+                    JSONObject pointObj = root.getJSONObject(i);
+                    double pLat = pointObj.getDouble(LOGSDATA_COLUMN_LAT);
+                    double pLon = pointObj.getDouble(LOGSDATA_COLUMN_LON);
+                    double pAltim = pointObj.getDouble(LOGSDATA_COLUMN_ALTIM);
+                    long pTs = pointObj.getLong(LOGSDATA_COLUMN_TS);
+
+                    Coordinate coord = new Coordinate(pLon, pLat);
+                    coords[i] = coord;
+                    Point logPoint = gf.createPoint(coord);
+                    GpsLogsData gpsLogsData = new GpsLogsData(logPoint, pAltim, pTs, null);
+                    logsData.add(gpsLogsData);
+                }
+                LineString logLine = gf.createLineString(coords);
+                GpsLogs newLog = new GpsLogs(logText, startts, endts, logLine, gpapUser);
+                logsData.forEach(ld -> ld.gpsLog = newLog);
+
+                GpsLogsProperties prop = new GpsLogsProperties(color, (float) width, newLog);
+
+                logsDao.create(newLog);
+                logsDataDao.create(logsData);
+                logsPropsDao.create(prop);
+                ServletUtils.debug("Uploaded log: " + logText);
                 break;
 
             default:
@@ -199,7 +271,6 @@ public class UploadServlet extends HttpServlet {
 ////                    // store or do something with the input stream
 ////                }
 //            }
-
 
 //
 //      
@@ -319,12 +390,12 @@ public class UploadServlet extends HttpServlet {
         }
     }
 
-    private long getLong( HashMap<String, String> partData, String key ) {
-        String value = partData.get(key);
+    private long getLong( HashMap<String, Object> partData, String key ) {
+        String value = (String) partData.get(key);
         return Long.parseLong(value);
     }
-    private double getDouble( HashMap<String, String> partData, String key ) {
-        String value = partData.get(key);
+    private double getDouble( HashMap<String, Object> partData, String key ) {
+        String value = (String) partData.get(key);
         return Double.parseDouble(value);
     }
 
@@ -345,6 +416,19 @@ public class UploadServlet extends HttpServlet {
             value.append(buffer, 0, length);
         }
         return value.toString();
+    }
+    private static byte[] getByteArray( Part part ) throws IOException {
+        try (InputStream is = part.getInputStream()) {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int nRead;
+            byte[] data = new byte[1024];
+            while( (nRead = is.read(data, 0, data.length)) != -1 ) {
+                buffer.write(data, 0, nRead);
+            }
+            buffer.flush();
+            byte[] byteArray = buffer.toByteArray();
+            return byteArray;
+        }
     }
 
 }

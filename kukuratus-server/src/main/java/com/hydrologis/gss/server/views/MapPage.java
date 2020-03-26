@@ -453,6 +453,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         if (to != null) {
             eq = eq.and().le(Images.TIMESTAMP_FIELD_NAME, to);
         }
+        eq = eq.and().isNull(Images.NOTE_FIELD_NAME);
 
         List<Images> imagesList = eq.query();
         if (imagesList.size() > 0) {
@@ -513,7 +514,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
 //                leafletMarker.setPopup(notesHtml);
 //                leafletMarker.setPopupAnchor(new Point(-iconSize / 2, -iconSize / 2));
 
-                String notesHtml = getNotesHtml(note);
+                String notesHtml = getNotesHtml(note, user);
                 leafletMarker.setTooltip(notesHtml);
                 TooltipState tooltipState = new TooltipState();
                 tooltipState.permanent = false;
@@ -524,13 +525,35 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
         }
     }
 
-    private String getNotesHtml( Notes note ) {
+    private String getNotesHtml( Notes note, GpapUsers user ) {
         StringBuilder sb = new StringBuilder("<h2>" + note.text + "</h2>"); //$NON-NLS-1$ //$NON-NLS-2$
         sb.append("<table style='width:100%' border='0' cellpadding='5'>"); //$NON-NLS-1$
-        sb.append("<tr><td><b>Timestamp</b></td><td>").append(formatDate(note.timestamp)).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
-        if (note.altimetry != 0.0) {
-            String elev = elevFormatter.format(note.altimetry);
-            sb.append("<tr><td><b>Elevation</b></td><td>").append(elev).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+        if (note.form == null) {
+            sb.append("<tr><td><b>Id</b></td><td>").append(note.id).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+            if (user != null) {
+                sb.append("<tr><td><b>User</b></td><td>").append(user.name).append(" on ").append(user.deviceId)
+                        .append("</td></tr>"); //
+            }
+            if (note.description != null && note.description.length() > 0) {
+                sb.append("<tr><td><b>Description</b></td><td>").append(note.description).append("</td></tr>");
+            }
+            sb.append("<tr><td><b>Timestamp</b></td><td>").append(formatDate(note.timestamp)).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+            if (note.altimetry != -1) {
+                String elev = elevFormatter.format(note.altimetry);
+                sb.append("<tr><td><b>Elevation</b></td><td>").append(elev).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+            }
+        } else {
+            sb.append("<tr><td><b>Id</b></td><td>").append(note.id).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+            if (user != null) {
+                sb.append("<tr><td><b>User</b></td><td>").append(user.name).append(" on ").append(user.deviceId)
+                        .append("</td></tr>"); //
+            }
+            sb.append("<tr><td><b>Timestamp</b></td><td>").append(formatDate(note.timestamp)).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+            if (note.altimetry != -1) {
+                String elev = elevFormatter.format(note.altimetry);
+                sb.append("<tr><td><b>Elevation</b></td><td>").append(elev).append("</td></tr>"); //$NON-NLS-1$ //$NON-NLS-2$
+            }
+
         }
         sb.append("</table>"); //$NON-NLS-1$
         return sb.toString();
@@ -627,7 +650,7 @@ public class MapPage extends VerticalLayout implements View, com.hydrologis.kuku
     public String getPagePath() {
         return "mapview"; //$NON-NLS-1$
     }
-    
+
     @Override
     public int getOrder() {
         return 1;
