@@ -4,26 +4,14 @@ import static spark.Spark.before;
 import static spark.Spark.get;
 import static spark.Spark.options;
 import static spark.Spark.port;
-import static spark.Spark.post;
 import static spark.Spark.secure;
 import static spark.Spark.staticFiles;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-
-import org.hortonmachine.dbs.compat.ASpatialDb;
-import org.hortonmachine.dbs.compat.EDb;
-import org.hortonmachine.gears.libs.modules.HMConstants;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
@@ -34,18 +22,13 @@ import com.hydrologis.kukuratus.gss.database.GpsLogsData;
 import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
-import com.hydrologis.kukuratus.registry.RegistryHandler;
-import com.hydrologis.kukuratus.registry.Settings;
-import com.hydrologis.kukuratus.registry.User;
 import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.tiles.MapsforgeTilesGenerator;
 import com.hydrologis.kukuratus.utils.KukuratusLogger;
-import com.hydrologis.kukuratus.utils.KukuratusStatus;
-import com.hydrologis.kukuratus.utils.NetworkUtilities;
 import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
-import com.j256.ormlite.dao.Dao;
 
-import spark.Request;
+import org.hortonmachine.dbs.compat.ASpatialDb;
+import org.hortonmachine.dbs.compat.EDb;
 
 /**
  * Deploy:
@@ -63,6 +46,7 @@ import spark.Request;
 public class GssServer implements Vars {
 
     private List<Class< ? >> tableClasses = Arrays.asList(//
+            GpapProject.class, //
             GpapUsers.class, //
             Notes.class, //
             ImageData.class, //
@@ -123,277 +107,15 @@ public class GssServer implements Vars {
         // ROUTES START
         activateMapsforge();
 
-        get("/check", ( req, res ) -> {
-            return "It works. " + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS);
-        });
-
-        get("/tiles/:source/:z/:x/:y", ( req, res ) -> {
-            String source = req.params(":source");
-            if (source.equals("mapsforge")) {
-                String x = req.params(":x");
-                String y = req.params(":y");
-                String z = req.params(":z");
-                int xTile = Integer.parseInt(x);
-                int yTile = Integer.parseInt(y);
-                int zoom = Integer.parseInt(z);
-                try {
-                    HttpServletResponse raw = res.raw();
-                    raw.setContentType("image/png");
-                    res.header("Content-Disposition", "attachment; filename=image.png");
-                    ServletOutputStream outputStream = raw.getOutputStream();
-                    mapsforgeTilesGenerator.getTile(xTile, yTile, zoom, outputStream);
-                    outputStream.flush();
-                    outputStream.close();
-                    return raw;
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    // halt();
-                }
-                return res;
-            }
-            return res;
-        });
-
-//        get("/data/:sectorid/:from/:to", ( req, res ) -> {
-//            try {
-//                String sectorId = req.params(":sectorid");
-//                int id = Integer.parseInt(sectorId);
-//                String from = req.params(":from");
-//                String to = req.params(":to");
-//                SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
-//                long fromDate = dateFormatter.parse(from + " 00:00:00").getTime();
-//                long toDate = dateFormatter.parse(to + " 23:59:59").getTime();
-//
-//                String sql = "select  type_id,timestamp, value from measures where sectorid=" + id + " and timestamp between "
-//                        + fromDate + " and " + toDate + " group by  type_id, timestamp order by  type_id, timestamp";
-//                JSONObject root = new JSONObject();
-//                JSONArray temperatureArray = new JSONArray();
-//                JSONArray humidityArray = new JSONArray();
-//                root.put(TEMPERATURE_ID, temperatureArray);
-//                root.put(HUMIDITY_ID, humidityArray);
-//                String json = db.execOnConnection(connection -> {
-//                    try (IHMStatement stmt = connection.createStatement(); IHMResultSet rs = stmt.executeQuery(sql)) {
-//                        while( rs.next() ) {
-//                            int type = rs.getInt(1);
-//                            long ts = rs.getLong(2);
-//                            double value = rs.getDouble(3);
-//
-//                            if (type == 0) {
-//                                JSONObject valueObj = new JSONObject();
-//                                valueObj.put("ts", ts);
-//                                valueObj.put("v", value);
-//                                temperatureArray.put(valueObj);
-//                            } else {
-//                                JSONObject valueObj = new JSONObject();
-//                                valueObj.put("ts", ts);
-//                                valueObj.put("v", value);
-//                                humidityArray.put(valueObj);
-//                            }
-//                        }
-//                        return root.toString();
-//                    }
-//                });
-//                return json;
-//            } catch (Exception e) {
-//                Logger.INSTANCE.insertError("get status", "error", e);
-//            }
-//            return "{ERROR}";
-//        });
-
-        post("/data", ( req, res ) -> {
-            KukuratusLogger.logDebug("GssServer#post(/data", "Received request from " + req.raw().getRemoteAddr());
-            if (hasPermission(req)) {
-                String surveyors = req.queryParams(SURVEYORS);
-                String projects = req.queryParams(PROJECTS);
-
-                JSONObject root = new JSONObject();
-
-                Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
-                List<GpapUsers> users = null;;
-                if (surveyors != null) {
-                    String[] surveyorsArray = surveyors.split(";");
-                    users = userDao.queryBuilder().where().in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray)).query();
-                }
-
-                Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
-                List<GpapProject> projectsList = null;
-                if (projects != null) {
-                    String[] projectsArray = projects.split(";");
-                    projectsList = projectDao.queryBuilder().where().in(GpapProject.NAME_FIELD_NAME, Arrays.asList(projectsArray))
-                            .query();
-                }
-
-                // TODO parameterize users, from and to
-                Long from = null;
-                Long to = null;
-
-                Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
-                GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
-
-                Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
-
-                // simple notes
-                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, false);
-                // form notes
-                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, true);
-
-                Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                GssDatabaseUtilities.getImages(root, imagesDao, users, projectsList, null, null);
-
-                return root.toString();
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-                res.status(ks.getCode());
-                return ks.toJson();
-            }
-        });
-
-        // get data from the server by type and the primary key id
-        get("/data/:type/:id", ( req, res ) -> {
-//            if (hasPermission(req)) {
-            String type = req.params(":type");
-            String id = req.params(":id");
-            KukuratusLogger.logDebug("GssServer#get(/data/" + type + "/" + id,
-                    "Received request from " + req.raw().getRemoteAddr());
-
-            try {
-                // images or notes are requested
-                if (type.equals(GssDatabaseUtilities.IMAGES)) {
-                    if (id != null) {
-                        long idLong = Long.parseLong(id);
-                        ImageData idObj = new ImageData(idLong);
-                        Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
-                        ImageData result = dao.queryForSameId(idObj);
-                        return result.data;
-                    }
-                }
-                return "";
-            } catch (Exception e) {
-                KukuratusLogger.logError("GssServer#get(/data/:type/:id", e);
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
-                res.status(ks.getCode());
-                return ks.toJson();
-            }
-//            } else {
-//                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-//                res.status(ks.getCode());
-//                return ks.toJson();
-//            }
-        });
-
-        // get an image by the original project id and the userid
-        get("/imagedata/:userid/:originalid", ( req, res ) -> {
-//            if (!hasPermission(req)) {
-            String userId = req.params(":userid");
-            String originalImageDataId = req.params(":originalid");
-            KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + originalImageDataId,
-                    "Received request from " + req.raw().getRemoteAddr());
-
-            try {
-                long userIdLong = Long.parseLong(userId);
-                long originalImageDataIdLong = Long.parseLong(originalImageDataId);
-                Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
-                ImageData imageData = dao.queryBuilder().where().eq(ImageData.ORIGINALID_FIELD_NAME, originalImageDataIdLong)
-                        .and().eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
-                return imageData.data;
-            } catch (Exception e) {
-                KukuratusLogger.logError("GssServer#get(/imagedata/:userid/:originalid", e);
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
-                res.status(ks.getCode());
-                return ks.toJson();
-            }
-//            } else {
-//                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-//                res.status(ks.getCode());
-//                return ks.toJson();
-//            }
-        });
-
-        get("/login", ( req, res ) -> {
-            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
-            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
-            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
-            if (user != null) {
-                KukuratusLogger.logDebug("GssServer#post(/login for " + user.getUniqueName(),
-                        "Received request from " + req.raw().getRemoteAddr());
-                boolean admin = RegistryHandler.INSTANCE.isAdmin(user);
-                JSONObject response = new JSONObject();
-                response.put(KEY_HASPERMISSION, true);
-                response.put(KEY_ISADMIN, admin);
-
-                // also get last used map background and map position
-                String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge", user.getUniqueName());
-                response.put(KEY_BASEMAP, baseMap);
-                String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6", user.getUniqueName());
-                response.put(KEY_MAPCENTER, xyz);
-                res.status(KukuratusStatus.CODE_200_OK);
-                return response.toString();
-            }
-            JSONObject response = new JSONObject();
-            response.put(KEY_HASPERMISSION, false);
-            return response.toString();
-        });
-
-        post("/usersettings", ( req, res ) -> {
-            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
-            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
-            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
-            if (user != null) {
-                KukuratusLogger.logDebug("GssServer#post(/usersettings for " + user.getUniqueName(),
-                        "Received request from " + req.raw().getRemoteAddr());
-                String baseMap = req.queryParams(KEY_BASEMAP);
-                if (baseMap != null) {
-                    Settings s = new Settings(KEY_BASEMAP, baseMap, user.getUniqueName());
-                    RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
-                }
-                String mapCenter = req.queryParams(KEY_MAPCENTER);
-                if (mapCenter != null) {
-                    Settings s = new Settings(KEY_MAPCENTER, mapCenter, user.getUniqueName());
-                    RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
-                }
-                return "OK";
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-                res.status(ks.getCode());
-                return ks.toJson();
-            }
-        });
-
-        get("/list/:type", ( req, res ) -> {
-            KukuratusLogger.logDebug("GssServer#get(/list/:type", "Received request from " + req.raw().getRemoteAddr());
-            if (hasPermission(req)) {
-                String type = req.params(":type");
-                if (type.equals(SURVEYORS)) {
-                    Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
-                    List<GpapUsers> users = userDao.queryForAll();
-                    JSONObject root = new JSONObject();
-                    JSONArray usersArray = new JSONArray();
-                    root.put(SURVEYORS, usersArray);
-                    for( GpapUsers gpapUsers : users ) {
-                        usersArray.put(gpapUsers.name);
-                    }
-                    return root.toString();
-                } else if (type.equals(PROJECTS)) {
-                    Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
-                    List<GpapProject> users = projectDao.queryForAll();
-                    JSONObject root = new JSONObject();
-                    JSONArray usersArray = new JSONArray();
-                    root.put(PROJECTS, usersArray);
-                    for( GpapProject gpapProject : users ) {
-                        usersArray.put(gpapProject.name);
-                    }
-                    return root.toString();
-                }
-
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recognised.");
-                res.status(ks.getCode());
-                return ks.toJson();
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-                res.status(ks.getCode());
-                return ks.toJson();
-            }
-        });
+        GssServerApi.addCheckRoute();
+        GssServerApi.addTilesRoute(mapsforgeTilesGenerator);
+        GssServerApi.addUploadRoute();
+        GssServerApi.addGetDataRoute();
+        GssServerApi.addGetDataByTypeRoute();
+        GssServerApi.addGetImagedataRoute();
+        GssServerApi.addLoginRoute();
+        GssServerApi.addUserSettingsRoute();
+        GssServerApi.addListByTypeRoute();
 
         get("/", ( req, res ) -> {
             res.redirect("index.html");
@@ -402,17 +124,7 @@ public class GssServer implements Vars {
         // ROUTES END
     }
 
-    private boolean hasPermission( Request req ) throws Exception {
-        try {
-            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
-            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
-            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
-            return user != null;
-        } catch (Exception e) {
-            KukuratusLogger.logError(this, e);
-            return false;
-        }
-    }
+
 
     private void activateMapsforge() {
         try {
@@ -448,7 +160,7 @@ public class GssServer implements Vars {
 
     public static void main( String[] args ) throws Exception {
 
-//        args = new String[]{"/home/hydrologis/TMP/TESTGSS/"}; // TODO remove after testing
+        args = new String[]{"/Users/hydrologis/TMP/GSSSERVER/"}; // TODO remove after testing
 
         if (args.length == 0) {
             System.err.println("The workspace folder needs to be supplied as argument.");
@@ -485,8 +197,8 @@ public class GssServer implements Vars {
             }
         }
 
-        GssServer lampServer = new GssServer();
-        lampServer.start(keyStorePath, keyStorePassword);
+        GssServer gssServer = new GssServer();
+        gssServer.start(keyStorePath, keyStorePassword);
     }
 
 }

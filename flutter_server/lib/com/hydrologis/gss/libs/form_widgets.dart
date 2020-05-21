@@ -8,7 +8,7 @@ import 'package:flutter_server/com/hydrologis/gss/libs/colors.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/screen.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:flutter_tags/tag.dart';
+import 'package:flutter_tags/flutter_tags.dart';
 
 typedef Null ItemSelectedCallback(String selectedFormName);
 
@@ -609,7 +609,7 @@ class DynamicStringWidgetState extends State<DynamicStringWidget> {
     valuesSplit.removeWhere((s) => s.trim().isEmpty);
 
     return Tags(
-      textField: TagsTextFiled(
+      textField: TagsTextField(
         width: 1000,
         hintText: "add new string",
         textStyle: TextStyle(fontSize: SmashUI.NORMAL_SIZE),
@@ -647,15 +647,17 @@ class DynamicStringWidgetState extends State<DynamicStringWidget> {
           color: SmashColors.mainDecorations,
           textActiveColor: SmashColors.mainBackground,
           textColor: SmashColors.mainBackground,
-          removeButton: ItemTagsRemoveButton(),
-          onRemoved: () {
-            // Remove the item from the data source.
-            setState(() {
-              valuesSplit.removeAt(index);
-              String saveValue = valuesSplit.join(";");
-              widget._itemMap[TAG_VALUE] = saveValue;
-            });
-          },
+          removeButton: ItemTagsRemoveButton(
+            onRemoved: () {
+              // Remove the item from the data source.
+              setState(() {
+                valuesSplit.removeAt(index);
+                String saveValue = valuesSplit.join(";");
+                widget._itemMap[TAG_VALUE] = saveValue;
+              });
+              return true;
+            },
+          ),
           onPressed: (item) {
 //            var removed = valuesSplit.removeAt(index);
 //            valuesSplit.insert(0, removed);

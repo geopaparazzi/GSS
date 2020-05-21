@@ -34,8 +34,8 @@ class GssApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(builder: (_) => MapstateModel()),
-        ChangeNotifierProvider(builder: (_) => FilterStateModel()),
+        ChangeNotifierProvider(create: (_) => MapstateModel()),
+        ChangeNotifierProvider(create: (_) => FilterStateModel()),
       ],
       child: MaterialApp(
         title: TITLE,
@@ -299,7 +299,6 @@ class _MainPageState extends State<MainPage> {
             FabCircularMenu(
               ringDiameter: ringDiameter,
               ringWidth: ringWidth,
-              child: Container(),
               ringColor: Colors.white30,
               fabCloseIcon: Icon(
                 MdiIcons.close,
@@ -307,10 +306,10 @@ class _MainPageState extends State<MainPage> {
               fabOpenIcon: Icon(
                 MdiIcons.filterMenuOutline,
               ),
-              options: <Widget>[
+              children: <Widget>[
                 IconButton(
                   key: Key("filter1"),
-                  icon: Icon(MdiIcons.worker),
+                  icon: Icon(MdiIcons.accountHardHat),
                   tooltip: "Filter by Surveyor",
                   onPressed: () {
                     Flushbar(
@@ -501,7 +500,7 @@ class _MainPageState extends State<MainPage> {
               padding: const EdgeInsets.all(8.0),
               child: ListTile(
                 leading: new Icon(
-                  MdiIcons.worker,
+                  MdiIcons.accountHardHat,
                   color: SmashColors.mainDecorations,
                   size: iconSize,
                 ),

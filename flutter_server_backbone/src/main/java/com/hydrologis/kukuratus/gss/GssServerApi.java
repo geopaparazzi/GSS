@@ -1,0 +1,610 @@
+package com.hydrologis.kukuratus.gss;
+
+import static spark.Spark.get;
+import static spark.Spark.post;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+
+import com.hydrologis.kukuratus.database.DatabaseHandler;
+import com.hydrologis.kukuratus.gss.database.GpapProject;
+import com.hydrologis.kukuratus.gss.database.GpapUsers;
+import com.hydrologis.kukuratus.gss.database.GpsLogs;
+import com.hydrologis.kukuratus.gss.database.GpsLogsData;
+import com.hydrologis.kukuratus.gss.database.ImageData;
+import com.hydrologis.kukuratus.gss.database.Images;
+import com.hydrologis.kukuratus.gss.database.Notes;
+import com.hydrologis.kukuratus.registry.RegistryHandler;
+import com.hydrologis.kukuratus.registry.Settings;
+import com.hydrologis.kukuratus.registry.User;
+import com.hydrologis.kukuratus.servlets.ServletUtils;
+import com.hydrologis.kukuratus.tiles.ITilesGenerator;
+import com.hydrologis.kukuratus.utils.KukuratusLogger;
+import com.hydrologis.kukuratus.utils.KukuratusStatus;
+import com.hydrologis.kukuratus.utils.Messages;
+import com.hydrologis.kukuratus.utils.NetworkUtilities;
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.stmt.QueryBuilder;
+
+import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
+import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Point;
+
+import spark.Request;
+
+public class GssServerApi implements Vars {
+
+    static final String NOTE_OBJID = "note";
+    static final String IMAGE_OBJID = "image";
+    static final String LOG_OBJID = "gpslog";
+    static final String TYPE_KEY = "type";
+
+    static final String PROJECT_NAME = "PROJECT_NAME";
+
+    static final String TABLE_NOTES = "notes";
+    static final String TABLE_NOTESEXT = "notesext";
+    static final String NOTES_COLUMN_ID = "_id";
+    static final String NOTES_COLUMN_LON = "lon";
+    static final String NOTES_COLUMN_LAT = "lat";
+    static final String NOTES_COLUMN_ALTIM = "altim";
+    static final String NOTES_COLUMN_TS = "ts";
+    static final String NOTES_COLUMN_DESCRIPTION = "description";
+    static final String NOTES_COLUMN_TEXT = "text";
+    static final String NOTES_COLUMN_FORM = "form";
+    static final String NOTES_COLUMN_ISDIRTY = "isdirty";
+    static final String NOTES_COLUMN_STYLE = "style";
+
+    static final String TABLE_IMAGES = "images";
+    static final String TABLE_IMAGE_DATA = "imagedata";
+    static final String IMAGES_COLUMN_ID = "_id";
+    static final String IMAGES_COLUMN_LON = "lon";
+    static final String IMAGES_COLUMN_LAT = "lat";
+    static final String IMAGES_COLUMN_ALTIM = "altim";
+    static final String IMAGES_COLUMN_TS = "ts";
+    static final String IMAGES_COLUMN_AZIM = "azim";
+    static final String IMAGES_COLUMN_TEXT = "text";
+    static final String IMAGES_COLUMN_ISDIRTY = "isdirty";
+    static final String IMAGES_COLUMN_NOTE_ID = "note_id";
+    static final String IMAGES_COLUMN_IMAGEDATA_ID = "imagedata_id";
+    static final String IMAGESDATA_COLUMN_ID = "_id";
+    static final String IMAGESDATA_COLUMN_IMAGE = "data";
+    static final String IMAGESDATA_COLUMN_THUMBNAIL = "thumbnail";
+
+    static final String TABLE_GPSLOGS = "gpslogs";
+    static final String TABLE_GPSLOG_DATA = "gpslogsdata";
+    static final String TABLE_GPSLOG_PROPERTIES = "gpslogsproperties";
+    static final String LOGS_COLUMN_ID = "_id";
+    static final String LOGS_COLUMN_STARTTS = "startts";
+    static final String LOGS_COLUMN_ENDTS = "endts";
+    static final String LOGS_COLUMN_LENGTHM = "lengthm";
+    static final String LOGS_COLUMN_ISDIRTY = "isdirty";
+    static final String LOGS_COLUMN_TEXT = "text";
+    static final String LOGSPROP_COLUMN_ID = "_id";
+    static final String LOGSPROP_COLUMN_VISIBLE = "visible";
+    static final String LOGSPROP_COLUMN_WIDTH = "width";
+    static final String LOGSPROP_COLUMN_COLOR = "color";
+    static final String LOGSPROP_COLUMN_LOGID = "logid";
+    static final String LOGSDATA_COLUMN_ID = "_id";
+    static final String LOGSDATA_COLUMN_LON = "lon";
+    static final String LOGSDATA_COLUMN_LAT = "lat";
+    static final String LOGSDATA_COLUMN_ALTIM = "altim";
+    static final String LOGSDATA_COLUMN_TS = "ts";
+    static final String LOGSDATA_COLUMN_LOGID = "logid";
+
+    private static boolean hasPermission(Request req) throws Exception {
+        try {
+            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
+            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
+            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
+            return user != null;
+        } catch (Exception e) {
+            KukuratusLogger.logError("GssServerApi#hasPermission", e);
+            return false;
+        }
+    }
+
+    public static void addCheckRoute() {
+        get("/check", (req, res) -> {
+            return "It works. " + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS);
+        });
+    }
+
+    public static void addTilesRoute(ITilesGenerator mapsforgeTilesGenerator) {
+
+        get("/tiles/:source/:z/:x/:y", (req, res) -> {
+            String source = req.params(":source");
+            if (source.equals("mapsforge")) {
+                String x = req.params(":x");
+                String y = req.params(":y");
+                String z = req.params(":z");
+                int xTile = Integer.parseInt(x);
+                int yTile = Integer.parseInt(y);
+                int zoom = Integer.parseInt(z);
+                try {
+                    HttpServletResponse raw = res.raw();
+                    raw.setContentType("image/png");
+                    res.header("Content-Disposition", "attachment; filename=image.png");
+                    ServletOutputStream outputStream = raw.getOutputStream();
+                    mapsforgeTilesGenerator.getTile(xTile, yTile, zoom, outputStream);
+                    outputStream.flush();
+                    outputStream.close();
+                    return raw;
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                    // halt();
+                }
+                return res;
+            }
+            return res;
+        });
+    }
+
+    public static void addUploadRoute() {
+        post("/upload", "multipart/form-data", (req, res) -> {
+            MultipartConfigElement multipartConfigElement = new MultipartConfigElement(ServletUtils.tmpDir);
+            req.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement);
+            // req.raw().setAttribute("org.eclipse.multipartConfig", multipartConfigElement);
+
+
+            KukuratusLogger.logDebug("GssServer#post(/upload", "Received request from " + req.raw().getRemoteAddr());
+
+            Object procObj = ServletUtils.canProceed(req, res, "sync");
+            if (procObj instanceof KukuratusStatus) {
+                KukuratusStatus ks = (KukuratusStatus) procObj;
+                res.status(ks.getCode());
+                return ks.toJson();
+            } else if (procObj instanceof String) {
+                String deviceId = (String) procObj;
+
+                DatabaseHandler dbHandler = DatabaseHandler.instance();
+                GeometryFactory gf = GeometryUtilities.gf();
+                Dao<GpapUsers, ?> usersDao = dbHandler.getDao(GpapUsers.class);
+                GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId)
+                        .queryForFirst();
+
+                Dao<GpapProject, ?> projectDao = dbHandler.getDao(GpapProject.class);
+
+                Dao<Notes, ?> notesDao = dbHandler.getDao(Notes.class);
+
+                Dao<GpsLogs, ?> logsDao = dbHandler.getDao(GpsLogs.class);
+                Dao<GpsLogsData, ?> logsDataDao = dbHandler.getDao(GpsLogsData.class);
+
+                Dao<ImageData, ?> imageDataDao = dbHandler.getDao(ImageData.class);
+                Dao<Images, ?> imagesDao = dbHandler.getDao(Images.class);
+
+                Collection<Part> parts = req.raw().getParts();
+
+                HashMap<String, Object> partData = new HashMap<String, Object>();
+                for (Part part : parts) {
+                    String partName = part.getName();
+                    if (partName.startsWith(TABLE_IMAGE_DATA)) {
+                        byte[] byteArray = getByteArray(part);
+                        partData.put(partName, byteArray);
+                    } else {
+                        String value = getValue(part);
+                        partData.put(partName, value);
+                    }
+                }
+
+                String type = (String) partData.get(TYPE_KEY);
+                String projectName = (String) partData.get(PROJECT_NAME);
+
+                GpapProject project = projectDao.queryBuilder().where().eq(GpapProject.NAME_FIELD_NAME, projectName)
+                        .queryForFirst();
+                if (project == null) {
+                    project = new GpapProject(projectName);
+                    projectDao.create(project);
+                }
+
+                switch (type) {
+                    case NOTE_OBJID:
+                        long id = getLong(partData, NOTES_COLUMN_ID);
+                        long previousId = -1;
+                        QueryBuilder<Notes, ?> qb = notesDao.queryBuilder();
+                        qb.where().eq(Notes.ORIGINALID_FIELD_NAME, id).and().eq(Notes.GPAPUSER_FIELD_NAME, gpapUser)
+                                .and().eq(Notes.GPAPPROJECT_FIELD_NAME, project);
+                        qb.orderBy(Notes.PREVIOUSID_FIELD_NAME, false);
+                        Notes previousNote = qb.queryForFirst();
+                        if (previousNote != null) {
+                            previousId = previousNote.id;
+                        }
+
+                        String text = (String) partData.get(NOTES_COLUMN_TEXT);
+                        String descr = (String) partData.get(NOTES_COLUMN_DESCRIPTION);
+                        long ts = getLong(partData, NOTES_COLUMN_TS);
+                        double lon = getDouble(partData, NOTES_COLUMN_LON);
+                        double lat = getDouble(partData, NOTES_COLUMN_LAT);
+                        double altim = getDouble(partData, NOTES_COLUMN_ALTIM);
+                        String style = (String) partData.get(NOTES_COLUMN_STYLE);
+                        String form = (String) partData.get(NOTES_COLUMN_FORM);
+                        Point point = gf.createPoint(new Coordinate(lon, lat));
+                        Notes serverNote = new Notes(point, id, altim, ts, descr, text, form, style, gpapUser, project,
+                                previousId, System.currentTimeMillis());
+                        notesDao.create(serverNote);
+                        if (form != null) {
+                            List<String> imageIds = Utilities.getImageIds(form);
+                            if (!imageIds.isEmpty()) {
+                                for (String imageIdString : imageIds) {
+                                    byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + imageIdString);
+                                    long imageIdNum = Long.parseLong(imageIdString);
+                                    ImageData imgData = new ImageData(id, imageData, gpapUser);
+                                    imageDataDao.create(imgData);
+                                    Point imgPoint = gf.createPoint(new Coordinate(lon, lat));
+                                    Images img = new Images(imgPoint, imageIdNum, altim, ts, -1, imageIdString,
+                                            serverNote, imgData, gpapUser, null, project, System.currentTimeMillis());
+                                    imagesDao.create(img);
+                                }
+                            }
+
+                        }
+                        ServletUtils.debug("Uploaded note: " + serverNote.text);
+                        break;
+                    case IMAGE_OBJID:
+                        long imgId = getLong(partData, NOTES_COLUMN_ID);
+                        String imgText = (String) partData.get(IMAGES_COLUMN_TEXT);
+                        long imgTs = getLong(partData, IMAGES_COLUMN_TS);
+                        double imgLon = getDouble(partData, IMAGES_COLUMN_LON);
+                        double imgLat = getDouble(partData, IMAGES_COLUMN_LAT);
+                        double imgAltim = getDouble(partData, IMAGES_COLUMN_ALTIM);
+
+                        byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA);
+
+                        ImageData imgData = new ImageData(imgId, imageData, gpapUser);
+                        imageDataDao.create(imgData);
+                        Point imgPoint = gf.createPoint(new Coordinate(imgLon, imgLat));
+                        Images img = new Images(imgPoint, imgId, imgAltim, imgTs, -1, imgText, null, imgData, gpapUser,
+                                null, project, System.currentTimeMillis());
+                        imagesDao.create(img);
+
+                        ServletUtils.debug("Uploaded image: " + imgText);
+                        break;
+                    case LOG_OBJID:
+                        long logId = getLong(partData, LOGS_COLUMN_ID);
+                        String logText = (String) partData.get(LOGS_COLUMN_TEXT);
+                        long startts = getLong(partData, LOGS_COLUMN_STARTTS);
+                        long endts = getLong(partData, LOGS_COLUMN_ENDTS);
+                        float width = getFloat(partData, LOGSPROP_COLUMN_WIDTH);
+                        String color = (String) partData.get(LOGSPROP_COLUMN_COLOR);
+                        if (color.length() == 9) {
+                            // has also alpha, remove it
+                            color = "#" + color.substring(3);
+                        }
+
+                        String logDataJson = (String) partData.get(TABLE_GPSLOG_DATA);
+                        JSONArray root = new JSONArray(logDataJson);
+                        int length = root.length();
+                        Coordinate[] coords = new Coordinate[length];
+                        List<GpsLogsData> logsData = new ArrayList<>();
+                        for (int i = 0; i < coords.length; i++) {
+                            JSONObject pointObj = root.getJSONObject(i);
+                            double pLat = pointObj.getDouble(LOGSDATA_COLUMN_LAT);
+                            double pLon = pointObj.getDouble(LOGSDATA_COLUMN_LON);
+                            double pAltim = pointObj.getDouble(LOGSDATA_COLUMN_ALTIM);
+                            long pTs = pointObj.getLong(LOGSDATA_COLUMN_TS);
+
+                            Coordinate coord = new Coordinate(pLon, pLat);
+                            coords[i] = coord;
+                            Point logPoint = gf.createPoint(coord);
+                            GpsLogsData gpsLogsData = new GpsLogsData(logPoint, pAltim, pTs, null);
+                            logsData.add(gpsLogsData);
+                        }
+                        LineString logLine = gf.createLineString(coords);
+                        GpsLogs newLog = new GpsLogs(logId, logText, startts, endts, logLine, color, width, gpapUser,
+                                project, System.currentTimeMillis());
+                        logsData.forEach(ld -> ld.gpsLog = newLog);
+
+                        logsDao.create(newLog);
+                        logsDataDao.create(logsData);
+                        ServletUtils.debug("Uploaded log: " + logText);
+                        break;
+
+                    default:
+                        break;
+                }
+
+                String message = Messages.getString("UploadServlet.data_uploaded");
+                ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message); //$NON-NLS-1$
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, message);
+                res.status(ks.getCode());
+                return ks.toJson();
+            } else {
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                        "No permission for request.");
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
+        });
+
+    }
+
+    public static void addGetDataRoute() {
+
+        post("/data", (req, res) -> {
+            KukuratusLogger.logDebug("GssServer#post(/data", "Received request from " + req.raw().getRemoteAddr());
+            if (hasPermission(req)) {
+                String surveyors = req.queryParams(SURVEYORS);
+                String projects = req.queryParams(PROJECTS);
+
+                JSONObject root = new JSONObject();
+
+                Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                List<GpapUsers> users = null;
+                ;
+                if (surveyors != null) {
+                    String[] surveyorsArray = surveyors.split(";");
+                    users = userDao.queryBuilder().where().in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray))
+                            .query();
+                }
+
+                Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                List<GpapProject> projectsList = null;
+                if (projects != null) {
+                    String[] projectsArray = projects.split(";");
+                    projectsList = projectDao.queryBuilder().where()
+                            .in(GpapProject.NAME_FIELD_NAME, Arrays.asList(projectsArray)).query();
+                }
+
+                // TODO parameterize users, from and to
+                Long from = null;
+                Long to = null;
+
+                Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+                GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
+
+                Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
+
+                // simple notes
+                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, false);
+                // form notes
+                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, true);
+
+                Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
+                GssDatabaseUtilities.getImages(root, imagesDao, users, projectsList, null, null);
+
+                return root.toString();
+            } else {
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                        "No permission for request.");
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
+        });
+    }
+
+    public static void addGetDataByTypeRoute() {
+
+        // get data from the server by type and the primary key id
+        get("/data/:type/:id", (req, res) -> {
+            // if (hasPermission(req)) {
+            String type = req.params(":type");
+            String id = req.params(":id");
+            KukuratusLogger.logDebug("GssServer#get(/data/" + type + "/" + id,
+                    "Received request from " + req.raw().getRemoteAddr());
+
+            try {
+                // images or notes are requested
+                if (type.equals(GssDatabaseUtilities.IMAGES)) {
+                    if (id != null) {
+                        long idLong = Long.parseLong(id);
+                        ImageData idObj = new ImageData(idLong);
+                        Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
+                        ImageData result = dao.queryForSameId(idObj);
+                        return result.data;
+                    }
+                }
+                return "";
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/data/:type/:id", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
+            // } else {
+            // KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+            // "No permission for request.");
+            // res.status(ks.getCode());
+            // return ks.toJson();
+            // }
+        });
+    }
+
+    public static void addGetImagedataRoute() {
+
+        // get an image by the original project id and the userid
+        get("/imagedata/:userid/:originalid", (req, res) -> {
+            // if (!hasPermission(req)) {
+            String userId = req.params(":userid");
+            String originalImageDataId = req.params(":originalid");
+            KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + originalImageDataId,
+                    "Received request from " + req.raw().getRemoteAddr());
+
+            try {
+                long userIdLong = Long.parseLong(userId);
+                long originalImageDataIdLong = Long.parseLong(originalImageDataId);
+                Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
+                ImageData imageData = dao.queryBuilder().where()
+                        .eq(ImageData.ORIGINALID_FIELD_NAME, originalImageDataIdLong).and()
+                        .eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
+                return imageData.data;
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/imagedata/:userid/:originalid", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
+            // } else {
+            // KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+            // "No permission for request.");
+            // res.status(ks.getCode());
+            // return ks.toJson();
+            // }
+        });
+    }
+
+    public static void addLoginRoute() {
+
+        get("/login", (req, res) -> {
+            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
+            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
+            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
+            if (user != null) {
+                KukuratusLogger.logDebug("GssServer#post(/login for " + user.getUniqueName(),
+                        "Received request from " + req.raw().getRemoteAddr());
+                boolean admin = RegistryHandler.INSTANCE.isAdmin(user);
+                JSONObject response = new JSONObject();
+                response.put(KEY_HASPERMISSION, true);
+                response.put(KEY_ISADMIN, admin);
+
+                // also get last used map background and map position
+                String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge",
+                        user.getUniqueName());
+                response.put(KEY_BASEMAP, baseMap);
+                String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6", user.getUniqueName());
+                response.put(KEY_MAPCENTER, xyz);
+                res.status(KukuratusStatus.CODE_200_OK);
+                return response.toString();
+            }
+            JSONObject response = new JSONObject();
+            response.put(KEY_HASPERMISSION, false);
+            return response.toString();
+        });
+    }
+
+    public static void addUserSettingsRoute() {
+
+        post("/usersettings", (req, res) -> {
+            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
+            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
+            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
+            if (user != null) {
+                KukuratusLogger.logDebug("GssServer#post(/usersettings for " + user.getUniqueName(),
+                        "Received request from " + req.raw().getRemoteAddr());
+                String baseMap = req.queryParams(KEY_BASEMAP);
+                if (baseMap != null) {
+                    Settings s = new Settings(KEY_BASEMAP, baseMap, user.getUniqueName());
+                    RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+                }
+                String mapCenter = req.queryParams(KEY_MAPCENTER);
+                if (mapCenter != null) {
+                    Settings s = new Settings(KEY_MAPCENTER, mapCenter, user.getUniqueName());
+                    RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+                }
+                return "OK";
+            } else {
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                        "No permission for request.");
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
+        });
+    }
+
+    public static void addListByTypeRoute() {
+
+        get("/list/:type", (req, res) -> {
+            KukuratusLogger.logDebug("GssServer#get(/list/:type", "Received request from " + req.raw().getRemoteAddr());
+            if (hasPermission(req)) {
+                String type = req.params(":type");
+                if (type.equals(SURVEYORS)) {
+                    Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                    List<GpapUsers> users = userDao.queryForAll();
+                    JSONObject root = new JSONObject();
+                    JSONArray usersArray = new JSONArray();
+                    root.put(SURVEYORS, usersArray);
+                    for (GpapUsers gpapUsers : users) {
+                        usersArray.put(gpapUsers.name);
+                    }
+                    return root.toString();
+                } else if (type.equals(PROJECTS)) {
+                    Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                    List<GpapProject> users = projectDao.queryForAll();
+                    JSONObject root = new JSONObject();
+                    JSONArray usersArray = new JSONArray();
+                    root.put(PROJECTS, usersArray);
+                    for (GpapProject gpapProject : users) {
+                        usersArray.put(gpapProject.name);
+                    }
+                    return root.toString();
+                }
+
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recognised.");
+                res.status(ks.getCode());
+                return ks.toJson();
+            } else {
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                        "No permission for request.");
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
+        });
+    }
+
+    private static long getLong(HashMap<String, Object> partData, String key) {
+        String value = (String) partData.get(key);
+        return Long.parseLong(value);
+    }
+
+    private static double getDouble(HashMap<String, Object> partData, String key) {
+        String value = (String) partData.get(key);
+        return Double.parseDouble(value);
+    }
+
+    private static float getFloat(HashMap<String, Object> partData, String key) {
+        String value = (String) partData.get(key);
+        return Float.parseFloat(value);
+    }
+
+    private static String getFilename(Part part) {
+        for (String cd : part.getHeader("content-disposition").split(";")) {
+            if (cd.trim().startsWith("filename")) {
+                return cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "");
+            }
+        }
+        return null;
+    }
+
+    private static String getValue(Part part) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(part.getInputStream(), "UTF-8"));
+        StringBuilder value = new StringBuilder();
+        char[] buffer = new char[1024];
+        for (int length = 0; (length = reader.read(buffer)) > 0;) {
+            value.append(buffer, 0, length);
+        }
+        return value.toString();
+    }
+
+    private static byte[] getByteArray(Part part) throws IOException {
+        try (InputStream is = part.getInputStream()) {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int nRead;
+            byte[] data = new byte[1024];
+            while ((nRead = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }
+            buffer.flush();
+            byte[] byteArray = buffer.toByteArray();
+            return byteArray;
+        }
+    }
+
+}

@@ -17,6 +17,7 @@
  * Author: Antonello Andrea (http://www.hydrologis.com)
  ******************************************************************************/
 package com.hydrologis.kukuratus.gss.database;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -70,7 +71,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     public long originalId;
 
     @DatabaseField(columnName = PREVIOUSID_FIELD_NAME, canBeNull = true, index = true)
-    public Long previousId;
+    public long previousId;
 
     @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusPointType.class)
     public Point the_geom;
@@ -107,12 +108,13 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     Notes() {
     }
 
-    public Notes( long id ) {
+    public Notes(long id) {
         this.id = id;
     }
 
-    public Notes( Point the_geom, long originalId, double altimetry, long timestamp, String description, String text, String form,
-            String style, GpapUsers gpapUser, GpapProject gpapProject, Long previousId, long uploadTimestamp ) {
+    public Notes(Point the_geom, long originalId, double altimetry, long timestamp, String description, String text,
+            String form, String style, GpapUsers gpapUser, GpapProject gpapProject, long previousId,
+            long uploadTimestamp) {
         super();
         this.the_geom = the_geom;
         this.originalId = originalId;
@@ -124,14 +126,14 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         this.style = style;
         this.gpapUser = gpapUser;
         this.gpapProject = gpapProject;
-        if (previousId != null)
-            this.previousId = previousId;
+        this.previousId = previousId;
         this.uploadTimestamp = uploadTimestamp;
         the_geom.setSRID(ISpatialTable.SRID);
     }
 
-    public Notes( Point the_geom, long originalId, double altimetry, Date timestamp, String description, String text, String form,
-            String style, GpapUsers gpapUser, GpapProject gpapProject, Long previousId, long uploadTimestamp ) {
+    public Notes(Point the_geom, long originalId, double altimetry, Date timestamp, String description, String text,
+            String form, String style, GpapUsers gpapUser, GpapProject gpapProject, long previousId,
+            long uploadTimestamp) {
         super();
         this.the_geom = the_geom;
         this.originalId = originalId;
@@ -143,8 +145,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         this.form = form;
         this.style = style;
         this.gpapUser = gpapUser;
-        if (previousId != null)
-            this.previousId = previousId;
+        this.previousId = previousId;
         this.uploadTimestamp = uploadTimestamp;
     }
 
@@ -152,7 +153,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return id;
     }
 
-    public void setId( long id ) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -160,7 +161,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return originalId;
     }
 
-    public void setOriginalId( long originalId ) {
+    public void setOriginalId(long originalId) {
         this.originalId = originalId;
     }
 
@@ -168,7 +169,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return previousId;
     }
 
-    public void setPreviousId( Long previousId ) {
+    public void setPreviousId(Long previousId) {
         this.previousId = previousId;
     }
 
@@ -176,7 +177,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return the_geom;
     }
 
-    public void setThe_geom( Point the_geom ) {
+    public void setThe_geom(Point the_geom) {
         this.the_geom = the_geom;
     }
 
@@ -184,7 +185,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return altimetry;
     }
 
-    public void setAltimetry( double altimetry ) {
+    public void setAltimetry(double altimetry) {
         this.altimetry = altimetry;
     }
 
@@ -192,7 +193,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return timestamp;
     }
 
-    public void setTimestamp( long timestamp ) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -200,7 +201,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return uploadTimestamp;
     }
 
-    public void setUploadTimestamp( long uploadTimestamp ) {
+    public void setUploadTimestamp(long uploadTimestamp) {
         this.uploadTimestamp = uploadTimestamp;
     }
 
@@ -208,7 +209,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return description;
     }
 
-    public void setDescription( String description ) {
+    public void setDescription(String description) {
         this.description = description;
     }
 
@@ -216,7 +217,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return text;
     }
 
-    public void setText( String text ) {
+    public void setText(String text) {
         this.text = text;
     }
 
@@ -224,7 +225,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return form;
     }
 
-    public void setForm( String form ) {
+    public void setForm(String form) {
         this.form = form;
     }
 
@@ -232,7 +233,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return style;
     }
 
-    public void setStyle( String style ) {
+    public void setStyle(String style) {
         this.style = style;
     }
 
@@ -240,7 +241,7 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return gpapUser;
     }
 
-    public void setGpapUser( GpapUsers gpapUser ) {
+    public void setGpapUser(GpapUsers gpapUser) {
         this.gpapUser = gpapUser;
     }
 
@@ -248,13 +249,13 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         return gpapProject;
     }
 
-    public void setGpapProject( GpapProject gpapProject ) {
+    public void setGpapProject(GpapProject gpapProject) {
         this.gpapProject = gpapProject;
     }
 
     public String toKmlString() throws Exception {
         DatabaseHandler dbHandler = DatabaseHandler.instance();
-        Dao<Images, ? > imagesDAO = dbHandler.getDao(Images.class);
+        Dao<Images, ?> imagesDAO = dbHandler.getDao(Images.class);
 
         images = new ArrayList<>();
         String name = makeXmlSafe(text);
@@ -275,15 +276,16 @@ public class Notes implements ISpatialTable, KmlRepresenter {
             }
 
             List<String> formsNames = Utilities.getFormNames4Section(sectionObject);
-            for( String formName : formsNames ) {
+            for (String formName : formsNames) {
                 sB.append("<h2>").append(formName).append("</h2>\n"); //$NON-NLS-1$ //$NON-NLS-2$
 
-                sB.append("<table style=\"text-align: left; width: 100%;\" border=\"1\" cellpadding=\"5\" cellspacing=\"2\">"); //$NON-NLS-1$
+                sB.append(
+                        "<table style=\"text-align: left; width: 100%;\" border=\"1\" cellpadding=\"5\" cellspacing=\"2\">"); //$NON-NLS-1$
                 sB.append("<tbody>"); //$NON-NLS-1$
 
                 JSONObject form4Name = Utilities.getForm4Name(formName, sectionObject);
                 JSONArray formItems = Utilities.getFormItems(form4Name);
-                for( int i = 0; i < formItems.length(); i++ ) {
+                for (int i = 0; i < formItems.length(); i++) {
                     JSONObject formItem = formItems.getJSONObject(i);
                     if (!formItem.has(Utilities.TAG_KEY)) {
                         continue;
@@ -303,12 +305,13 @@ public class Notes implements ISpatialTable, KmlRepresenter {
                             continue;
                         }
                         String[] imageIdsSplit = value.split(Utilities.IMAGES_SEPARATOR);
-                        for( String imageId : imageIdsSplit ) {
+                        for (String imageId : imageIdsSplit) {
 
                             Images image = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
                             String imgName = image.text;
                             sB.append("<tr>"); //$NON-NLS-1$
-                            sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">"); //$NON-NLS-1$
+                            sB.append(
+                                    "<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">"); //$NON-NLS-1$
                             sB.append("<img src=\"").append(imgName).append("\" width=\"300\">"); //$NON-NLS-1$ //$NON-NLS-2$
                             sB.append("</td>"); //$NON-NLS-1$
                             sB.append("</tr>"); //$NON-NLS-1$
@@ -334,11 +337,12 @@ public class Notes implements ISpatialTable, KmlRepresenter {
                             continue;
                         }
                         String[] imageIdsSplit = value.split(Utilities.IMAGES_SEPARATOR);
-                        for( String imageId : imageIdsSplit ) {
+                        for (String imageId : imageIdsSplit) {
                             Images image = imagesDAO.queryForSameId(new Images(Long.parseLong(imageId)));
                             String imgName = image.text;
                             sB.append("<tr>"); //$NON-NLS-1$
-                            sB.append("<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">"); //$NON-NLS-1$
+                            sB.append(
+                                    "<td colspan=\"2\" style=\"text-align: left; vertical-align: top; width: 100%;\">"); //$NON-NLS-1$
                             sB.append("<img src=\"").append(imgName).append("\" width=\"300\">"); //$NON-NLS-1$ //$NON-NLS-2$
                             sB.append("</td>"); //$NON-NLS-1$
                             sB.append("</tr>"); //$NON-NLS-1$
@@ -370,7 +374,8 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         sB.append("</description>\n"); //$NON-NLS-1$
         sB.append("<gx:balloonVisibility>1</gx:balloonVisibility>\n"); //$NON-NLS-1$
         sB.append("<Point>\n"); //$NON-NLS-1$
-        sB.append("<coordinates>").append(the_geom.getX()).append(",").append(the_geom.getY()).append(",0</coordinates>\n"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        sB.append("<coordinates>").append(the_geom.getX()).append(",").append(the_geom.getY()) //$NON-NLS-1$ //$NON-NLS-2$
+                .append(",0</coordinates>\n"); //$NON-NLS-1$
         sB.append("</Point>\n"); //$NON-NLS-1$
         sB.append("</Placemark>\n"); //$NON-NLS-1$
 

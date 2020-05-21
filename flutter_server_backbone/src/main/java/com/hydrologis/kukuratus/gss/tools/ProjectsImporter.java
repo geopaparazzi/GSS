@@ -92,7 +92,7 @@ public class ProjectsImporter {
     private static final String logPropColorFN = GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_COLOR.getFieldName();
     private static final String logPropWidthFN = GpsLogsPropertiesTableFields.COLUMN_PROPERTIES_WIDTH.getFieldName();
 
-    private List<Class< ? >> tableClasses = Arrays.asList(//
+    private List<Class<?>> tableClasses = Arrays.asList(//
             GpapUsers.class, //
             GpapProject.class, //
             Notes.class, //
@@ -108,13 +108,19 @@ public class ProjectsImporter {
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170216_075147_compleanno_hydrologis.gpap", //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170205_130453_valencia_geopap.gpap", //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20180317_091712_bonn_codesprint.gpap", //$NON-NLS-1$
-//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap", //$NON-NLS-1$
+                // "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160319_064638_vacanze_rest.gpap",
+                // //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170120_123422_skiri.gpap", //$NON-NLS-1$
-//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20161221_092537_torino_arcobaleno.gpap", //$NON-NLS-1$
-//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160816_172638_bonn_foss4g.gpap", //$NON-NLS-1$
-//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160210_092652_hydrologis_11.gpap", //$NON-NLS-1$
-//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20121127_075920_sopraluogo_helsinki.gpap", //$NON-NLS-1$
-//                "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap", //$NON-NLS-1$
+                // "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20161221_092537_torino_arcobaleno.gpap",
+                // //$NON-NLS-1$
+                // "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160816_172638_bonn_foss4g.gpap",
+                // //$NON-NLS-1$
+                // "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20160210_092652_hydrologis_11.gpap",
+                // //$NON-NLS-1$
+                // "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20121127_075920_sopraluogo_helsinki.gpap",
+                // //$NON-NLS-1$
+                // "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20170310_riogambis_with_forms.gpap",
+                // //$NON-NLS-1$
                 "/home/hydrologis/Dropbox/geopaparazzi/projects/geopaparazzi_20150712_143343_foss4g_como.gpap", //$NON-NLS-1$
         };
 
@@ -133,15 +139,15 @@ public class ProjectsImporter {
             dbHandler.populateWithDefaults();
             dbHandler.populateForDemo();
 
-            Dao<Notes, ? > notesDao = dbHandler.getDao(Notes.class);
-            Dao<Images, ? > imagesDao = dbHandler.getDao(Images.class);
-            Dao<ImageData, ? > imageDataDao = dbHandler.getDao(ImageData.class);
-            Dao<GpapUsers, ? > gpapUsersDao = dbHandler.getDao(GpapUsers.class);
-            Dao<GpapProject, ? > gpapProjectDao = dbHandler.getDao(GpapProject.class);
-            Dao<GpsLogs, ? > logsDao = dbHandler.getDao(GpsLogs.class);
-            Dao<GpsLogsData, ? > logsDataDao = dbHandler.getDao(GpsLogsData.class);
+            Dao<Notes, ?> notesDao = dbHandler.getDao(Notes.class);
+            Dao<Images, ?> imagesDao = dbHandler.getDao(Images.class);
+            Dao<ImageData, ?> imageDataDao = dbHandler.getDao(ImageData.class);
+            Dao<GpapUsers, ?> gpapUsersDao = dbHandler.getDao(GpapUsers.class);
+            Dao<GpapProject, ?> gpapProjectDao = dbHandler.getDao(GpapProject.class);
+            Dao<GpsLogs, ?> logsDao = dbHandler.getDao(GpsLogs.class);
+            Dao<GpsLogsData, ?> logsDataDao = dbHandler.getDao(GpsLogsData.class);
 
-            for( String tmpDbPath : dbsToImport ) {
+            for (String tmpDbPath : dbsToImport) {
                 String dummyDeviceId = FileUtilities.getNameWithoutExtention(new File(tmpDbPath));
                 String userName = "user-" + dummyDeviceId;
                 String projectName = "project-" + dummyDeviceId;
@@ -176,9 +182,9 @@ public class ProjectsImporter {
         }
     }
 
-    private void createTables( DatabaseHandler dbHandler ) throws Exception {
+    private void createTables(DatabaseHandler dbHandler) throws Exception {
         ASpatialDb db = dbHandler.getDb();
-        for( Class< ? > tClass : tableClasses ) {
+        for (Class<?> tClass : tableClasses) {
             System.out.println("Create if not exists: " + DatabaseHandler.getTableName(tClass)); //$NON-NLS-1$
             dbHandler.createTableIfNotExists(tClass);
             if (ISpatialTable.class.isAssignableFrom(tClass)) {
@@ -194,7 +200,8 @@ public class ProjectsImporter {
                     db.execOnConnection(conn -> {
                         // SELECT RecoverGeometryColumn('pipespieces', 'the_geom', 4326,
                         // 'LINESTRING', 'XY')
-                        String sql = "SELECT RecoverGeometryColumn('" + tableName + "','" + ISpatialTable.GEOM_FIELD_NAME + "', " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                        String sql = "SELECT RecoverGeometryColumn('" + tableName + "','" //$NON-NLS-1$ //$NON-NLS-2$
+                                + ISpatialTable.GEOM_FIELD_NAME + "', " //$NON-NLS-1$
                                 + DatabaseHandler.TABLES_EPSG + ", '" + geometryType + "', 'XY')"; //$NON-NLS-1$ //$NON-NLS-2$
                         try (IHMStatement stmt = conn.createStatement()) {
                             stmt.execute(sql);
@@ -212,10 +219,10 @@ public class ProjectsImporter {
         }
     }
 
-    private void importGpsLog( IHMConnection gpapConnection, Dao<GpsLogs, ? > logsDao, Dao<GpsLogsData, ? > logsDataDao,
-            GpapUsers user, GpapProject project ) throws Exception {
+    private void importGpsLog(IHMConnection gpapConnection, Dao<GpsLogs, ?> logsDao, Dao<GpsLogsData, ?> logsDataDao,
+            GpapUsers user, GpapProject project) throws Exception {
         List<GpsLog> logsList = OmsGeopaparazzi4Converter.getGpsLogsList(gpapConnection);
-        for( GpsLog log : logsList ) {
+        for (GpsLog log : logsList) {
 
             String sql = "select " + // //$NON-NLS-1$
                     logPropColorFN + "," + // //$NON-NLS-1$
@@ -223,7 +230,8 @@ public class ProjectsImporter {
                     TABLE_GPSLOG_PROPERTIES + " where " + logPropIdFN + "=" + log.id; //$NON-NLS-1$ //$NON-NLS-2$
             String color = "#FF0000";
             float width = 3;
-            try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {
+            try (IHMStatement statement = gpapConnection.createStatement();
+                    IHMResultSet rs = statement.executeQuery(sql);) {
                 if (rs.next()) {
                     color = rs.getString(1);
                     width = rs.getFloat(2);
@@ -234,12 +242,12 @@ public class ProjectsImporter {
             List<Coordinate> logCoordinates = gpsPointList.stream().map(gp -> new Coordinate(gp.lon, gp.lat))
                     .collect(Collectors.toList());
             LineString logLine = gf.createLineString(logCoordinates.toArray(new Coordinate[logCoordinates.size()]));
-            GpsLogs newLog = new GpsLogs(log.id, log.text, log.startTime, log.endTime, logLine, color, width, user, project,
-                    System.currentTimeMillis());
+            GpsLogs newLog = new GpsLogs(log.id, log.text, log.startTime, log.endTime, logLine, color, width, user,
+                    project, System.currentTimeMillis());
             logsDao.create(newLog);
 
             List<GpsLogsData> dataList = new ArrayList<>();
-            for( GpsPoint gpsPoint : gpsPointList ) {
+            for (GpsPoint gpsPoint : gpsPointList) {
                 Coordinate c = new Coordinate(gpsPoint.lon, gpsPoint.lat);
                 Point point = gf.createPoint(c);
 
@@ -252,8 +260,8 @@ public class ProjectsImporter {
 
     }
 
-    private void importNotes( IHMConnection gpapConnection, Dao<Notes, ? > notesDao, Dao<Images, ? > imagesDao,
-            Dao<ImageData, ? > imageDataDao, GpapUsers user, GpapProject project ) throws Exception {
+    private void importNotes(IHMConnection gpapConnection, Dao<Notes, ?> notesDao, Dao<Images, ?> imagesDao,
+            Dao<ImageData, ?> imageDataDao, GpapUsers user, GpapProject project) throws Exception {
         String sql = "select " + // //$NON-NLS-1$
                 idFN + "," + // //$NON-NLS-1$
                 latFN + "," + // //$NON-NLS-1$
@@ -266,8 +274,9 @@ public class ProjectsImporter {
                 formFN + " from " + // //$NON-NLS-1$
                 TABLE_NOTES;
 
-        try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {
-            while( rs.next() ) {
+        try (IHMStatement statement = gpapConnection.createStatement();
+                IHMResultSet rs = statement.executeQuery(sql);) {
+            while (rs.next()) {
                 long gpapNoteId = rs.getLong(idFN);
                 String form = rs.getString(formFN);
                 double lat = rs.getDouble(latFN);
@@ -286,7 +295,7 @@ public class ProjectsImporter {
                 Coordinate c = new Coordinate(lon, lat);
                 Point point = gf.createPoint(c);
 
-                Notes note = new Notes(point, gpapNoteId, altim, ts, descr, text, form, style, user, project, null,
+                Notes note = new Notes(point, gpapNoteId, altim, ts, descr, text, form, style, user, project, -1,
                         System.currentTimeMillis());
                 notesDao.create(note);
 
@@ -301,8 +310,8 @@ public class ProjectsImporter {
 
     }
 
-    private void insertImage( GpapUsers user, IHMConnection gpapConnection, Long gpapNoteId, Long newNoteId,
-            Dao<Images, ? > imagesDao, Dao<ImageData, ? > imageDataDao, GpapProject project ) throws Exception {
+    private void insertImage(GpapUsers user, IHMConnection gpapConnection, Long gpapNoteId, Long newNoteId,
+            Dao<Images, ?> imagesDao, Dao<ImageData, ?> imageDataDao, GpapProject project) throws Exception {
 
         String sql = "select i." + // //$NON-NLS-1$
                 imgIdFN + "," + // //$NON-NLS-1$
@@ -324,10 +333,11 @@ public class ProjectsImporter {
             sql += " (" + imgNoteidFN + " is null or " + imgNoteidFN + "=-1)"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         }
 
-        try (IHMStatement statement = gpapConnection.createStatement(); IHMResultSet rs = statement.executeQuery(sql);) {
+        try (IHMStatement statement = gpapConnection.createStatement();
+                IHMResultSet rs = statement.executeQuery(sql);) {
             statement.setQueryTimeout(30); // set timeout to 30 sec.
 
-            while( rs.next() ) {
+            while (rs.next()) {
                 int i = 1;
                 long imgId = rs.getLong(i++);
                 double lon = rs.getDouble(i++);
@@ -356,7 +366,7 @@ public class ProjectsImporter {
         }
     }
 
-    public static void main( String[] args ) throws Exception {
+    public static void main(String[] args) throws Exception {
         new ProjectsImporter();
     }
 
