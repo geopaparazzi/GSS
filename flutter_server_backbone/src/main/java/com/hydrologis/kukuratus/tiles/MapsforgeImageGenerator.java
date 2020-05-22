@@ -246,17 +246,17 @@ public class MapsforgeImageGenerator {
         return Math.toDegrees(Math.atan(Math.sinh(n)));
     }
 
-    public static void main( String[] args ) throws Exception {
-        File[] mapFiles = new File[]{new File("path.map")}; //$NON-NLS-1$
-        // 15/46.63192/11.14469
-        double y = 46.63192;
-        double x = 11.14469;
-        double dx = 0.002;
-        double dy = 0.001;
+    // public static void main( String[] args ) throws Exception {
+    //     File[] mapFiles = new File[]{new File("path.map")}; //$NON-NLS-1$
+    //     // 15/46.63192/11.14469
+    //     double y = 46.63192;
+    //     double x = 11.14469;
+    //     double dx = 0.002;
+    //     double dy = 0.001;
 
-        Envelope env = new Envelope(x - dx, x + dx, y - dy, y + dy);
-        MapsforgeImageGenerator gen = new MapsforgeImageGenerator(mapFiles, 256, 1f);
-        BufferedImage img = gen.getMapAreaImage(env, 21, false);
-        ImageIO.write(img, "png", new File("image.png")); //$NON-NLS-1$ //$NON-NLS-2$
-    }
+    //     Envelope env = new Envelope(x - dx, x + dx, y - dy, y + dy);
+    //     MapsforgeImageGenerator gen = new MapsforgeImageGenerator(mapFiles, 256, 1f);
+    //     BufferedImage img = gen.getMapAreaImage(env, 21, false);
+    //     ImageIO.write(img, "png", new File("image.png")); //$NON-NLS-1$ //$NON-NLS-2$
+    // }
 }

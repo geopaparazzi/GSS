@@ -40,7 +40,7 @@ import spark.Request;
 import spark.Response;
 
 public class ServletUtils {
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
     private static final String NO_PERMISSION = Messages.getString("ServletUtils.no_permission"); //$NON-NLS-1$
 
     public static final int MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB

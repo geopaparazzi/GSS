@@ -45,6 +45,8 @@ import com.j256.ormlite.table.DatabaseTable;
  */
 @DatabaseTable(tableName = "notes")
 public class Notes implements ISpatialTable, KmlRepresenter {
+    public static String TABLE_NAME = "notes";
+
     private static final long serialVersionUID = 1L;
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
 
@@ -58,6 +60,17 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     public static final String TEXT_FIELD_NAME = "text"; //$NON-NLS-1$
     public static final String FORM_FIELD_NAME = "form"; //$NON-NLS-1$
     public static final String STYLE_FIELD_NAME = "style"; //$NON-NLS-1$
+
+    // NOTE EXT
+    public static final String NOTESEXT_COLUMN_MARKER = "marker";
+    public static final String NOTESEXT_COLUMN_SIZE = "size";
+    public static final String NOTESEXT_COLUMN_ROTATION = "rotation";
+    public static final String NOTESEXT_COLUMN_COLOR = "color";
+    public static final String NOTESEXT_COLUMN_ACCURACY = "accuracy";
+    public static final String NOTESEXT_COLUMN_HEADING = "heading";
+    public static final String NOTESEXT_COLUMN_SPEED = "speed";
+    public static final String NOTESEXT_COLUMN_SPEEDACCURACY = "speedaccuracy";
+
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
 
     public static final String GPAPPROJECT_FIELD_NAME = "gpapprojectid"; //$NON-NLS-1$
@@ -66,9 +79,6 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
-
-    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
-    public long originalId;
 
     @DatabaseField(columnName = PREVIOUSID_FIELD_NAME, canBeNull = true, index = true)
     public long previousId;
@@ -91,11 +101,32 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     @DatabaseField(columnName = TEXT_FIELD_NAME, canBeNull = false)
     public String text;
 
+    @DatabaseField(columnName = NOTESEXT_COLUMN_MARKER, canBeNull = false)
+    public String marker;
+
+    @DatabaseField(columnName = NOTESEXT_COLUMN_SIZE, canBeNull = false)
+    public double size;
+
+    @DatabaseField(columnName = NOTESEXT_COLUMN_ROTATION, canBeNull = true)
+    public double rotation;
+
+    @DatabaseField(columnName = NOTESEXT_COLUMN_COLOR, canBeNull = false)
+    public String color;
+
+    @DatabaseField(columnName = NOTESEXT_COLUMN_ACCURACY, canBeNull = false)
+    public double accuracy;
+
+    @DatabaseField(columnName = NOTESEXT_COLUMN_HEADING, canBeNull = false)
+    public double heading;
+
+    @DatabaseField(columnName = NOTESEXT_COLUMN_SPEED, canBeNull = false)
+    public double speed;
+
+    @DatabaseField(columnName = NOTESEXT_COLUMN_SPEEDACCURACY, canBeNull = false)
+    public double speedaccuracy;
+
     @DatabaseField(columnName = FORM_FIELD_NAME, canBeNull = true, dataType = DataType.LONG_STRING)
     public String form;
-
-    @DatabaseField(columnName = STYLE_FIELD_NAME, canBeNull = true)
-    public String style;
 
     @DatabaseField(columnName = GPAPUSER_FIELD_NAME, foreign = true, canBeNull = false, index = true, columnDefinition = GpapUsers.usersFKColumnDefinition)
     public GpapUsers gpapUser;
@@ -112,41 +143,30 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         this.id = id;
     }
 
-    public Notes(Point the_geom, long originalId, double altimetry, long timestamp, String description, String text,
-            String form, String style, GpapUsers gpapUser, GpapProject gpapProject, long previousId,
+    public Notes(Point the_geom, double altimetry, long timestamp, String description, String text,
+            String form, String marker, double size, double rotation, String color, double accuracy, double heading,
+            double speed, double speedaccuracy, GpapUsers gpapUser, GpapProject gpapProject, long previousId,
             long uploadTimestamp) {
         super();
         this.the_geom = the_geom;
-        this.originalId = originalId;
         this.altimetry = altimetry;
         this.timestamp = timestamp;
         this.description = description;
         this.text = text;
         this.form = form;
-        this.style = style;
+        this.marker = marker;
+        this.size = size;
+        this.rotation = rotation;
+        this.color = color;
+        this.accuracy = accuracy;
+        this.heading = heading;
+        this.speed = speed;
+        this.speedaccuracy = speedaccuracy;
         this.gpapUser = gpapUser;
         this.gpapProject = gpapProject;
         this.previousId = previousId;
         this.uploadTimestamp = uploadTimestamp;
         the_geom.setSRID(ISpatialTable.SRID);
-    }
-
-    public Notes(Point the_geom, long originalId, double altimetry, Date timestamp, String description, String text,
-            String form, String style, GpapUsers gpapUser, GpapProject gpapProject, long previousId,
-            long uploadTimestamp) {
-        super();
-        this.the_geom = the_geom;
-        this.originalId = originalId;
-        this.altimetry = altimetry;
-        this.gpapProject = gpapProject;
-        this.timestamp = timestamp.getTime();
-        this.description = description;
-        this.text = text;
-        this.form = form;
-        this.style = style;
-        this.gpapUser = gpapUser;
-        this.previousId = previousId;
-        this.uploadTimestamp = uploadTimestamp;
     }
 
     public long getId() {
@@ -155,14 +175,6 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public long getOriginalId() {
-        return originalId;
-    }
-
-    public void setOriginalId(long originalId) {
-        this.originalId = originalId;
     }
 
     public Long getPreviousId() {
@@ -227,14 +239,6 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     public void setForm(String form) {
         this.form = form;
-    }
-
-    public String getStyle() {
-        return style;
-    }
-
-    public void setStyle(String style) {
-        this.style = style;
     }
 
     public GpapUsers getGpapUser() {
@@ -398,6 +402,70 @@ public class Notes implements ISpatialTable, KmlRepresenter {
             return Collections.emptyList();
         }
         return images;
+    }
+
+    public String getMarker() {
+        return marker;
+    }
+
+    public void setMarker(String marker) {
+        this.marker = marker;
+    }
+
+    public double getSize() {
+        return size;
+    }
+
+    public void setSize(double size) {
+        this.size = size;
+    }
+
+    public double getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(double rotation) {
+        this.rotation = rotation;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public double getAccuracy() {
+        return accuracy;
+    }
+
+    public void setAccuracy(double accuracy) {
+        this.accuracy = accuracy;
+    }
+
+    public double getHeading() {
+        return heading;
+    }
+
+    public void setHeading(double heading) {
+        this.heading = heading;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(double speed) {
+        this.speed = speed;
+    }
+
+    public double getSpeedaccuracy() {
+        return speedaccuracy;
+    }
+
+    public void setSpeedaccuracy(double speedaccuracy) {
+        this.speedaccuracy = speedaccuracy;
     }
 
 }

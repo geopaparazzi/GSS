@@ -33,7 +33,6 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "images")
 public class Images implements ISpatialTable {
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
-    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$ s
     public static final String ALTIM_FIELD_NAME = "altim"; //$NON-NLS-1$
     public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
     public static final String UPLOADTIMESTAMP_FIELD_NAME = "uploadts"; //$NON-NLS-1$
@@ -47,9 +46,6 @@ public class Images implements ISpatialTable {
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
-
-    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
-    public long originalId;
 
     @DatabaseField(columnName = GEOM_FIELD_NAME, canBeNull = false, persisterClass = KukuratusPointType.class)
     public Point the_geom;
@@ -91,10 +87,9 @@ public class Images implements ISpatialTable {
         this.id = id;
     }
 
-    public Images( Point the_geom, long originalId, double altimetry, long timestamp, double azimuth, String text, Notes notes,
+    public Images( Point the_geom, double altimetry, long timestamp, double azimuth, String text, Notes notes,
             ImageData imageData, GpapUsers gpapUser, byte[] thumbnail, GpapProject gpapProject, long uploadTimestamp ) {
         this.the_geom = the_geom;
-        this.originalId = originalId;
         this.altimetry = altimetry;
         this.timestamp = timestamp;
         this.azimuth = azimuth;

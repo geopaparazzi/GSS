@@ -39,13 +39,16 @@ import com.hydrologis.kukuratus.utils.NetworkUtilities;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
 
+import org.hortonmachine.dbs.compat.objects.QueryResult;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.libs.modules.HMConstants;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
+import org.hortonmachine.gears.utils.images.ImageUtilities;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
@@ -163,8 +166,6 @@ public class GssServerApi implements Vars {
         post("/upload", "multipart/form-data", (req, res) -> {
             MultipartConfigElement multipartConfigElement = new MultipartConfigElement(ServletUtils.tmpDir);
             req.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement);
-            // req.raw().setAttribute("org.eclipse.multipartConfig", multipartConfigElement);
-
 
             KukuratusLogger.logDebug("GssServer#post(/upload", "Received request from " + req.raw().getRemoteAddr());
 
@@ -218,40 +219,61 @@ public class GssServerApi implements Vars {
 
                 switch (type) {
                     case NOTE_OBJID:
-                        long id = getLong(partData, NOTES_COLUMN_ID);
+                        String text = getString(partData, NOTES_COLUMN_TEXT, "- nv -");
+                        String descr = getString(partData, NOTES_COLUMN_DESCRIPTION, "");
+                        long ts = getLong(partData, NOTES_COLUMN_TS, 0);
+
+                        double lon = getDouble(partData, NOTES_COLUMN_LON, 0);
+                        double lat = getDouble(partData, NOTES_COLUMN_LAT, 0);
+                        Coordinate coordinate = new Coordinate(lon, lat);
+                        Point point = gf.createPoint(coordinate);
+                        Envelope env = new Envelope(coordinate);
+                        env.expandBy(0.000001);
+                        QueryResult tableRecords = dbHandler.getDb().getTableRecordsMapIn(Notes.TABLE_NAME, env, 1, -1,
+                                null);
                         long previousId = -1;
-                        QueryBuilder<Notes, ?> qb = notesDao.queryBuilder();
-                        qb.where().eq(Notes.ORIGINALID_FIELD_NAME, id).and().eq(Notes.GPAPUSER_FIELD_NAME, gpapUser)
-                                .and().eq(Notes.GPAPPROJECT_FIELD_NAME, project);
-                        qb.orderBy(Notes.PREVIOUSID_FIELD_NAME, false);
-                        Notes previousNote = qb.queryForFirst();
-                        if (previousNote != null) {
-                            previousId = previousNote.id;
+                        if (!tableRecords.geometries.isEmpty()) {
+                            int indexOf = tableRecords.names.indexOf(Notes.ID_FIELD_NAME);
+                            if (indexOf != -1) {
+                                Object[] objects = tableRecords.data.get(0);
+                                Object idObj = objects[indexOf];
+                                if (idObj instanceof Long) {
+                                    previousId = (Long) idObj;
+                                }
+                            }
                         }
 
-                        String text = (String) partData.get(NOTES_COLUMN_TEXT);
-                        String descr = (String) partData.get(NOTES_COLUMN_DESCRIPTION);
-                        long ts = getLong(partData, NOTES_COLUMN_TS);
-                        double lon = getDouble(partData, NOTES_COLUMN_LON);
-                        double lat = getDouble(partData, NOTES_COLUMN_LAT);
-                        double altim = getDouble(partData, NOTES_COLUMN_ALTIM);
-                        String style = (String) partData.get(NOTES_COLUMN_STYLE);
-                        String form = (String) partData.get(NOTES_COLUMN_FORM);
-                        Point point = gf.createPoint(new Coordinate(lon, lat));
-                        Notes serverNote = new Notes(point, id, altim, ts, descr, text, form, style, gpapUser, project,
-                                previousId, System.currentTimeMillis());
+                        double altim = getDouble(partData, NOTES_COLUMN_ALTIM, 0);
+                        String form = getString(partData, NOTES_COLUMN_FORM, null);
+
+                        String marker = getString(partData, Notes.NOTESEXT_COLUMN_MARKER, "mapMarker");
+                        double size = getDouble(partData, Notes.NOTESEXT_COLUMN_SIZE, 10);
+                        double rotation = getDouble(partData, Notes.NOTESEXT_COLUMN_ROTATION, 0);
+                        String color = getString(partData, Notes.NOTESEXT_COLUMN_COLOR, "#FFFFFF");
+                        double accuracy = getDouble(partData, Notes.NOTESEXT_COLUMN_ACCURACY, 0);
+                        double heading = getDouble(partData, Notes.NOTESEXT_COLUMN_HEADING, 0);
+                        double speed = getDouble(partData, Notes.NOTESEXT_COLUMN_SPEED, 0);
+                        double speedaccuracy = getDouble(partData, Notes.NOTESEXT_COLUMN_SPEEDACCURACY, 0);
+
+                        Notes serverNote = new Notes(point, altim, ts, descr, text, form, marker, size, rotation, color,
+                                accuracy, heading, speed, speedaccuracy, gpapUser, project, previousId,
+                                System.currentTimeMillis());
                         notesDao.create(serverNote);
                         if (form != null) {
                             List<String> imageIds = Utilities.getImageIds(form);
                             if (!imageIds.isEmpty()) {
                                 for (String imageIdString : imageIds) {
-                                    byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + imageIdString);
                                     long imageIdNum = Long.parseLong(imageIdString);
-                                    ImageData imgData = new ImageData(id, imageData, gpapUser);
+
+                                    byte[] imageData = (byte[]) partData.get(
+                                            TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
+                                    byte[] thumbData = (byte[]) partData.get(
+                                            TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
+                                    ImageData imgData = new ImageData(imageData, gpapUser);
                                     imageDataDao.create(imgData);
                                     Point imgPoint = gf.createPoint(new Coordinate(lon, lat));
-                                    Images img = new Images(imgPoint, imageIdNum, altim, ts, -1, imageIdString,
-                                            serverNote, imgData, gpapUser, null, project, System.currentTimeMillis());
+                                    Images img = new Images(imgPoint, altim, ts, -1, imageIdString, serverNote, imgData,
+                                            gpapUser, thumbData, project, System.currentTimeMillis());
                                     imagesDao.create(img);
                                 }
                             }
@@ -260,34 +282,35 @@ public class GssServerApi implements Vars {
                         ServletUtils.debug("Uploaded note: " + serverNote.text);
                         break;
                     case IMAGE_OBJID:
-                        long imgId = getLong(partData, NOTES_COLUMN_ID);
-                        String imgText = (String) partData.get(IMAGES_COLUMN_TEXT);
-                        long imgTs = getLong(partData, IMAGES_COLUMN_TS);
-                        double imgLon = getDouble(partData, IMAGES_COLUMN_LON);
-                        double imgLat = getDouble(partData, IMAGES_COLUMN_LAT);
-                        double imgAltim = getDouble(partData, IMAGES_COLUMN_ALTIM);
+                        // long imgId = getLong(partData, NOTES_COLUMN_ID, -1);
+                        String imgText = getString(partData, IMAGES_COLUMN_TEXT, "- nv -");
+                        long imgTs = getLong(partData, IMAGES_COLUMN_TS, 0);
+                        double imgLon = getDouble(partData, IMAGES_COLUMN_LON, 0);
+                        double imgLat = getDouble(partData, IMAGES_COLUMN_LAT, 0);
+                        double imgAltim = getDouble(partData, IMAGES_COLUMN_ALTIM, -1);
 
-                        byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA);
+                        byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE);
+                        byte[] thumbnailData = (byte[]) partData
+                                .get(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
 
-                        ImageData imgData = new ImageData(imgId, imageData, gpapUser);
+                        ImageData imgData = new ImageData(imageData, gpapUser);
                         imageDataDao.create(imgData);
                         Point imgPoint = gf.createPoint(new Coordinate(imgLon, imgLat));
-                        Images img = new Images(imgPoint, imgId, imgAltim, imgTs, -1, imgText, null, imgData, gpapUser,
-                                null, project, System.currentTimeMillis());
+                        Images img = new Images(imgPoint, imgAltim, imgTs, -1, imgText, null, imgData, gpapUser,
+                                thumbnailData, project, System.currentTimeMillis());
                         imagesDao.create(img);
 
                         ServletUtils.debug("Uploaded image: " + imgText);
                         break;
                     case LOG_OBJID:
-                        long logId = getLong(partData, LOGS_COLUMN_ID);
-                        String logText = (String) partData.get(LOGS_COLUMN_TEXT);
-                        long startts = getLong(partData, LOGS_COLUMN_STARTTS);
-                        long endts = getLong(partData, LOGS_COLUMN_ENDTS);
-                        float width = getFloat(partData, LOGSPROP_COLUMN_WIDTH);
-                        String color = (String) partData.get(LOGSPROP_COLUMN_COLOR);
-                        if (color.length() == 9) {
+                        String logText = getString(partData, LOGS_COLUMN_TEXT, "- nv -");
+                        long startts = getLong(partData, LOGS_COLUMN_STARTTS, 0);
+                        long endts = getLong(partData, LOGS_COLUMN_ENDTS, 0);
+                        float width = getFloat(partData, LOGSPROP_COLUMN_WIDTH, 3);
+                        String logColor = getString(partData, LOGSPROP_COLUMN_COLOR, "#FFFFFF");
+                        if (logColor.length() == 9) {
                             // has also alpha, remove it
-                            color = "#" + color.substring(3);
+                            logColor = "#" + logColor.substring(3);
                         }
 
                         String logDataJson = (String) partData.get(TABLE_GPSLOG_DATA);
@@ -309,7 +332,7 @@ public class GssServerApi implements Vars {
                             logsData.add(gpsLogsData);
                         }
                         LineString logLine = gf.createLineString(coords);
-                        GpsLogs newLog = new GpsLogs(logId, logText, startts, endts, logLine, color, width, gpapUser,
+                        GpsLogs newLog = new GpsLogs(logText, startts, endts, logLine, logColor, width, gpapUser,
                                 project, System.currentTimeMillis());
                         logsData.forEach(ld -> ld.gpsLog = newLog);
 
@@ -431,19 +454,18 @@ public class GssServerApi implements Vars {
     public static void addGetImagedataRoute() {
 
         // get an image by the original project id and the userid
-        get("/imagedata/:userid/:originalid", (req, res) -> {
+        get("/imagedata/:userid/:dataid", (req, res) -> {
             // if (!hasPermission(req)) {
             String userId = req.params(":userid");
-            String originalImageDataId = req.params(":originalid");
-            KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + originalImageDataId,
+            String imageDataId = req.params(":dataid");
+            KukuratusLogger.logDebug("GssServer#get(/imagedata/" + userId + "/" + imageDataId,
                     "Received request from " + req.raw().getRemoteAddr());
 
             try {
                 long userIdLong = Long.parseLong(userId);
-                long originalImageDataIdLong = Long.parseLong(originalImageDataId);
+                long imageDataIdLong = Long.parseLong(imageDataId);
                 Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
-                ImageData imageData = dao.queryBuilder().where()
-                        .eq(ImageData.ORIGINALID_FIELD_NAME, originalImageDataIdLong).and()
+                ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong).and()
                         .eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
                 return imageData.data;
             } catch (Exception e) {
@@ -559,19 +581,76 @@ public class GssServerApi implements Vars {
         });
     }
 
-    private static long getLong(HashMap<String, Object> partData, String key) {
-        String value = (String) partData.get(key);
-        return Long.parseLong(value);
+    private static long getLong(HashMap<String, Object> partData, String key, long defaultValue) {
+        if (partData.containsKey(key)) {
+            Object object = partData.get(key);
+            if (object instanceof String) {
+                String value = (String) partData.get(key);
+                if (value.equals("null")) {
+                    return defaultValue;
+                } else {
+                    return Long.parseLong(value);
+                }
+            } else {
+                return defaultValue;
+            }
+        } else {
+            return defaultValue;
+        }
     }
 
-    private static double getDouble(HashMap<String, Object> partData, String key) {
-        String value = (String) partData.get(key);
-        return Double.parseDouble(value);
+    private static String getString(HashMap<String, Object> partData, String key, String defaultValue) {
+        if (partData.containsKey(key)) {
+            Object object = partData.get(key);
+            if (object instanceof String) {
+                String value = (String) partData.get(key);
+                if (value.equals("null")) {
+                    return defaultValue;
+                } else {
+                    return value;
+                }
+            } else {
+                return defaultValue;
+            }
+        } else {
+            return defaultValue;
+        }
     }
 
-    private static float getFloat(HashMap<String, Object> partData, String key) {
-        String value = (String) partData.get(key);
-        return Float.parseFloat(value);
+    private static double getDouble(HashMap<String, Object> partData, String key, double defaultValue) {
+        if (partData.containsKey(key)) {
+            Object object = partData.get(key);
+            if (object instanceof String) {
+                String value = (String) partData.get(key);
+                if (value.equals("null")) {
+                    return defaultValue;
+                } else {
+                    return Double.parseDouble(value);
+                }
+            } else {
+                return defaultValue;
+            }
+        } else {
+            return defaultValue;
+        }
+    }
+
+    private static float getFloat(HashMap<String, Object> partData, String key, float defaultValue) {
+        if (partData.containsKey(key)) {
+            Object object = partData.get(key);
+            if (object instanceof String) {
+                String value = (String) partData.get(key);
+                if (value.equals("null")) {
+                    return defaultValue;
+                } else {
+                    return Float.parseFloat(value);
+                }
+            } else {
+                return defaultValue;
+            }
+        } else {
+            return defaultValue;
+        }
     }
 
     private static String getFilename(Part part) {

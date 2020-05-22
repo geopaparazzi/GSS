@@ -33,6 +33,8 @@ public class GssDatabaseUtilities {
     public static final String NAME = "name";
     public static final String WIDTH = "width";
     public static final String COLOR = "color";
+    public static final String MARKER = "marker";
+    public static final String SIZE = "size";
     public static final String ID = "id";
     public static final String DATAID = "dataid";
     public static final String DATA = "data";
@@ -154,7 +156,7 @@ public class GssDatabaseUtilities {
         } else {
             if (needAnd)
                 where = where.and();
-            where = where.eq(Notes.FORM_FIELD_NAME, "");
+            where = where.eq(Notes.FORM_FIELD_NAME, "").or().isNull(Notes.FORM_FIELD_NAME);
             root.put(NOTES, jsonNotes);
             needAnd = true;
         }
@@ -168,6 +170,9 @@ public class GssDatabaseUtilities {
                 noteObject.put(NAME, note.text);
                 noteObject.put(TS, note.timestamp);
                 noteObject.put(USER, note.gpapUser.id);
+                noteObject.put(MARKER, note.marker);
+                noteObject.put(SIZE, note.size);
+                noteObject.put(COLOR, note.color);
                 if (typeForm) {
                     noteObject.put(FORM, note.form);
                 }

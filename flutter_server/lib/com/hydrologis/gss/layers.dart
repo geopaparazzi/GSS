@@ -16,17 +16,17 @@ final AVAILABLE_LAYERS_MAP = {
     urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     tileProvider: NonCachingNetworkTileProvider(),
   ),
-  'Esri Satellite': TileLayerOptions(
-    tms: true,
+  'OpenTopoMap': TileLayerOptions(
+    tms: false,
     maxZoom: 19,
-    urlTemplate:
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    subdomains: const ['a', 'b', 'c'],
+    urlTemplate: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
     tileProvider: NonCachingNetworkTileProvider(),
   ),
   'Stamen Watercolor': TileLayerOptions(
     tms: false,
     maxZoom: 19,
-    urlTemplate: "https://tile.stamen.com/watercolor/{z}/{x}/{y}.jpg",
+    urlTemplate: "http://c.tile.stamen.com/watercolor/{z}/{x}/{y}.jpg",
     tileProvider: NonCachingNetworkTileProvider(),
   ),
   'Wikimedia Map': TileLayerOptions(

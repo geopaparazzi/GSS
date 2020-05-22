@@ -242,7 +242,7 @@ public class ProjectsImporter {
             List<Coordinate> logCoordinates = gpsPointList.stream().map(gp -> new Coordinate(gp.lon, gp.lat))
                     .collect(Collectors.toList());
             LineString logLine = gf.createLineString(logCoordinates.toArray(new Coordinate[logCoordinates.size()]));
-            GpsLogs newLog = new GpsLogs(log.id, log.text, log.startTime, log.endTime, logLine, color, width, user,
+            GpsLogs newLog = new GpsLogs(log.text, log.startTime, log.endTime, logLine, color, width, user,
                     project, System.currentTimeMillis());
             logsDao.create(newLog);
 
@@ -263,7 +263,6 @@ public class ProjectsImporter {
     private void importNotes(IHMConnection gpapConnection, Dao<Notes, ?> notesDao, Dao<Images, ?> imagesDao,
             Dao<ImageData, ?> imageDataDao, GpapUsers user, GpapProject project) throws Exception {
         String sql = "select " + // //$NON-NLS-1$
-                idFN + "," + // //$NON-NLS-1$
                 latFN + "," + // //$NON-NLS-1$
                 lonFN + "," + // //$NON-NLS-1$
                 altimFN + "," + // //$NON-NLS-1$
@@ -274,39 +273,42 @@ public class ProjectsImporter {
                 formFN + " from " + // //$NON-NLS-1$
                 TABLE_NOTES;
 
-        try (IHMStatement statement = gpapConnection.createStatement();
-                IHMResultSet rs = statement.executeQuery(sql);) {
-            while (rs.next()) {
-                long gpapNoteId = rs.getLong(idFN);
-                String form = rs.getString(formFN);
-                double lat = rs.getDouble(latFN);
-                double lon = rs.getDouble(lonFN);
-                double altim = rs.getDouble(altimFN);
-                long ts = rs.getLong(tsFN);
-                String text = rs.getString(textFN);
-                String descr = rs.getString(descFN);
-                if (descr == null)
-                    descr = ""; //$NON-NLS-1$
-                String style = rs.getString(styleFN);
-                if (lat == 0 || lon == 0) {
-                    continue;
-                }
-                // and then create the features
-                Coordinate c = new Coordinate(lon, lat);
-                Point point = gf.createPoint(c);
+        // TODO fix note creation - currently unused
+        // try (IHMStatement statement = gpapConnection.createStatement();
+        // IHMResultSet rs = statement.executeQuery(sql);) {
+        // while (rs.next()) {
+        // long gpapNoteId = rs.getLong(idFN);
+        // String form = rs.getString(formFN);
+        // double lat = rs.getDouble(latFN);
+        // double lon = rs.getDouble(lonFN);
+        // double altim = rs.getDouble(altimFN);
+        // long ts = rs.getLong(tsFN);
+        // String text = rs.getString(textFN);
+        // String descr = rs.getString(descFN);
+        // if (descr == null)
+        // descr = ""; //$NON-NLS-1$
+        // String style = rs.getString(styleFN);
+        // if (lat == 0 || lon == 0) {
+        // continue;
+        // }
+        // // and then create the features
+        // Coordinate c = new Coordinate(lon, lat);
+        // Point point = gf.createPoint(c);
 
-                Notes note = new Notes(point, gpapNoteId, altim, ts, descr, text, form, style, user, project, -1,
-                        System.currentTimeMillis());
-                notesDao.create(note);
+        // Notes note = new Notes(point, gpapNoteId, altim, ts, descr, text, form,
+        // style, user, project, -1,
+        // System.currentTimeMillis());
+        // notesDao.create(note);
 
-                if (form != null && form.trim().length() > 0) {
-                    // check for images and import those also
-                    insertImage(user, gpapConnection, gpapNoteId, note.id, imagesDao, imageDataDao, project);
-                }
+        // if (form != null && form.trim().length() > 0) {
+        // // check for images and import those also
+        // insertImage(user, gpapConnection, gpapNoteId, note.id, imagesDao,
+        // imageDataDao, project);
+        // }
 
-            }
+        // }
 
-        }
+        // }
 
     }
 
@@ -314,14 +316,12 @@ public class ProjectsImporter {
             Dao<Images, ?> imagesDao, Dao<ImageData, ?> imageDataDao, GpapProject project) throws Exception {
 
         String sql = "select i." + // //$NON-NLS-1$
-                imgIdFN + "," + // //$NON-NLS-1$
                 imgLonFN + "," + // //$NON-NLS-1$
                 imgLatFN + "," + // //$NON-NLS-1$
                 imgAltimFN + "," + // //$NON-NLS-1$
                 imgTsFN + "," + // //$NON-NLS-1$
                 imgAzimFN + "," + // //$NON-NLS-1$
                 imgTextFN + "," + // //$NON-NLS-1$
-                imgImagedataidFN + "," + // //$NON-NLS-1$
                 imgdImadedataDataFN + "," + // //$NON-NLS-1$
                 imgdImadedataThumbFN + //
                 " from " + TABLE_IMAGES + " i, " + TABLE_IMAGE_DATA + " id  where " + // //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -339,7 +339,6 @@ public class ProjectsImporter {
 
             while (rs.next()) {
                 int i = 1;
-                long imgId = rs.getLong(i++);
                 double lon = rs.getDouble(i++);
                 double lat = rs.getDouble(i++);
                 Point point = gf.createPoint(new Coordinate(lon, lat));
@@ -347,11 +346,10 @@ public class ProjectsImporter {
                 long ts = rs.getLong(i++);
                 double azim = rs.getDouble(i++);
                 String text = rs.getString(i++);
-                long imgDataId = rs.getLong(i++);
                 byte[] imgBytes = rs.getBytes(i++);
                 byte[] thumbBytes = rs.getBytes(i++);
 
-                ImageData imgData = new ImageData(imgDataId, imgBytes, user);
+                ImageData imgData = new ImageData(imgBytes, user);
                 imageDataDao.create(imgData);
 
                 Notes note = null;
@@ -359,15 +357,15 @@ public class ProjectsImporter {
                     note = new Notes(newNoteId);
                 }
 
-                Images img = new Images(point, imgId, altim, ts, azim, text, note, imgData, user, thumbBytes, project,
+                Images img = new Images(point, altim, ts, azim, text, note, imgData, user, thumbBytes, project,
                         System.currentTimeMillis());
                 imagesDao.create(img);
             }
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        new ProjectsImporter();
-    }
+    // public static void main(String[] args) throws Exception {
+    //     new ProjectsImporter();
+    // }
 
 }

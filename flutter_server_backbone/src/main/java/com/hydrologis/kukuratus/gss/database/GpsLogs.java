@@ -38,7 +38,6 @@ import com.j256.ormlite.table.DatabaseTable;
 public class GpsLogs implements ISpatialTable, KmlRepresenter {
     private static final long serialVersionUID = 1L;
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
-    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$ s
     public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
     public static final String STARTTS_FIELD_NAME = "startts"; //$NON-NLS-1$
     public static final String ENDTS_FIELD_NAME = "endts"; //$NON-NLS-1$
@@ -52,9 +51,6 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
-
-    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
-    public long originalId;
 
     @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
     public String name;
@@ -90,9 +86,8 @@ public class GpsLogs implements ISpatialTable, KmlRepresenter {
         this.id = id;
     }
 
-    public GpsLogs( long originalId, String name, long startTs, long endTs, LineString the_geom, String color, float width,
+    public GpsLogs( String name, long startTs, long endTs, LineString the_geom, String color, float width,
             GpapUsers gpapUser, GpapProject gpapProject, long uploadTimestamp ) {
-        this.originalId = originalId;
         this.name = name;
         this.startTs = startTs;
         this.endTs = endTs;

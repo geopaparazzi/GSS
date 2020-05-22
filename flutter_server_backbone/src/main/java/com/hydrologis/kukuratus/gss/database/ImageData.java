@@ -29,7 +29,6 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "imagedata")
 public class ImageData {
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
-    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$ s
     public static final String DATA_FIELD_NAME = "data"; //$NON-NLS-1$
 
     public static final String GPAPUSER_FIELD_NAME = "gpapusersid"; //$NON-NLS-1$
@@ -38,9 +37,6 @@ public class ImageData {
 
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
-
-    @DatabaseField(columnName = ORIGINALID_FIELD_NAME, canBeNull = false, index = true)
-    public long originalId;
 
     @DatabaseField(columnName = DATA_FIELD_NAME, canBeNull = false, dataType = DataType.BYTE_ARRAY)
     public byte[] data;
@@ -55,8 +51,7 @@ public class ImageData {
         this.id = id;
     }
 
-    public ImageData( long originalId, byte[] data, GpapUsers gpapUser ) {
-        this.originalId = originalId;
+    public ImageData( byte[] data, GpapUsers gpapUser ) {
         this.data = data;
         this.gpapUser = gpapUser;
     }

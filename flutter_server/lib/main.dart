@@ -12,6 +12,7 @@ import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/colors.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/form_widgets.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/forms.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/icons.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/ui.dart';
 import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
@@ -132,9 +133,9 @@ class _MainPageState extends State<MainPage> {
 
       var layers = <LayerOptions>[];
 
-//    if (_logs != null) {
-//      layers.add(_logs);
-//    }
+      if (_logs != null) {
+        layers.add(_logs);
+      }
       if (_markers != null && _markers.length > 0) {
         var markerCluster = MarkerClusterLayerOptions(
           maxClusterRadius: 40,
@@ -660,36 +661,55 @@ class _MainPageState extends State<MainPage> {
     Map<String, dynamic> json = jsonDecode(data);
 
     // TODO add back also logs
-//    List<dynamic> logsList = json[LOGS];
-//
-//    if (logsList != null) {
-//      List<Polyline> lines = [];
-//      for (int i = 0; i < logsList.length; i++) {
-//        dynamic logItem = logsList[i];
-////        var id = logItem[ID];
-////        var name = logItem[NAME];
-//        var colorHex = logItem[COLOR];
-//        var width = logItem[WIDTH];
-//        var coords = logItem[COORDS];
-//
-//        List<LatLng> points = [];
-//        for (int j = 0; j < coords.length; j++) {
-//          var coord = coords[j];
-//          var latLng = LatLng(coord[Y], coord[X]);
-//          _dataBounds.extend(latLng);
-//          points.add(latLng);
-//        }
-//
-//        lines.add(Polyline(
-//            points: points, strokeWidth: width, color: ColorExt(colorHex)));
-//      }
-//      _logs = PolylineLayerOptions(
-//        polylines: lines,
-////        rebuild: true
-//      );
-//    }
+    List<dynamic> logsList = json[LOGS];
+    if (logsList != null) {
+      List<Polyline> lines = [];
+      for (int i = 0; i < logsList.length; i++) {
+
+        dynamic logItem = logsList[i];
+//        var id = logItem[ID];
+        // var name = logItem[NAME];
+        var colorHex = logItem[COLOR];
+        var width = logItem[WIDTH];
+        var coords = logItem[COORDS];
+
+        List<LatLng> points = [];
+        for (int j = 0; j < coords.length; j++) {
+          if (j == 0) print(coords[j]);
+          var coord = coords[j];
+          var latLng = LatLng(coord[Y], coord[X]);
+          _dataBounds.extend(latLng);
+          points.add(latLng);
+        }
+
+        lines.add(Polyline(
+            points: points, strokeWidth: width, color: ColorExt(colorHex)));
+      }
+      _logs = PolylineLayerOptions(
+        polylines: lines,
+        polylineCulling: true,
+      );
+    }
 
     List<Marker> markers = <Marker>[];
+
+    List<dynamic> imagesList = json[IMAGES];
+    for (int i = 0; i < imagesList.length; i++) {
+      dynamic imageItem = imagesList[i];
+      //      var id = imageItem[ID];
+      var dataId = imageItem[DATAID];
+      var data = imageItem[DATA];
+      var name = imageItem[NAME];
+      //      var ts = imageItem[TS];
+      var x = imageItem[X];
+      var y = imageItem[Y];
+      var latLng = LatLng(y, x);
+//      print("$latLng : $name");
+      _dataBounds.extend(latLng);
+      var imgData = Base64Decoder().convert(data);
+      markers.add(buildImage(x, y, name, dataId, imgData));
+    }
+
     List<dynamic> simpleNotesList = json[NOTES];
     for (int i = 0; i < simpleNotesList.length; i++) {
       dynamic noteItem = simpleNotesList[i];
@@ -702,7 +722,11 @@ class _MainPageState extends State<MainPage> {
       var latLng = LatLng(y, x);
 //      print("$latLng : $name");
       _dataBounds.extend(latLng);
-      markers.add(buildSimpleNote(x, y, name));
+
+      var marker = noteItem[MARKER];
+      var size = noteItem[SIZE];
+      var color = noteItem[COLOR];
+      markers.add(buildSimpleNote(x, y, name, marker, size, color));
     }
 
     List<dynamic> formNotesList = json[FORMS];
@@ -723,30 +747,14 @@ class _MainPageState extends State<MainPage> {
       markers.add(buildFormNote(x, y, name, form, noteId, userId));
     }
 
-    List<dynamic> imagesList = json[IMAGES];
-    for (int i = 0; i < imagesList.length; i++) {
-      dynamic imageItem = imagesList[i];
-      //      var id = imageItem[ID];
-      var dataId = imageItem[DATAID];
-      var data = imageItem[DATA];
-      var name = imageItem[NAME];
-      //      var ts = imageItem[TS];
-      var x = imageItem[X];
-      var y = imageItem[Y];
-      var latLng = LatLng(y, x);
-//      print("$latLng : $name");
-      _dataBounds.extend(latLng);
-      var imgData = Base64Decoder().convert(data);
-      markers.add(buildImage(x, y, name, dataId, imgData));
-    }
-
     _markers = markers;
     //    _mapController.move(p, 13);
 
     setState(() {});
   }
 
-  Marker buildSimpleNote(var x, var y, String name) {
+  Marker buildSimpleNote(
+      var x, var y, String name, String marker, double size, String color) {
     final constraints = BoxConstraints(
       maxWidth: 800.0, // maxwidth calculated
       minHeight: 0.0,
@@ -765,31 +773,40 @@ class _MainPageState extends State<MainPage> {
     );
     renderParagraph.layout(constraints);
     double textlen = renderParagraph.getMinIntrinsicWidth(36).ceilToDouble();
+    double textHeight =
+        renderParagraph.getMinIntrinsicHeight(36).ceilToDouble();
+
+    textlen = textlen > size ? textlen : size;
+
+    var iconData = getSmashIcon(marker);
+    var colorExt = ColorExt(color);
 
     return Marker(
       width: textlen,
-      height: 180,
+      height: size + textHeight,
       point: new LatLng(y, x),
       builder: (ctx) => new Container(
         child: Column(
           children: <Widget>[
             Icon(
-              MdiIcons.noteText,
-              size: 48,
-              color: Colors.indigo,
+              iconData,
+              size: size,
+              color: colorExt,
             ),
-            Container(
-              decoration: new BoxDecoration(
-                  color: Colors.indigo,
-                  borderRadius:
-                      new BorderRadius.all(const Radius.circular(10.0))),
-              child: new Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.white),
+            FittedBox(
+              child: Container(
+                decoration: new BoxDecoration(
+                    color: colorExt,
+                    borderRadius:
+                        new BorderRadius.all(const Radius.circular(5.0))),
+                child: new Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                          fontWeight: FontWeight.normal, color: Colors.black),
+                    ),
                   ),
                 ),
               ),
@@ -803,7 +820,7 @@ class _MainPageState extends State<MainPage> {
   Marker buildImage(var x, var y, String name, var dataId, var data) {
     var imageWidget = Image.memory(
       data,
-      scale: 2.0,
+      scale: 6.0,
     );
 
     return Marker(

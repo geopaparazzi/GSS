@@ -35,6 +35,8 @@ final String STARTTS = "startts";
 final String NAME = "name";
 final String WIDTH = "width";
 final String COLOR = "color";
+final String SIZE = "size";
+final String MARKER = "marker";
 final String ID = "id";
 final String DATAID = "dataid";
 final String DATA = "data";
@@ -48,5 +50,5 @@ final String TS = "ts";
 
 // API VARS END
 
-final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP[MAPSFORGE]; //'Openstreetmap'];
+final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP['Openstreetmap'];
 
