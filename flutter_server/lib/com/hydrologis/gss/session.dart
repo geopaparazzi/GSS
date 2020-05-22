@@ -48,7 +48,7 @@ class SmashSession {
   }
 
   static String getBasemap() {
-    return html.window.sessionStorage[KEY_BASEMAP] ??= "Mapsforge";
+    return html.window.sessionStorage[KEY_BASEMAP] ??= "Openstreetmap";
   }
 
   static void setMapcenter(double lon, double lat, double zoom) {

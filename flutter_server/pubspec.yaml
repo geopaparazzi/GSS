@@ -10,6 +10,22 @@ dependencies:
   flutter:
     sdk: flutter
 
+
+  ###########################
+  # OWN
+  ###########################
+
+  smashlibs:
+    # path: ../smashlibs/
+    git:
+      url: https://github.com/moovida/smashlibs.git
+
+  dart_hydrologis_utils: ^0.4.0
+
+  ###########################
+  # OTHERS
+  ############################
+
   # MIT
   material_design_icons_flutter: ^4.0.5245
 

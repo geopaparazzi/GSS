@@ -9,20 +9,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/colors.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/form_widgets.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/forms.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/icons.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/ui.dart';
+import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
-import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/widgets.dart';
 import 'package:latlong/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smashlibs/smashlibs.dart';
 
 export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
@@ -129,8 +125,6 @@ class _MainPageState extends State<MainPage> {
         getData(null);
       }
 
-//    html.IdbFactory fac = html.window.indexedDB;
-
       var layers = <LayerOptions>[];
 
       if (_logs != null) {
@@ -138,9 +132,7 @@ class _MainPageState extends State<MainPage> {
       }
       if (_markers != null && _markers.length > 0) {
         var markerCluster = MarkerClusterLayerOptions(
-          maxClusterRadius: 40,
-//        height: 40,
-//        width: 40,
+          maxClusterRadius: 20,
           size: Size(40, 40),
           fitBoundsOptions: FitBoundsOptions(
             padding: EdgeInsets.all(50),
@@ -156,7 +148,7 @@ class _MainPageState extends State<MainPage> {
             return FloatingActionButton(
               child: Text(markers.length.toString()),
               onPressed: null,
-              backgroundColor: SmashColors.mainDecorationsDark,
+              backgroundColor: SmashColors.mainDecorationsDarker,
               foregroundColor: SmashColors.mainBackground,
               heroTag: "${_heroCount++}",
             );
@@ -203,7 +195,6 @@ class _MainPageState extends State<MainPage> {
                         plugins: [
                           MarkerClusterPlugin(),
                         ],
-                        // TODO check interaction possibilities
                       ),
                       layers: [AVAILABLE_LAYERS_MAP[basemap]]..addAll(layers),
                       mapController: _mapController,
@@ -289,7 +280,7 @@ class _MainPageState extends State<MainPage> {
                   heroTag: "opendrawer",
                   elevation: 1,
                   backgroundColor: Colors.transparent,
-                  foregroundColor: SmashColors.mainDecorationsDark,
+                  foregroundColor: SmashColors.mainDecorationsDarker,
                   onPressed: () {
                     _scaffoldKey.currentState.openDrawer();
                   },
@@ -297,88 +288,7 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-            FabCircularMenu(
-              ringDiameter: ringDiameter,
-              ringWidth: ringWidth,
-              ringColor: Colors.white30,
-              fabCloseIcon: Icon(
-                MdiIcons.close,
-              ),
-              fabOpenIcon: Icon(
-                MdiIcons.filterMenuOutline,
-              ),
-              children: <Widget>[
-                IconButton(
-                  key: Key("filter1"),
-                  icon: Icon(MdiIcons.accountHardHat),
-                  tooltip: "Filter by Surveyor",
-                  onPressed: () {
-                    Flushbar(
-                      flushbarPosition: FlushbarPosition.BOTTOM,
-                      flushbarStyle: FlushbarStyle.GROUNDED,
-                      backgroundColor: Colors.white.withAlpha(128),
-                      onTap: (e) {
-                        Navigator.of(context).pop();
-                      },
-                      messageText: Container(
-                        height: 600,
-                        child: Center(
-                          child: FilterSurveyor(filterStateModel, getData),
-                        ),
-                      ),
-                    )..show(context);
-                  },
-                  iconSize: 48.0,
-                  color: filterStateModel.surveyors != null
-                      ? SmashColors.mainSelectionBorder
-                      : SmashColors.mainDecorationsDark,
-                ),
-                IconButton(
-                  key: Key("filter4"),
-                  icon: Icon(MdiIcons.folderOutline),
-                  tooltip: "Filter by Project",
-                  onPressed: () {
-                    Flushbar(
-                      flushbarPosition: FlushbarPosition.BOTTOM,
-                      flushbarStyle: FlushbarStyle.GROUNDED,
-                      backgroundColor: Colors.white.withAlpha(128),
-                      onTap: (e) {
-                        Navigator.of(context).pop();
-                      },
-                      messageText: Container(
-                        height: 600,
-                        child: Center(
-                          child: FilterProject(filterStateModel, getData),
-                        ),
-                      ),
-                    )..show(context);
-                  },
-                  iconSize: 48.0,
-                  color: filterStateModel.projects != null
-                      ? SmashColors.mainSelectionBorder
-                      : SmashColors.mainDecorationsDark,
-                ),
-                IconButton(
-                  key: Key("filter2"),
-                  icon: Icon(MdiIcons.calendar),
-                  tooltip: "Filter by Date",
-                  onPressed: () {},
-                  iconSize: 48.0,
-                  color: SmashColors.mainDecorationsDark,
-                ),
-                IconButton(
-                  key: Key("filter3"),
-                  icon: Icon(MdiIcons.filterRemove),
-                  tooltip: "Remove all Filters",
-                  onPressed: () {
-                    filterStateModel.reset();
-                    getData(filterStateModel);
-                  },
-                  iconSize: 48.0,
-                  color: SmashColors.mainDecorationsDark,
-                ),
-              ],
-            ),
+            getCircularMenu(context, ringDiameter, ringWidth, filterStateModel),
           ],
         ),
         drawer: Drawer(
@@ -416,7 +326,7 @@ class _MainPageState extends State<MainPage> {
       final loginButon = Material(
         elevation: 5.0,
         borderRadius: BorderRadius.circular(30.0),
-        color: SmashColors.mainDecorationsDark,
+        color: SmashColors.mainDecorationsDarker,
         child: MaterialButton(
           minWidth: MediaQuery.of(context).size.width,
           padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
@@ -471,6 +381,92 @@ class _MainPageState extends State<MainPage> {
         ),
       ));
     }
+  }
+
+  FabCircularMenu getCircularMenu(BuildContext context, double ringDiameter,
+      double ringWidth, FilterStateModel filterStateModel) {
+    return FabCircularMenu(
+      ringDiameter: ringDiameter,
+      ringWidth: ringWidth,
+      ringColor: Colors.white30,
+      fabCloseIcon: Icon(
+        MdiIcons.close,
+      ),
+      fabOpenIcon: Icon(
+        MdiIcons.filterMenuOutline,
+      ),
+      children: <Widget>[
+        IconButton(
+          key: Key("filter1"),
+          icon: Icon(MdiIcons.accountHardHat),
+          tooltip: "Filter by Surveyor",
+          onPressed: () {
+            Flushbar(
+              flushbarPosition: FlushbarPosition.BOTTOM,
+              flushbarStyle: FlushbarStyle.GROUNDED,
+              backgroundColor: Colors.white.withAlpha(128),
+              onTap: (e) {
+                Navigator.of(context).pop();
+              },
+              messageText: Container(
+                height: 600,
+                child: Center(
+                  child: FilterSurveyor(filterStateModel, getData),
+                ),
+              ),
+            )..show(context);
+          },
+          iconSize: 48.0,
+          color: filterStateModel.surveyors != null
+              ? SmashColors.mainSelectionBorder
+              : SmashColors.mainDecorationsDarker,
+        ),
+        IconButton(
+          key: Key("filter4"),
+          icon: Icon(MdiIcons.folderOutline),
+          tooltip: "Filter by Project",
+          onPressed: () {
+            Flushbar(
+              flushbarPosition: FlushbarPosition.BOTTOM,
+              flushbarStyle: FlushbarStyle.GROUNDED,
+              backgroundColor: Colors.white.withAlpha(128),
+              onTap: (e) {
+                Navigator.of(context).pop();
+              },
+              messageText: Container(
+                height: 600,
+                child: Center(
+                  child: FilterProject(filterStateModel, getData),
+                ),
+              ),
+            )..show(context);
+          },
+          iconSize: 48.0,
+          color: filterStateModel.projects != null
+              ? SmashColors.mainSelectionBorder
+              : SmashColors.mainDecorationsDarker,
+        ),
+        IconButton(
+          key: Key("filter2"),
+          icon: Icon(MdiIcons.calendar),
+          tooltip: "Filter by Date",
+          onPressed: () {},
+          iconSize: 48.0,
+          color: SmashColors.mainDecorationsDarker,
+        ),
+        IconButton(
+          key: Key("filter3"),
+          icon: Icon(MdiIcons.filterRemove),
+          tooltip: "Remove all Filters",
+          onPressed: () {
+            filterStateModel.reset();
+            getData(filterStateModel);
+          },
+          iconSize: 48.0,
+          color: SmashColors.mainDecorationsDarker,
+        ),
+      ],
+    );
   }
 
   _getDrawerWidgets(BuildContext context) {
@@ -665,7 +661,6 @@ class _MainPageState extends State<MainPage> {
     if (logsList != null) {
       List<Polyline> lines = [];
       for (int i = 0; i < logsList.length; i++) {
-
         dynamic logItem = logsList[i];
 //        var id = logItem[ID];
         // var name = logItem[NAME];
@@ -675,7 +670,6 @@ class _MainPageState extends State<MainPage> {
 
         List<LatLng> points = [];
         for (int j = 0; j < coords.length; j++) {
-          if (j == 0) print(coords[j]);
           var coord = coords[j];
           var latLng = LatLng(coord[Y], coord[X]);
           _dataBounds.extend(latLng);
@@ -883,7 +877,9 @@ class _MainPageState extends State<MainPage> {
                     sectionName,
                     p,
                     noteId,
-                    userId,
+                    null, // TODO add here save function if editing is supported on web
+                    null, // TODO add get thumbnails function
+                    null, // no taking pictures permitted on web
                   ),
                 ),
               ),

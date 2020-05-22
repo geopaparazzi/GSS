@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/ui.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'dart:convert' as JSON;
+
+import 'package:smashlibs/smashlibs.dart';
 
 class FilterSurveyor extends StatefulWidget {
   FilterStateModel _filterStateModel;

@@ -1,32 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
-
-/// Time related utilities
-class TimeUtilities {
-  /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
-  static final DateFormat ISO8601_TS_FORMATTER =
-      DateFormat("yyyy-MM-dd HH:mm:ss");
-
-  /// An ISO8601 time formatter (HH:mm:ss).
-  static final DateFormat ISO8601_TS_TIME_FORMATTER = DateFormat("HH:mm:ss");
-
-  /// An ISO8601 day formatter (yyyy-MM-dd).
-  static final DateFormat ISO8601_TS_DAY_FORMATTER = DateFormat("yyyy-MM-dd");
-
-  /// A date formatter (yyyyMMdd_HHmmss) useful for file names (it contains no spaces).
-  static final DateFormat DATE_TS_FORMATTER = DateFormat("yyyyMMdd_HHmmss");
-
-  /// A date formatter (yyyyMMdd) useful for file names (it contains no spaces).
-  static final DateFormat DAY_TS_FORMATTER = DateFormat("yyyyMMdd");
-
-  /// A date formatter (yyyyMMdd_HH) useful for file names (it contains no spaces).
-  static final DateFormat DAYHOUR_TS_FORMATTER = DateFormat("yyyyMMdd_HH");
-
-  /// A date formatter (yyyyMMdd_HHmm) useful for file names (it contains no spaces).
-  static final DateFormat DAYHOURMINUTE_TS_FORMATTER =
-      DateFormat("yyyyMMdd_HHmm");
-}
+import 'package:smashlibs/smashlibs.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class SelectMapLayerButton extends StatefulWidget {
   final List<Widget> fabButtons;
@@ -166,6 +142,41 @@ class TransformMapLayerButton extends StatelessWidget {
         duration: Duration(milliseconds: 500),
         // The green box must be a child of the AnimatedOpacity widget.
         child: floatButton,
+      ),
+    );
+  }
+}
+
+class NetworkImageWidget extends StatelessWidget {
+  double _height;
+  String _imageUrl;
+
+  NetworkImageWidget(this._imageUrl, this._height);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Center(
+        child: Stack(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            Center(
+              child: Container(
+                height: _height,
+                decoration: BoxDecoration(
+                    border: Border.all(color: SmashColors.mainDecorations)),
+                padding: EdgeInsets.all(5),
+                child: FadeInImage.memoryNetwork(
+                    placeholder: kTransparentImage,
+                    image: _imageUrl,
+                    fit: BoxFit.contain),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
