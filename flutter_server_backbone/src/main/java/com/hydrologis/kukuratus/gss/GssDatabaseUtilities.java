@@ -3,6 +3,8 @@ package com.hydrologis.kukuratus.gss;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.json.JSONArray;
@@ -40,14 +42,16 @@ public class GssDatabaseUtilities {
     public static final String DATA = "data";
     public static final String LOGS = "logs";
 
-//    public static String formatDate( long dateLong ) {
-//        return new DateTime(dateLong).toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS);
-//    }
+    // public static String formatDate( long dateLong ) {
+    // return new
+    // DateTime(dateLong).toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS);
+    // }
 
     /**
-     * Get the logs a json. 
+     * Get the logs a json.
      * 
-     * @param root the root to which to add the logs. If not available, the root is created.
+     * @param root              the root to which to add the logs. If not available,
+     *                          the root is created.
      * @param logsDao
      * @param logsPropertiesDao
      * @param users
@@ -56,12 +60,12 @@ public class GssDatabaseUtilities {
      * @return the root object that was used.
      * @throws SQLException
      */
-    public static JSONObject getLogs( JSONObject root, Dao<GpsLogs, ? > logsDao, List<GpapUsers> users,
-            List<GpapProject> projects, long[] fromTo, String textMatching ) throws SQLException {
-        QueryBuilder<GpsLogs, ? > qb = logsDao.queryBuilder();
+    public static JSONObject getLogs(JSONObject root, Dao<GpsLogs, ?> logsDao, List<GpapUsers> users,
+            List<GpapProject> projects, long[] fromTo, String textMatching) throws SQLException {
+        QueryBuilder<GpsLogs, ?> qb = logsDao.queryBuilder();
         List<GpsLogs> gpsLogs;
         if (users != null || projects != null || fromTo != null || textMatching != null) {
-            Where<GpsLogs, ? > where = qb.where();
+            Where<GpsLogs, ?> where = qb.where();
             boolean needAnd = false;
             if (users != null) {
                 if (needAnd)
@@ -78,7 +82,8 @@ public class GssDatabaseUtilities {
             if (fromTo != null) {
                 if (needAnd)
                     where = where.and();
-                where = where.and().ge(GpsLogs.STARTTS_FIELD_NAME, fromTo[0]).and().le(GpsLogs.ENDTS_FIELD_NAME, fromTo[1]);
+                where = where.and().ge(GpsLogs.STARTTS_FIELD_NAME, fromTo[0]).and().le(GpsLogs.ENDTS_FIELD_NAME,
+                        fromTo[1]);
                 needAnd = true;
             }
             gpsLogs = where.query();
@@ -94,7 +99,7 @@ public class GssDatabaseUtilities {
         root.put(LOGS, jsonLogs);
 
         if (gpsLogs.size() > 0) {
-            for( GpsLogs log : gpsLogs ) {
+            for (GpsLogs log : gpsLogs) {
                 JSONObject logObject = new JSONObject();
                 jsonLogs.put(logObject);
                 logObject.put(ID, log.id);
@@ -106,7 +111,7 @@ public class GssDatabaseUtilities {
                 JSONArray jsonCoords = new JSONArray();
                 logObject.put(COORDS, jsonCoords);
                 Coordinate[] coords = log.the_geom.getCoordinates();
-                for( Coordinate c : coords ) {
+                for (Coordinate c : coords) {
                     JSONObject coordObject = new JSONObject();
                     coordObject.put(X, c.x);
                     coordObject.put(Y, c.y);
@@ -118,52 +123,57 @@ public class GssDatabaseUtilities {
         return root;
     }
 
-    public static JSONObject getNotes( JSONObject root, Dao<Notes, ? > notesDao, List<GpapUsers> users,
-            List<GpapProject> projects, long[] fromTo, String textMatching, boolean typeForm ) throws SQLException {
+    public static JSONObject getNotes(JSONObject root, Dao<Notes, ?> notesDao, List<GpapUsers> users,
+            List<GpapProject> projects, long[] fromTo, String textMatching, boolean typeForm) throws SQLException {
         if (root == null) {
             root = new JSONObject();
         }
 
-        QueryBuilder<Notes, ? > qb = notesDao.queryBuilder();
+        QueryBuilder<Notes, ?> qb = notesDao.queryBuilder();
         List<Notes> notesList;
-        Where<Notes, ? > where = qb.where();
+        Where<Notes, ?> where = qb.where();
         boolean needAnd = false;
-        if (users != null) {
-            if (needAnd)
-                where = where.and();
-            where = where.in(Notes.GPAPUSER_FIELD_NAME, users);
-            needAnd = true;
-        }
-        if (projects != null) {
-            if (needAnd)
-                where = where.and();
-            where = where.in(Notes.GPAPPROJECT_FIELD_NAME, projects);
-            needAnd = true;
-        }
-        if (fromTo != null) {
-            if (needAnd)
-                where = where.and();
-            where = where.ge(Notes.TIMESTAMP_FIELD_NAME, fromTo[0]).and().le(Notes.TIMESTAMP_FIELD_NAME, fromTo[1]);
-            needAnd = true;
-        }
         JSONArray jsonNotes = new JSONArray();
         if (typeForm) {
             if (needAnd)
-                where = where.and();
-            where = where.ne(Notes.FORM_FIELD_NAME, "");
+                where.and();
+            where.ne(Notes.FORM_FIELD_NAME, "");
+            where.isNotNull(Notes.FORM_FIELD_NAME);
+            where.and(2);
             root.put(FORMS, jsonNotes);
             needAnd = true;
         } else {
             if (needAnd)
-                where = where.and();
-            where = where.eq(Notes.FORM_FIELD_NAME, "").or().isNull(Notes.FORM_FIELD_NAME);
+                where.and();
+            where.eq(Notes.FORM_FIELD_NAME, "");
+            where.isNull(Notes.FORM_FIELD_NAME);
+            where.or(2);
             root.put(NOTES, jsonNotes);
+            needAnd = true;
+        }
+        if (users != null) {
+            if (needAnd)
+                where.and();
+            where.in(Notes.GPAPUSER_FIELD_NAME, users);
+            needAnd = true;
+        }
+        if (projects != null) {
+            if (needAnd)
+                where.and();
+
+            where.in(Notes.GPAPPROJECT_FIELD_NAME, projects);
+            needAnd = true;
+        }
+        if (fromTo != null) {
+            if (needAnd)
+                where.and();
+            where.between(Notes.TIMESTAMP_FIELD_NAME, fromTo[0], fromTo[1]);
             needAnd = true;
         }
         notesList = where.query();
 
         if (notesList != null) {
-            for( Notes note : notesList ) {
+            for (Notes note : notesList) {
                 JSONObject noteObject = new JSONObject();
                 jsonNotes.put(noteObject);
                 noteObject.put(ID, note.id);
@@ -180,24 +190,25 @@ public class GssDatabaseUtilities {
                 noteObject.put(X, c.x);
                 noteObject.put(Y, c.y);
 
-//                System.out.println((typeForm ? "form: " : "simple ") + c.x + "/" + c.y + ": " + note.text);
+                // System.out.println((typeForm ? "form: " : "simple ") + c.x + "/" + c.y + ": "
+                // + note.text);
 
             }
         }
         return root;
     }
 
-    public static JSONObject getImages( JSONObject root, Dao<Images, ? > imagesDao, List<GpapUsers> users,
-            List<GpapProject> projects, long[] fromTo, String textMatching ) throws Exception {
+    public static JSONObject getImages(JSONObject root, Dao<Images, ?> imagesDao, List<GpapUsers> users,
+            List<GpapProject> projects, long[] fromTo, String textMatching) throws Exception {
         if (root == null) {
             root = new JSONObject();
         }
 
-        QueryBuilder<Images, ? > qb = imagesDao.queryBuilder();
+        QueryBuilder<Images, ?> qb = imagesDao.queryBuilder();
         List<Images> imagesList;
+        Where<Images, ?> where = qb.where();
+        boolean needAnd = false;
         if (users != null || projects != null || fromTo != null || textMatching != null) {
-            Where<Images, ? > where = qb.where();
-            boolean needAnd = false;
             if (users != null) {
                 if (needAnd)
                     where = where.and();
@@ -213,18 +224,20 @@ public class GssDatabaseUtilities {
             if (fromTo != null) {
                 if (needAnd)
                     where = where.and();
-                where = where.and().ge(Images.TIMESTAMP_FIELD_NAME, fromTo[0]).and().le(Images.TIMESTAMP_FIELD_NAME, fromTo[1]);
+                where = where.ge(Images.TIMESTAMP_FIELD_NAME, fromTo[0]).and().le(Images.TIMESTAMP_FIELD_NAME,
+                        fromTo[1]);
                 needAnd = true;
             }
-            imagesList = where.query();
-        } else {
-            imagesList = qb.query();
         }
+        if (needAnd)
+            where = where.and();
+        where.isNull(Images.NOTE_FIELD_NAME);
+        imagesList = where.query();
 
         JSONArray jsonImages = new JSONArray();
         root.put(IMAGES, jsonImages);
         if (imagesList != null) {
-            for( Images image : imagesList ) {
+            for (Images image : imagesList) {
                 JSONObject imageObject = new JSONObject();
                 jsonImages.put(imageObject);
                 imageObject.put(ID, image.id);

@@ -1,8 +1,5 @@
+import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong/latlong.dart';
-import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 
 class FilterStateModel extends ChangeNotifier {
   List<String> _surveyors;
@@ -29,7 +26,7 @@ class FilterStateModel extends ChangeNotifier {
 
   List<String> get projects => _projects;
 
-  void setProjects(List<String> _projects) {
+  void setProjects(List<String> projects) {
     _projects = projects;
     notifyListeners();
   }
@@ -46,6 +43,26 @@ class FilterStateModel extends ChangeNotifier {
     _fromToTimestamp = null;
     _projects = null;
     _matchingText = null;
+  }
+
+  @override
+  String toString() {
+    String timespan = "No timepsan";
+    if (_fromToTimestamp != null) {
+      timespan = "Timespan: ";
+      timespan +=
+          "${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(_fromToTimestamp[0]))}";
+      timespan +=
+          " to ${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(_fromToTimestamp[1]))}";
+    }
+
+    String str = """
+    Filter state:
+      Projects: ${_projects?.join(";")}
+      Surveyors: ${_surveyors?.join(";")}
+      $timespan
+    """;
+    return str;
   }
 }
 

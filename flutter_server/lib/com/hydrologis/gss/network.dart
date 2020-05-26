@@ -21,8 +21,17 @@ const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
 //const SERVER_IP = "172.26.181.138"; // office hydrologis
 
 class ServerApi {
+  static Map<String, String> getAuthRequestHeader(String user, String pwd) {
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    var requestHeaders = {"authorization": basicAuth};
+    return requestHeaders;
+  }
+
   static Future<String> getData(String user, String pwd,
-      {List<String> surveyors, List<String>  projects, fromTo, matchString}) async {
+      {List<String> surveyors,
+      List<String> projects,
+      fromTo,
+      matchString}) async {
     String apiCall = "$API_DATA";
 
     Map<String, String> formData = {};
@@ -33,13 +42,9 @@ class ServerApi {
       formData[KEY_PROJECTS] = projects.join(";");
     }
 
-    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
-        requestHeaders: {"authorization": basicAuth});
-
-//    HttpRequest request = await HttpRequest.request(apiCall,
-//        method: 'GET', requestHeaders: {"authorization": basicAuth});
-
+        requestHeaders: requestHeaders);
     if (request.status == 200) {
       return request.response;
     } else {
@@ -50,9 +55,9 @@ class ServerApi {
   static Future<String> login(String user, String pwd) async {
     String apiCall = "$API_LOGIN";
 
-    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.request(apiCall,
-        method: 'GET', requestHeaders: {"authorization": basicAuth});
+        method: 'GET', requestHeaders: requestHeaders);
     if (request.status == 200) {
       return request.response;
     } else {
@@ -71,9 +76,9 @@ class ServerApi {
     if (mapCenter != null) {
       formData[KEY_MAPCENTER] = mapCenter;
     }
-    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
-        requestHeaders: {"authorization": basicAuth});
+        requestHeaders: requestHeaders);
     if (request.status == 200) {
       return request.response;
     } else {
@@ -84,9 +89,9 @@ class ServerApi {
   static Future<String> getImageBytesById(
       String user, String pwd, int id) async {
     String apiCall = "$API_IMAGE/$id";
-    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.request(apiCall,
-        method: 'GET', requestHeaders: {"authorization": basicAuth});
+        method: 'GET', requestHeaders: requestHeaders);
     if (request.status == 200) {
       print(request.response.runtimeType);
       return request.response;
@@ -98,9 +103,9 @@ class ServerApi {
   static Future<String> getSurveyors(String user, String pwd) async {
     String apiCall = "$API_LIST_SURVEYORS";
 
-    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.request(apiCall,
-        method: 'GET', requestHeaders: {"authorization": basicAuth});
+        method: 'GET', requestHeaders: requestHeaders);
     if (request.status == 200) {
       return request.response;
     } else {
@@ -111,25 +116,13 @@ class ServerApi {
   static Future<String> getProjects(String user, String pwd) async {
     String apiCall = "$API_LIST_PROJECTS";
 
-    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.request(apiCall,
-        method: 'GET', requestHeaders: {"authorization": basicAuth});
+        method: 'GET', requestHeaders: requestHeaders);
     if (request.status == 200) {
       return request.response;
     } else {
       return null;
     }
   }
-
-//  /// Send recipe to the server.
-//  static Future<HttpRequest> uploadRecipe(
-//      String fileName, String recipeContent) async {
-//    Map<String, String> data = {
-//      "name": fileName,
-//      "recipe": recipeContent,
-//    };
-//    HttpRequest response =
-//    await HttpRequest.postFormData(API_RECIPE_UPLOAD, data);
-//    return response;
-//  }
 }

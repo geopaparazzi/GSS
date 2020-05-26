@@ -158,9 +158,11 @@ class _FilterProjectState extends State<FilterProject> {
       tmp[name] = filterProjects != null ? filterProjects.contains(name) : true;
     });
 
-    setState(() {
-      _projectsToActive = tmp;
-    });
+    if (mounted) {
+      setState(() {
+        _projectsToActive = tmp;
+      });
+    }
   }
 
   @override
@@ -229,8 +231,8 @@ class _FilterProjectState extends State<FilterProject> {
               filtered.add(name);
             }
           });
-          print(filtered);
           widget._filterStateModel.setProjects(filtered);
+          print(widget._filterStateModel);
           widget._reloadDataFunction(widget._filterStateModel);
           Navigator.pop(context);
         },

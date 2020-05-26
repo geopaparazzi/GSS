@@ -103,6 +103,10 @@ class _MainPageState extends State<MainPage> {
   bool _doFirstDataLoading = true;
   LatLngBounds _dataBounds = LatLngBounds();
 
+  static const _mapIconsPadding = 16.0;
+  static const _mapIconsSizeNormal = 48.0;
+  static const _mapIconsSizeMini = 38.0;
+
   @override
   void initState() {
     super.initState();
@@ -200,73 +204,92 @@ class _MainPageState extends State<MainPage> {
                       mapController: _mapController,
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: SelectMapLayerButton(
-                        fabButtons: getButtons(),
-                        colorStartAnimation: Colors.green,
-                        colorEndAnimation: Colors.red,
-                        key: Key("layerMenu"),
-                        animatedIconData: AnimatedIcons.menu_close,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
             Align(
-              alignment: Alignment.topRight,
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                color: SmashColors.mainBackground.withAlpha(128),
+                height: _mapIconsSizeNormal + _mapIconsPadding * 2,
+                width: double.infinity,
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomLeft,
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Text(
-                  "User: ${SmashSession.getSessionUser()[0]}",
-                  style: TextStyle(color: Colors.blueGrey),
+                padding: const EdgeInsets.all(_mapIconsPadding),
+                child: SelectMapLayerButton(
+                  fabButtons: getButtons(),
+                  colorStartAnimation: Colors.green,
+                  colorEndAnimation: Colors.red,
+                  key: Key("layerMenu"),
+                  animatedIconData: AnimatedIcons.menu_close,
                 ),
               ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(_mapIconsPadding),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    FloatingActionButton(
-                      heroTag: "zoomin",
-                      backgroundColor: SmashColors.mainDecorations,
-                      mini: true,
-                      onPressed: () {
-                        var zoom = _mapController.zoom - 1;
-                        if (zoom < MINZOOM) zoom = MINZOOM;
-                        _mapController.move(_mapController.center, zoom);
-                      },
-                      child: Icon(MdiIcons.magnifyMinus),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: _mapIconsSizeMini,
+                        height: _mapIconsSizeMini,
+                        child: FloatingActionButton(
+                          heroTag: "zoomin",
+                          backgroundColor: SmashColors.mainDecorations,
+                          mini: true,
+                          onPressed: () {
+                            var zoom = _mapController.zoom - 1;
+                            if (zoom < MINZOOM) zoom = MINZOOM;
+                            _mapController.move(_mapController.center, zoom);
+                          },
+                          child: Icon(MdiIcons.magnifyMinus),
+                        ),
+                      ),
                     ),
-                    FloatingActionButton(
-                      backgroundColor: SmashColors.mainDecorations,
-                      heroTag: "zoomdata",
-                      mini: true,
-                      tooltip: "Zoom to data",
-                      onPressed: () {
-                        if (_dataBounds.isValid) {
-                          _mapController.fitBounds(_dataBounds);
-                        }
-                      },
-                      child: Icon(MdiIcons.layers),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: _mapIconsSizeMini,
+                        height: _mapIconsSizeMini,
+                        child: FloatingActionButton(
+                          backgroundColor: SmashColors.mainDecorations,
+                          heroTag: "zoomdata",
+                          mini: true,
+                          tooltip: "Zoom to data",
+                          onPressed: () {
+                            if (_dataBounds.isValid) {
+                              _mapController.fitBounds(_dataBounds);
+                            }
+                          },
+                          child: Icon(MdiIcons.layers),
+                        ),
+                      ),
                     ),
-                    FloatingActionButton(
-                      backgroundColor: SmashColors.mainDecorations,
-                      heroTag: "zoomout",
-                      mini: true,
-                      onPressed: () {
-                        var zoom = _mapController.zoom + 1;
-                        if (zoom > MAXZOOM) zoom = MAXZOOM;
-                        _mapController.move(_mapController.center, zoom);
-                      },
-                      child: Icon(MdiIcons.magnifyPlus),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: _mapIconsSizeMini,
+                        height: _mapIconsSizeMini,
+                        child: FloatingActionButton(
+                          backgroundColor: SmashColors.mainDecorations,
+                          heroTag: "zoomout",
+                          mini: true,
+                          onPressed: () {
+                            var zoom = _mapController.zoom + 1;
+                            if (zoom > MAXZOOM) zoom = MAXZOOM;
+                            _mapController.move(_mapController.center, zoom);
+                          },
+                          child: Icon(MdiIcons.magnifyPlus),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -275,7 +298,7 @@ class _MainPageState extends State<MainPage> {
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(_mapIconsPadding),
                 child: FloatingActionButton(
                   heroTag: "opendrawer",
                   elevation: 1,
@@ -288,7 +311,11 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-            getCircularMenu(context, ringDiameter, ringWidth, filterStateModel),
+            Padding(
+              padding: const EdgeInsets.all(_mapIconsPadding),
+              child: getCircularMenu(
+                  context, ringDiameter, ringWidth, filterStateModel),
+            ),
           ],
         ),
         drawer: Drawer(
@@ -446,14 +473,14 @@ class _MainPageState extends State<MainPage> {
               ? SmashColors.mainSelectionBorder
               : SmashColors.mainDecorationsDarker,
         ),
-        IconButton(
-          key: Key("filter2"),
-          icon: Icon(MdiIcons.calendar),
-          tooltip: "Filter by Date",
-          onPressed: () {},
-          iconSize: 48.0,
-          color: SmashColors.mainDecorationsDarker,
-        ),
+        // IconButton(
+        //   key: Key("filter2"),
+        //   icon: Icon(MdiIcons.calendar),
+        //   tooltip: "Filter by Date",
+        //   onPressed: () {},
+        //   iconSize: 48.0,
+        //   color: SmashColors.mainDecorationsDarker,
+        // ),
         IconButton(
           key: Key("filter3"),
           icon: Icon(MdiIcons.filterRemove),
@@ -485,6 +512,10 @@ class _MainPageState extends State<MainPage> {
                 ),
                 alignment: Alignment.center,
               ),
+              Text(
+                "User: ${SmashSession.getSessionUser()[0]}",
+                style: TextStyle(color: Colors.blueGrey),
+              )
             ],
           ),
         ),
@@ -644,7 +675,6 @@ class _MainPageState extends State<MainPage> {
     }
 
     var userPwd = SmashSession.getSessionUser();
-    print("Projects: ${filterStateModel.projects}");
 
     var data = await ServerApi.getData(
       userPwd[0],
@@ -656,7 +686,7 @@ class _MainPageState extends State<MainPage> {
     );
     Map<String, dynamic> json = jsonDecode(data);
 
-    // TODO add back also logs
+    // TODO find a fix for logs
     List<dynamic> logsList = json[LOGS];
     if (logsList != null) {
       List<Polyline> lines = [];
@@ -742,7 +772,12 @@ class _MainPageState extends State<MainPage> {
     }
 
     _markers = markers;
-    //    _mapController.move(p, 13);
+
+    var delta = 0.01;
+    _dataBounds = LatLngBounds(
+        LatLng(_dataBounds.south - delta, _dataBounds.west - delta),
+        LatLng(_dataBounds.north + delta, _dataBounds.east + delta));
+    _mapController.fitBounds(_dataBounds);
 
     setState(() {});
   }
