@@ -768,7 +768,11 @@ class _MainPageState extends State<MainPage> {
 //      print("$latLng : $name");
 //      print(latLng);
       _dataBounds.extend(latLng);
-      markers.add(buildFormNote(x, y, name, form, noteId, userId));
+
+      var marker = formItem[MARKER];
+      var size = formItem[SIZE];
+      var color = formItem[COLOR];
+      markers.add(buildFormNote(x, y, name, form, noteId, marker, size, color));
     }
 
     _markers = markers;
@@ -784,35 +788,14 @@ class _MainPageState extends State<MainPage> {
 
   Marker buildSimpleNote(
       var x, var y, String name, String marker, double size, String color) {
-    final constraints = BoxConstraints(
-      maxWidth: 800.0, // maxwidth calculated
-      minHeight: 0.0,
-      minWidth: 0.0,
-    );
-
-    RenderParagraph renderParagraph = RenderParagraph(
-      TextSpan(
-        text: name,
-        style: TextStyle(
-          fontSize: 36,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    );
-    renderParagraph.layout(constraints);
-    double textlen = renderParagraph.getMinIntrinsicWidth(36).ceilToDouble();
-    double textHeight =
-        renderParagraph.getMinIntrinsicHeight(36).ceilToDouble();
-
-    textlen = textlen > size ? textlen : size;
+    List lengthHeight = guessTextDimensions(name, size);
 
     var iconData = getSmashIcon(marker);
     var colorExt = ColorExt(color);
 
     return Marker(
-      width: textlen,
-      height: size + textHeight,
+      width: lengthHeight[0],
+      height: size + lengthHeight[1],
       point: new LatLng(y, x),
       builder: (ctx) => new Container(
         child: Column(
@@ -844,6 +827,35 @@ class _MainPageState extends State<MainPage> {
         ),
       ),
     );
+  }
+
+  List guessTextDimensions(String name, double size) {
+    var lengthHeight = [];
+    final constraints = BoxConstraints(
+      maxWidth: 800.0, // maxwidth calculated
+      minHeight: 0.0,
+      minWidth: 0.0,
+    );
+
+    RenderParagraph renderParagraph = RenderParagraph(
+      TextSpan(
+        text: name,
+        style: TextStyle(
+          fontSize: 36,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    );
+    renderParagraph.layout(constraints);
+    double textlen = renderParagraph.getMinIntrinsicWidth(36).ceilToDouble();
+    double textHeight =
+        renderParagraph.getMinIntrinsicHeight(36).ceilToDouble();
+
+    textlen = textlen > size ? textlen : size;
+    lengthHeight.add(textlen);
+    lengthHeight.add(textHeight);
+    return lengthHeight;
   }
 
   Marker buildImage(var x, var y, String name, var dataId, var data) {
@@ -882,15 +894,45 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Marker buildFormNote(
-      var x, var y, String name, String form, var noteId, var userId) {
+  Marker buildFormNote(var x, var y, String name, String form, var noteId,
+      String marker, double size, String color) {
     LatLng p = LatLng(y, x);
+
+    List lengthHeight = guessTextDimensions(name, size);
+
+    var iconData = getSmashIcon(marker);
+    var colorExt = ColorExt(color);
     return Marker(
-      width: 180,
-      height: 180,
+      width: lengthHeight[0],
+      height: size + lengthHeight[1],
       point: new LatLng(y, x),
       builder: (ctx) => new Container(
         child: GestureDetector(
+          child: Column(
+            children: <Widget>[
+              Icon(
+                iconData,
+                size: size,
+                color: colorExt,
+              ),
+              Container(
+                decoration: new BoxDecoration(
+                    color: colorExt,
+                    borderRadius:
+                        new BorderRadius.all(const Radius.circular(5.0))),
+                child: new Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Text(
+                      name,
+                      style: TextStyle(
+                          fontWeight: FontWeight.normal, color: Colors.black),
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
           onTap: () async {
             var sectionMap = jsonDecode(form);
             var sectionName = sectionMap[ATTR_SECTIONNAME];
@@ -920,31 +962,6 @@ class _MainPageState extends State<MainPage> {
               ),
             )..show(context);
           },
-          child: Column(
-            children: <Widget>[
-              Icon(
-                MdiIcons.notebook,
-                size: 48,
-                color: Colors.deepOrange,
-              ),
-              Container(
-                decoration: new BoxDecoration(
-                    color: Colors.deepOrange,
-                    borderRadius:
-                        new BorderRadius.all(const Radius.circular(10.0))),
-                child: new Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(5.0),
-                    child: Text(
-                      name,
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
         ),
       ),
     );
