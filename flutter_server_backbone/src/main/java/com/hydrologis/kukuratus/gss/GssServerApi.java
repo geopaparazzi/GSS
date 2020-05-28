@@ -37,13 +37,11 @@ import com.hydrologis.kukuratus.utils.KukuratusStatus;
 import com.hydrologis.kukuratus.utils.Messages;
 import com.hydrologis.kukuratus.utils.NetworkUtilities;
 import com.j256.ormlite.dao.Dao;
-import com.j256.ormlite.stmt.QueryBuilder;
 
 import org.hortonmachine.dbs.compat.objects.QueryResult;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.libs.modules.HMConstants;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
-import org.hortonmachine.gears.utils.images.ImageUtilities;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;

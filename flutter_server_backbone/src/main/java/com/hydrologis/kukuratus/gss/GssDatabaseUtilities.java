@@ -3,13 +3,6 @@ package com.hydrologis.kukuratus.gss;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
-import org.hortonmachine.dbs.compat.ASpatialDb;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.locationtech.jts.geom.Coordinate;
 
 import com.hydrologis.kukuratus.gss.database.GpapProject;
 import com.hydrologis.kukuratus.gss.database.GpapUsers;
@@ -19,6 +12,10 @@ import com.hydrologis.kukuratus.gss.database.Notes;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.Where;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.locationtech.jts.geom.Coordinate;
 
 public class GssDatabaseUtilities {
     public static final String NOTES = "notes";
