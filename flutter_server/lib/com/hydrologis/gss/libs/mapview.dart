@@ -11,8 +11,6 @@ import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
-import 'package:flutter_server/com/hydrologis/gss/utils.dart';
-import 'package:flutter_server/com/hydrologis/gss/widgets.dart';
 import 'package:latlong/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +27,8 @@ class _MainMapViewState extends State<MainMapView>
     with AfterLayoutMixin<MainMapView> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   MapController _mapController;
+  final maxZoom = 22.0;
+  final minZoom = 1.0;
 
   double _screenWidth;
   int _heroCount;
@@ -58,8 +58,7 @@ class _MainMapViewState extends State<MainMapView>
       _mapController = MapController();
       mapstateModel.mapController = _mapController;
     }
-    final MAXZOOM = 22.0;
-    final MINZOOM = 1.0;
+
     _heroCount = 0;
 
     var size = MediaQuery.of(context).size;
@@ -129,8 +128,8 @@ class _MainMapViewState extends State<MainMapView>
                     options: new MapOptions(
                       center: new LatLng(xyz[1], xyz[0]),
                       zoom: xyz[2],
-                      minZoom: MINZOOM,
-                      maxZoom: MAXZOOM,
+                      minZoom: minZoom,
+                      maxZoom: maxZoom,
                       plugins: [
                         MarkerClusterPlugin(),
                       ],
@@ -143,95 +142,37 @@ class _MainMapViewState extends State<MainMapView>
             ),
           ),
           Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              color: SmashColors.mainBackground.withAlpha(128),
-              height: _mapIconsSizeNormal + _mapIconsPadding * 2,
-              width: double.infinity,
-            ),
-          ),
-          Align(
             alignment: Alignment.topRight,
             child: Padding(
               padding: const EdgeInsets.all(_mapIconsPadding),
-              child: FloatingActionButton(
-                  key: Key("map_dialog_button"),
-                  child: Icon(
-                    MdiIcons.map,
-                  ),
-                  backgroundColor: SmashColors.mainDecorations,
-                  onPressed: () {
-                    openMapSelectionDialog(context);
-                  }),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(_mapIconsPadding),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SizedBox(
-                      width: _mapIconsSizeMini,
-                      height: _mapIconsSizeMini,
-                      child: FloatingActionButton(
-                        heroTag: "zoomin",
-                        backgroundColor: SmashColors.mainDecorations,
-                        mini: true,
-                        onPressed: () {
-                          var zoom = _mapController.zoom - 1;
-                          if (zoom < MINZOOM) zoom = MINZOOM;
-                          _mapController.move(_mapController.center, zoom);
-                        },
-                        child: Icon(MdiIcons.magnifyMinus),
+              child: Column(
+                children: [
+                  FloatingActionButton(
+                      key: Key("map_dialog_button"),
+                      child: Icon(
+                        MdiIcons.map,
                       ),
-                    ),
-                  ),
+                      backgroundColor: SmashColors.mainDecorations,
+                      onPressed: () {
+                        openMapSelectionDialog(context);
+                      }),
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SizedBox(
-                      width: _mapIconsSizeMini,
-                      height: _mapIconsSizeMini,
-                      child: FloatingActionButton(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: FloatingActionButton(
+                        key: Key("filter_dialog_button"),
+                        child: Icon(
+                          MdiIcons.filterMenuOutline,
+                        ),
                         backgroundColor: SmashColors.mainDecorations,
-                        heroTag: "zoomdata",
-                        mini: true,
-                        tooltip: "Zoom to data",
                         onPressed: () {
-                          if (mapstateModel.dataBounds.isValid) {
-                            _mapController.fitBounds(mapstateModel.dataBounds);
-                          }
-                        },
-                        child: Icon(MdiIcons.layers),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SizedBox(
-                      width: _mapIconsSizeMini,
-                      height: _mapIconsSizeMini,
-                      child: FloatingActionButton(
-                        backgroundColor: SmashColors.mainDecorations,
-                        heroTag: "zoomout",
-                        mini: true,
-                        onPressed: () {
-                          var zoom = _mapController.zoom + 1;
-                          if (zoom > MAXZOOM) zoom = MAXZOOM;
-                          _mapController.move(_mapController.center, zoom);
-                        },
-                        child: Icon(MdiIcons.magnifyPlus),
-                      ),
-                    ),
+                          openFilterDialog(context);
+                        }),
                   ),
                 ],
               ),
             ),
           ),
+          getZoomButtons(mapstateModel),
           Align(
             alignment: Alignment.topLeft,
             child: Padding(
@@ -248,22 +189,83 @@ class _MainMapViewState extends State<MainMapView>
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(_mapIconsPadding),
-            child: getCircularMenu(
-                context, ringDiameter, ringWidth, filterStateModel),
-          ),
         ],
       ),
       drawer: Drawer(
           child: ListView(
         children: _getDrawerWidgets(context),
       )),
-      endDrawer: Drawer(
-          child: ListView(
-        children: _getMapDrawerWidgets(context),
-      )),
       endDrawerEnableOpenDragGesture: false,
+    );
+  }
+
+  Align getZoomButtons(MapstateModel mapstateModel) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.all(_mapIconsPadding),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: _mapIconsSizeMini,
+                height: _mapIconsSizeMini,
+                child: FloatingActionButton(
+                  heroTag: "zoomin",
+                  backgroundColor: SmashColors.mainDecorations,
+                  mini: true,
+                  onPressed: () {
+                    var zoom = _mapController.zoom - 1;
+                    if (zoom < minZoom) zoom = minZoom;
+                    _mapController.move(_mapController.center, zoom);
+                  },
+                  child: Icon(MdiIcons.magnifyMinus),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: _mapIconsSizeMini,
+                height: _mapIconsSizeMini,
+                child: FloatingActionButton(
+                  backgroundColor: SmashColors.mainDecorations,
+                  heroTag: "zoomdata",
+                  mini: true,
+                  tooltip: "Zoom to data",
+                  onPressed: () {
+                    if (mapstateModel.dataBounds.isValid) {
+                      _mapController.fitBounds(mapstateModel.dataBounds);
+                    }
+                  },
+                  child: Icon(MdiIcons.layers),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: _mapIconsSizeMini,
+                height: _mapIconsSizeMini,
+                child: FloatingActionButton(
+                  backgroundColor: SmashColors.mainDecorations,
+                  heroTag: "zoomout",
+                  mini: true,
+                  onPressed: () {
+                    var zoom = _mapController.zoom + 1;
+                    if (zoom > maxZoom) zoom = maxZoom;
+                    _mapController.move(_mapController.center, zoom);
+                  },
+                  child: Icon(MdiIcons.magnifyPlus),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -413,119 +415,5 @@ class _MainMapViewState extends State<MainMapView>
         ),
       ),
     ];
-  }
-
-  FabCircularMenu getCircularMenu(BuildContext context, double ringDiameter,
-      double ringWidth, FilterStateModel filterStateModel) {
-    return FabCircularMenu(
-      ringDiameter: ringDiameter,
-      ringWidth: ringWidth,
-      ringColor: Colors.white30,
-      fabCloseIcon: Icon(
-        MdiIcons.close,
-      ),
-      fabOpenIcon: Icon(
-        MdiIcons.filterMenuOutline,
-      ),
-      children: <Widget>[
-        IconButton(
-          key: Key("filter1"),
-          icon: Icon(MdiIcons.accountHardHat),
-          tooltip: "Filter by Surveyor",
-          onPressed: () {
-            Flushbar(
-              flushbarPosition: FlushbarPosition.BOTTOM,
-              flushbarStyle: FlushbarStyle.GROUNDED,
-              backgroundColor: Colors.white.withAlpha(128),
-              onTap: (e) {
-                Navigator.of(context).pop();
-              },
-              messageText: Container(
-                height: 600,
-                child: Center(
-                  child: FilterSurveyor(filterStateModel),
-                ),
-              ),
-            )..show(context);
-          },
-          iconSize: 48.0,
-          color: filterStateModel.surveyors != null
-              ? SmashColors.mainSelectionBorder
-              : SmashColors.mainDecorationsDarker,
-        ),
-        IconButton(
-          key: Key("filter4"),
-          icon: Icon(MdiIcons.folderOutline),
-          tooltip: "Filter by Project",
-          onPressed: () {
-            Flushbar(
-              flushbarPosition: FlushbarPosition.BOTTOM,
-              flushbarStyle: FlushbarStyle.GROUNDED,
-              backgroundColor: Colors.white.withAlpha(128),
-              onTap: (e) {
-                Navigator.of(context).pop();
-              },
-              messageText: Container(
-                height: 600,
-                child: Center(
-                  child: FilterProject(filterStateModel),
-                ),
-              ),
-            )..show(context);
-          },
-          iconSize: 48.0,
-          color: filterStateModel.projects != null
-              ? SmashColors.mainSelectionBorder
-              : SmashColors.mainDecorationsDarker,
-        ),
-        // IconButton(
-        //   key: Key("filter2"),
-        //   icon: Icon(MdiIcons.calendar),
-        //   tooltip: "Filter by Date",
-        //   onPressed: () {},
-        //   iconSize: 48.0,
-        //   color: SmashColors.mainDecorationsDarker,
-        // ),
-        IconButton(
-          key: Key("filter3"),
-          icon: Icon(MdiIcons.filterRemove),
-          tooltip: "Remove all Filters",
-          onPressed: () async {
-            filterStateModel.reset();
-            var mapstateModel =
-                Provider.of<MapstateModel>(context, listen: false);
-            await mapstateModel.getData(context);
-            mapstateModel.fitbounds();
-            mapstateModel.reloadMap();
-          },
-          iconSize: 48.0,
-          color: SmashColors.mainDecorationsDarker,
-        ),
-      ],
-    );
-  }
-
-  _getMapDrawerWidgets(BuildContext context) {
-    return AVAILABLE_ONLINE_MAPS.keys.map((name) {
-      return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: OnlineSourceCard(name, AVAILABLE_ONLINE_MAPS[name])
-
-//         Container(
-//           width: 200.0,
-//           child: FloatingActionButton.extended(
-//             label: Text(name),
-//             onPressed: () {
-//               SmashSession.setBasemap(name);
-//               setState(() {});
-//             },
-//             key: Key(name),
-//             heroTag: name,
-// //          tooltip: name,
-// //          icon: Icon(Icons.map),
-//           ),
-//         ),
-          );
-    }).toList();
   }
 }

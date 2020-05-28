@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:after_layout/after_layout.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -9,9 +10,8 @@ import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
+import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:latlong/latlong.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:page_slider/page_slider.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 
@@ -198,7 +198,7 @@ Marker buildFormNote(BuildContext context, var x, var y, String name,
 
 openMapSelectionDialog(BuildContext context) {
   var size = 400.0;
-  Dialog errorDialog = Dialog(
+  Dialog mapSelectionDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: Container(
       height: size,
@@ -206,7 +206,8 @@ openMapSelectionDialog(BuildContext context) {
       child: BackgroundMapSelectionWidget(),
     ),
   );
-  showDialog(context: context, builder: (BuildContext context) => errorDialog);
+  showDialog(
+      context: context, builder: (BuildContext context) => mapSelectionDialog);
 }
 
 class BackgroundMapSelectionWidget extends StatefulWidget {
@@ -285,5 +286,172 @@ class _BackgroundMapSelectionWidgetState
         )
       ],
     );
+  }
+}
+
+openFilterDialog(BuildContext context) {
+  var size = 600.0;
+  Dialog filterDialog = Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+    child: Container(
+      height: size,
+      width: size,
+      child: FilterWidget(),
+    ),
+  );
+  showDialog(context: context, builder: (BuildContext context) => filterDialog);
+}
+
+class FilterWidget extends StatefulWidget {
+  FilterWidget();
+  _FilterWidgetState createState() => _FilterWidgetState();
+}
+
+class _FilterWidgetState extends State<FilterWidget>
+    with AfterLayoutMixin<FilterWidget> {
+  Map<String, bool> _projectsToActive;
+  Map<String, bool> _surveyorsToActive;
+  List<String> _projectNames;
+  List<String> _surveyorNames;
+  bool _doSurveyors = true;
+
+  bool _dataLoaded = false;
+
+  FilterStateModel _filterStateModel;
+
+  @override
+  Future<void> afterFirstLayout(BuildContext context) async {
+    _filterStateModel = Provider.of<FilterStateModel>(context, listen: false);
+    var sessionUser = SmashSession.getSessionUser();
+    String responsJson =
+        await ServerApi.getProjects(sessionUser[0], sessionUser[1]);
+
+    var jsonMap = jsonDecode(responsJson);
+
+    List<dynamic> projects = jsonMap[KEY_PROJECTS];
+    List<String> filterProjects = _filterStateModel.projects;
+
+    Map<String, bool> tmp = {};
+    projects.forEach((name) {
+      tmp[name] = filterProjects != null ? filterProjects.contains(name) : true;
+    });
+
+    _projectsToActive = tmp;
+    _projectNames = _projectsToActive.keys.toList();
+
+    responsJson = await ServerApi.getSurveyors(sessionUser[0], sessionUser[1]);
+
+    jsonMap = jsonDecode(responsJson);
+
+    List<dynamic> surveyors = jsonMap[KEY_SURVEYORS];
+    List<String> filterSurveyors = _filterStateModel.surveyors;
+
+    tmp = {};
+    surveyors.forEach((name) {
+      tmp[name] =
+          filterSurveyors != null ? filterSurveyors.contains(name) : true;
+    });
+
+    _surveyorsToActive = tmp;
+    _surveyorNames = _surveyorsToActive.keys.toList();
+
+    setState(() {
+      _dataLoaded = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_dataLoaded) {
+      return SmashCircularProgress();
+    } else {
+      List<dynamic> names = _doSurveyors ? _surveyorNames : _projectNames;
+      Map<String, bool> name2active =
+          _doSurveyors ? _surveyorsToActive : _projectsToActive;
+      var title = _doSurveyors ? "SURVEYORS" : "PROJECTS";
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SmashUI.titleText(title),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListView.builder(
+                itemCount: names.length,
+                itemBuilder: (BuildContext context, int index) {
+                  var name = names[index];
+                  var isActive = name2active[name];
+                  return CheckboxListTile(
+                      title: Text(name),
+                      value: isActive,
+                      onChanged: (selected) {
+                        setState(() {
+                          name2active[name] = selected;
+                        });
+                      });
+                },
+              ),
+            ),
+          ),
+          ButtonBar(
+            alignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              FlatButton(
+                child: const Text('CANCEL'),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              FlatButton(
+                child: const Text('RESET'),
+                onPressed: () async {
+                  _filterStateModel.reset();
+                  var mapstateModel =
+                      Provider.of<MapstateModel>(context, listen: false);
+                  await mapstateModel.getData(context);
+                  mapstateModel.fitbounds();
+                  mapstateModel.reloadMap();
+                  Navigator.pop(context);
+                },
+              ),
+              FlatButton(
+                child: Text(_doSurveyors ? 'PROJECTS' : 'SURVEYORS'),
+                onPressed: () {
+                  setState(() {
+                    _doSurveyors = !_doSurveyors;
+                  });
+                },
+              ),
+              FlatButton(
+                child: const Text('OK'),
+                onPressed: () async {
+                  _projectsToActive.removeWhere((key, value) => !value);
+                  var activeProjects = _projectsToActive.entries
+                      .map((entry) => entry.key)
+                      .toList();
+                  _filterStateModel.setProjectsQuiet(activeProjects);
+
+                  _surveyorsToActive.removeWhere((key, value) => !value);
+                  var activeSurveyors =
+                      _surveyorsToActive.entries.map((e) => e.key).toList();
+                  _filterStateModel.setSurveyors(activeSurveyors);
+
+                  var mapstateModel =
+                      Provider.of<MapstateModel>(context, listen: false);
+                  await mapstateModel.getData(context);
+                  mapstateModel.fitbounds();
+                  mapstateModel.reloadMap();
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          )
+        ],
+      );
+    }
   }
 }

@@ -25,6 +25,9 @@ class FilterStateModel extends ChangeNotifier {
     _surveyors = surveyors;
     notifyListeners();
   }
+  void setSurveyorsQuiet(List<String> surveyors) {
+    _surveyors = surveyors;
+  }
 
   List<int> get fromToTimestamp => _fromToTimestamp;
 
@@ -38,6 +41,9 @@ class FilterStateModel extends ChangeNotifier {
   void setProjects(List<String> projects) {
     _projects = projects;
     notifyListeners();
+  }
+  void setProjectsQuiet(List<String> projects) {
+    _projects = projects;
   }
 
   String get matchingText => _matchingText;
