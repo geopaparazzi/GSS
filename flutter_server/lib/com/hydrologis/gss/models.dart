@@ -1,5 +1,14 @@
-import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
+import 'dart:convert';
+
+import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart' hide SIZE;
 import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
+import 'package:flutter_server/com/hydrologis/gss/network.dart';
+import 'package:flutter_server/com/hydrologis/gss/session.dart';
+import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:latlong/latlong.dart';
+import 'package:provider/provider.dart';
 
 class FilterStateModel extends ChangeNotifier {
   List<String> _surveyors;
@@ -67,50 +76,140 @@ class FilterStateModel extends ChangeNotifier {
 }
 
 class MapstateModel extends ChangeNotifier {
-//  String _backgroundLayer = MAPSFORGE;
-//
-//  double _centerLon = 11.0;
-//  double _centerLat = 46.0;
-//  double _currentZoom = 8;
-//
-//  String get backgroundLayer => _backgroundLayer;
-//
-//  set backgroundLayer(String backgroundLayer) {
-//    _backgroundLayer = backgroundLayer;
-//    notifyListeners();
-//  }
-//
-//  setBackgroundLayerNoevent(String backgroundLayer) {
-//    _backgroundLayer = backgroundLayer;
-//    notifyListeners();
-//  }
-//
-//  TileLayerOptions getBackgroundLayerOption() {
-//    return AVAILABLE_LAYERS_MAP[_backgroundLayer] ??=
-//        AVAILABLE_LAYERS_MAP[MAPSFORGE];
-//  }
-//
-//  get centerLat => _centerLat;
-//
-//  get centerLon => _centerLon;
-//
-//  get currentZoom => _currentZoom;
-//
-//  void setMapPosition(double lon, double lat, double zoom) {
-//    _centerLat = lat;
-//    _centerLon = lon;
-//    _currentZoom = zoom;
-//    notifyListeners();
-//  }
-//
-//  void setMapPositionNoEvent(double lon, double lat, double zoom) {
-//    _centerLat = lat;
-//    _centerLon = lon;
-//    _currentZoom = zoom;
-//  }
-//
-//  void reset() {
-//    _backgroundLayer = MAPSFORGE;
-//    notifyListeners();
-//  }
+  PolylineLayerOptions logs;
+  List<Marker> mapMarkers = [];
+  LatLngBounds dataBounds = LatLngBounds();
+
+  double screenHeight = 600;
+
+  MapController mapController; // initial value
+
+  void reloadMap() {
+    notifyListeners();
+  }
+
+  void fitbounds() {
+    if (mapController != null) {
+      mapController.fitBounds(dataBounds);
+    }
+  }
+
+  Future<void> getData(BuildContext context) async {
+    print("Data reload called");
+
+    var filterStateModel =
+        Provider.of<FilterStateModel>(context, listen: false);
+
+    var userPwd = SmashSession.getSessionUser();
+
+    var data = await ServerApi.getData(
+      userPwd[0],
+      userPwd[1],
+      surveyors: filterStateModel.surveyors,
+      projects: filterStateModel.projects,
+      matchString: filterStateModel.matchingText,
+      fromTo: filterStateModel.fromToTimestamp,
+    );
+    Map<String, dynamic> json = jsonDecode(data);
+
+    dataBounds = LatLngBounds();
+
+    // TODO find a fix for logs
+//   List<dynamic> logsList = json[LOGS];
+//   if (logsList != null) {
+//     List<Polyline> lines = [];
+//     for (int i = 0; i < logsList.length; i++) {
+//       dynamic logItem = logsList[i];
+// //        var id = logItem[ID];
+//       // var name = logItem[NAME];
+//       var colorHex = logItem[COLOR];
+//       var width = logItem[WIDTH];
+//       var coords = logItem[COORDS];
+
+//       List<LatLng> points = [];
+//       for (int j = 0; j < coords.length; j++) {
+//         var coord = coords[j];
+//         var latLng = LatLng(coord[Y], coord[X]);
+//         _dataBounds.extend(latLng);
+//         points.add(latLng);
+//       }
+
+//       lines.add(Polyline(
+//           points: points, strokeWidth: width, color: ColorExt(colorHex)));
+//     }
+//     _logs = PolylineLayerOptions(
+//       polylines: lines,
+//       polylineCulling: true,
+//     );
+//   }
+
+    List<Marker> markers = <Marker>[];
+
+    List<dynamic> imagesList = json[IMAGES];
+    for (int i = 0; i < imagesList.length; i++) {
+      dynamic imageItem = imagesList[i];
+      //      var id = imageItem[ID];
+      var dataId = imageItem[DATAID];
+      var data = imageItem[DATA];
+      var name = imageItem[NAME];
+      //      var ts = imageItem[TS];
+      var x = imageItem[X];
+      var y = imageItem[Y];
+      var latLng = LatLng(y, x);
+//      print("$latLng : $name");
+      dataBounds.extend(latLng);
+      var imgData = Base64Decoder().convert(data);
+      markers
+          .add(buildImage(context, screenHeight, x, y, name, dataId, imgData));
+    }
+
+    List<dynamic> simpleNotesList = json[NOTES];
+    for (int i = 0; i < simpleNotesList.length; i++) {
+      dynamic noteItem = simpleNotesList[i];
+//      print(noteItem);
+      //      var id = noteItem[ID];
+      var name = noteItem[NAME];
+      //      var ts = noteItem[TS];
+      var x = noteItem[X];
+      var y = noteItem[Y];
+      var latLng = LatLng(y, x);
+//      print("$latLng : $name");
+      dataBounds.extend(latLng);
+
+      var marker = noteItem[MARKER];
+      var size = noteItem[SIZE];
+      var color = noteItem[COLOR];
+      markers.add(buildSimpleNote(x, y, name, marker, size, color));
+    }
+
+    List<dynamic> formNotesList = json[FORMS];
+    for (int i = 0; i < formNotesList.length; i++) {
+      dynamic formItem = formNotesList[i];
+//      print(formItem);
+      var noteId = formItem[ID];
+      var name = formItem[NAME];
+      var form = formItem[FORM];
+      var userId = formItem[USER];
+      //      var ts = noteItem[TS];
+      var x = formItem[X];
+      var y = formItem[Y];
+      var latLng = LatLng(y, x);
+//      print("$latLng : $name");
+//      print(latLng);
+      dataBounds.extend(latLng);
+
+      var marker = formItem[MARKER];
+      var size = formItem[SIZE];
+      var color = formItem[COLOR];
+      markers.add(buildFormNote(
+          context, x, y, name, form, noteId, marker, size, color));
+    }
+
+    mapMarkers = markers;
+
+    var delta = 0.01;
+    dataBounds = LatLngBounds(
+        LatLng(dataBounds.south - delta, dataBounds.west - delta),
+        LatLng(dataBounds.north + delta, dataBounds.east + delta));
+  }
 }

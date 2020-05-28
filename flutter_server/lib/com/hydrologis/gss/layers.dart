@@ -3,12 +3,7 @@ import 'package:flutter_server/com/hydrologis/gss/network.dart';
 
 const MAPSFORGE = "Mapsforge";
 
-final AVAILABLE_LAYERS_MAP = {
-  '${MAPSFORGE}': TileLayerOptions(
-    tms: false,
-    urlTemplate: '$WEBAPP_URL/tiles/mapsforge/{z}/{x}/{y}',
-    tileProvider: NonCachingNetworkTileProvider(),
-  ),
+final AVAILABLE_ONLINE_MAPS = {
   'Openstreetmap': TileLayerOptions(
     tms: false,
     subdomains: const ['a', 'b', 'c'],
@@ -36,6 +31,13 @@ final AVAILABLE_LAYERS_MAP = {
     tileProvider: NonCachingNetworkTileProvider(),
   ),
 };
+final AVAILABLE_MAPS = {
+  '$MAPSFORGE': TileLayerOptions(
+    tms: false,
+    urlTemplate: '$WEBAPP_URL/tiles/mapsforge/{z}/{x}/{y}',
+    tileProvider: NonCachingNetworkTileProvider(),
+  ),
+}..addAll(AVAILABLE_ONLINE_MAPS);
 
 //TileSource.Open_Stree_Map_Cicle({
 //this.label: "Open Cicle Map",

@@ -50,5 +50,5 @@ final String TS = "ts";
 
 // API VARS END
 
-final DEFAULT_TILELAYER = AVAILABLE_LAYERS_MAP['Openstreetmap'];
+final DEFAULT_TILELAYER = AVAILABLE_MAPS['Openstreetmap'];
 

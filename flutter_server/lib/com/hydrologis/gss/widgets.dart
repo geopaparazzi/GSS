@@ -4,15 +4,15 @@ import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert' as JSON;
 
 import 'package:smashlibs/smashlibs.dart';
 
 class FilterSurveyor extends StatefulWidget {
   FilterStateModel _filterStateModel;
-  Function _reloadDataFunction;
 
-  FilterSurveyor(this._filterStateModel, this._reloadDataFunction);
+  FilterSurveyor(this._filterStateModel);
 
   @override
   _FilterSurveyorState createState() => _FilterSurveyorState();
@@ -115,8 +115,12 @@ class _FilterSurveyorState extends State<FilterSurveyor> {
             }
           });
           widget._filterStateModel.setSurveyors(filtered);
-          widget._reloadDataFunction(widget._filterStateModel);
           Navigator.pop(context);
+          var mapstateModel =
+              Provider.of<MapstateModel>(context, listen: false);
+          await mapstateModel.getData(context);
+          mapstateModel.fitbounds();
+          mapstateModel.reloadMap();
         },
         child: Icon(MdiIcons.contentSave),
       ),
@@ -126,9 +130,8 @@ class _FilterSurveyorState extends State<FilterSurveyor> {
 
 class FilterProject extends StatefulWidget {
   FilterStateModel _filterStateModel;
-  Function _reloadDataFunction;
 
-  FilterProject(this._filterStateModel, this._reloadDataFunction);
+  FilterProject(this._filterStateModel);
 
   @override
   _FilterProjectState createState() => _FilterProjectState();
@@ -233,8 +236,12 @@ class _FilterProjectState extends State<FilterProject> {
           });
           widget._filterStateModel.setProjects(filtered);
           print(widget._filterStateModel);
-          widget._reloadDataFunction(widget._filterStateModel);
           Navigator.pop(context);
+          var mapstateModel =
+              Provider.of<MapstateModel>(context, listen: false);
+          await mapstateModel.getData(context);
+          mapstateModel.fitbounds();
+          mapstateModel.reloadMap();
         },
         child: Icon(MdiIcons.contentSave),
       ),

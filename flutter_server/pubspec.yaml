@@ -27,6 +27,9 @@ dependencies:
   ############################
 
   # MIT
+  after_layout: ^1.0.7+2
+
+  # MIT
   material_design_icons_flutter: ^4.0.5245
 
   # Apache 2.0
