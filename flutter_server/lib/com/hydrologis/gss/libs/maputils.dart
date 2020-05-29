@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:flushbar/flushbar.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -222,10 +223,11 @@ class _BackgroundMapSelectionWidgetState
   int _index = 0;
   List<TileLayerOptions> _widgets = [];
   List<String> _names = [];
+  MapController _mapController = new MapController();
 
   @override
   void initState() {
-    AVAILABLE_ONLINE_MAPS.forEach((name, tilelayer) {
+    AVAILABLE_MAPS.forEach((name, tilelayer) {
       _names.add(name);
       _widgets.add(tilelayer);
     });
@@ -244,12 +246,23 @@ class _BackgroundMapSelectionWidgetState
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: FlutterMap(
-              options: new MapOptions(
-                center: new LatLng(46.47781, 11.33140),
-                zoom: 4.0,
+            child: Listener(
+              // listen to mouse scroll
+              onPointerSignal: (e) {
+                if (e is PointerScrollEvent) {
+                  var delta = e.scrollDelta.direction;
+                  _mapController.move(_mapController.center,
+                      _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
+                }
+              },
+              child: FlutterMap(
+                options: new MapOptions(
+                  center: new LatLng(46.47781, 11.33140),
+                  zoom: 8,
+                ),
+                layers: [_widgets[_index]],
+                mapController: _mapController,
               ),
-              layers: [_widgets[_index]],
             ),
           ),
         ),

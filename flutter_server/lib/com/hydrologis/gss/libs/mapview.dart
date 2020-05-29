@@ -30,7 +30,6 @@ class _MainMapViewState extends State<MainMapView>
   final maxZoom = 22.0;
   final minZoom = 1.0;
 
-  double _screenWidth;
   int _heroCount;
 
   static const _mapIconsPadding = 16.0;
@@ -64,7 +63,6 @@ class _MainMapViewState extends State<MainMapView>
 
     var size = MediaQuery.of(context).size;
     var screenHeight = size.height;
-    _screenWidth = size.width;
     mapstateModel.screenHeight = screenHeight;
 
     var layers = <LayerOptions>[];
@@ -100,46 +98,34 @@ class _MainMapViewState extends State<MainMapView>
       layers.add(markerCluster);
     }
 
-    var ringDiameter = _screenWidth * 0.4;
-    var ringWidth = ringDiameter / 3;
-
     var xyz = SmashSession.getMapcenter();
     var basemap = SmashSession.getBasemap();
-
-    FilterStateModel filterStateModel =
-        Provider.of<FilterStateModel>(context, listen: false);
 
     return Scaffold(
       key: _scaffoldKey,
       body: Stack(
         children: <Widget>[
-          Consumer<FilterStateModel>(
-            builder: (context, model, _) => Stack(
-              children: <Widget>[
-                Listener(
-                  // listen to mouse scroll
-                  onPointerSignal: (e) {
-                    if (e is PointerScrollEvent) {
-                      var delta = e.scrollDelta.direction;
-                      _mapController.move(_mapController.center,
-                          _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
-                    }
-                  },
-                  child: FlutterMap(
-                    options: new MapOptions(
-                      center: new LatLng(xyz[1], xyz[0]),
-                      zoom: xyz[2],
-                      minZoom: minZoom,
-                      maxZoom: maxZoom,
-                      plugins: [
-                        MarkerClusterPlugin(),
-                      ],
-                    ),
-                    layers: [AVAILABLE_MAPS[basemap]]..addAll(layers),
-                    mapController: _mapController,
-                  ),
-                ),
-              ],
+          Listener(
+            // listen to mouse scroll
+            onPointerSignal: (e) {
+              if (e is PointerScrollEvent) {
+                var delta = e.scrollDelta.direction;
+                _mapController.move(_mapController.center,
+                    _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
+              }
+            },
+            child: FlutterMap(
+              options: new MapOptions(
+                center: new LatLng(xyz[1], xyz[0]),
+                zoom: xyz[2],
+                minZoom: minZoom,
+                maxZoom: maxZoom,
+                plugins: [
+                  MarkerClusterPlugin(),
+                ],
+              ),
+              layers: [AVAILABLE_MAPS[basemap]]..addAll(layers),
+              mapController: _mapController,
             ),
           ),
           Align(
@@ -212,7 +198,7 @@ class _MainMapViewState extends State<MainMapView>
             // border: Border.all(color: SmashColors.mainDecorations, width: 5),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(_mapIconsPadding/2.0),
+            padding: const EdgeInsets.all(_mapIconsPadding / 2.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,

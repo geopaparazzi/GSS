@@ -89,6 +89,8 @@ class MapstateModel extends ChangeNotifier {
 
   double screenHeight = 600;
 
+  bool showAttributes = true;
+
   MapController mapController; // initial value
 
   void reloadMap() {
