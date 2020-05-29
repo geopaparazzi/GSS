@@ -369,8 +369,10 @@ public class GssServerApi implements Vars {
                 JSONObject root = new JSONObject();
 
                 Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+            
                 List<GpapUsers> users = null;
-                ;
+            
+            
                 if (surveyors != null) {
                     String[] surveyorsArray = surveyors.split(";");
                     users = userDao.queryBuilder().where().in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray))
@@ -389,18 +391,18 @@ public class GssServerApi implements Vars {
                 Long from = null;
                 Long to = null;
 
-                Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
-                GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
+                // Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+                // GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
 
                 Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
 
                 // simple notes
-                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, false);
+                GssDatabaseUtilities.getNotes(root, notesDao,projectDao, userDao, users, projectsList, null, null, false);
                 // form notes
-                GssDatabaseUtilities.getNotes(root, notesDao, users, projectsList, null, null, true);
+                GssDatabaseUtilities.getNotes(root, notesDao,projectDao, userDao, users, projectsList, null, null, true);
 
                 Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                GssDatabaseUtilities.getImages(root, imagesDao, users, projectsList, null, null);
+                GssDatabaseUtilities.getImages(root, imagesDao,projectDao, userDao, users, projectsList, null, null);
 
                 return root.toString();
             } else {

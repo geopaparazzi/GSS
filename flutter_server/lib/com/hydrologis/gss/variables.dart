@@ -7,15 +7,15 @@ const ABOUTPAGE_INDEX = 1000;
 
 const WEBAPP = 'http://localhost:8080';
 
-final String KEY_HASPERMISSION = "hasPermission";
-final String KEY_ISADMIN = "isAdmin";
-final String KEY_USER = "user";
-final String KEY_PWD = "pwd";
-final String KEY_BASEMAP = "basemap";
-final String KEY_MAPCENTER = "mapcenter_xyz";
+const KEY_HASPERMISSION = "hasPermission";
+const KEY_ISADMIN = "isAdmin";
+const KEY_USER = "user";
+const KEY_PWD = "pwd";
+const KEY_BASEMAP = "basemap";
+const KEY_MAPCENTER = "mapcenter_xyz";
 
-final String KEY_SURVEYORS = "surveyors";
-final String KEY_PROJECTS = "projects";
+const KEY_SURVEYORS = "surveyors";
+const KEY_PROJECTS = "projects";
 
 /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
 final DateFormat ISO8601_TS_FORMATTER = DateFormat("yyyy-MM-dd HH:mm:ss");
@@ -27,28 +27,29 @@ final DateFormat ISO8601_TS_TIME_FORMATTER = DateFormat("HH:mm:ss");
 final DateFormat ISO8601_TS_DAY_FORMATTER = DateFormat("yyyy-MM-dd");
 
 // API VARS START
-final String Y = "y";
-final String X = "x";
-final String COORDS = "coords";
-final String ENDTS = "endts";
-final String STARTTS = "startts";
-final String NAME = "name";
-final String WIDTH = "width";
-final String COLOR = "color";
-final String SIZE = "size";
-final String MARKER = "marker";
-final String ID = "id";
-final String DATAID = "dataid";
-final String DATA = "data";
-final String LOGS = "logs";
-final String NOTES = "notes";
-final String FORMS = "forms";
-final String FORM = "form";
-final String USER = "user";
-final String IMAGES = "images";
-final String TS = "ts";
+const Y = "y";
+const X = "x";
+const COORDS = "coords";
+const ENDTS = "endts";
+const STARTTS = "startts";
+const NAME = "name";
+const WIDTH = "width";
+const COLOR = "color";
+const SIZE = "size";
+const MARKER = "marker";
+const ID = "id";
+const DATAID = "dataid";
+const DATA = "data";
+const LOGS = "logs";
+const NOTES = "notes";
+const FORMS = "forms";
+const FORM = "form";
+const USER = "user";
+const IMAGES = "images";
+const TS = "ts";
+const SURVEYOR = "surveyor";
+const PROJECT = "project";
 
 // API VARS END
 
-final DEFAULT_TILELAYER = AVAILABLE_MAPS['Openstreetmap'];
-
+final DEFAULT_TILELAYER = AVAILABLE_MAPS[MAPSFORGE];

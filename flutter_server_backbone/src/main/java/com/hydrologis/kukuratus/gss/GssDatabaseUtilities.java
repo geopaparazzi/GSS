@@ -38,6 +38,8 @@ public class GssDatabaseUtilities {
     public static final String DATAID = "dataid";
     public static final String DATA = "data";
     public static final String LOGS = "logs";
+    public static final String SURVEYOR = "surveyor";
+    public static final String PROJECT = "project";
 
     // public static String formatDate( long dateLong ) {
     // return new
@@ -120,8 +122,9 @@ public class GssDatabaseUtilities {
         return root;
     }
 
-    public static JSONObject getNotes(JSONObject root, Dao<Notes, ?> notesDao, List<GpapUsers> users,
-            List<GpapProject> projects, long[] fromTo, String textMatching, boolean typeForm) throws SQLException {
+    public static JSONObject getNotes(JSONObject root, Dao<Notes, ?> notesDao, Dao<GpapProject, ?> projectDao,
+            Dao<GpapUsers, ?> userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo,
+            String textMatching, boolean typeForm) throws SQLException {
         if (root == null) {
             root = new JSONObject();
         }
@@ -176,7 +179,6 @@ public class GssDatabaseUtilities {
                 noteObject.put(ID, note.id);
                 noteObject.put(NAME, note.text);
                 noteObject.put(TS, note.timestamp);
-                noteObject.put(USER, note.gpapUser.id);
                 noteObject.put(MARKER, note.marker);
                 noteObject.put(SIZE, note.size);
                 noteObject.put(COLOR, note.color);
@@ -186,6 +188,10 @@ public class GssDatabaseUtilities {
                 Coordinate c = note.the_geom.getCoordinate();
                 noteObject.put(X, c.x);
                 noteObject.put(Y, c.y);
+                projectDao.refresh(note.gpapProject);
+                userDao.refresh(note.gpapUser);
+                noteObject.put(PROJECT, note.gpapProject.getName());
+                noteObject.put(SURVEYOR, note.gpapUser.getName());
 
                 // System.out.println((typeForm ? "form: " : "simple ") + c.x + "/" + c.y + ": "
                 // + note.text);
@@ -195,8 +201,9 @@ public class GssDatabaseUtilities {
         return root;
     }
 
-    public static JSONObject getImages(JSONObject root, Dao<Images, ?> imagesDao, List<GpapUsers> users,
-            List<GpapProject> projects, long[] fromTo, String textMatching) throws Exception {
+    public static JSONObject getImages(JSONObject root, Dao<Images, ?> imagesDao, Dao<GpapProject, ?> projectDao,
+            Dao<GpapUsers, ?> userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo,
+            String textMatching) throws Exception {
         if (root == null) {
             root = new JSONObject();
         }
@@ -247,6 +254,11 @@ public class GssDatabaseUtilities {
                 byte[] thumbBytes = image.thumbnail;
                 String encodedThumb = Base64.getEncoder().encodeToString(thumbBytes);
                 imageObject.put(DATA, encodedThumb);
+
+                projectDao.refresh(image.gpapProject);
+                userDao.refresh(image.gpapUser);
+                imageObject.put(PROJECT, image.gpapProject.getName());
+                imageObject.put(SURVEYOR, image.gpapUser.getName());
 
             }
         }

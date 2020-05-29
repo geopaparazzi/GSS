@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:after_layout/after_layout.dart';
+import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -18,12 +19,8 @@ import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 
 Marker buildSimpleNote(
-    var x, var y, String name, String marker, double size, String color) {
+    var x, var y, String name, Icon icon, double size, Color color) {
   List lengthHeight = guessTextDimensions(name, size);
-
-  var iconData = getSmashIcon(marker);
-  var colorExt = ColorExt(color);
-
   return Marker(
     width: lengthHeight[0],
     height: size + lengthHeight[1],
@@ -31,15 +28,11 @@ Marker buildSimpleNote(
     builder: (ctx) => new Container(
       child: Column(
         children: <Widget>[
-          Icon(
-            iconData,
-            size: size,
-            color: colorExt,
-          ),
+          icon,
           FittedBox(
             child: Container(
               decoration: new BoxDecoration(
-                  color: colorExt,
+                  color: color,
                   borderRadius:
                       new BorderRadius.all(const Radius.circular(5.0))),
               child: new Center(
@@ -89,12 +82,7 @@ List guessTextDimensions(String name, double size) {
 }
 
 Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
-    String name, var dataId, var data) {
-  var imageWidget = Image.memory(
-    data,
-    scale: 6.0,
-  );
-
+    String name, var dataId, var imageWidget) {
   return Marker(
     width: 180,
     height: 180,
@@ -126,13 +114,11 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
 }
 
 Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
-    String form, var noteId, String marker, double size, String color) {
+    String form, var noteId, Icon icon, double size, Color color) {
   LatLng p = LatLng(y, x);
 
   List lengthHeight = guessTextDimensions(name, size);
 
-  var iconData = getSmashIcon(marker);
-  var colorExt = ColorExt(color);
   return Marker(
     width: lengthHeight[0],
     height: size + lengthHeight[1],
@@ -141,14 +127,10 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
       child: GestureDetector(
         child: Column(
           children: <Widget>[
-            Icon(
-              iconData,
-              size: size,
-              color: colorExt,
-            ),
+            icon,
             Container(
               decoration: new BoxDecoration(
-                  color: colorExt,
+                  color: color,
                   borderRadius:
                       new BorderRadius.all(const Radius.circular(5.0))),
               child: new Center(
@@ -467,5 +449,85 @@ class _FilterWidgetState extends State<FilterWidget>
         ],
       );
     }
+  }
+}
+
+class Attributes {
+  Widget marker;
+  int id;
+  String text;
+  int timeStamp;
+  String user;
+  String project;
+  LatLng point;
+}
+
+class AttributesTableWidget extends StatefulWidget {
+  ValueNotifier<bool> refreshNotifier = ValueNotifier<bool>(true);
+  AttributesTableWidget({Key key}) : super(key: key);
+
+  @override
+  _AttributesTableWidgetState createState() => _AttributesTableWidgetState();
+
+  void refresh() {
+    refreshNotifier.value = !refreshNotifier.value;
+  }
+}
+
+class _AttributesTableWidgetState extends State<AttributesTableWidget> {
+  @override
+  void initState() {
+    widget.refreshNotifier.addListener(() {
+      setState(() {});
+    });
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
+    var dataRows = mapstateModel.attributes
+        .where((arrt) => mapstateModel.currentMapBounds.contains(arrt.point))
+        .map((attr) {
+      return DataRow(cells: [
+        DataCell(attr.marker),
+        DataCell(Text("${attr.id}")),
+        DataCell(Text(attr.text??"text")),
+        DataCell(Text(TimeUtilities.ISO8601_TS_FORMATTER
+            .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp)))),
+        DataCell(Text(attr.user??"user")),
+        DataCell(Text(attr.project??"project")),
+      ]);
+    }).toList();
+
+    return SingleChildScrollView(
+      child: Container(
+        width: double.infinity,
+        child: DataTable(
+          columns: [
+            DataColumn(
+              label: Text("Marker"),
+            ),
+            DataColumn(
+              label: Text("Id"),
+            ),
+            DataColumn(
+              label: Text("Text"),
+            ),
+            DataColumn(
+              label: Text("Timestamp"),
+            ),
+            DataColumn(
+              label: Text("User"),
+            ),
+            DataColumn(
+              label: Text("Project"),
+            ),
+          ],
+          rows: dataRows,
+        ),
+      ),
+    );
   }
 }

@@ -11,6 +11,7 @@ import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
+import 'package:flutter_server/main.dart';
 import 'package:latlong/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +28,7 @@ class _MainMapViewState extends State<MainMapView>
     with AfterLayoutMixin<MainMapView> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   MapController _mapController;
+  AttributesTableWidget attributesTableWidget;
   final maxZoom = 22.0;
   final minZoom = 1.0;
 
@@ -42,6 +44,10 @@ class _MainMapViewState extends State<MainMapView>
     mapstateModel.getData(context).then((value) {
       mapstateModel.reloadMap();
       mapstateModel.fitbounds();
+      
+      if (attributesTableWidget != null) {
+        attributesTableWidget.refresh();
+      }
     });
   }
 
@@ -91,7 +97,7 @@ class _MainMapViewState extends State<MainMapView>
             onPressed: null,
             backgroundColor: SmashColors.mainDecorationsDarker,
             foregroundColor: SmashColors.mainBackground,
-            heroTag: "${_heroCount++}",
+            heroTag: "Cluster_${_heroCount++}",
           );
         },
       );
@@ -100,33 +106,69 @@ class _MainMapViewState extends State<MainMapView>
 
     var xyz = SmashSession.getMapcenter();
     var basemap = SmashSession.getBasemap();
+    var mapPointers = 0;
 
+    attributesTableWidget =
+        mapstateModel.showAttributes ? AttributesTableWidget() : null;
     return Scaffold(
       key: _scaffoldKey,
       body: Stack(
         children: <Widget>[
-          Listener(
-            // listen to mouse scroll
-            onPointerSignal: (e) {
-              if (e is PointerScrollEvent) {
-                var delta = e.scrollDelta.direction;
-                _mapController.move(_mapController.center,
-                    _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
-              }
-            },
-            child: FlutterMap(
-              options: new MapOptions(
-                center: new LatLng(xyz[1], xyz[0]),
-                zoom: xyz[2],
-                minZoom: minZoom,
-                maxZoom: maxZoom,
-                plugins: [
-                  MarkerClusterPlugin(),
-                ],
+          Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Expanded(
+                flex: 2,
+                child: Listener(
+                  // listen to mouse scroll
+                  onPointerSignal: (e) {
+                    if (e is PointerScrollEvent) {
+                      var delta = e.scrollDelta.direction;
+                      _mapController.move(_mapController.center,
+                          _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
+                      var bounds = _mapController.bounds;
+                      mapstateModel.currentMapBounds = bounds;
+                      attributesTableWidget.refresh();
+                    }
+                  },
+                  onPointerDown: (details) {
+                    // if (mapPointers == 0) {
+                    //   print("onMoveStart");
+                    // }
+                    mapPointers++;
+                  },
+                  onPointerUp: (details) {
+                    mapPointers--;
+                    if (mapPointers == 0) {
+                      print("onMoveEnd");
+                      var bounds = _mapController.bounds;
+                      mapstateModel.currentMapBounds = bounds;
+                      attributesTableWidget.refresh();
+                    }
+                  },
+                  behavior: HitTestBehavior.deferToChild,
+                  child: FlutterMap(
+                    options: new MapOptions(
+                      center: new LatLng(xyz[1], xyz[0]),
+                      zoom: xyz[2],
+                      minZoom: minZoom,
+                      maxZoom: maxZoom,
+                      plugins: [
+                        MarkerClusterPlugin(),
+                      ],
+                    ),
+                    layers: [AVAILABLE_MAPS[basemap]]..addAll(layers),
+                    mapController: _mapController,
+                  ),
+                ),
               ),
-              layers: [AVAILABLE_MAPS[basemap]]..addAll(layers),
-              mapController: _mapController,
-            ),
+              mapstateModel.showAttributes
+                  ? Expanded(
+                      flex: 1,
+                      child: attributesTableWidget,
+                    )
+                  : Container()
+            ],
           ),
           Align(
             alignment: Alignment.topRight,
@@ -135,7 +177,8 @@ class _MainMapViewState extends State<MainMapView>
               child: Column(
                 children: [
                   FloatingActionButton(
-                      key: Key("map_dialog_button"),
+                      tooltip: "Open background map selector.",
+                      heroTag: "map_dialog_button",
                       child: Icon(
                         MdiIcons.map,
                       ),
@@ -146,13 +189,41 @@ class _MainMapViewState extends State<MainMapView>
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: FloatingActionButton(
-                        key: Key("filter_dialog_button"),
+                        tooltip: "Open data filter dialog.",
+                        heroTag: "filter_dialog_button",
                         child: Icon(
                           MdiIcons.filterMenuOutline,
                         ),
                         backgroundColor: SmashColors.mainDecorations,
                         onPressed: () {
                           openFilterDialog(context);
+                        }),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: FloatingActionButton(
+                        tooltip: mapstateModel.showAttributes
+                            ? "Close attributes table."
+                            : "Open attributes table.",
+                        heroTag: "view_attributes_button",
+                        child: Icon(
+                          mapstateModel.showAttributes
+                              ? MdiIcons.tableLargeRemove
+                              : MdiIcons.tableLarge,
+                        ),
+                        backgroundColor: SmashColors.mainDecorations,
+                        onPressed: () {
+                          setState(() {
+                            mapstateModel.showAttributes =
+                                !mapstateModel.showAttributes;
+                            int delta = -1;
+                            if (mapstateModel.showAttributes) {
+                              delta = 1;
+                            }
+                            _mapController.move(_mapController.center,
+                                _mapController.zoom + delta);
+                          });
+                          // mapstateModel.reloadMap();
                         }),
                   ),
                 ],
@@ -216,6 +287,9 @@ class _MainMapViewState extends State<MainMapView>
                         var zoom = _mapController.zoom - 1;
                         if (zoom < minZoom) zoom = minZoom;
                         _mapController.move(_mapController.center, zoom);
+                        var bounds = _mapController.bounds;
+                        mapstateModel.currentMapBounds = bounds;
+                        attributesTableWidget.refresh();
                       },
                       child: Icon(MdiIcons.magnifyMinus),
                     ),
@@ -234,6 +308,9 @@ class _MainMapViewState extends State<MainMapView>
                       onPressed: () {
                         if (mapstateModel.dataBounds.isValid) {
                           _mapController.fitBounds(mapstateModel.dataBounds);
+                          mapstateModel.currentMapBounds =
+                              mapstateModel.dataBounds;
+                          attributesTableWidget.refresh();
                         }
                       },
                       child: Icon(MdiIcons.layers),
@@ -253,6 +330,9 @@ class _MainMapViewState extends State<MainMapView>
                         var zoom = _mapController.zoom + 1;
                         if (zoom > maxZoom) zoom = maxZoom;
                         _mapController.move(_mapController.center, zoom);
+                        var bounds = _mapController.bounds;
+                        mapstateModel.currentMapBounds = bounds;
+                        attributesTableWidget.refresh();
                       },
                       child: Icon(MdiIcons.magnifyPlus),
                     ),
@@ -397,14 +477,13 @@ class _MainMapViewState extends State<MainMapView>
                 ),
                 title: Text("Logout"),
                 onTap: () {
-                  Navigator.of(context).pop();
-                  // MapstateModel model = Provider.of<MapstateModel>(context, listen: false);
-                  setState(() {
-                    SmashSession.logout(
-                      mapCenter:
-                          "${_mapController.center.longitude};${_mapController.center.latitude};${_mapController.zoom}",
-                    );
-                  });
+                  SmashSession.logout(
+                    mapCenter:
+                        "${_mapController.center.longitude};${_mapController.center.latitude};${_mapController.zoom}",
+                  );
+                  Navigator.pushReplacement(
+                      context, MaterialPageRoute(builder: (_) => MainPage()));
+                  // .then((_) => refresh());
                 },
               ),
             ),
