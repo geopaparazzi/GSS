@@ -15,6 +15,7 @@ import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:latlong/latlong.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 
@@ -479,38 +480,80 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
           .where((arrt) => mapstateModel.currentMapBounds.contains(arrt.point))
           .map((attr) {
         return DataRow(cells: [
-          DataCell(attr.marker),
-          DataCell(Text("${attr.id}")),
-          DataCell(Text(attr.text ?? "text")),
-          DataCell(Text(TimeUtilities.ISO8601_TS_FORMATTER
-              .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp)))),
-          DataCell(Text(attr.user ?? "user")),
-          DataCell(Text(attr.project ?? "project")),
+          DataCell(Center(child: attr.marker)),
+          DataCell(Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    MdiIcons.magnifyScan,
+                    color: SmashColors.mainDecorations,
+                  ),
+                  tooltip: "Zoom to note.",
+                  onPressed: () {
+                    if (mapstateModel.mapController != null) {
+                      var ll = LatLng(attr.point.latitude - NOTE_ZOOM_BUFFER,
+                          attr.point.longitude - NOTE_ZOOM_BUFFER);
+                      var ur = LatLng(attr.point.latitude + NOTE_ZOOM_BUFFER,
+                          attr.point.longitude + NOTE_ZOOM_BUFFER);
+
+                      mapstateModel.fitbounds(
+                          newBounds: LatLngBounds.fromPoints([ll, ur]));
+                      attrState.refresh();
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: Icon(
+                    MdiIcons.glasses,
+                    color: SmashColors.mainDecorations,
+                  ),
+                  tooltip: "View note.",
+                  onPressed: () {
+                    // TODO
+                  },
+                ),
+              ],
+            ),
+          )),
+          DataCell(Center(child: Text("${attr.id}"))),
+          DataCell(Center(child: Text(attr.text))),
+          DataCell(Center(
+            child: Text(TimeUtilities.ISO8601_TS_FORMATTER
+                .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp))),
+          )),
+          DataCell(Center(child: Text(attr.user ?? "- nv -"))),
+          DataCell(Center(child: Text(attr.project ?? "- nv -"))),
         ]);
       }).toList();
 
       return SingleChildScrollView(
+        scrollDirection: Axis.vertical,
         child: Container(
           width: double.infinity,
           child: DataTable(
             columns: [
               DataColumn(
-                label: Text("Marker"),
+                label: Center(child: Text("Marker")),
               ),
               DataColumn(
-                label: Text("Id"),
+                label: Center(child: Text("Actions")),
               ),
               DataColumn(
-                label: Text("Text"),
+                label: Center(child: Text("Id")),
               ),
               DataColumn(
-                label: Text("Timestamp"),
+                label: Center(child: Text("Text")),
               ),
               DataColumn(
-                label: Text("User"),
+                label: Center(child: Text("Timestamp")),
               ),
               DataColumn(
-                label: Text("Project"),
+                label: Center(child: Text("User")),
+              ),
+              DataColumn(
+                label: Center(child: Text("Project")),
               ),
             ],
             rows: dataRows,

@@ -109,10 +109,10 @@ class MapstateModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void fitbounds() {
+  void fitbounds({LatLngBounds newBounds}) {
     if (mapController != null) {
-      currentMapBounds = dataBounds;
-      mapController.fitBounds(dataBounds);
+      mapController.fitBounds(newBounds ?? dataBounds);
+      currentMapBounds = mapController.bounds;
     }
   }
 
@@ -186,7 +186,7 @@ class MapstateModel extends ChangeNotifier {
         imgData,
         scale: 6.0,
       );
-      markers.add(buildImage(this, screenHeight, x, y, name, dataId, imgData));
+      markers.add(buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
 
       var surveyor = imageItem[SURVEYOR];
       var project = imageItem[PROJECT];
