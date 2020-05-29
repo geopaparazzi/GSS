@@ -84,6 +84,12 @@ class FilterStateModel extends ChangeNotifier {
   }
 }
 
+class AttributesTableStateModel extends ChangeNotifier {
+  void refresh() {
+    notifyListeners();
+  }
+}
+
 class MapstateModel extends ChangeNotifier {
   PolylineLayerOptions logs;
   List<Marker> mapMarkers = [];

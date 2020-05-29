@@ -45,9 +45,7 @@ class _MainMapViewState extends State<MainMapView>
       mapstateModel.reloadMap();
       mapstateModel.fitbounds();
       
-      if (attributesTableWidget != null) {
-        attributesTableWidget.refresh();
-      }
+      Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
     });
   }
 
@@ -128,7 +126,7 @@ class _MainMapViewState extends State<MainMapView>
                           _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
                       var bounds = _mapController.bounds;
                       mapstateModel.currentMapBounds = bounds;
-                      attributesTableWidget.refresh();
+                      Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
                     }
                   },
                   onPointerDown: (details) {
@@ -143,7 +141,7 @@ class _MainMapViewState extends State<MainMapView>
                       print("onMoveEnd");
                       var bounds = _mapController.bounds;
                       mapstateModel.currentMapBounds = bounds;
-                      attributesTableWidget.refresh();
+                      Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
                     }
                   },
                   behavior: HitTestBehavior.deferToChild,
@@ -289,7 +287,7 @@ class _MainMapViewState extends State<MainMapView>
                         _mapController.move(_mapController.center, zoom);
                         var bounds = _mapController.bounds;
                         mapstateModel.currentMapBounds = bounds;
-                        attributesTableWidget.refresh();
+                        Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
                       },
                       child: Icon(MdiIcons.magnifyMinus),
                     ),
@@ -310,7 +308,7 @@ class _MainMapViewState extends State<MainMapView>
                           _mapController.fitBounds(mapstateModel.dataBounds);
                           mapstateModel.currentMapBounds =
                               mapstateModel.dataBounds;
-                          attributesTableWidget.refresh();
+                          Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
                         }
                       },
                       child: Icon(MdiIcons.layers),
@@ -332,7 +330,7 @@ class _MainMapViewState extends State<MainMapView>
                         _mapController.move(_mapController.center, zoom);
                         var bounds = _mapController.bounds;
                         mapstateModel.currentMapBounds = bounds;
-                        attributesTableWidget.refresh();
+                        Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
                       },
                       child: Icon(MdiIcons.magnifyPlus),
                     ),

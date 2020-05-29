@@ -463,71 +463,60 @@ class Attributes {
 }
 
 class AttributesTableWidget extends StatefulWidget {
-  ValueNotifier<bool> refreshNotifier = ValueNotifier<bool>(true);
   AttributesTableWidget({Key key}) : super(key: key);
 
   @override
   _AttributesTableWidgetState createState() => _AttributesTableWidgetState();
-
-  void refresh() {
-    refreshNotifier.value = !refreshNotifier.value;
-  }
 }
 
 class _AttributesTableWidgetState extends State<AttributesTableWidget> {
   @override
-  void initState() {
-    widget.refreshNotifier.addListener(() {
-      setState(() {});
-    });
-
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
-    var dataRows = mapstateModel.attributes
-        .where((arrt) => mapstateModel.currentMapBounds.contains(arrt.point))
-        .map((attr) {
-      return DataRow(cells: [
-        DataCell(attr.marker),
-        DataCell(Text("${attr.id}")),
-        DataCell(Text(attr.text??"text")),
-        DataCell(Text(TimeUtilities.ISO8601_TS_FORMATTER
-            .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp)))),
-        DataCell(Text(attr.user??"user")),
-        DataCell(Text(attr.project??"project")),
-      ]);
-    }).toList();
+    return Consumer<AttributesTableStateModel>(
+        builder: (context, attrState, child) {
+      var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
+      var dataRows = mapstateModel.attributes
+          .where((arrt) => mapstateModel.currentMapBounds.contains(arrt.point))
+          .map((attr) {
+        return DataRow(cells: [
+          DataCell(attr.marker),
+          DataCell(Text("${attr.id}")),
+          DataCell(Text(attr.text ?? "text")),
+          DataCell(Text(TimeUtilities.ISO8601_TS_FORMATTER
+              .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp)))),
+          DataCell(Text(attr.user ?? "user")),
+          DataCell(Text(attr.project ?? "project")),
+        ]);
+      }).toList();
 
-    return SingleChildScrollView(
-      child: Container(
-        width: double.infinity,
-        child: DataTable(
-          columns: [
-            DataColumn(
-              label: Text("Marker"),
-            ),
-            DataColumn(
-              label: Text("Id"),
-            ),
-            DataColumn(
-              label: Text("Text"),
-            ),
-            DataColumn(
-              label: Text("Timestamp"),
-            ),
-            DataColumn(
-              label: Text("User"),
-            ),
-            DataColumn(
-              label: Text("Project"),
-            ),
-          ],
-          rows: dataRows,
+      return SingleChildScrollView(
+        child: Container(
+          width: double.infinity,
+          child: DataTable(
+            columns: [
+              DataColumn(
+                label: Text("Marker"),
+              ),
+              DataColumn(
+                label: Text("Id"),
+              ),
+              DataColumn(
+                label: Text("Text"),
+              ),
+              DataColumn(
+                label: Text("Timestamp"),
+              ),
+              DataColumn(
+                label: Text("User"),
+              ),
+              DataColumn(
+                label: Text("Project"),
+              ),
+            ],
+            rows: dataRows,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
