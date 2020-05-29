@@ -181,6 +181,35 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
   );
 }
 
+openImageDialog(BuildContext context, String name, int imageId) {
+  var h = MediaQuery.of(context).size.height;
+  var size = 600.0;
+  Dialog mapSelectionDialog = Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+    child: Container(
+      height: size,
+      width: size,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SmashUI.titleText(
+                name,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            NetworkImageWidget("$API_IMAGE/$imageId", h * 0.6),
+          ],
+        ),
+      ),
+    ),
+  );
+  showDialog(
+      context: context, builder: (BuildContext context) => mapSelectionDialog);
+}
+
 openMapSelectionDialog(BuildContext context) {
   var size = 400.0;
   Dialog mapSelectionDialog = Dialog(
@@ -511,6 +540,9 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
                   ),
                   tooltip: "View note.",
                   onPressed: () {
+                    if (attr.marker is Image) {
+                      openImageDialog(context, attr.text, attr.id);
+                    }
                     // TODO
                   },
                 ),

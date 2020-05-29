@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 import 'package:transparent_image/transparent_image.dart';
 
-
 class NetworkImageWidget extends StatelessWidget {
   double _height;
   String _imageUrl;
@@ -23,14 +22,14 @@ class NetworkImageWidget extends StatelessWidget {
         child: Stack(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Center(child: CircularProgressIndicator()),
+              padding: EdgeInsets.only(top: _height / 2),
+              child: Center(child: SmashCircularProgress()),
             ),
             Center(
               child: Container(
                 height: _height,
-                decoration: BoxDecoration(
-                    border: Border.all(color: SmashColors.mainDecorations)),
+                // decoration: BoxDecoration(
+                //     border: Border.all(color: SmashColors.mainDecorations)),
                 padding: EdgeInsets.all(5),
                 child: FadeInImage.memoryNetwork(
                     placeholder: kTransparentImage,
@@ -89,7 +88,8 @@ class _OnlineSourceCardState extends State<OnlineSourceCard> {
                   onPressed: () {
                     SmashSession.setBasemap(widget.name);
                     Navigator.pop(context);
-                    var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
+                    var mapstateModel =
+                        Provider.of<MapstateModel>(context, listen: false);
                     mapstateModel.reloadMap();
                   },
                 ),
