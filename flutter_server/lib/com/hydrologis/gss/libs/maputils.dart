@@ -5,6 +5,7 @@ import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/network.dart';
@@ -86,7 +87,7 @@ List guessTextDimensions(String name, double size) {
   return lengthHeight;
 }
 
-Marker buildImage(BuildContext context, double screenHeight, var x, var y,
+Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
     String name, var dataId, var data) {
   var imageWidget = Image.memory(
     data,
@@ -107,7 +108,7 @@ Marker buildImage(BuildContext context, double screenHeight, var x, var y,
 //              isDismissible: true,
 //              dismissDirection: FlushbarDismissDirection.HORIZONTAL,
             onTap: (e) {
-              Navigator.of(context).pop();
+              Navigator.of(mapState.currentMapContext).pop();
             },
             titleText: SmashUI.titleText(
               name,
@@ -115,7 +116,7 @@ Marker buildImage(BuildContext context, double screenHeight, var x, var y,
             ),
             messageText:
                 NetworkImageWidget("$API_IMAGE/$dataId", screenHeight / 2.0),
-          )..show(context);
+          )..show(mapState.currentMapContext);
         },
         child: imageWidget,
       ),
@@ -123,7 +124,7 @@ Marker buildImage(BuildContext context, double screenHeight, var x, var y,
   );
 }
 
-Marker buildFormNote(BuildContext context, var x, var y, String name,
+Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
     String form, var noteId, String marker, double size, String color) {
   LatLng p = LatLng(y, x);
 
@@ -171,7 +172,7 @@ Marker buildFormNote(BuildContext context, var x, var y, String name,
             flushbarStyle: FlushbarStyle.GROUNDED,
             backgroundColor: Colors.white.withAlpha(128),
             onTap: (e) {
-              Navigator.of(context).pop();
+              Navigator.of(mapState.currentMapContext).pop();
             },
             messageText: Container(
               height: 600,
@@ -189,7 +190,7 @@ Marker buildFormNote(BuildContext context, var x, var y, String name,
                 ),
               ),
             ),
-          )..show(context);
+          )..show(mapState.currentMapContext);
         },
       ),
     ),

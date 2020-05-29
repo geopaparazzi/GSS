@@ -49,6 +49,7 @@ class _MainMapViewState extends State<MainMapView>
   @override
   Widget build(BuildContext context) {
     return Consumer<MapstateModel>(builder: (context, mapState, child) {
+      mapState.currentMapContext = context;
       return consume(context, mapState);
     });
   }
@@ -203,67 +204,77 @@ class _MainMapViewState extends State<MainMapView>
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: const EdgeInsets.all(_mapIconsPadding),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: _mapIconsSizeMini,
-                height: _mapIconsSizeMini,
-                child: FloatingActionButton(
-                  heroTag: "zoomin",
-                  backgroundColor: SmashColors.mainDecorations,
-                  mini: true,
-                  onPressed: () {
-                    var zoom = _mapController.zoom - 1;
-                    if (zoom < minZoom) zoom = minZoom;
-                    _mapController.move(_mapController.center, zoom);
-                  },
-                  child: Icon(MdiIcons.magnifyMinus),
+        padding: const EdgeInsets.all(_mapIconsPadding / 2.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: SmashColors.mainBackground.withAlpha(128),
+            borderRadius: BorderRadius.all(Radius.circular(40)),
+            // border: Border.all(color: SmashColors.mainDecorations, width: 5),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(_mapIconsPadding/2.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    width: _mapIconsSizeMini,
+                    height: _mapIconsSizeMini,
+                    child: FloatingActionButton(
+                      heroTag: "zoomin",
+                      backgroundColor: SmashColors.mainDecorations,
+                      mini: true,
+                      onPressed: () {
+                        var zoom = _mapController.zoom - 1;
+                        if (zoom < minZoom) zoom = minZoom;
+                        _mapController.move(_mapController.center, zoom);
+                      },
+                      child: Icon(MdiIcons.magnifyMinus),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: _mapIconsSizeMini,
-                height: _mapIconsSizeMini,
-                child: FloatingActionButton(
-                  backgroundColor: SmashColors.mainDecorations,
-                  heroTag: "zoomdata",
-                  mini: true,
-                  tooltip: "Zoom to data",
-                  onPressed: () {
-                    if (mapstateModel.dataBounds.isValid) {
-                      _mapController.fitBounds(mapstateModel.dataBounds);
-                    }
-                  },
-                  child: Icon(MdiIcons.layers),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    width: _mapIconsSizeMini,
+                    height: _mapIconsSizeMini,
+                    child: FloatingActionButton(
+                      backgroundColor: SmashColors.mainDecorations,
+                      heroTag: "zoomdata",
+                      mini: true,
+                      tooltip: "Zoom to data",
+                      onPressed: () {
+                        if (mapstateModel.dataBounds.isValid) {
+                          _mapController.fitBounds(mapstateModel.dataBounds);
+                        }
+                      },
+                      child: Icon(MdiIcons.layers),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: _mapIconsSizeMini,
-                height: _mapIconsSizeMini,
-                child: FloatingActionButton(
-                  backgroundColor: SmashColors.mainDecorations,
-                  heroTag: "zoomout",
-                  mini: true,
-                  onPressed: () {
-                    var zoom = _mapController.zoom + 1;
-                    if (zoom > maxZoom) zoom = maxZoom;
-                    _mapController.move(_mapController.center, zoom);
-                  },
-                  child: Icon(MdiIcons.magnifyPlus),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    width: _mapIconsSizeMini,
+                    height: _mapIconsSizeMini,
+                    child: FloatingActionButton(
+                      backgroundColor: SmashColors.mainDecorations,
+                      heroTag: "zoomout",
+                      mini: true,
+                      onPressed: () {
+                        var zoom = _mapController.zoom + 1;
+                        if (zoom > maxZoom) zoom = maxZoom;
+                        _mapController.move(_mapController.center, zoom);
+                      },
+                      child: Icon(MdiIcons.magnifyPlus),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

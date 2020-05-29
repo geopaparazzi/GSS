@@ -85,6 +85,7 @@ class MapstateModel extends ChangeNotifier {
   PolylineLayerOptions logs;
   List<Marker> mapMarkers = [];
   LatLngBounds dataBounds = LatLngBounds();
+  BuildContext currentMapContext;
 
   double screenHeight = 600;
 
@@ -166,7 +167,7 @@ class MapstateModel extends ChangeNotifier {
       dataBounds.extend(latLng);
       var imgData = Base64Decoder().convert(data);
       markers
-          .add(buildImage(context, screenHeight, x, y, name, dataId, imgData));
+          .add(buildImage(this, screenHeight, x, y, name, dataId, imgData));
     }
 
     List<dynamic> simpleNotesList = json[NOTES];
@@ -208,7 +209,7 @@ class MapstateModel extends ChangeNotifier {
       var size = formItem[SIZE];
       var color = formItem[COLOR];
       markers.add(buildFormNote(
-          context, x, y, name, form, noteId, marker, size, color));
+          this, x, y, name, form, noteId, marker, size, color));
     }
 
     mapMarkers = markers;

@@ -549,20 +549,20 @@ public class GssServerApi implements Vars {
                     Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
                     List<GpapUsers> users = userDao.queryForAll();
                     JSONObject root = new JSONObject();
-                    JSONArray usersArray = new JSONArray();
-                    root.put(SURVEYORS, usersArray);
+                    JSONArray surveyorsArray = new JSONArray();
+                    root.put(SURVEYORS, surveyorsArray);
                     for (GpapUsers gpapUsers : users) {
-                        usersArray.put(gpapUsers.name);
+                        surveyorsArray.put(gpapUsers.name);
                     }
                     return root.toString();
                 } else if (type.equals(PROJECTS)) {
                     Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
-                    List<GpapProject> users = projectDao.queryForAll();
+                    List<GpapProject> projects = projectDao.queryForAll();
                     JSONObject root = new JSONObject();
-                    JSONArray usersArray = new JSONArray();
-                    root.put(PROJECTS, usersArray);
-                    for (GpapProject gpapProject : users) {
-                        usersArray.put(gpapProject.name);
+                    JSONArray projectsArray = new JSONArray();
+                    root.put(PROJECTS, projectsArray);
+                    for (GpapProject gpapProject : projects) {
+                        projectsArray.put(gpapProject.name);
                     }
                     return root.toString();
                 }

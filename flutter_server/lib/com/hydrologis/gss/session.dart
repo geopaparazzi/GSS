@@ -34,7 +34,7 @@ class SmashSession {
     return html.window.sessionStorage[KEY_USER] != null;
   }
 
-  static bool isAdmini() {
+  static bool isAdmin() {
     String isAdminStr = html.window.sessionStorage[KEY_ISADMIN];
     return isAdminStr != null && isAdminStr.toLowerCase() == 'true';
   }
