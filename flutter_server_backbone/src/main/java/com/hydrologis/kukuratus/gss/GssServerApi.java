@@ -369,10 +369,9 @@ public class GssServerApi implements Vars {
                 JSONObject root = new JSONObject();
 
                 Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
-            
+
                 List<GpapUsers> users = null;
-            
-            
+
                 if (surveyors != null) {
                     String[] surveyorsArray = surveyors.split(";");
                     users = userDao.queryBuilder().where().in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray))
@@ -397,12 +396,14 @@ public class GssServerApi implements Vars {
                 Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
 
                 // simple notes
-                GssDatabaseUtilities.getNotes(root, notesDao,projectDao, userDao, users, projectsList, null, null, false);
+                GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
+                        false);
                 // form notes
-                GssDatabaseUtilities.getNotes(root, notesDao,projectDao, userDao, users, projectsList, null, null, true);
+                GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
+                        true);
 
                 Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                GssDatabaseUtilities.getImages(root, imagesDao,projectDao, userDao, users, projectsList, null, null);
+                GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null, null);
 
                 return root.toString();
             } else {
@@ -433,6 +434,15 @@ public class GssServerApi implements Vars {
                         Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
                         ImageData result = dao.queryForSameId(idObj);
                         return result.data;
+                    }
+                } else if (type.equals(GssDatabaseUtilities.NOTES)) {
+                    if (id != null) {
+                        Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
+                        Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                        Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                        long idLong = Long.parseLong(id);
+                        JSONObject noteObj = GssDatabaseUtilities.getNoteById(notesDao, projectDao, userDao, idLong);
+                        return noteObj.toString();
                     }
                 }
                 return "";

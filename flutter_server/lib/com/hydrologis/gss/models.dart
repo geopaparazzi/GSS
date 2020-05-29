@@ -85,6 +85,8 @@ class FilterStateModel extends ChangeNotifier {
 }
 
 class AttributesTableStateModel extends ChangeNotifier {
+  int selectedNoteId;
+
   void refresh() {
     notifyListeners();
   }
@@ -186,7 +188,8 @@ class MapstateModel extends ChangeNotifier {
         imgData,
         scale: 6.0,
       );
-      markers.add(buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
+      markers
+          .add(buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
 
       var surveyor = imageItem[SURVEYOR];
       var project = imageItem[PROJECT];
@@ -223,7 +226,7 @@ class MapstateModel extends ChangeNotifier {
         size: size,
         color: colorExt,
       );
-      markers.add(buildSimpleNote(x, y, name, icon, size, colorExt));
+      markers.add(buildSimpleNote(this, x, y, name, id, icon, size, colorExt));
 
       var surveyor = noteItem[SURVEYOR];
       var project = noteItem[PROJECT];

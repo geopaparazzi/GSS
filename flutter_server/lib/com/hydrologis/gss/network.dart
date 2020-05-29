@@ -17,6 +17,7 @@ const API_LOGIN = "$WEBAPP_URL/login";
 const API_USERSETTINGS = "$WEBAPP_URL/usersettings";
 const API_IMAGE = "$API_DATA/images";
 const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
+const API_NOTE = "$API_DATA/notes";
 
 //const SERVER_IP = "172.26.181.138"; // office hydrologis
 
@@ -46,6 +47,21 @@ class ServerApi {
     HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
         requestHeaders: requestHeaders);
     if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
+  }
+  
+  static Future<String> getNoteById(String user, String pwd,
+      int id) async {
+    String apiCall = "$API_NOTE/$id";
+
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      print(request.response.runtimeType);
       return request.response;
     } else {
       return null;

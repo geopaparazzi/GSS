@@ -28,8 +28,6 @@ class NetworkImageWidget extends StatelessWidget {
             Center(
               child: Container(
                 height: _height,
-                // decoration: BoxDecoration(
-                //     border: Border.all(color: SmashColors.mainDecorations)),
                 padding: EdgeInsets.all(5),
                 child: FadeInImage.memoryNetwork(
                     placeholder: kTransparentImage,

@@ -201,6 +201,33 @@ public class GssDatabaseUtilities {
         return root;
     }
 
+    public static JSONObject getNoteById(Dao<Notes, ?> notesDao, Dao<GpapProject, ?> projectDao,
+            Dao<GpapUsers, ?> userDao, long id) throws SQLException {
+        QueryBuilder<Notes, ?> qb = notesDao.queryBuilder();
+        Notes note = qb.where().eq(Notes.ID_FIELD_NAME, id).queryForFirst();
+        JSONObject noteObject = new JSONObject();
+        if (note != null) {
+            noteObject.put(ID, note.id);
+            noteObject.put(NAME, note.text);
+            noteObject.put(TS, note.timestamp);
+            noteObject.put(MARKER, note.marker);
+            noteObject.put(SIZE, note.size);
+            noteObject.put(COLOR, note.color);
+            if (note.form != null && note.form.length() > 0) {
+                noteObject.put(FORM, note.form);
+            }
+            Coordinate c = note.the_geom.getCoordinate();
+            noteObject.put(X, c.x);
+            noteObject.put(Y, c.y);
+            projectDao.refresh(note.gpapProject);
+            userDao.refresh(note.gpapUser);
+            noteObject.put(PROJECT, note.gpapProject.getName());
+            noteObject.put(SURVEYOR, note.gpapUser.getName());
+
+        }
+        return noteObject;
+    }
+
     public static JSONObject getImages(JSONObject root, Dao<Images, ?> imagesDao, Dao<GpapProject, ?> projectDao,
             Dao<GpapUsers, ?> userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo,
             String textMatching) throws Exception {
