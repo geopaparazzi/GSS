@@ -207,6 +207,7 @@ openNoteDialog(BuildContext context, int noteId) async {
             null, // TODO add here save function if editing is supported on web
             null, // TODO add get thumbnails function
             null, // no taking pictures permitted on web
+            doScaffold: false,
           ),
         ),
       ],
@@ -573,85 +574,89 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
         if (id != null && id == attr.id) {
           selected = true;
         }
-        return DataRow(selected: selected, cells: [
-          DataCell(Center(child: attr.marker)),
-          DataCell(Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    MdiIcons.magnifyScan,
-                    color: SmashColors.mainDecorations,
-                  ),
-                  tooltip: "Zoom to note.",
-                  onPressed: () {
-                    if (mapstateModel.mapController != null) {
-                      var ll = LatLng(attr.point.latitude - NOTE_ZOOM_BUFFER,
-                          attr.point.longitude - NOTE_ZOOM_BUFFER);
-                      var ur = LatLng(attr.point.latitude + NOTE_ZOOM_BUFFER,
-                          attr.point.longitude + NOTE_ZOOM_BUFFER);
 
-                      mapstateModel.fitbounds(
-                          newBounds: LatLngBounds.fromPoints([ll, ur]));
-                      attrState.refresh();
-                    }
-                  },
+        var textFun = (String str) {
+          return SmashUI.normalText(str);
+        };
+        return DataRow(selected: selected, cells: [
+          DataCell(attr.marker),
+          DataCell(Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(
+                  MdiIcons.magnifyScan,
+                  color: SmashColors.mainDecorations,
                 ),
-                IconButton(
-                  icon: Icon(
-                    MdiIcons.glasses,
-                    color: SmashColors.mainDecorations,
-                  ),
-                  tooltip: "View note.",
-                  onPressed: () {
-                    if (attr.marker is Image) {
-                      openImageDialog(context, attr.text, attr.id);
-                    } else {
-                      openNoteDialog(context, attr.id);
-                    }
-                  },
+                tooltip: "Zoom to note.",
+                onPressed: () {
+                  if (mapstateModel.mapController != null) {
+                    var ll = LatLng(attr.point.latitude - NOTE_ZOOM_BUFFER,
+                        attr.point.longitude - NOTE_ZOOM_BUFFER);
+                    var ur = LatLng(attr.point.latitude + NOTE_ZOOM_BUFFER,
+                        attr.point.longitude + NOTE_ZOOM_BUFFER);
+
+                    mapstateModel.fitbounds(
+                        newBounds: LatLngBounds.fromPoints([ll, ur]));
+                    attrState.refresh();
+                  }
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  MdiIcons.glasses,
+                  color: SmashColors.mainDecorations,
                 ),
-              ],
-            ),
+                tooltip: "View note.",
+                onPressed: () {
+                  if (attr.marker is Image) {
+                    openImageDialog(context, attr.text, attr.id);
+                  } else {
+                    openNoteDialog(context, attr.id);
+                  }
+                },
+              ),
+            ],
           )),
-          DataCell(Center(child: Text("${attr.id}"))),
-          DataCell(Center(child: Text(attr.text))),
-          DataCell(Center(
-            child: Text(TimeUtilities.ISO8601_TS_FORMATTER
-                .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp))),
-          )),
-          DataCell(Center(child: Text(attr.user ?? "- nv -"))),
-          DataCell(Center(child: Text(attr.project ?? "- nv -"))),
+          DataCell(textFun("${attr.id}")),
+          DataCell(textFun(attr.text)),
+          DataCell(textFun(TimeUtilities.ISO8601_TS_FORMATTER
+              .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp)))),
+          DataCell(textFun(attr.user ?? "- nv -")),
+          DataCell(textFun(attr.project ?? "- nv -")),
         ]);
       }).toList();
 
+      var textFun = (String str) {
+        return SmashUI.normalText(str, bold: true);
+      };
       return SingleChildScrollView(
         scrollDirection: Axis.vertical,
-        child: Container(
-          width: double.infinity,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
           child: DataTable(
             columns: [
               DataColumn(
-                label: Center(child: Text("Marker")),
+                label: textFun("Marker"),
               ),
               DataColumn(
-                label: Center(child: Text("Actions")),
+                label: textFun("Actions"),
               ),
               DataColumn(
-                label: Center(child: Text("Id")),
+                label: textFun("Id"),
               ),
               DataColumn(
-                label: Center(child: Text("Text")),
+                label: textFun("Text"),
               ),
               DataColumn(
-                label: Center(child: Text("Timestamp")),
+                label: textFun("Timestamp"),
               ),
               DataColumn(
-                label: Center(child: Text("User")),
+                label: textFun("User"),
               ),
               DataColumn(
-                label: Center(child: Text("Project")),
+                label: textFun("Project"),
               ),
             ],
             rows: dataRows,

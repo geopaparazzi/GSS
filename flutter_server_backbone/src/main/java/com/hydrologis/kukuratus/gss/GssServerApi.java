@@ -362,53 +362,62 @@ public class GssServerApi implements Vars {
 
         post("/data", (req, res) -> {
             KukuratusLogger.logDebug("GssServer#post(/data", "Received request from " + req.raw().getRemoteAddr());
-            if (hasPermission(req)) {
-                String surveyors = req.queryParams(SURVEYORS);
-                String projects = req.queryParams(PROJECTS);
+            try {
 
-                JSONObject root = new JSONObject();
+                if (hasPermission(req)) {
+                    String surveyors = req.queryParams(SURVEYORS);
+                    String projects = req.queryParams(PROJECTS);
 
-                Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                    JSONObject root = new JSONObject();
 
-                List<GpapUsers> users = null;
+                    Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
 
-                if (surveyors != null) {
-                    String[] surveyorsArray = surveyors.split(";");
-                    users = userDao.queryBuilder().where().in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray))
-                            .query();
+                    List<GpapUsers> users = null;
+
+                    if (surveyors != null) {
+                        String[] surveyorsArray = surveyors.split(";");
+                        users = userDao.queryBuilder().where()
+                                .in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray)).query();
+                    }
+
+                    Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                    List<GpapProject> projectsList = null;
+                    if (projects != null) {
+                        String[] projectsArray = projects.split(";");
+                        projectsList = projectDao.queryBuilder().where()
+                                .in(GpapProject.NAME_FIELD_NAME, Arrays.asList(projectsArray)).query();
+                    }
+
+                    // TODO parameterize users, from and to
+                    Long from = null;
+                    Long to = null;
+
+                    // Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+                    // GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
+
+                    Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
+
+                    // simple notes
+                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
+                            false);
+                    // form notes
+                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
+                            true);
+
+                    Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
+                    GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null,
+                            null);
+
+                    return root.toString();
+                } else {
+                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                            "No permission for request.");
+                    res.status(ks.getCode());
+                    return ks.toJson();
                 }
-
-                Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
-                List<GpapProject> projectsList = null;
-                if (projects != null) {
-                    String[] projectsArray = projects.split(";");
-                    projectsList = projectDao.queryBuilder().where()
-                            .in(GpapProject.NAME_FIELD_NAME, Arrays.asList(projectsArray)).query();
-                }
-
-                // TODO parameterize users, from and to
-                Long from = null;
-                Long to = null;
-
-                // Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
-                // GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
-
-                Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
-
-                // simple notes
-                GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
-                        false);
-                // form notes
-                GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
-                        true);
-
-                Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null, null);
-
-                return root.toString();
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
-                        "No permission for request.");
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#post(/data", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
                 res.status(ks.getCode());
                 return ks.toJson();
             }
@@ -447,7 +456,7 @@ public class GssServerApi implements Vars {
                 }
                 return "";
             } catch (Exception e) {
-                KukuratusLogger.logError("GssServer#get(/data/:type/:id", e);
+                KukuratusLogger.logError("GssServer#get(/data/" + type + "/" + id, e);
                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
                 res.status(ks.getCode());
                 return ks.toJson();
@@ -479,7 +488,7 @@ public class GssServerApi implements Vars {
                         .eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
                 return imageData.data;
             } catch (Exception e) {
-                KukuratusLogger.logError("GssServer#get(/imagedata/:userid/:originalid", e);
+                KukuratusLogger.logError("GssServer#get(/imagedata/" + userId + "/" + imageDataId, e);
                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
                 res.status(ks.getCode());
                 return ks.toJson();
@@ -496,55 +505,70 @@ public class GssServerApi implements Vars {
     public static void addLoginRoute() {
 
         get("/login", (req, res) -> {
-            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
-            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
-            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
-            if (user != null) {
-                KukuratusLogger.logDebug("GssServer#post(/login for " + user.getUniqueName(),
-                        "Received request from " + req.raw().getRemoteAddr());
-                boolean admin = RegistryHandler.INSTANCE.isAdmin(user);
-                JSONObject response = new JSONObject();
-                response.put(KEY_HASPERMISSION, true);
-                response.put(KEY_ISADMIN, admin);
+            try {
+                String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
+                String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
+                User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
+                if (user != null) {
+                    KukuratusLogger.logDebug("GssServer#post(/login for " + user.getUniqueName(),
+                            "Received request from " + req.raw().getRemoteAddr());
+                    boolean admin = RegistryHandler.INSTANCE.isAdmin(user);
+                    JSONObject response = new JSONObject();
+                    response.put(KEY_HASPERMISSION, true);
+                    response.put(KEY_ISADMIN, admin);
 
-                // also get last used map background and map position
-                String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge",
-                        user.getUniqueName());
-                response.put(KEY_BASEMAP, baseMap);
-                String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6", user.getUniqueName());
-                response.put(KEY_MAPCENTER, xyz);
-                res.status(KukuratusStatus.CODE_200_OK);
+                    // also get last used map background and map position
+                    String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge",
+                            user.getUniqueName());
+                    response.put(KEY_BASEMAP, baseMap);
+                    String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6",
+                            user.getUniqueName());
+                    response.put(KEY_MAPCENTER, xyz);
+                    res.status(KukuratusStatus.CODE_200_OK);
+                    return response.toString();
+                }
+                JSONObject response = new JSONObject();
+                response.put(KEY_HASPERMISSION, false);
                 return response.toString();
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/login", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
+                res.status(ks.getCode());
+                return ks.toJson();
             }
-            JSONObject response = new JSONObject();
-            response.put(KEY_HASPERMISSION, false);
-            return response.toString();
         });
     }
 
     public static void addUserSettingsRoute() {
 
         post("/usersettings", (req, res) -> {
-            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
-            String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
-            User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
-            if (user != null) {
-                KukuratusLogger.logDebug("GssServer#post(/usersettings for " + user.getUniqueName(),
-                        "Received request from " + req.raw().getRemoteAddr());
-                String baseMap = req.queryParams(KEY_BASEMAP);
-                if (baseMap != null) {
-                    Settings s = new Settings(KEY_BASEMAP, baseMap, user.getUniqueName());
-                    RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+            try {
+                String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
+                String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
+                User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
+                if (user != null) {
+                    KukuratusLogger.logDebug("GssServer#post(/usersettings for " + user.getUniqueName(),
+                            "Received request from " + req.raw().getRemoteAddr());
+                    String baseMap = req.queryParams(KEY_BASEMAP);
+                    if (baseMap != null) {
+                        Settings s = new Settings(KEY_BASEMAP, baseMap, user.getUniqueName());
+                        RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+                    }
+                    String mapCenter = req.queryParams(KEY_MAPCENTER);
+                    if (mapCenter != null) {
+                        Settings s = new Settings(KEY_MAPCENTER, mapCenter, user.getUniqueName());
+                        RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+                    }
+                    return "OK";
+                } else {
+                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                            "No permission for request.");
+                    res.status(ks.getCode());
+                    return ks.toJson();
                 }
-                String mapCenter = req.queryParams(KEY_MAPCENTER);
-                if (mapCenter != null) {
-                    Settings s = new Settings(KEY_MAPCENTER, mapCenter, user.getUniqueName());
-                    RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
-                }
-                return "OK";
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
-                        "No permission for request.");
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#post(/usersettings", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
                 res.status(ks.getCode());
                 return ks.toJson();
             }
