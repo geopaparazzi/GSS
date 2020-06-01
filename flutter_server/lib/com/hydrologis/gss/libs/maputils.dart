@@ -631,36 +631,39 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
       var textFun = (String str) {
         return SmashUI.normalText(str, bold: true);
       };
-      return SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: [
-              DataColumn(
-                label: textFun("Marker"),
+      return Scrollbar(
+        child: ListView(
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: [
+                  DataColumn(
+                    label: textFun("Marker"),
+                  ),
+                  DataColumn(
+                    label: textFun("Actions"),
+                  ),
+                  DataColumn(
+                    label: textFun("Id"),
+                  ),
+                  DataColumn(
+                    label: textFun("Text"),
+                  ),
+                  DataColumn(
+                    label: textFun("Timestamp"),
+                  ),
+                  DataColumn(
+                    label: textFun("User"),
+                  ),
+                  DataColumn(
+                    label: textFun("Project"),
+                  ),
+                ],
+                rows: dataRows,
               ),
-              DataColumn(
-                label: textFun("Actions"),
-              ),
-              DataColumn(
-                label: textFun("Id"),
-              ),
-              DataColumn(
-                label: textFun("Text"),
-              ),
-              DataColumn(
-                label: textFun("Timestamp"),
-              ),
-              DataColumn(
-                label: textFun("User"),
-              ),
-              DataColumn(
-                label: textFun("Project"),
-              ),
-            ],
-            rows: dataRows,
-          ),
+            ),
+          ],
         ),
       );
     });
