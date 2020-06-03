@@ -260,9 +260,8 @@ public class GssServerApi implements Vars {
                         if (form != null) {
                             List<String> imageIds = Utilities.getImageIds(form);
                             if (!imageIds.isEmpty()) {
+                                HashMap<String, String> oldId2NewMap = new HashMap<>();
                                 for (String imageIdString : imageIds) {
-                                    long imageIdNum = Long.parseLong(imageIdString);
-
                                     byte[] imageData = (byte[]) partData.get(
                                             TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
                                     byte[] thumbData = (byte[]) partData.get(
@@ -273,10 +272,16 @@ public class GssServerApi implements Vars {
                                     Images img = new Images(imgPoint, altim, ts, -1, imageIdString, serverNote, imgData,
                                             gpapUser, thumbData, project, System.currentTimeMillis());
                                     imagesDao.create(img);
-                                }
-                            }
 
+                                    oldId2NewMap.put(imageIdString, String.valueOf(img.id));
+                                }
+                                form = GssDatabaseUtilities.updateImagesIds(form, oldId2NewMap);
+
+                                serverNote.form = form;
+                                notesDao.update(serverNote);
+                            }
                         }
+
                         ServletUtils.debug("Uploaded note: " + serverNote.text);
                         break;
                     case IMAGE_OBJID:
@@ -436,13 +441,22 @@ public class GssServerApi implements Vars {
 
             try {
                 // images or notes are requested
-                if (type.equals(GssDatabaseUtilities.IMAGES)) {
+                if (type.equals(GssDatabaseUtilities.IMAGEDATA)) {
                     if (id != null) {
                         long idLong = Long.parseLong(id);
                         ImageData idObj = new ImageData(idLong);
                         Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
                         ImageData result = dao.queryForSameId(idObj);
                         return result.data;
+                    }
+                } else if (type.equals(GssDatabaseUtilities.IMAGES)) {
+                    if (id != null) {
+                        Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
+                        Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                        Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                        long idLong = Long.parseLong(id);
+                        JSONObject imageObj = GssDatabaseUtilities.getImageById(imagesDao, projectDao, userDao, idLong);
+                        return imageObj.toString();
                     }
                 } else if (type.equals(GssDatabaseUtilities.NOTES)) {
                     if (id != null) {
@@ -471,7 +485,6 @@ public class GssServerApi implements Vars {
     }
 
     public static void addGetImagedataRoute() {
-
         // get an image by the original project id and the userid
         get("/imagedata/:userid/:dataid", (req, res) -> {
             // if (!hasPermission(req)) {
@@ -493,12 +506,6 @@ public class GssServerApi implements Vars {
                 res.status(ks.getCode());
                 return ks.toJson();
             }
-            // } else {
-            // KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
-            // "No permission for request.");
-            // res.status(ks.getCode());
-            // return ks.toJson();
-            // }
         });
     }
 

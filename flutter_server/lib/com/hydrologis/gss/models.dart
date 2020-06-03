@@ -284,8 +284,12 @@ class MapstateModel extends ChangeNotifier {
     attributes = attributesList;
 
     var delta = 0.01;
-    dataBounds = LatLngBounds(
-        LatLng(dataBounds.south - delta, dataBounds.west - delta),
-        LatLng(dataBounds.north + delta, dataBounds.east + delta));
+    if (mapMarkers.length > 0) {
+      dataBounds = LatLngBounds(
+          LatLng(dataBounds.south - delta, dataBounds.west - delta),
+          LatLng(dataBounds.north + delta, dataBounds.east + delta));
+    } else {
+      dataBounds = LatLngBounds(LatLng(-45, -90), LatLng(45, 90));
+    }
   }
 }

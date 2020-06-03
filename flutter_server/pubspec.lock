@@ -169,13 +169,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "5.1.0"
-  flushbar:
-    dependency: "direct main"
-    description:
-      name: flushbar
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.10.4"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -251,6 +244,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2"
+  horizontal_data_table:
+    dependency: "direct main"
+    description:
+      name: horizontal_data_table
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.5+3"
   http:
     dependency: transitive
     description:
@@ -539,11 +539,9 @@ packages:
   smashlibs:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "962c3ff1fc7989eb5976a512cc062e9b8cf5fe64"
-      url: "https://github.com/moovida/smashlibs.git"
-    source: git
+      path: "../../../SMASH/smashlibs"
+      relative: true
+    source: path
     version: "1.0.0"
   source_span:
     dependency: transitive
@@ -607,7 +605,7 @@ packages:
       name: test_api
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.15"
+    version: "0.2.16"
   transparent_image:
     dependency: "direct main"
     description:
@@ -700,5 +698,5 @@ packages:
     source: hosted
     version: "3.7.0"
 sdks:
-  dart: ">=2.7.2 <3.0.0"
+  dart: ">=2.7.0 <3.0.0"
   flutter: ">=1.16.0 <2.0.0"

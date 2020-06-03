@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
-import 'package:flushbar/flushbar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -14,10 +13,13 @@ import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:horizontal_data_table/horizontal_data_table.dart';
 import 'package:latlong/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
+
+const IMAGE_ID_SEPARATOR = ";";
 
 Marker buildSimpleNote(MapstateModel mapState, var x, var y, String name,
     int noteId, Icon icon, double size, Color color) {
@@ -52,14 +54,14 @@ Marker buildSimpleNote(MapstateModel mapState, var x, var y, String name,
           ],
         ),
         onTap: () async {
-          if (mapState.showAttributes) {
-            var model =
-                Provider.of<AttributesTableStateModel>(ctx, listen: false);
-            model.selectedNoteId = noteId;
-            model.refresh();
-          } else {
-            openNoteDialog(ctx, noteId);
-          }
+          // if (mapState.showAttributes) {
+          //   var model =
+          //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
+          //   model.selectedNoteId = noteId;
+          //   model.refresh();
+          // } else {
+          openNoteDialog(ctx, noteId);
+          // }
         },
       ),
     ),
@@ -102,15 +104,15 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
     point: new LatLng(y, x),
     builder: (ctx) => new Container(
       child: GestureDetector(
-        onTap: () async {
-          if (mapState.showAttributes) {
-            var model =
-                Provider.of<AttributesTableStateModel>(ctx, listen: false);
-            model.selectedNoteId = dataId;
-            model.refresh();
-          } else {
-            openImageDialog(mapState.currentMapContext, name, dataId);
-          }
+        onTap: () {
+          // if (mapState.showAttributes) {
+          //   var model =
+          //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
+          //   model.selectedNoteId = dataId;
+          //   model.refresh();
+          // } else {
+          openImageDialog(mapState.currentMapContext, name, dataId);
+          // }
         },
         child: imageWidget,
       ),
@@ -150,14 +152,14 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
           ],
         ),
         onTap: () async {
-          if (mapState.showAttributes) {
-            var model =
-                Provider.of<AttributesTableStateModel>(ctx, listen: false);
-            model.selectedNoteId = noteId;
-            model.refresh();
-          } else {
-            openNoteDialog(ctx, noteId);
-          }
+          // if (mapState.showAttributes) {
+          //   var model =
+          //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
+          //   model.selectedNoteId = noteId;
+          //   model.refresh();
+          // } else {
+          await openNoteDialog(ctx, noteId);
+          // }
         },
       ),
     ),
@@ -180,9 +182,11 @@ openNoteDialog(BuildContext context, int noteId) async {
   var form = noteItem[FORM];
 
   var widget;
-  var size = 400.0;
+  var h = 300.0;
+  var w = 400.0;
   if (form != null) {
-    size = 900.0;
+    h = 900.0;
+    w = 900.0;
     var sectionMap = jsonDecode(form);
     var sectionName = sectionMap[ATTR_SECTIONNAME];
 
@@ -194,18 +198,22 @@ openNoteDialog(BuildContext context, int noteId) async {
           child: SmashUI.titleText(
             name,
             textAlign: TextAlign.center,
+            useColor: true,
           ),
         ),
         Expanded(
           child: MasterDetailPage(
             sectionMap,
-            SmashUI.titleText(sectionName,
-                color: SmashColors.mainBackground, bold: true),
+            SmashUI.titleText(
+              sectionName,
+              color: SmashColors.mainBackground,
+              bold: true,
+            ),
             sectionName,
             p,
             noteId,
             null, // TODO add here save function if editing is supported on web
-            null, // TODO add get thumbnails function
+            getThumbnailsFromDb,
             null, // no taking pictures permitted on web
             doScaffold: false,
           ),
@@ -213,6 +221,15 @@ openNoteDialog(BuildContext context, int noteId) async {
       ],
     );
   } else {
+    var map = {
+      "ID": id,
+      "Text": name,
+      "Timestamp": TimeUtilities.ISO8601_TS_FORMATTER
+          .format(DateTime.fromMillisecondsSinceEpoch(ts)),
+      "Project": project,
+      "Surveyor": surveyor,
+    };
+
     widget = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -221,10 +238,14 @@ openNoteDialog(BuildContext context, int noteId) async {
           child: SmashUI.titleText(
             name,
             textAlign: TextAlign.center,
+            useColor: true,
           ),
         ),
         Expanded(
-          child: TableUtilities.fromMap(noteItem),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(child: TableUtilities.fromMap(map)),
+          ),
         ),
       ],
     );
@@ -233,12 +254,12 @@ openNoteDialog(BuildContext context, int noteId) async {
   Dialog mapSelectionDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: Container(
-      height: size,
-      width: size,
+      height: h,
+      width: w,
       child: Center(child: widget),
     ),
   );
-  showDialog(
+  await showDialog(
       context: context, builder: (BuildContext context) => mapSelectionDialog);
 }
 
@@ -261,7 +282,7 @@ openImageDialog(BuildContext context, String name, int imageId) {
                 textAlign: TextAlign.center,
               ),
             ),
-            NetworkImageWidget("$API_IMAGE/$imageId", h * 0.6),
+            NetworkImageWidget("$API_IMAGEDATA/$imageId", h * 0.6),
           ],
         ),
       ),
@@ -561,12 +582,38 @@ class AttributesTableWidget extends StatefulWidget {
 }
 
 class _AttributesTableWidgetState extends State<AttributesTableWidget> {
+  List<List<Widget>> _dataRows;
+  double width;
+  double rowHeight = 52.0;
+  var headerTexts = [
+    "Marker",
+    "Actions",
+    "Id",
+    "Text",
+    "Timestamp",
+    "User",
+    "Project",
+  ];
+  var colFactors = [
+    0.05,
+    0.1,
+    0.05,
+    0.2,
+    0.2,
+    0.2,
+    0.2,
+  ];
   @override
   Widget build(BuildContext context) {
+    width = ScreenUtilities.getWidth(context);
+    if (width < 1500) {
+      width = 1500;
+    }
+
     return Consumer<AttributesTableStateModel>(
         builder: (context, attrState, child) {
       var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
-      var dataRows = mapstateModel.attributes
+      _dataRows = mapstateModel.attributes
           .where((arrt) => mapstateModel.currentMapBounds.contains(arrt.point))
           .map((attr) {
         var id = attrState.selectedNoteId;
@@ -576,96 +623,156 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
         }
 
         var textFun = (String str) {
-          return SmashUI.normalText(str);
+          return Center(child: SmashUI.normalText(str));
         };
-        return DataRow(selected: selected, cells: [
-          DataCell(attr.marker),
-          DataCell(Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(
-                  MdiIcons.magnifyScan,
-                  color: SmashColors.mainDecorations,
-                ),
-                tooltip: "Zoom to note.",
-                onPressed: () {
-                  if (mapstateModel.mapController != null) {
-                    var ll = LatLng(attr.point.latitude - NOTE_ZOOM_BUFFER,
-                        attr.point.longitude - NOTE_ZOOM_BUFFER);
-                    var ur = LatLng(attr.point.latitude + NOTE_ZOOM_BUFFER,
-                        attr.point.longitude + NOTE_ZOOM_BUFFER);
+        return <Widget>[
+          Center(child: attr.marker),
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    MdiIcons.magnifyScan,
+                    color: SmashColors.mainDecorations,
+                  ),
+                  tooltip: "Zoom to note.",
+                  onPressed: () {
+                    if (mapstateModel.mapController != null) {
+                      var ll = LatLng(attr.point.latitude - NOTE_ZOOM_BUFFER,
+                          attr.point.longitude - NOTE_ZOOM_BUFFER);
+                      var ur = LatLng(attr.point.latitude + NOTE_ZOOM_BUFFER,
+                          attr.point.longitude + NOTE_ZOOM_BUFFER);
 
-                    mapstateModel.fitbounds(
-                        newBounds: LatLngBounds.fromPoints([ll, ur]));
-                    attrState.refresh();
-                  }
-                },
-              ),
-              IconButton(
-                icon: Icon(
-                  MdiIcons.glasses,
-                  color: SmashColors.mainDecorations,
+                      mapstateModel.fitbounds(
+                          newBounds: LatLngBounds.fromPoints([ll, ur]));
+                      attrState.refresh();
+                    }
+                  },
                 ),
-                tooltip: "View note.",
-                onPressed: () {
-                  if (attr.marker is Image) {
-                    openImageDialog(context, attr.text, attr.id);
-                  } else {
-                    openNoteDialog(context, attr.id);
-                  }
-                },
-              ),
-            ],
-          )),
-          DataCell(textFun("${attr.id}")),
-          DataCell(textFun(attr.text)),
-          DataCell(textFun(TimeUtilities.ISO8601_TS_FORMATTER
-              .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp)))),
-          DataCell(textFun(attr.user ?? "- nv -")),
-          DataCell(textFun(attr.project ?? "- nv -")),
-        ]);
+                IconButton(
+                  icon: Icon(
+                    MdiIcons.glasses,
+                    color: SmashColors.mainDecorations,
+                  ),
+                  tooltip: "View note.",
+                  onPressed: () {
+                    if (attr.marker is Image) {
+                      openImageDialog(context, attr.text, attr.id);
+                    } else {
+                      openNoteDialog(context, attr.id);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          textFun("${attr.id}"),
+          textFun(attr.text),
+          textFun(TimeUtilities.ISO8601_TS_FORMATTER
+              .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp))),
+          textFun(attr.user ?? "- nv -"),
+          textFun(attr.project ?? "- nv -"),
+        ];
       }).toList();
 
       var textFun = (String str) {
-        return SmashUI.normalText(str, bold: true);
+        return Center(child: SmashUI.normalText(str, bold: true));
       };
-      return Scrollbar(
-        child: ListView(
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: [
-                  DataColumn(
-                    label: textFun("Marker"),
-                  ),
-                  DataColumn(
-                    label: textFun("Actions"),
-                  ),
-                  DataColumn(
-                    label: textFun("Id"),
-                  ),
-                  DataColumn(
-                    label: textFun("Text"),
-                  ),
-                  DataColumn(
-                    label: textFun("Timestamp"),
-                  ),
-                  DataColumn(
-                    label: textFun("User"),
-                  ),
-                  DataColumn(
-                    label: textFun("Project"),
-                  ),
-                ],
-                rows: dataRows,
-              ),
-            ),
-          ],
+      final List headerIndexes =
+          Iterable<int>.generate(headerTexts.length).toList();
+      var headerWidgets = headerIndexes
+          .map((index) => Container(
+                child: textFun(
+                  headerTexts[index],
+                ),
+                width: colFactors[index] * width,
+                height: rowHeight + 5,
+                padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
+                alignment: Alignment.centerLeft,
+              ))
+          .toList();
+
+      return Container(
+        width: double.infinity,
+        child: HorizontalDataTable(
+          leftHandSideColumnWidth: width * colFactors[0],
+          rightHandSideColumnWidth: width,
+          isFixedHeader: true,
+          headerWidgets: headerWidgets,
+          leftSideItemBuilder: _generateFirstColumnRow,
+          rightSideItemBuilder: _generateRightHandSideColumnRow,
+          itemCount: _dataRows.length,
+          rowSeparatorWidget: Divider(
+            color: SmashColors.mainDecorations,
+            height: 1.0,
+            thickness: 0.5,
+          ),
+          leftHandSideColBackgroundColor: SmashColors.mainBackground,
+          rightHandSideColBackgroundColor: SmashColors.mainBackground,
         ),
       );
     });
   }
+
+  Widget _generateFirstColumnRow(BuildContext context, int index) {
+    return Container(
+      child: _dataRows[index][0],
+      width: width * colFactors[0],
+      height: rowHeight,
+      padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
+      alignment: Alignment.centerLeft,
+    );
+  }
+
+  Widget _generateRightHandSideColumnRow(BuildContext context, int index) {
+    List<Widget> row = _dataRows[index];
+
+    final List rowIndexes = [1, 2, 3, 4, 5, 6];
+    var newRow = rowIndexes
+        .map((i) => Container(
+              child: row[i],
+              width: width * colFactors[i],
+              height: rowHeight,
+              padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
+              alignment: Alignment.centerLeft,
+            ))
+        .toList();
+
+    return Row(
+      children: newRow,
+    );
+  }
+}
+
+/// Get thumbnails from the database
+Future<List<Widget>> getThumbnailsFromDb(
+    BuildContext context, var itemMap, List<String> imageSplit) async {
+  List<Widget> thumbList = [];
+  String value = ""; //$NON-NLS-1$
+  if (itemMap.containsKey(TAG_VALUE)) {
+    value = itemMap[TAG_VALUE].trim();
+  }
+  if (value.isNotEmpty) {
+    imageSplit.clear();
+    imageSplit.addAll(value.split(IMAGE_ID_SEPARATOR));
+  } else {
+    return Future.value(thumbList);
+  }
+
+  var userPwd = SmashSession.getSessionUser();
+
+  for (int i = 0; i < imageSplit.length; i++) {
+    var id = int.parse(imageSplit[i]);
+    var bytes =
+        await ServerApi.getImageThumbnailById(userPwd[0], userPwd[1], id);
+    Image img = Image.memory(bytes);
+    Widget withBorder = Container(
+      padding: SmashUI.defaultPadding(),
+      child: img,
+    );
+    thumbList.add(withBorder);
+  }
+  return thumbList;
 }

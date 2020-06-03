@@ -2,6 +2,7 @@ package com.hydrologis.kukuratus.gss;
 
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 
 import com.hydrologis.kukuratus.gss.database.GpapProject;
@@ -13,6 +14,7 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.stmt.Where;
 
+import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.locationtech.jts.geom.Coordinate;
@@ -21,6 +23,7 @@ public class GssDatabaseUtilities {
     public static final String NOTES = "notes";
     public static final String FORMS = "forms";
     public static final String IMAGES = "images";
+    public static final String IMAGEDATA = "imagedata";
     public static final String FORM = "form";
     public static final String USER = "user";
     public static final String Y = "y";
@@ -290,6 +293,114 @@ public class GssDatabaseUtilities {
             }
         }
         return root;
+    }
+
+    public static JSONObject getImageById(Dao<Images, ?> imagesDao, Dao<GpapProject, ?> projectDao,
+            Dao<GpapUsers, ?> userDao, long id) throws Exception {
+
+        QueryBuilder<Images, ?> qb = imagesDao.queryBuilder();
+        Images image = qb.where().eq(Images.ID_FIELD_NAME, id).queryForFirst();
+
+        JSONObject imageObject = new JSONObject();
+        if (image != null) {
+            imageObject.put(ID, image.id);
+            Coordinate c = image.the_geom.getCoordinate();
+            imageObject.put(X, c.x);
+            imageObject.put(Y, c.y);
+            imageObject.put(TS, image.timestamp);
+            imageObject.put(NAME, image.text);
+            imageObject.put(DATAID, image.imageData.id);
+            byte[] thumbBytes = image.thumbnail;
+            String encodedThumb = Base64.getEncoder().encodeToString(thumbBytes);
+            imageObject.put(DATA, encodedThumb);
+            projectDao.refresh(image.gpapProject);
+            userDao.refresh(image.gpapUser);
+            imageObject.put(PROJECT, image.gpapProject.getName());
+            imageObject.put(SURVEYOR, image.gpapUser.getName());
+        }
+        return imageObject;
+    }
+
+    /**
+     * Updates the image ids on the server side.
+     *
+     * @param formString    the form.
+     * @param oldIds2NewMap the map of ids to substitute.
+     * @return the updated form string.
+     * @throws Exception if something goes wrong.
+     */
+    public static String updateImagesIds(String formString, HashMap<String, String> oldIds2NewMap) throws Exception {
+        JSONObject sectionObject = new JSONObject(formString);
+        List<String> formsNames = Utilities.getFormNames4Section(sectionObject);
+        for (String formName : formsNames) {
+            JSONObject form4Name = Utilities.getForm4Name(formName, sectionObject);
+            JSONArray formItems = Utilities.getFormItems(form4Name);
+            for (int i = 0; i < formItems.length(); i++) {
+                JSONObject formItem = formItems.getJSONObject(i);
+                if (!formItem.has(Utilities.TAG_KEY)) {
+                    continue;
+                }
+
+                String type = formItem.getString(Utilities.TAG_TYPE);
+                String value = "";
+                if (formItem.has(Utilities.TAG_VALUE))
+                    value = formItem.getString(Utilities.TAG_VALUE);
+
+                if (type.equals(Utilities.TYPE_PICTURES)||type.equals(Utilities.TYPE_IMAGELIB)) {
+                    if (value.trim().length() == 0) {
+                        continue;
+                    }
+                    String[] imageSplit = value.split(";");
+                    if (imageSplit.length > 0) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int j = 0; j < imageSplit.length; j++) {
+                            String oldId = imageSplit[j].trim();
+                            String newId = oldIds2NewMap.get(oldId);
+                            if (newId == null) {
+                                throw new Exception("ERROR in images id map.");
+                            }
+                            if (j > 0) {
+                                sb.append(";");
+                            }
+                            sb.append(newId);
+                        }
+                        formItem.put(Utilities.TAG_VALUE, sb.toString());
+                    }
+                } else if (type.equals(Utilities.TYPE_MAP)) {
+                    if (value.trim().length() == 0) {
+                        continue;
+                    }
+                    String image = value.trim();
+                    String newId = oldIds2NewMap.get(image);
+                    if (newId == null) {
+                        throw new Exception("ERROR in images id map.");
+                    }
+                    formItem.put(Utilities.TAG_VALUE, newId);
+                } else if (type.equals(Utilities.TYPE_SKETCH)) {
+                    if (value.trim().length() == 0) {
+                        continue;
+                    }
+                    String[] imageSplit = value.split(";");
+                    if (imageSplit.length > 0) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int j = 0; j < imageSplit.length; j++) {
+                            String oldId = imageSplit[j].trim();
+                            String newId = oldIds2NewMap.get(oldId);
+                            if (newId == null) {
+                                throw new Exception("ERROR in images id map.");
+                            }
+                            if (j > 0) {
+                                sb.append(";");
+                            }
+                            sb.append(newId);
+                        }
+                        formItem.put(Utilities.TAG_VALUE, sb.toString());
+                    }
+                }
+            }
+        }
+        return sectionObject.toString();
+
     }
 
 }

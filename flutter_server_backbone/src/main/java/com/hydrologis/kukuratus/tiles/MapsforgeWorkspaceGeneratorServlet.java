@@ -18,7 +18,6 @@
  ******************************************************************************/
 package com.hydrologis.kukuratus.tiles;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -30,9 +29,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
 
 @WebServlet(urlPatterns = "/mapsforge")
