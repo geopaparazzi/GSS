@@ -12,6 +12,8 @@ const WEBAPP_URL = "http://localhost:8080"; // TODO make empty for release
 
 const API_DATA = "$WEBAPP_URL/data";
 const API_LIST = "$WEBAPP_URL/list";
+const API_UPDATE = "$WEBAPP_URL/update";
+const API_UPDATE_SURVEYOR = "$API_UPDATE/surveyors";
 const API_LIST_SURVEYORS = "$API_LIST/surveyors";
 const API_LIST_PROJECTS = "$API_LIST/projects";
 const API_LOGIN = "$WEBAPP_URL/login";
@@ -133,7 +135,7 @@ class ServerApi {
   //   }
   // }
 
-  static Future<String> getSurveyors(String user, String pwd) async {
+  static Future<String> getSurveyorsJson(String user, String pwd) async {
     String apiCall = "$API_LIST_SURVEYORS";
 
     Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
@@ -152,6 +154,51 @@ class ServerApi {
     Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.request(apiCall,
         method: 'GET', requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<String> updateOrAddSurveyor(
+      String user, String pwd, dynamic surveyor) async {
+    String apiCall = "$API_UPDATE_SURVEYOR";
+    Map<String, String> formData = {}
+      ..[SURVEYOR_DEVICE_FIELD_NAME] =
+          surveyor[SURVEYOR_DEVICE_FIELD_NAME].toString()
+      ..[SURVEYOR_NAME_FIELD_NAME] =
+          surveyor[SURVEYOR_NAME_FIELD_NAME].toString()
+      ..[SURVEYOR_ACTIVE_FIELD_NAME] =
+          surveyor[SURVEYOR_ACTIVE_FIELD_NAME].toString()
+      ..[SURVEYOR_CONTACT_FIELD_NAME] =
+          surveyor[SURVEYOR_CONTACT_FIELD_NAME].toString();
+    if (surveyor[SURVEYOR_ID_FIELD_NAME] != null) {
+      formData[SURVEYOR_ID_FIELD_NAME] =
+          surveyor[SURVEYOR_ID_FIELD_NAME].toString();
+    }
+
+    formData[KEY_AUTOMATIC_REGISTRATION] =
+        DateTime.now().millisecondsSinceEpoch.toString();
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
+        requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return null;
+    } else {
+      return request.response;
+    }
+  }
+
+  static Future<void> enableAutomaticRegistration(
+      String user, String pwd) async {
+    String apiCall = "$API_USERSETTINGS";
+    Map<String, String> formData = {};
+    formData[KEY_AUTOMATIC_REGISTRATION] =
+        DateTime.now().millisecondsSinceEpoch.toString();
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
+        requestHeaders: requestHeaders);
     if (request.status == 200) {
       return request.response;
     } else {

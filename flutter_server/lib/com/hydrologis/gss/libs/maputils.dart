@@ -448,7 +448,8 @@ class _FilterWidgetState extends State<FilterWidget>
     _projectsToActive = tmp;
     _projectNames = _projectsToActive.keys.toList();
 
-    responsJson = await ServerApi.getSurveyors(sessionUser[0], sessionUser[1]);
+    responsJson =
+        await ServerApi.getSurveyorsJson(sessionUser[0], sessionUser[1]);
 
     jsonMap = jsonDecode(responsJson);
 
@@ -456,9 +457,14 @@ class _FilterWidgetState extends State<FilterWidget>
     List<String> filterSurveyors = _filterStateModel.surveyors;
 
     tmp = {};
-    surveyors.forEach((name) {
-      tmp[name] =
-          filterSurveyors != null ? filterSurveyors.contains(name) : true;
+    surveyors.forEach((map) {
+      var active = map[SURVEYOR_ACTIVE_FIELD_NAME];
+      if (active == 1) {
+        var name = map[SURVEYOR_NAME_FIELD_NAME];
+
+        tmp[name] =
+            filterSurveyors != null ? filterSurveyors.contains(name) : true;
+      }
     });
 
     _surveyorsToActive = tmp;

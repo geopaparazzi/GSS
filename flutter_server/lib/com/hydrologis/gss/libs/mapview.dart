@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/surveyors_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/main.dart';
@@ -42,7 +43,7 @@ class _MainMapViewState extends State<MainMapView>
     mapstateModel.getData(context).then((value) {
       mapstateModel.reloadMap();
       mapstateModel.fitbounds();
-      
+
       Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
     });
   }
@@ -124,7 +125,9 @@ class _MainMapViewState extends State<MainMapView>
                           _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
                       var bounds = _mapController.bounds;
                       mapstateModel.currentMapBounds = bounds;
-                      Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
+                      Provider.of<AttributesTableStateModel>(context,
+                              listen: false)
+                          .refresh();
                     }
                   },
                   onPointerDown: (details) {
@@ -139,7 +142,9 @@ class _MainMapViewState extends State<MainMapView>
                       print("onMoveEnd");
                       var bounds = _mapController.bounds;
                       mapstateModel.currentMapBounds = bounds;
-                      Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
+                      Provider.of<AttributesTableStateModel>(context,
+                              listen: false)
+                          .refresh();
                     }
                   },
                   behavior: HitTestBehavior.deferToChild,
@@ -233,9 +238,7 @@ class _MainMapViewState extends State<MainMapView>
               padding: const EdgeInsets.all(_mapIconsPadding),
               child: FloatingActionButton(
                 heroTag: "opendrawer",
-                elevation: 1,
-                backgroundColor: Colors.transparent,
-                foregroundColor: SmashColors.mainDecorationsDarker,
+                backgroundColor: SmashColors.mainDecorations,
                 onPressed: () {
                   _scaffoldKey.currentState.openDrawer();
                 },
@@ -285,7 +288,9 @@ class _MainMapViewState extends State<MainMapView>
                         _mapController.move(_mapController.center, zoom);
                         var bounds = _mapController.bounds;
                         mapstateModel.currentMapBounds = bounds;
-                        Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
+                        Provider.of<AttributesTableStateModel>(context,
+                                listen: false)
+                            .refresh();
                       },
                       child: Icon(MdiIcons.magnifyMinus),
                     ),
@@ -306,7 +311,9 @@ class _MainMapViewState extends State<MainMapView>
                           _mapController.fitBounds(mapstateModel.dataBounds);
                           mapstateModel.currentMapBounds =
                               mapstateModel.dataBounds;
-                          Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
+                          Provider.of<AttributesTableStateModel>(context,
+                                  listen: false)
+                              .refresh();
                         }
                       },
                       child: Icon(MdiIcons.layers),
@@ -328,7 +335,9 @@ class _MainMapViewState extends State<MainMapView>
                         _mapController.move(_mapController.center, zoom);
                         var bounds = _mapController.bounds;
                         mapstateModel.currentMapBounds = bounds;
-                        Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
+                        Provider.of<AttributesTableStateModel>(context,
+                                listen: false)
+                            .refresh();
                       },
                       child: Icon(MdiIcons.magnifyPlus),
                     ),
@@ -380,8 +389,9 @@ class _MainMapViewState extends State<MainMapView>
                 ),
                 title: Text("Surveyors"),
                 onTap: () {
-                  // TODO
                   Navigator.of(context).pop();
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => SurveyorsView()));
                 },
               ),
             ),

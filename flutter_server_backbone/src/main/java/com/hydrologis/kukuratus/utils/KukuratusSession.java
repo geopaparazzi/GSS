@@ -26,7 +26,7 @@ import com.hydrologis.kukuratus.registry.Settings;
 
 public class KukuratusSession {
     public static final String KEY_AUTOMATIC_REGISTRATION = "GSS_KEY_AUTOMATIC_REGISTRATION"; //$NON-NLS-1$
-    public static final int timerMinutes = 5;
+    public static final int timerSeconds = 30;
 
     public static final String KEY_LOCALE = "KUKURATUS_KEY_LOCALE"; //$NON-NLS-1$
 

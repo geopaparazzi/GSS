@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
+import javax.validation.constraints.Null;
+
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
 import com.hydrologis.kukuratus.gss.database.GpapProject;
@@ -22,6 +24,7 @@ import com.hydrologis.kukuratus.gss.database.GpsLogsData;
 import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
+import com.hydrologis.kukuratus.servlets.ServletUtils;
 import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.tiles.MapsforgeTilesGenerator;
 import com.hydrologis.kukuratus.utils.KukuratusLogger;
@@ -33,11 +36,12 @@ import org.hortonmachine.dbs.compat.EDb;
 /**
  * Deploy:
  * 
- * - export as runnable jar (will use embedded jetty, which is anyways necessary for websockets)
- * - run with java -jar xxx.jar
+ * - export as runnable jar (will use embedded jetty, which is anyways necessary
+ * for websockets) - run with java -jar xxx.jar
  * 
- * To load static pages, the folder public, that resides in the src/main/resources folder, needs
- * to be copied to the folder into which the runnable jar is exported and used. 
+ * To load static pages, the folder public, that resides in the
+ * src/main/resources folder, needs to be copied to the folder into which the
+ * runnable jar is exported and used.
  * 
  * 
  * @author hydrologis
@@ -45,7 +49,7 @@ import org.hortonmachine.dbs.compat.EDb;
  */
 public class GssServer implements Vars {
 
-    private List<Class< ? >> tableClasses = Arrays.asList(//
+    private List<Class<?>> tableClasses = Arrays.asList(//
             GpapProject.class, //
             GpapUsers.class, //
             Notes.class, //
@@ -56,11 +60,12 @@ public class GssServer implements Vars {
             Forms.class);
 
     private ITilesGenerator mapsforgeTilesGenerator;
+
     public void start() throws Exception {
         start(null, null);
     }
 
-    public void start( String keyStorePath, String keyStorePassword ) throws Exception {
+    public void start(String keyStorePath, String keyStorePassword) throws Exception {
         KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
         File dataFolder = workspace.getDataFolder();
         File dbFile = new File(dataFolder, "gss_database.mv.db"); //$NON-NLS-1$
@@ -89,7 +94,7 @@ public class GssServer implements Vars {
         // staticFiles.expireTime(600); // ten minutes
 
         // ENABLE CORS START
-        options("/*", ( request, response ) -> {
+        options("/*", (request, response) -> {
             String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
             if (accessControlRequestHeaders != null) {
                 response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
@@ -101,7 +106,7 @@ public class GssServer implements Vars {
             return "OK";
         });
 
-        before(( request, response ) -> response.header("Access-Control-Allow-Origin", "*"));
+        before((request, response) -> response.header("Access-Control-Allow-Origin", "*"));
         // ENABLE CORS END
 
         // ROUTES START
@@ -116,22 +121,21 @@ public class GssServer implements Vars {
         GssServerApi.addLoginRoute();
         GssServerApi.addUserSettingsRoute();
         GssServerApi.addListByTypeRoute();
+        GssServerApi.addUpdateByTypeRoute();
 
-        get("/", ( req, res ) -> {
+        get("/", (req, res) -> {
             res.redirect("index.html");
             return null;
         });
         // ROUTES END
     }
 
-
-
     private void activateMapsforge() {
         try {
             File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
-            File[] mapfiles = dataFolder.listFiles(new FilenameFilter(){
+            File[] mapfiles = dataFolder.listFiles(new FilenameFilter() {
                 @Override
-                public boolean accept( File dir, String name ) {
+                public boolean accept(File dir, String name) {
                     return name.endsWith(".map"); //$NON-NLS-1$
                 }
             });
@@ -146,7 +150,7 @@ public class GssServer implements Vars {
 
     private void createTables() throws Exception {
         DatabaseHandler dbHandler = DatabaseHandler.instance();
-        for( Class< ? > tClass : tableClasses ) {
+        for (Class<?> tClass : tableClasses) {
             String tableName = DatabaseHandler.getTableName(tClass);
             if (dbHandler.getDb().hasTable(tableName)) {
                 KukuratusLogger.logDebug(this, "Table exists already: " + tableName); //$NON-NLS-1$
@@ -158,14 +162,13 @@ public class GssServer implements Vars {
         }
     }
 
-    public static void main( String[] args ) throws Exception {
-
-        args = new String[]{"/Users/hydrologis/TMP/GSSSERVER/"}; // TODO remove after testing
+    public static void main(String[] args) throws Exception {
 
         if (args.length == 0) {
             System.err.println("The workspace folder needs to be supplied as argument.");
             System.exit(1);
         }
+
         String workspacePath = args[0];
         File workspaceFolder = new File(workspacePath);
         if (!workspaceFolder.exists()) {
@@ -174,26 +177,43 @@ public class GssServer implements Vars {
         }
         KukuratusWorkspace.setWorkspaceFolderPath(workspacePath);
 
+        String pwd = null;
         String keyStorePath = null;
-        String keyStorePassword = null;
-        if (args.length == 2) {
-            File keyStorInfo = new File(args[1]);
-            if (keyStorInfo.exists()) {
-                keyStorePath = keyStorInfo.getAbsolutePath();
-                // ask for the password at startup
-                System.out.println("Please enter the keystore passord and press return:");
-                try (Scanner in = new Scanner(System.in)) {
-                    keyStorePassword = in.nextLine();
-                    if (keyStorePassword.trim().length() == 0) {
-                        System.out.println("Disabling keystore use due to empty password.");
-                        keyStorePassword = null;
-                        keyStorePath = null;
-                    }
-                }
-
+        for (int i = 1; i < args.length; i++) {
+            String arg = args[i];
+            if (new File(arg).exists()) {
+                // assuming it is the keystore
+                keyStorePath = arg;
             } else {
-                System.err.println("Keystore file doesn't exist.");
-                System.exit(1);
+                pwd = arg;
+            }
+        }
+
+        System.out.println("****************************************************");
+        System.out.println("* Launching with parameters:");
+        System.out.println("* \tWORKSPACE FOLDER: " + workspacePath);
+        System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
+        System.out.println("* \tMOBILE PWD: " + (pwd != null ? pwd : " - nv - "));
+        System.out.println("****************************************************");
+
+        if (pwd != null) {
+            // pwd was supplied
+            ServletUtils.MOBILE_UPLOAD_PWD = pwd;
+        } else {
+            ServletUtils.MOBILE_UPLOAD_PWD = "gss_Master_Survey_Forever_2018";
+        }
+
+        String keyStorePassword = null;
+        if (keyStorePath != null) {
+            // ask for the password at startup
+            System.out.println("Please enter the keystore password and press return:");
+            try (Scanner in = new Scanner(System.in)) {
+                keyStorePassword = in.nextLine();
+                if (keyStorePassword.trim().length() == 0) {
+                    System.out.println("Disabling keystore use due to empty password.");
+                    keyStorePassword = null;
+                    keyStorePath = null;
+                }
             }
         }
 

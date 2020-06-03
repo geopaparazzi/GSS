@@ -30,7 +30,7 @@ public class GpapUsers {
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
     public static final String DEVICE_FIELD_NAME = "deviceid"; //$NON-NLS-1$
     public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
-    public static final String PASSWORD_FIELD_NAME = "password"; //$NON-NLS-1$
+    public static final String ACTIVE_FIELD_NAME = "active"; //$NON-NLS-1$
     public static final String CONTACT_FIELD_NAME = "contact"; //$NON-NLS-1$
 
     public static final String usersFKColumnDefinition = "bigint references gpapusers(id) on delete cascade"; //$NON-NLS-1$
@@ -44,11 +44,11 @@ public class GpapUsers {
     @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
     public String name;
 
-    @DatabaseField(columnName = PASSWORD_FIELD_NAME, canBeNull = true)
-    public String password;
-
     @DatabaseField(columnName = CONTACT_FIELD_NAME, canBeNull = true)
     public String contact;
+    
+    @DatabaseField(columnName = ACTIVE_FIELD_NAME, canBeNull = false)
+    public int active;
 
     public GpapUsers() {
     }
@@ -57,10 +57,10 @@ public class GpapUsers {
         this.id = id;
     }
 
-    public GpapUsers( String deviceId, String name, String password, String contact ) {
+    public GpapUsers( String deviceId, String name,  String contact , int active) {
         this.deviceId = deviceId;
         this.name = name;
-        this.password = password;
+        this.active = active;
         this.contact = contact;
     }
 
@@ -88,12 +88,12 @@ public class GpapUsers {
         this.name = name;
     }
 
-    public String getPassword() {
-        return password;
+    public int getActive() {
+        return active;
     }
 
-    public void setPassword( String password ) {
-        this.password = password;
+    public void setActive( int active ) {
+        this.active = active;
     }
 
     public String getContact() {

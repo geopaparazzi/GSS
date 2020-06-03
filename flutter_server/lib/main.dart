@@ -125,9 +125,8 @@ class _MainPageState extends State<MainPage> {
         minWidth: MediaQuery.of(context).size.width,
         padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
         onPressed: () async {
-          // TODO change when not testing
-          String user = "god"; //userNameController.text;
-          String password = "god"; //passwordController.text;
+          String user = userNameController.text;
+          String password = passwordController.text;
           await SmashSession.login(user, password);
           setState(() {});
         },

@@ -154,7 +154,7 @@ public class ProjectsImporter {
 
                 System.out.println("Importing db: " + dummyDeviceId); //$NON-NLS-1$
 
-                GpapUsers user = new GpapUsers(dummyDeviceId, userName, null, null);
+                GpapUsers user = new GpapUsers(dummyDeviceId, userName, null, 1);
                 gpapUsersDao.create(user);
                 GpapProject project = new GpapProject(projectName);
                 gpapProjectDao.create(project);

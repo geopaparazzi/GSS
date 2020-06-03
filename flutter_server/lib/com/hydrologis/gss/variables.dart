@@ -13,6 +13,7 @@ const KEY_USER = "user";
 const KEY_PWD = "pwd";
 const KEY_BASEMAP = "basemap";
 const KEY_MAPCENTER = "mapcenter_xyz";
+const KEY_AUTOMATIC_REGISTRATION = "GSS_KEY_AUTOMATIC_REGISTRATION"; 
 
 const KEY_SURVEYORS = "surveyors";
 const KEY_PROJECTS = "projects";
@@ -49,6 +50,12 @@ const IMAGES = "images";
 const TS = "ts";
 const SURVEYOR = "surveyor";
 const PROJECT = "project";
+
+const SURVEYOR_ID_FIELD_NAME = "id"; //$NON-NLS-1$
+const SURVEYOR_DEVICE_FIELD_NAME = "deviceid"; //$NON-NLS-1$
+const SURVEYOR_NAME_FIELD_NAME = "name"; //$NON-NLS-1$
+const SURVEYOR_ACTIVE_FIELD_NAME = "active"; //$NON-NLS-1$
+const SURVEYOR_CONTACT_FIELD_NAME = "contact"; //$NON-NLS-1$
 
 // API VARS END
 

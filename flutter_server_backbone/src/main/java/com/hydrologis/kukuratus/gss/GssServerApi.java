@@ -33,6 +33,7 @@ import com.hydrologis.kukuratus.registry.User;
 import com.hydrologis.kukuratus.servlets.ServletUtils;
 import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.utils.KukuratusLogger;
+import com.hydrologis.kukuratus.utils.KukuratusSession;
 import com.hydrologis.kukuratus.utils.KukuratusStatus;
 import com.hydrologis.kukuratus.utils.Messages;
 import com.hydrologis.kukuratus.utils.NetworkUtilities;
@@ -381,8 +382,10 @@ public class GssServerApi implements Vars {
 
                     if (surveyors != null) {
                         String[] surveyorsArray = surveyors.split(";");
-                        users = userDao.queryBuilder().where()
+                        users = userDao.queryBuilder().where().eq(GpapUsers.ACTIVE_FIELD_NAME, 1).and()
                                 .in(GpapUsers.NAME_FIELD_NAME, Arrays.asList(surveyorsArray)).query();
+                    } else {
+                        users = userDao.queryBuilder().where().eq(GpapUsers.ACTIVE_FIELD_NAME, 1).query();
                     }
 
                     Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
@@ -566,6 +569,12 @@ public class GssServerApi implements Vars {
                         Settings s = new Settings(KEY_MAPCENTER, mapCenter, user.getUniqueName());
                         RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
                     }
+                    String automaticRegistrationMillis = req.queryParams(KukuratusSession.KEY_AUTOMATIC_REGISTRATION);
+                    if (automaticRegistrationMillis != null) {
+                        Settings s = new Settings(KukuratusSession.KEY_AUTOMATIC_REGISTRATION,
+                                automaticRegistrationMillis, user.getUniqueName());
+                        RegistryHandler.INSTANCE.insertOrUpdateGlobalSetting(s);
+                    }
                     return "OK";
                 } else {
                     KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
@@ -586,36 +595,111 @@ public class GssServerApi implements Vars {
 
         get("/list/:type", (req, res) -> {
             KukuratusLogger.logDebug("GssServer#get(/list/:type", "Received request from " + req.raw().getRemoteAddr());
-            if (hasPermission(req)) {
-                String type = req.params(":type");
-                if (type.equals(SURVEYORS)) {
-                    Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
-                    List<GpapUsers> users = userDao.queryForAll();
-                    JSONObject root = new JSONObject();
-                    JSONArray surveyorsArray = new JSONArray();
-                    root.put(SURVEYORS, surveyorsArray);
-                    for (GpapUsers gpapUsers : users) {
-                        surveyorsArray.put(gpapUsers.name);
+            try {
+                if (hasPermission(req)) {
+                    String type = req.params(":type");
+                    if (type.equals(SURVEYORS)) {
+                        Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                        List<GpapUsers> users = userDao.queryForAll();
+                        JSONObject root = new JSONObject();
+                        JSONArray surveyorsArray = new JSONArray();
+                        root.put(SURVEYORS, surveyorsArray);
+                        for (GpapUsers gpapUsers : users) {
+                            JSONObject surveyor = new JSONObject();
+                            surveyorsArray.put(surveyor);
+                            surveyor.put(GpapUsers.ID_FIELD_NAME, gpapUsers.id);
+                            surveyor.put(GpapUsers.DEVICE_FIELD_NAME, gpapUsers.deviceId);
+                            surveyor.put(GpapUsers.NAME_FIELD_NAME, gpapUsers.name);
+                            surveyor.put(GpapUsers.CONTACT_FIELD_NAME, gpapUsers.contact);
+                            surveyor.put(GpapUsers.ACTIVE_FIELD_NAME, gpapUsers.active);
+                        }
+                        return root.toString();
+                    } else if (type.equals(PROJECTS)) {
+                        Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                        List<GpapProject> projects = projectDao.queryForAll();
+                        JSONObject root = new JSONObject();
+                        JSONArray projectsArray = new JSONArray();
+                        root.put(PROJECTS, projectsArray);
+                        for (GpapProject gpapProject : projects) {
+                            projectsArray.put(gpapProject.name);
+                        }
+                        return root.toString();
                     }
-                    return root.toString();
-                } else if (type.equals(PROJECTS)) {
-                    Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
-                    List<GpapProject> projects = projectDao.queryForAll();
-                    JSONObject root = new JSONObject();
-                    JSONArray projectsArray = new JSONArray();
-                    root.put(PROJECTS, projectsArray);
-                    for (GpapProject gpapProject : projects) {
-                        projectsArray.put(gpapProject.name);
-                    }
-                    return root.toString();
-                }
 
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recognised.");
+                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recognised.");
+                    res.status(ks.getCode());
+                    return ks.toJson();
+                } else {
+                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                            "No permission for request.");
+                    res.status(ks.getCode());
+                    return ks.toJson();
+                }
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#get(/list/:type", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
                 res.status(ks.getCode());
                 return ks.toJson();
-            } else {
-                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
-                        "No permission for request.");
+            }
+        });
+    }
+
+    public static void addUpdateByTypeRoute() {
+
+        post("/update/:type", (req, res) -> {
+            KukuratusLogger.logDebug("GssServer#get(/update/:type",
+                    "Received request from " + req.raw().getRemoteAddr());
+            try {
+                if (hasPermission(req)) {
+                    String type = req.params(":type");
+                    if (type.equals(SURVEYORS)) {
+                        String id = req.queryParams(GpapUsers.ID_FIELD_NAME);
+                        String deviceId = req.queryParams(GpapUsers.DEVICE_FIELD_NAME);
+                        String name = req.queryParams(GpapUsers.NAME_FIELD_NAME);
+                        String contact = req.queryParams(GpapUsers.CONTACT_FIELD_NAME);
+                        String active = req.queryParams(GpapUsers.ACTIVE_FIELD_NAME);
+
+                        Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                        if (id != null) {
+                            GpapUsers existingUser = userDao.queryBuilder().where()
+                                    .eq(GpapUsers.ID_FIELD_NAME, Long.parseLong(id)).queryForFirst();
+                            if (existingUser != null) {
+                                // update
+                                existingUser.deviceId = deviceId;
+                                existingUser.name = name;
+                                existingUser.contact = contact;
+                                existingUser.active = Integer.parseInt(active);
+                                userDao.update(existingUser);
+                            } else {
+                                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
+                                        "No user existing by the id: " + id);
+                                res.status(ks.getCode());
+                                return ks.toJson();
+                            }
+                        } else {
+                            // create new one
+                            GpapUsers newUser = new GpapUsers(deviceId, name, contact, 1);
+                            userDao.create(newUser);
+                        }
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
+                        res.status(ks.getCode());
+                        return ks.toJson();
+                    } else {
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
+                                "Type not recognised.");
+                        res.status(ks.getCode());
+                        return ks.toJson();
+                    }
+
+                } else {
+                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                            "No permission for request.");
+                    res.status(ks.getCode());
+                    return ks.toJson();
+                }
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#post(/usersettings", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
                 res.status(ks.getCode());
                 return ks.toJson();
             }
