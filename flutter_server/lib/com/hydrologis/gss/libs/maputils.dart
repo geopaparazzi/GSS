@@ -216,6 +216,7 @@ openNoteDialog(BuildContext context, int noteId) async {
             getThumbnailsFromDb,
             null, // no taking pictures permitted on web
             doScaffold: false,
+            isReadOnly: true,
           ),
         ),
       ],
