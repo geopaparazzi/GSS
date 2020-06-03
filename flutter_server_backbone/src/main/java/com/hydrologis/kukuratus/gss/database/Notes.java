@@ -19,6 +19,7 @@
 package com.hydrologis.kukuratus.gss.database;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -26,11 +27,13 @@ import java.util.List;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.database.ISpatialTable;
 import com.hydrologis.kukuratus.database.ormlite.KukuratusPointType;
+import com.hydrologis.kukuratus.gss.GssDatabaseUtilities;
 import com.hydrologis.kukuratus.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.utils.export.KmlRepresenter;
 import com.j256.ormlite.dao.Dao;
@@ -143,10 +146,9 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         this.id = id;
     }
 
-    public Notes(Point the_geom, double altimetry, long timestamp, String description, String text,
-            String form, String marker, double size, double rotation, String color, double accuracy, double heading,
-            double speed, double speedaccuracy, GpapUsers gpapUser, GpapProject gpapProject, long previousId,
-            long uploadTimestamp) {
+    public Notes(Point the_geom, double altimetry, long timestamp, String description, String text, String form,
+            String marker, double size, double rotation, String color, double accuracy, double heading, double speed,
+            double speedaccuracy, GpapUsers gpapUser, GpapProject gpapProject, long previousId, long uploadTimestamp) {
         super();
         this.the_geom = the_geom;
         this.altimetry = altimetry;
@@ -466,6 +468,25 @@ public class Notes implements ISpatialTable, KmlRepresenter {
 
     public void setSpeedaccuracy(double speedaccuracy) {
         this.speedaccuracy = speedaccuracy;
+    }
+
+    public JSONObject toJson() {
+        JSONObject noteObject = new JSONObject();
+        noteObject.put(ID_FIELD_NAME, id);
+        noteObject.put(GssDatabaseUtilities.NAME, text);
+        noteObject.put(TIMESTAMP_FIELD_NAME, timestamp);
+        noteObject.put(NOTESEXT_COLUMN_MARKER, marker);
+        noteObject.put(NOTESEXT_COLUMN_SIZE, size);
+        noteObject.put(NOTESEXT_COLUMN_COLOR, color);
+        if (form != null && form.length() > 0) {
+            noteObject.put(FORM_FIELD_NAME, form);
+        }
+        Coordinate c = the_geom.getCoordinate();
+        noteObject.put(GssDatabaseUtilities.X, c.x);
+        noteObject.put(GssDatabaseUtilities.Y, c.y);
+        noteObject.put(GssDatabaseUtilities.PROJECT, gpapProject.getName());
+        noteObject.put(GssDatabaseUtilities.SURVEYOR, gpapUser.getName());
+        return noteObject;
     }
 
 }

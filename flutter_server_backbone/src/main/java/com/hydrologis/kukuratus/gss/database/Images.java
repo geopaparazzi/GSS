@@ -17,10 +17,15 @@
  * Author: Antonello Andrea (http://www.hydrologis.com)
  ******************************************************************************/
 package com.hydrologis.kukuratus.gss.database;
+import org.json.JSONObject;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Point;
+
+import java.util.Base64;
 
 import com.hydrologis.kukuratus.database.ISpatialTable;
 import com.hydrologis.kukuratus.database.ormlite.KukuratusPointType;
+import com.hydrologis.kukuratus.gss.GssDatabaseUtilities;
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
@@ -103,4 +108,21 @@ public class Images implements ISpatialTable {
         the_geom.setSRID(ISpatialTable.SRID);
     }
 
+
+    public JSONObject toJson() {
+        JSONObject imageObject = new JSONObject();
+        imageObject.put(ID_FIELD_NAME, id);
+        Coordinate c = the_geom.getCoordinate();
+        imageObject.put(GssDatabaseUtilities.X, c.x);
+        imageObject.put(GssDatabaseUtilities.Y, c.y);
+        imageObject.put(TIMESTAMP_FIELD_NAME, timestamp);
+        imageObject.put(GssDatabaseUtilities.NAME, text);
+        imageObject.put(GssDatabaseUtilities.DATAID, imageData.id);
+        byte[] thumbBytes = thumbnail;
+        String encodedThumb = Base64.getEncoder().encodeToString(thumbBytes);
+        imageObject.put(GssDatabaseUtilities.DATA, encodedThumb);
+        imageObject.put(GssDatabaseUtilities.PROJECT, gpapProject.getName());
+        imageObject.put(GssDatabaseUtilities.SURVEYOR, gpapUser.getName());
+        return imageObject;
+    }
 }

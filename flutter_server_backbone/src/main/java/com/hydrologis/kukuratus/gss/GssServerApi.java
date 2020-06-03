@@ -605,13 +605,7 @@ public class GssServerApi implements Vars {
                         JSONArray surveyorsArray = new JSONArray();
                         root.put(SURVEYORS, surveyorsArray);
                         for (GpapUsers gpapUsers : users) {
-                            JSONObject surveyor = new JSONObject();
-                            surveyorsArray.put(surveyor);
-                            surveyor.put(GpapUsers.ID_FIELD_NAME, gpapUsers.id);
-                            surveyor.put(GpapUsers.DEVICE_FIELD_NAME, gpapUsers.deviceId);
-                            surveyor.put(GpapUsers.NAME_FIELD_NAME, gpapUsers.name);
-                            surveyor.put(GpapUsers.CONTACT_FIELD_NAME, gpapUsers.contact);
-                            surveyor.put(GpapUsers.ACTIVE_FIELD_NAME, gpapUsers.active);
+                            surveyorsArray.put(gpapUsers.toJson());
                         }
                         return root.toString();
                     } else if (type.equals(PROJECTS)) {

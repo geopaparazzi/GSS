@@ -29,14 +29,7 @@ public class GssDatabaseUtilities {
     public static final String Y = "y";
     public static final String X = "x";
     public static final String COORDS = "coords";
-    public static final String ENDTS = "endts";
-    public static final String TS = "ts";
-    public static final String STARTTS = "startts";
     public static final String NAME = "name";
-    public static final String WIDTH = "width";
-    public static final String COLOR = "color";
-    public static final String MARKER = "marker";
-    public static final String SIZE = "size";
     public static final String ID = "id";
     public static final String DATAID = "dataid";
     public static final String DATA = "data";
@@ -105,11 +98,11 @@ public class GssDatabaseUtilities {
                 JSONObject logObject = new JSONObject();
                 jsonLogs.put(logObject);
                 logObject.put(ID, log.id);
-                logObject.put(COLOR, log.color);
-                logObject.put(WIDTH, log.width);
+                logObject.put(GpsLogs.COLOR_FIELD_NAME, log.color);
+                logObject.put(GpsLogs.WIDTH_FIELD_NAME, log.width);
                 logObject.put(NAME, log.name);
-                logObject.put(STARTTS, log.startTs);
-                logObject.put(ENDTS, log.endTs);
+                logObject.put(GpsLogs.STARTTS_FIELD_NAME, log.startTs);
+                logObject.put(GpsLogs.ENDTS_FIELD_NAME, log.endTs);
                 JSONArray jsonCoords = new JSONArray();
                 logObject.put(COORDS, jsonCoords);
                 Coordinate[] coords = log.the_geom.getCoordinates();
@@ -177,28 +170,10 @@ public class GssDatabaseUtilities {
 
         if (notesList != null) {
             for (Notes note : notesList) {
-                JSONObject noteObject = new JSONObject();
-                jsonNotes.put(noteObject);
-                noteObject.put(ID, note.id);
-                noteObject.put(NAME, note.text);
-                noteObject.put(TS, note.timestamp);
-                noteObject.put(MARKER, note.marker);
-                noteObject.put(SIZE, note.size);
-                noteObject.put(COLOR, note.color);
-                if (typeForm) {
-                    noteObject.put(FORM, note.form);
-                }
-                Coordinate c = note.the_geom.getCoordinate();
-                noteObject.put(X, c.x);
-                noteObject.put(Y, c.y);
                 projectDao.refresh(note.gpapProject);
                 userDao.refresh(note.gpapUser);
-                noteObject.put(PROJECT, note.gpapProject.getName());
-                noteObject.put(SURVEYOR, note.gpapUser.getName());
 
-                // System.out.println((typeForm ? "form: " : "simple ") + c.x + "/" + c.y + ": "
-                // + note.text);
-
+                jsonNotes.put(note.toJson());
             }
         }
         return root;
@@ -208,27 +183,12 @@ public class GssDatabaseUtilities {
             Dao<GpapUsers, ?> userDao, long id) throws SQLException {
         QueryBuilder<Notes, ?> qb = notesDao.queryBuilder();
         Notes note = qb.where().eq(Notes.ID_FIELD_NAME, id).queryForFirst();
-        JSONObject noteObject = new JSONObject();
         if (note != null) {
-            noteObject.put(ID, note.id);
-            noteObject.put(NAME, note.text);
-            noteObject.put(TS, note.timestamp);
-            noteObject.put(MARKER, note.marker);
-            noteObject.put(SIZE, note.size);
-            noteObject.put(COLOR, note.color);
-            if (note.form != null && note.form.length() > 0) {
-                noteObject.put(FORM, note.form);
-            }
-            Coordinate c = note.the_geom.getCoordinate();
-            noteObject.put(X, c.x);
-            noteObject.put(Y, c.y);
             projectDao.refresh(note.gpapProject);
             userDao.refresh(note.gpapUser);
-            noteObject.put(PROJECT, note.gpapProject.getName());
-            noteObject.put(SURVEYOR, note.gpapUser.getName());
-
+            return note.toJson();
         }
-        return noteObject;
+        return new JSONObject();
     }
 
     public static JSONObject getImages(JSONObject root, Dao<Images, ?> imagesDao, Dao<GpapProject, ?> projectDao,
@@ -272,24 +232,9 @@ public class GssDatabaseUtilities {
         root.put(IMAGES, jsonImages);
         if (imagesList != null) {
             for (Images image : imagesList) {
-                JSONObject imageObject = new JSONObject();
-                jsonImages.put(imageObject);
-                imageObject.put(ID, image.id);
-                Coordinate c = image.the_geom.getCoordinate();
-                imageObject.put(X, c.x);
-                imageObject.put(Y, c.y);
-                imageObject.put(TS, image.timestamp);
-                imageObject.put(NAME, image.text);
-                imageObject.put(DATAID, image.imageData.id);
-                byte[] thumbBytes = image.thumbnail;
-                String encodedThumb = Base64.getEncoder().encodeToString(thumbBytes);
-                imageObject.put(DATA, encodedThumb);
-
                 projectDao.refresh(image.gpapProject);
                 userDao.refresh(image.gpapUser);
-                imageObject.put(PROJECT, image.gpapProject.getName());
-                imageObject.put(SURVEYOR, image.gpapUser.getName());
-
+                jsonImages.put(image.toJson());
             }
         }
         return root;
@@ -301,24 +246,12 @@ public class GssDatabaseUtilities {
         QueryBuilder<Images, ?> qb = imagesDao.queryBuilder();
         Images image = qb.where().eq(Images.ID_FIELD_NAME, id).queryForFirst();
 
-        JSONObject imageObject = new JSONObject();
         if (image != null) {
-            imageObject.put(ID, image.id);
-            Coordinate c = image.the_geom.getCoordinate();
-            imageObject.put(X, c.x);
-            imageObject.put(Y, c.y);
-            imageObject.put(TS, image.timestamp);
-            imageObject.put(NAME, image.text);
-            imageObject.put(DATAID, image.imageData.id);
-            byte[] thumbBytes = image.thumbnail;
-            String encodedThumb = Base64.getEncoder().encodeToString(thumbBytes);
-            imageObject.put(DATA, encodedThumb);
             projectDao.refresh(image.gpapProject);
             userDao.refresh(image.gpapUser);
-            imageObject.put(PROJECT, image.gpapProject.getName());
-            imageObject.put(SURVEYOR, image.gpapUser.getName());
+            return image.toJson();
         }
-        return imageObject;
+        return new JSONObject();
     }
 
     /**
@@ -346,7 +279,7 @@ public class GssDatabaseUtilities {
                 if (formItem.has(Utilities.TAG_VALUE))
                     value = formItem.getString(Utilities.TAG_VALUE);
 
-                if (type.equals(Utilities.TYPE_PICTURES)||type.equals(Utilities.TYPE_IMAGELIB)) {
+                if (type.equals(Utilities.TYPE_PICTURES) || type.equals(Utilities.TYPE_IMAGELIB)) {
                     if (value.trim().length() == 0) {
                         continue;
                     }

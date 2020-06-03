@@ -17,8 +17,13 @@
  * Author: Antonello Andrea (http://www.hydrologis.com)
  ******************************************************************************/
 package com.hydrologis.kukuratus.gss.database;
+
+import java.util.Collection;
+
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+
+import org.json.JSONObject;
 
 /**
  * The geopaparazzi users class.
@@ -46,18 +51,18 @@ public class GpapUsers {
 
     @DatabaseField(columnName = CONTACT_FIELD_NAME, canBeNull = true)
     public String contact;
-    
+
     @DatabaseField(columnName = ACTIVE_FIELD_NAME, canBeNull = false)
     public int active;
 
     public GpapUsers() {
     }
 
-    public GpapUsers( long id ) {
+    public GpapUsers(long id) {
         this.id = id;
     }
 
-    public GpapUsers( String deviceId, String name,  String contact , int active) {
+    public GpapUsers(String deviceId, String name, String contact, int active) {
         this.deviceId = deviceId;
         this.name = name;
         this.active = active;
@@ -68,7 +73,7 @@ public class GpapUsers {
         return id;
     }
 
-    public void setId( long id ) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -76,7 +81,7 @@ public class GpapUsers {
         return deviceId;
     }
 
-    public void setDeviceId( String deviceId ) {
+    public void setDeviceId(String deviceId) {
         this.deviceId = deviceId;
     }
 
@@ -84,7 +89,7 @@ public class GpapUsers {
         return name;
     }
 
-    public void setName( String name ) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -92,7 +97,7 @@ public class GpapUsers {
         return active;
     }
 
-    public void setActive( int active ) {
+    public void setActive(int active) {
         this.active = active;
     }
 
@@ -100,8 +105,18 @@ public class GpapUsers {
         return contact;
     }
 
-    public void setContact( String contact ) {
+    public void setContact(String contact) {
         this.contact = contact;
+    }
+
+    public JSONObject toJson() {
+        JSONObject surveyor = new JSONObject();
+        surveyor.put(GpapUsers.ID_FIELD_NAME, id);
+        surveyor.put(GpapUsers.DEVICE_FIELD_NAME, deviceId);
+        surveyor.put(GpapUsers.NAME_FIELD_NAME, name);
+        surveyor.put(GpapUsers.CONTACT_FIELD_NAME, contact);
+        surveyor.put(GpapUsers.ACTIVE_FIELD_NAME, active);
+        return surveyor;
     }
 
 }
