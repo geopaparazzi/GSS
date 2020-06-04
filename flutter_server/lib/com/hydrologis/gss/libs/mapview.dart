@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/about.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/surveyors_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/webusers_view.dart';
@@ -412,54 +413,51 @@ class _MainMapViewState extends State<MainMapView>
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: new Icon(
-                  MdiIcons.notebook,
-                  color: SmashColors.mainDecorations,
-                  size: iconSize,
-                ),
-                title: Text("Form Builder"),
-                onTap: () {
-                  // TODO
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: new Icon(
-                  MdiIcons.databaseExport,
-                  color: SmashColors.mainDecorations,
-                  size: iconSize,
-                ),
-                title: Text("Export"),
-                onTap: () {
-                  // TODO
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-//            Expanded(
-//              child: Container(),
-//            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: new Icon(
-                  MdiIcons.bug,
-                  color: SmashColors.mainDecorations,
-                  size: iconSize,
-                ),
-                title: Text("Log"),
-                onTap: () {
-                  // TODO
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: ListTile(
+            //     leading: new Icon(
+            //       MdiIcons.notebook,
+            //       color: SmashColors.mainDecorations,
+            //       size: iconSize,
+            //     ),
+            //     title: Text("Form Builder"),
+            //     onTap: () {
+            //       // TODO
+            //       Navigator.of(context).pop();
+            //     },
+            //   ),
+            // ),
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: ListTile(
+            //     leading: new Icon(
+            //       MdiIcons.databaseExport,
+            //       color: SmashColors.mainDecorations,
+            //       size: iconSize,
+            //     ),
+            //     title: Text("Export"),
+            //     onTap: () {
+            //       // TODO
+            //       Navigator.of(context).pop();
+            //     },
+            //   ),
+            // ),
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: ListTile(
+            //     leading: new Icon(
+            //       MdiIcons.bug,
+            //       color: SmashColors.mainDecorations,
+            //       size: iconSize,
+            //     ),
+            //     title: Text("Log"),
+            //     onTap: () {
+            //       // TODO
+            //       Navigator.of(context).pop();
+            //     },
+            //   ),
+            // ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: ListTile(
@@ -470,8 +468,8 @@ class _MainMapViewState extends State<MainMapView>
                 ),
                 title: Text("About"),
                 onTap: () {
-                  // TODO
                   Navigator.of(context).pop();
+                  openAboutDialog(context);
                 },
               ),
             ),
