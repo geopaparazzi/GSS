@@ -27,6 +27,7 @@ import com.hydrologis.kukuratus.gss.database.GpsLogsData;
 import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
+import com.hydrologis.kukuratus.registry.Group;
 import com.hydrologis.kukuratus.registry.RegistryHandler;
 import com.hydrologis.kukuratus.registry.Settings;
 import com.hydrologis.kukuratus.registry.User;
@@ -618,9 +619,23 @@ public class GssServerApi implements Vars {
                             projectsArray.put(gpapProject.name);
                         }
                         return root.toString();
+                    } else if (type.equals(WEBUSERS)) {
+                        JSONObject root = new JSONObject();
+                        JSONArray usersArray = new JSONArray();
+                        root.put(WEBUSERS, usersArray);
+                        List<Group> groups = RegistryHandler.INSTANCE.getGroupsWithAuthorizations();
+                        for (Group group : groups) {
+                            List<User> usersList = RegistryHandler.INSTANCE.getUsersOfGroup(group);
+                            for (User user : usersList) {
+                                user.setGroup(group);
+                                usersArray.put(user.toJson());
+                            }
+                        }
+                        return root.toString();
                     }
 
-                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recognised.");
+                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
+                            "Type not recognised: type");
                     res.status(ks.getCode());
                     return ks.toJson();
                 } else {
@@ -641,7 +656,7 @@ public class GssServerApi implements Vars {
     public static void addUpdateByTypeRoute() {
 
         post("/update/:type", (req, res) -> {
-            KukuratusLogger.logDebug("GssServer#get(/update/:type",
+            KukuratusLogger.logDebug("GssServer#post(/update/:type",
                     "Received request from " + req.raw().getRemoteAddr());
             try {
                 if (hasPermission(req)) {
@@ -678,9 +693,43 @@ public class GssServerApi implements Vars {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
                         res.status(ks.getCode());
                         return ks.toJson();
+                    } else if (type.equals(WEBUSERS)) {
+                        String id = req.queryParams(User.ID_FIELD_NAME);
+                        String name = req.queryParams(User.NAME_FIELD_NAME);
+                        String uniqueName = req.queryParams(User.UNIQUENAME_FIELD_NAME);
+                        String email = req.queryParams(User.EMAIL_FIELD_NAME);
+                        String pwd = req.queryParams(User.PASSWORD_FIELD_NAME);
+                        String group = req.queryParams(User.GROUP_FIELD_NAME);
+
+                        if (id != null) {
+                            User existingUser = RegistryHandler.INSTANCE.getUserById(Long.parseLong(id));
+                            if (existingUser != null) {
+                                // update
+                                existingUser.uniqueName = uniqueName;
+                                existingUser.name = name;
+                                existingUser.email = email;
+                                if (pwd != null) {
+                                    existingUser.pwd = RegistryHandler.hashPwd(pwd);
+                                }
+                                RegistryHandler.INSTANCE.updateUser(existingUser);
+                            } else {
+                                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
+                                        "No webuser existing by the id: " + id);
+                                res.status(ks.getCode());
+                                return ks.toJson();
+                            }
+                        } else {
+                            // create new one
+                            Group groupObj = RegistryHandler.INSTANCE.getGroupByName(group);
+                            User newUser = new User(name, uniqueName, email, pwd, groupObj);
+                            RegistryHandler.INSTANCE.addUser(newUser);
+                        }
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
+                        res.status(ks.getCode());
+                        return ks.toJson();
                     } else {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
-                                "Type not recognised.");
+                                "Type not recognised: " + type);
                         res.status(ks.getCode());
                         return ks.toJson();
                     }
@@ -692,7 +741,53 @@ public class GssServerApi implements Vars {
                     return ks.toJson();
                 }
             } catch (Exception e) {
-                KukuratusLogger.logError("GssServer#post(/usersettings", e);
+                KukuratusLogger.logError("GssServer#post(/update/:type", e);
+                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
+                res.status(ks.getCode());
+                return ks.toJson();
+            }
+        });
+    }
+
+    public static void addDeleteByTypeRoute() {
+
+        post("/delete/:type", (req, res) -> {
+            KukuratusLogger.logDebug("GssServer#post(/delete/:type",
+                    "Received request from " + req.raw().getRemoteAddr());
+            try {
+                if (hasPermission(req)) {
+                    String type = req.params(":type");
+                    if (type.equals(WEBUSERS)) {
+                        String id = req.queryParams(User.ID_FIELD_NAME);
+                        if (id != null) {
+                            User existingUser = RegistryHandler.INSTANCE.getUserById(Long.parseLong(id));
+                            if (existingUser != null) {
+                                RegistryHandler.INSTANCE.deleteUser(existingUser);
+                            } else {
+                                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
+                                        "No webuser existing by the id: " + id);
+                                res.status(ks.getCode());
+                                return ks.toJson();
+                            }
+                        }
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
+                        res.status(ks.getCode());
+                        return ks.toJson();
+                    } else {
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
+                                "Type not recognised: " + type);
+                        res.status(ks.getCode());
+                        return ks.toJson();
+                    }
+
+                } else {
+                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN,
+                            "No permission for request.");
+                    res.status(ks.getCode());
+                    return ks.toJson();
+                }
+            } catch (Exception e) {
+                KukuratusLogger.logError("GssServer#post(/delete/:type", e);
                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
                 res.status(ks.getCode());
                 return ks.toJson();

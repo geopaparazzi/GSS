@@ -118,11 +118,11 @@ public enum RegistryHandler implements IDbVisitor {
      * Checks the login and returns the logged user if ok.
      * 
      * @param uniqueUserName the username to test.
-     * @param pwd the pwd of the user.
+     * @param pwd            the pwd of the user.
      * @return the user if login was ok, else <code>null</code>.
      * @throws Exception
      */
-    public User isLoginOk( String uniqueUserName, String pwd ) throws Exception {
+    public User isLoginOk(String uniqueUserName, String pwd) throws Exception {
         User user = getUserByUniqueName(uniqueUserName);
         if (user != null && BCrypt.checkpw(pwd, user.getPwd())) {
             return user;
@@ -137,7 +137,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @return the user or <code>null</code>, if none exists for the given username.
      * @throws Exception
      */
-    public User getUserByUniqueName( String uniqueUserName ) throws Exception {
+    public User getUserByUniqueName(String uniqueUserName) throws Exception {
         checkInit();
         if (uniqueUserName.indexOf(' ') != -1) {
             // user name can't have spaces
@@ -145,20 +145,31 @@ public enum RegistryHandler implements IDbVisitor {
         }
         QueryBuilder<User, Integer> queryBuilder = userDao.queryBuilder();
         queryBuilder.where().eq(User.UNIQUENAME_FIELD_NAME, uniqueUserName);
-        List<User> users = userDao.query(queryBuilder.prepare());
-        if (users.size() == 1) {
-            return users.get(0);
-        } else if (users.size() > 1) {
-            throw new IllegalArgumentException("Foudn more than one user by the given unique name!");
-        }
-        return null;
+        User user = userDao.queryForFirst(queryBuilder.prepare());
+        return user;
+    }
+
+    /**
+     * Get a User by its id.
+     * 
+     * @param id the id.
+     * @return the user or <code>null</code>, if none exists for the given id.
+     * @throws Exception
+     */
+    public User getUserById(long id) throws Exception {
+        checkInit();
+
+        QueryBuilder<User, Integer> queryBuilder = userDao.queryBuilder();
+        queryBuilder.where().eq(User.ID_FIELD_NAME, id);
+        User user = userDao.queryForFirst(queryBuilder.prepare());
+        return user;
     }
 
     public List<User> getUsersList() {
         List<User> all = new ArrayList<>();
         try {
             List<Group> groupsWithAuthorizations = getGroupsWithAuthorizations();
-            for( Group group : groupsWithAuthorizations ) {
+            for (Group group : groupsWithAuthorizations) {
                 all.addAll(getUsersOfGroup(group));
             }
         } catch (SQLException e) {
@@ -173,7 +184,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param user the user to check.
      * @return <code>true</code> if the user is admin.
      */
-    public boolean isAdmin( User user ) {
+    public boolean isAdmin(User user) {
         checkInit();
         try {
             if (user == null) {
@@ -199,7 +210,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param user the user to check.
      * @return <code>true</code> if the user is normal.
      */
-    public boolean isUser( User user ) {
+    public boolean isUser(User user) {
         checkInit();
         try {
             if (user == null) {
@@ -231,11 +242,11 @@ public enum RegistryHandler implements IDbVisitor {
 
         List<Authorization> authorizations = authorizationDao.queryForAll();
         HashMap<Integer, Authorization> id2Auth = new HashMap<>();
-        for( Authorization authorization : authorizations ) {
+        for (Authorization authorization : authorizations) {
             id2Auth.put(authorization.getId(), authorization);
         }
 
-        for( Group group : allGroups ) {
+        for (Group group : allGroups) {
             int id = group.getAuthorization().getId();
             group.setAuthorization(id2Auth.get(id));
         }
@@ -243,7 +254,7 @@ public enum RegistryHandler implements IDbVisitor {
         return allGroups;
     }
 
-    public void updateGroup( Group group ) {
+    public void updateGroup(Group group) {
         try {
             groupDao.update(group);
         } catch (SQLException e) {
@@ -251,7 +262,7 @@ public enum RegistryHandler implements IDbVisitor {
         }
     }
 
-    public void deleteGroup( Group group ) {
+    public void deleteGroup(Group group) {
         try {
             groupDao.delete(group);
         } catch (SQLException e) {
@@ -259,7 +270,7 @@ public enum RegistryHandler implements IDbVisitor {
         }
     }
 
-    public void updateUser( User user ) {
+    public void updateUser(User user) {
         try {
             userDao.update(user);
         } catch (SQLException e) {
@@ -267,7 +278,7 @@ public enum RegistryHandler implements IDbVisitor {
         }
     }
 
-    public void deleteUser( User user ) {
+    public void deleteUser(User user) {
         try {
             userDao.delete(user);
         } catch (SQLException e) {
@@ -282,7 +293,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @return the list of users.
      * @throws SQLException
      */
-    public List<User> getUsersOfGroup( Group group ) throws SQLException {
+    public List<User> getUsersOfGroup(Group group) throws SQLException {
         checkInit();
         QueryBuilder<User, Integer> queryBuilder = userDao.queryBuilder();
         queryBuilder.where().like(User.GROUP_FIELD_NAME, group.getId());
@@ -306,7 +317,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @return the group.
      * @throws SQLException
      */
-    public Group getGroupByName( String groupName ) throws SQLException {
+    public Group getGroupByName(String groupName) throws SQLException {
         checkInit();
         QueryBuilder<Group, Integer> queryBuilder = groupDao.queryBuilder();
         queryBuilder.where().like(Group.DESCR_FIELD_NAME, groupName);
@@ -324,7 +335,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @return the authorization.
      * @throws SQLException
      */
-    public Authorization getAuthorizationByName( String authName ) throws SQLException {
+    public Authorization getAuthorizationByName(String authName) throws SQLException {
         checkInit();
         QueryBuilder<Authorization, Integer> queryBuilder = authorizationDao.queryBuilder();
         queryBuilder.where().like(Authorization.NAME_FIELD_NAME, authName);
@@ -341,7 +352,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param group
      * @throws SQLException
      */
-    public void addGroup( Group group ) throws SQLException {
+    public void addGroup(Group group) throws SQLException {
         checkInit();
         groupDao.create(group);
     }
@@ -352,7 +363,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param group the group to delete.
      * @throws SQLException
      */
-    public void removeGroup( Group group ) throws SQLException {
+    public void removeGroup(Group group) throws SQLException {
         checkInit();
         QueryBuilder<User, Integer> userQB = userDao.queryBuilder();
         List<User> userToRemove = userQB.where().eq(User.GROUP_FIELD_NAME, group).query();
@@ -366,7 +377,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param user the user to add.
      * @throws SQLException
      */
-    public void addUser( User user ) throws SQLException {
+    public void addUser(User user) throws SQLException {
         checkInit();
         userDao.create(user);
     }
@@ -377,7 +388,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param user the user to delete.
      * @throws SQLException
      */
-    public void removeUser( User user ) throws SQLException {
+    public void removeUser(User user) throws SQLException {
         checkInit();
         userDao.delete(user);
     }
@@ -385,13 +396,13 @@ public enum RegistryHandler implements IDbVisitor {
     /**
      * Get a user setting from the db.
      * 
-     * @param key the settings key.
+     * @param key          the settings key.
      * @param defaultValue the value in case the setting doesn't exist.
-     * @param userName the userName the setting belongs to.
+     * @param userName     the userName the setting belongs to.
      * @return the setting string value.
      * @throws SQLException
      */
-    public String getSettingByKey( String key, String defaultValue, String userName ) {
+    public String getSettingByKey(String key, String defaultValue, String userName) {
         checkInit();
         try {
             Settings settings = settingsDao.queryBuilder().where().eq(Settings.KEY_FIELD_NAME, key).and()
@@ -409,12 +420,12 @@ public enum RegistryHandler implements IDbVisitor {
     /**
      * Get a global setting from the db.
      * 
-     * @param key the settings key.
+     * @param key          the settings key.
      * @param defaultValue the value in case the setting doesn't exist.
      * @return the setting string value.
      * @throws SQLException
      */
-    public String getGlobalSettingByKey( String key, String defaultValue ) {
+    public String getGlobalSettingByKey(String key, String defaultValue) {
         checkInit();
         try {
             Settings settings = settingsDao.queryBuilder().where().eq(Settings.KEY_FIELD_NAME, key).and()
@@ -435,7 +446,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param setting the setting to add or update.
      * @throws SQLException
      */
-    public void insertOrUpdateSetting( Settings setting ) throws SQLException {
+    public void insertOrUpdateSetting(Settings setting) throws SQLException {
         checkInit();
         settingsDao.createOrUpdate(setting);
     }
@@ -446,7 +457,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param setting the setting to add or update.
      * @throws SQLException
      */
-    public void insertOrUpdateGlobalSetting( Settings setting ) throws SQLException {
+    public void insertOrUpdateGlobalSetting(Settings setting) throws SQLException {
         checkInit();
         setting.userName = Settings.GLOBALUSER;
         settingsDao.createOrUpdate(setting);
@@ -458,7 +469,7 @@ public enum RegistryHandler implements IDbVisitor {
     public static List<String> getAllTileSourcesNames() {
         List<String> tileSourcesNames = new ArrayList<>();
         tileSourcesNames.add(MAPSFORGE);
-        for( EOnlineTileSources source : EOnlineTileSources.values() ) {
+        for (EOnlineTileSources source : EOnlineTileSources.values()) {
             tileSourcesNames.add(source.getName());
         }
         return tileSourcesNames;
@@ -470,7 +481,7 @@ public enum RegistryHandler implements IDbVisitor {
      * @param userName the user the setting belongs to.
      * @return the list of names.
      */
-    public static List<String> getSelectedTileSourcesNames( String userName ) {
+    public static List<String> getSelectedTileSourcesNames(String userName) {
         String colonSepMaps = RegistryHandler.INSTANCE.getSettingByKey(SETTINGS_KEY_MAPS,
                 EOnlineTileSources.Open_Street_Map_Standard.getName(), userName);
         String[] split = colonSepMaps.split(";"); //$NON-NLS-1$
@@ -480,10 +491,10 @@ public enum RegistryHandler implements IDbVisitor {
     /**
      * Put selected tilesources names in the settings.
      * 
-     * @param names the names of teh tilesources to insert.
+     * @param names    the names of teh tilesources to insert.
      * @param userName the name of the user the setting belongs to.
      */
-    public void putSelectedTileSourcesNames( List<String> names, String userName ) {
+    public void putSelectedTileSourcesNames(List<String> names, String userName) {
         String maps = names.stream().collect(Collectors.joining(";")); //$NON-NLS-1$
         Settings newSetting = new Settings(SETTINGS_KEY_MAPS, maps, userName);
         try {
@@ -494,7 +505,7 @@ public enum RegistryHandler implements IDbVisitor {
     }
 
     @Override
-    public void visit( DataSource dataSource ) throws Exception {
+    public void visit(DataSource dataSource) throws Exception {
         if (dataSource != null) {
             String url = db.getJdbcUrlPre() + db.getDatabasePath();
             connectionSource = new DataSourceConnectionSource(dataSource, url);
@@ -502,7 +513,7 @@ public enum RegistryHandler implements IDbVisitor {
     }
 
     @Override
-    public void visit( Connection singleConnection ) throws Exception {
+    public void visit(Connection singleConnection) throws Exception {
         if (singleConnection != null) {
             String url = db.getJdbcUrlPre() + db.getDatabasePath();
             connectionSource = new JdbcSingleConnectionSource(url, singleConnection);
@@ -513,16 +524,16 @@ public enum RegistryHandler implements IDbVisitor {
     /**
      * Get the name of the table, the class describes.
      * 
-     * @param ormliteClass the ormlite annotated class. 
+     * @param ormliteClass the ormlite annotated class.
      * @return the name of the table.
      */
-    public static String getTableName( Class< ? > ormliteClass ) {
+    public static String getTableName(Class<?> ormliteClass) {
         DatabaseTable annotation = ormliteClass.getAnnotation(DatabaseTable.class);
         String tableName = annotation.tableName();
         return tableName;
     }
 
-    public static String hashPwd( String pwd ) {
+    public static String hashPwd(String pwd) {
         String hashed = BCrypt.hashpw(pwd, BCrypt.gensalt(12));
         return hashed;
     }

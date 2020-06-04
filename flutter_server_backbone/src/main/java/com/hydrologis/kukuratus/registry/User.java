@@ -17,35 +17,39 @@
  * Author: Antonello Andrea (http://www.hydrologis.com)
  ******************************************************************************/
 package com.hydrologis.kukuratus.registry;
+
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+
+import org.json.JSONObject;
 
 @DatabaseTable(tableName = "users")
 public class User {
 
+    public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
     public static final String NAME_FIELD_NAME = "name"; //$NON-NLS-1$
     public static final String UNIQUENAME_FIELD_NAME = "uniquename"; //$NON-NLS-1$
     public static final String EMAIL_FIELD_NAME = "email"; //$NON-NLS-1$
     public static final String PASSWORD_FIELD_NAME = "password"; //$NON-NLS-1$
     public static final String GROUP_FIELD_NAME = "group_id"; //$NON-NLS-1$
 
-    @DatabaseField(generatedId = true)
-    private int id;
+    @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
+    public int id;
 
     @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
-    private String name;
+    public String name;
 
-    @DatabaseField(columnName = UNIQUENAME_FIELD_NAME, canBeNull = false)
-    private String uniqueName;
+    @DatabaseField(columnName = UNIQUENAME_FIELD_NAME, canBeNull = false, unique = true)
+    public String uniqueName;
 
     @DatabaseField(columnName = EMAIL_FIELD_NAME, canBeNull = false)
-    private String email;
+    public String email;
 
     @DatabaseField(columnName = PASSWORD_FIELD_NAME, canBeNull = false)
-    private String pwd;
+    public String pwd;
 
     @DatabaseField(foreign = true, columnName = GROUP_FIELD_NAME)
-    private Group group;
+    public Group group;
 
     public User() {
     }
@@ -103,4 +107,14 @@ public class User {
         this.group = group;
     }
 
+    public JSONObject toJson() {
+        JSONObject surveyor = new JSONObject();
+        surveyor.put(ID_FIELD_NAME, id);
+        surveyor.put(NAME_FIELD_NAME, name);
+        surveyor.put(UNIQUENAME_FIELD_NAME, uniqueName);
+        surveyor.put(EMAIL_FIELD_NAME, email);
+        surveyor.put(GROUP_FIELD_NAME, group.getDescription());
+        // password is never sent on purpose
+        return surveyor;
+    }
 }

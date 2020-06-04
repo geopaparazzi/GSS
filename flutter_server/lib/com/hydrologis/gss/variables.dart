@@ -13,9 +13,10 @@ const KEY_USER = "user";
 const KEY_PWD = "pwd";
 const KEY_BASEMAP = "basemap";
 const KEY_MAPCENTER = "mapcenter_xyz";
-const KEY_AUTOMATIC_REGISTRATION = "GSS_KEY_AUTOMATIC_REGISTRATION"; 
+const KEY_AUTOMATIC_REGISTRATION = "GSS_KEY_AUTOMATIC_REGISTRATION";
 
 const KEY_SURVEYORS = "surveyors";
+const KEY_WEBUSERS = "webusers";
 const KEY_PROJECTS = "projects";
 
 /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
@@ -56,6 +57,16 @@ const SURVEYOR_DEVICE_FIELD_NAME = "deviceid"; //$NON-NLS-1$
 const SURVEYOR_NAME_FIELD_NAME = "name"; //$NON-NLS-1$
 const SURVEYOR_ACTIVE_FIELD_NAME = "active"; //$NON-NLS-1$
 const SURVEYOR_CONTACT_FIELD_NAME = "contact"; //$NON-NLS-1$
+
+const WEBUSER_ID_FIELD_NAME = "id"; //$NON-NLS-1$
+const WEBUSER_NAME_FIELD_NAME = "name"; //$NON-NLS-1$
+const WEBUSER_UNIQUENAME_FIELD_NAME = "uniquename"; //$NON-NLS-1$
+const WEBUSER_EMAIL_FIELD_NAME = "email"; //$NON-NLS-1$
+const WEBUSER_PASSWORD_FIELD_NAME = "password"; //$NON-NLS-1$
+const WEBUSER_GROUP_FIELD_NAME = "group_id"; //$NON-NLS-1$
+
+const ADMINGROUP = "administrators"; //$NON-NLS-1$
+const USERGROUP = "users"; //$NON-NLS-1$
 
 // API VARS END
 

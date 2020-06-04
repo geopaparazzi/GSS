@@ -21,6 +21,7 @@ public interface Vars {
 
     static final String SURVEYORS = "surveyors";
     static final String PROJECTS = "projects";
+    static final String WEBUSERS = "webusers";
 
     static final String AUTHORIZATION = "Authorization";
 

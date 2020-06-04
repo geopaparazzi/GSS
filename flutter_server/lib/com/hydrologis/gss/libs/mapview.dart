@@ -8,6 +8,7 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/surveyors_view.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/webusers_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/main.dart';
@@ -405,8 +406,9 @@ class _MainMapViewState extends State<MainMapView>
                 ),
                 title: Text("Web Users"),
                 onTap: () {
-                  // TODO
                   Navigator.of(context).pop();
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => WebUsersView()));
                 },
               ),
             ),

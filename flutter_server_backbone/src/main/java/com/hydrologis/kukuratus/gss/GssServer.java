@@ -122,6 +122,7 @@ public class GssServer implements Vars {
         GssServerApi.addUserSettingsRoute();
         GssServerApi.addListByTypeRoute();
         GssServerApi.addUpdateByTypeRoute();
+        GssServerApi.addDeleteByTypeRoute();
 
         get("/", (req, res) -> {
             res.redirect("index.html");

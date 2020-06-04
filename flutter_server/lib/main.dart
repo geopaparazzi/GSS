@@ -80,6 +80,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  String _errortext = "";
   @override
   Widget build(BuildContext context) {
     var _isLogged = SmashSession.isLogged();
@@ -127,7 +128,10 @@ class _MainPageState extends State<MainPage> {
         onPressed: () async {
           String user = userNameController.text;
           String password = passwordController.text;
-          await SmashSession.login(user, password);
+          var loginOk = await SmashSession.login(user, password);
+          if (!loginOk) {
+            _errortext = "The used credentials are wrong.";
+          }
           setState(() {});
         },
         child: Text("Login",
@@ -167,6 +171,8 @@ class _MainPageState extends State<MainPage> {
                 SizedBox(
                   height: 15.0,
                 ),
+                SmashUI.normalText(_errortext,
+                    color: SmashColors.mainSelectionBorder)
               ],
             ),
           ),

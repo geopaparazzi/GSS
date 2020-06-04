@@ -43,7 +43,7 @@ public class GpapUsers {
     @DatabaseField(generatedId = true, columnName = ID_FIELD_NAME)
     public long id;
 
-    @DatabaseField(columnName = DEVICE_FIELD_NAME, canBeNull = false)
+    @DatabaseField(columnName = DEVICE_FIELD_NAME, canBeNull = false, unique = true)
     public String deviceId;
 
     @DatabaseField(columnName = NAME_FIELD_NAME, canBeNull = false)
@@ -111,11 +111,11 @@ public class GpapUsers {
 
     public JSONObject toJson() {
         JSONObject surveyor = new JSONObject();
-        surveyor.put(GpapUsers.ID_FIELD_NAME, id);
-        surveyor.put(GpapUsers.DEVICE_FIELD_NAME, deviceId);
-        surveyor.put(GpapUsers.NAME_FIELD_NAME, name);
-        surveyor.put(GpapUsers.CONTACT_FIELD_NAME, contact);
-        surveyor.put(GpapUsers.ACTIVE_FIELD_NAME, active);
+        surveyor.put(ID_FIELD_NAME, id);
+        surveyor.put(DEVICE_FIELD_NAME, deviceId);
+        surveyor.put(NAME_FIELD_NAME, name);
+        surveyor.put(CONTACT_FIELD_NAME, contact);
+        surveyor.put(ACTIVE_FIELD_NAME, active);
         return surveyor;
     }
 
