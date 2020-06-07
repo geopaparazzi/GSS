@@ -16,7 +16,7 @@ class SurveyorsView extends StatefulWidget {
 }
 
 class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
-  List<dynamic> surveyors = [];
+  List<dynamic> surveyors;
 
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
@@ -39,95 +39,53 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
 
     var isAdmin = SmashSession.isAdmin();
 
-    surveyors.forEach((surveyor) {
-      var deviceId = surveyor[SURVEYOR_DEVICE_FIELD_NAME];
-      var name = surveyor[SURVEYOR_NAME_FIELD_NAME];
-      var contact = surveyor[SURVEYOR_CONTACT_FIELD_NAME] ?? "";
-      int active = surveyor[SURVEYOR_ACTIVE_FIELD_NAME];
+    if (surveyors != null)
+      surveyors.forEach((surveyor) {
+        var deviceId = surveyor[SURVEYOR_DEVICE_FIELD_NAME];
+        var name = surveyor[SURVEYOR_NAME_FIELD_NAME];
+        var contact = surveyor[SURVEYOR_CONTACT_FIELD_NAME] ?? "";
+        int active = surveyor[SURVEYOR_ACTIVE_FIELD_NAME];
 
-      var inputTitle = "Set new value";
-      var row = DataRow(cells: [
-        DataCell(
-          SmashUI.normalText(deviceId),
-          showEditIcon: isAdmin,
-          onTap: () async {
-            if (isAdmin) {
-              var result = await showInputDialog(
-                context,
-                inputTitle,
-                "Device id",
-                defaultText: deviceId,
-              );
-              if (result != null && result.length > 0) {
-                surveyor[SURVEYOR_DEVICE_FIELD_NAME] = result;
-                var up = SmashSession.getSessionUser();
-                String error =
-                    await ServerApi.updateOrAddSurveyor(up[0], up[1], surveyor);
-                if (error != null) {
-                  showErrorDialog(context, error);
-                } else {
-                  setState(() {});
+        var inputTitle = "Set new value";
+        var row = DataRow(cells: [
+          DataCell(
+            SmashUI.normalText(deviceId),
+            showEditIcon: isAdmin,
+            onTap: () async {
+              if (isAdmin) {
+                var result = await showInputDialog(
+                  context,
+                  inputTitle,
+                  "Device id",
+                  defaultText: deviceId,
+                );
+                if (result != null && result.length > 0) {
+                  surveyor[SURVEYOR_DEVICE_FIELD_NAME] = result;
+                  var up = SmashSession.getSessionUser();
+                  String error = await ServerApi.updateOrAddSurveyor(
+                      up[0], up[1], surveyor);
+                  if (error != null) {
+                    showErrorDialog(context, error);
+                  } else {
+                    setState(() {});
+                  }
                 }
               }
-            }
-          },
-        ),
-        DataCell(
-          SmashUI.normalText(name),
-          showEditIcon: isAdmin,
-          onTap: () async {
-            if (isAdmin) {
-              var result = await showInputDialog(
-                context,
-                inputTitle,
-                "Name",
-                defaultText: name,
-              );
-              if (result != null && result.length > 0) {
-                surveyor[SURVEYOR_NAME_FIELD_NAME] = result;
-                var up = SmashSession.getSessionUser();
-                String error =
-                    await ServerApi.updateOrAddSurveyor(up[0], up[1], surveyor);
-                if (error != null) {
-                  showErrorDialog(context, error);
-                } else {
-                  await getSurveyors();
-                }
-              }
-            }
-          },
-        ),
-        DataCell(
-          SmashUI.normalText(contact),
-          showEditIcon: isAdmin,
-          onTap: () async {
-            if (isAdmin) {
-              var result = await showInputDialog(
-                context,
-                inputTitle,
-                "Contact",
-                defaultText: contact,
-              );
-              if (result != null && result.length > 0) {
-                surveyor[SURVEYOR_CONTACT_FIELD_NAME] = result;
-                var up = SmashSession.getSessionUser();
-                String error =
-                    await ServerApi.updateOrAddSurveyor(up[0], up[1], surveyor);
-                if (error != null) {
-                  showErrorDialog(context, error);
-                } else {
-                  await getSurveyors();
-                }
-              }
-            }
-          },
-        ),
-        DataCell(
-          Checkbox(
-              value: active == 1 ? true : false,
-              onChanged: (selected) async {
-                if (isAdmin) {
-                  surveyor[SURVEYOR_ACTIVE_FIELD_NAME] = selected ? 1 : 0;
+            },
+          ),
+          DataCell(
+            SmashUI.normalText(name),
+            showEditIcon: isAdmin,
+            onTap: () async {
+              if (isAdmin) {
+                var result = await showInputDialog(
+                  context,
+                  inputTitle,
+                  "Name",
+                  defaultText: name,
+                );
+                if (result != null && result.length > 0) {
+                  surveyor[SURVEYOR_NAME_FIELD_NAME] = result;
                   var up = SmashSession.getSessionUser();
                   String error = await ServerApi.updateOrAddSurveyor(
                       up[0], up[1], surveyor);
@@ -137,16 +95,59 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
                     await getSurveyors();
                   }
                 }
-              }),
-        ),
-      ]);
+              }
+            },
+          ),
+          DataCell(
+            SmashUI.normalText(contact),
+            showEditIcon: isAdmin,
+            onTap: () async {
+              if (isAdmin) {
+                var result = await showInputDialog(
+                  context,
+                  inputTitle,
+                  "Contact",
+                  defaultText: contact,
+                );
+                if (result != null && result.length > 0) {
+                  surveyor[SURVEYOR_CONTACT_FIELD_NAME] = result;
+                  var up = SmashSession.getSessionUser();
+                  String error = await ServerApi.updateOrAddSurveyor(
+                      up[0], up[1], surveyor);
+                  if (error != null) {
+                    showErrorDialog(context, error);
+                  } else {
+                    await getSurveyors();
+                  }
+                }
+              }
+            },
+          ),
+          DataCell(
+            Checkbox(
+                value: active == 1 ? true : false,
+                onChanged: (selected) async {
+                  if (isAdmin) {
+                    surveyor[SURVEYOR_ACTIVE_FIELD_NAME] = selected ? 1 : 0;
+                    var up = SmashSession.getSessionUser();
+                    String error = await ServerApi.updateOrAddSurveyor(
+                        up[0], up[1], surveyor);
+                    if (error != null) {
+                      showErrorDialog(context, error);
+                    } else {
+                      await getSurveyors();
+                    }
+                  }
+                }),
+          ),
+        ]);
 
-      if (active == 1) {
-        activeRows.add(row);
-      } else {
-        disabledRows.add(row);
-      }
-    });
+        if (active == 1) {
+          activeRows.add(row);
+        } else {
+          disabledRows.add(row);
+        }
+      });
 
     bool doActive = activeRows.length > 0;
     bool doDisabled = disabledRows.length > 0;
@@ -169,73 +170,77 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
           ),
         ),
       ),
-      body: surveyors.length == 0
+      body: surveyors == null
           ? SmashCircularProgress(label: "Loading surveyors...")
-          : Align(
-              alignment: Alignment.topCenter,
-              child: Column(
-                children: [
-                  doActive
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 25.0),
-                          child: SmashUI.titleText("Active Surveyors"),
-                        )
-                      : Container(),
-                  doActive
-                      ? Expanded(
-                          child: SingleChildScrollView(
-                            child: DataTable(
-                              columns: [
-                                DataColumn(
-                                    label: SmashUI.normalText("Device Id",
-                                        bold: true)),
-                                DataColumn(
-                                    label:
-                                        SmashUI.normalText("Name", bold: true)),
-                                DataColumn(
-                                    label: SmashUI.normalText("Contact",
-                                        bold: true)),
-                                DataColumn(
-                                    label: SmashUI.normalText("Active",
-                                        bold: true)),
-                              ],
-                              rows: activeRows,
-                            ),
-                          ),
-                        )
-                      : Container(),
-                  doDisabled
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 25.0),
-                          child: SmashUI.titleText("Disabled Surveyors"),
-                        )
-                      : Container(),
-                  doDisabled
-                      ? Expanded(
-                          child: SingleChildScrollView(
-                            child: DataTable(
-                              columns: [
-                                DataColumn(
-                                    label: SmashUI.normalText("Device Id",
-                                        bold: true)),
-                                DataColumn(
-                                    label:
-                                        SmashUI.normalText("Name", bold: true)),
-                                DataColumn(
-                                    label: SmashUI.normalText("Contact",
-                                        bold: true)),
-                                DataColumn(
-                                    label: SmashUI.normalText("Active",
-                                        bold: true)),
-                              ],
-                              rows: disabledRows,
-                            ),
-                          ),
-                        )
-                      : Container(),
-                ],
-              ),
-            ),
+          : surveyors.length == 0
+              ? Center(
+                  child: SmashUI.titleText("No surveyors present yet.",
+                      useColor: true))
+              : Align(
+                  alignment: Alignment.topCenter,
+                  child: Column(
+                    children: [
+                      doActive
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 25.0),
+                              child: SmashUI.titleText("Active Surveyors"),
+                            )
+                          : Container(),
+                      doActive
+                          ? Expanded(
+                              child: SingleChildScrollView(
+                                child: DataTable(
+                                  columns: [
+                                    DataColumn(
+                                        label: SmashUI.normalText("Device Id",
+                                            bold: true)),
+                                    DataColumn(
+                                        label: SmashUI.normalText("Name",
+                                            bold: true)),
+                                    DataColumn(
+                                        label: SmashUI.normalText("Contact",
+                                            bold: true)),
+                                    DataColumn(
+                                        label: SmashUI.normalText("Active",
+                                            bold: true)),
+                                  ],
+                                  rows: activeRows,
+                                ),
+                              ),
+                            )
+                          : Container(),
+                      doDisabled
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 25.0),
+                              child: SmashUI.titleText("Disabled Surveyors"),
+                            )
+                          : Container(),
+                      doDisabled
+                          ? Expanded(
+                              child: SingleChildScrollView(
+                                child: DataTable(
+                                  columns: [
+                                    DataColumn(
+                                        label: SmashUI.normalText("Device Id",
+                                            bold: true)),
+                                    DataColumn(
+                                        label: SmashUI.normalText("Name",
+                                            bold: true)),
+                                    DataColumn(
+                                        label: SmashUI.normalText("Contact",
+                                            bold: true)),
+                                    DataColumn(
+                                        label: SmashUI.normalText("Active",
+                                            bold: true)),
+                                  ],
+                                  rows: disabledRows,
+                                ),
+                              ),
+                            )
+                          : Container(),
+                    ],
+                  ),
+                ),
       floatingActionButton: SmashSession.isAdmin()
           ? Builder(
               builder: (BuildContext context) {

@@ -61,21 +61,11 @@ public class GssServer implements Vars {
 
     private ITilesGenerator mapsforgeTilesGenerator;
 
-    public void start() throws Exception {
-        start(null, null);
+    public void start(ASpatialDb db) throws Exception {
+        start(db, null, null);
     }
 
-    public void start(String keyStorePath, String keyStorePassword) throws Exception {
-        KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
-        File dataFolder = workspace.getDataFolder();
-        File dbFile = new File(dataFolder, "gss_database.mv.db"); //$NON-NLS-1$
-        if (!dbFile.exists()) {
-            KukuratusLogger.logInfo(this, "No database present in folder, creating one."); //$NON-NLS-1$
-        }
-
-        // TODO handle dbs
-        ASpatialDb db = EDb.H2GIS.getSpatialDb();
-        db.open(dbFile.getAbsolutePath());
+    public void start(ASpatialDb db, String keyStorePath, String keyStorePassword) throws Exception {
         DatabaseHandler.init(db);
         createTables();
 
@@ -178,37 +168,66 @@ public class GssServer implements Vars {
         }
         KukuratusWorkspace.setWorkspaceFolderPath(workspacePath);
 
-        String pwd = null;
+        String mobilePwd = null;
         String keyStorePath = null;
+        String postgresUrl = null;
         for (int i = 1; i < args.length; i++) {
             String arg = args[i];
             if (new File(arg).exists()) {
                 // assuming it is the keystore
                 keyStorePath = arg;
+            } else if (arg.contains("jdbc:postgresql")) {
+                // jdbc:postgresql://localhost:5432/test
+                postgresUrl = arg.replaceFirst(EDb.POSTGIS.getJdbcPrefix(), "");
             } else {
-                pwd = arg;
+                mobilePwd = arg;
             }
         }
 
-        System.out.println("****************************************************");
-        System.out.println("* Launching with parameters:");
-        System.out.println("* \tWORKSPACE FOLDER: " + workspacePath);
-        System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
-        System.out.println("* \tMOBILE PWD: " + (pwd != null ? pwd : " - nv - "));
-        System.out.println("****************************************************");
+        try (Scanner in = new Scanner(System.in)) {
 
-        if (pwd != null) {
-            // pwd was supplied
-            ServletUtils.MOBILE_UPLOAD_PWD = pwd;
-        } else {
-            ServletUtils.MOBILE_UPLOAD_PWD = "gss_Master_Survey_Forever_2018";
-        }
+            ASpatialDb db = null;
+            if (postgresUrl != null) {
+                db = EDb.POSTGIS.getSpatialDb();
+                System.out.println("Please enter the postgresql username and password (one on each line):");
+                String user = in.nextLine();
+                String pwd = in.nextLine();
+                db.setCredentials(user, pwd);
+                db.open(postgresUrl);
+            } else {
+                KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
+                File dataFolder = workspace.getDataFolder();
+                File dbFile = new File(dataFolder, "gss_database.mv.db"); //$NON-NLS-1$
+                if (!dbFile.exists()) {
+                    KukuratusLogger.logInfo("main", "No database present in folder, creating one."); //$NON-NLS-1$
+                }
+                db = EDb.H2GIS.getSpatialDb();
+                db.open(dbFile.getAbsolutePath());
+            }
 
-        String keyStorePassword = null;
-        if (keyStorePath != null) {
-            // ask for the password at startup
-            System.out.println("Please enter the keystore password and press return:");
-            try (Scanner in = new Scanner(System.in)) {
+            System.out.println("****************************************************");
+            System.out.println("* Launching with parameters:");
+            System.out.println("* \tWORKSPACE FOLDER: " + workspacePath);
+            System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
+            System.out.println("* \tMOBILE PWD: " + (mobilePwd != null ? mobilePwd : " - nv - "));
+            if (postgresUrl != null) {
+                System.out.println("* \tDATABASE: " + postgresUrl);
+            } else {
+                System.out.println("* \tDATABASE: " + db.getDatabasePath());
+            }
+            System.out.println("****************************************************");
+
+            if (mobilePwd != null) {
+                // pwd was supplied
+                ServletUtils.MOBILE_UPLOAD_PWD = mobilePwd;
+            } else {
+                ServletUtils.MOBILE_UPLOAD_PWD = "gss_Master_Survey_Forever_2018";
+            }
+
+            String keyStorePassword = null;
+            if (keyStorePath != null) {
+                // ask for the password at startup
+                System.out.println("Please enter the keystore password and press return:");
                 keyStorePassword = in.nextLine();
                 if (keyStorePassword.trim().length() == 0) {
                     System.out.println("Disabling keystore use due to empty password.");
@@ -216,10 +235,10 @@ public class GssServer implements Vars {
                     keyStorePath = null;
                 }
             }
-        }
 
-        GssServer gssServer = new GssServer();
-        gssServer.start(keyStorePath, keyStorePassword);
+            GssServer gssServer = new GssServer();
+            gssServer.start(db, keyStorePath, keyStorePassword);
+        }
     }
 
 }
