@@ -247,6 +247,8 @@ class MapstateModel extends ChangeNotifier {
       var noteId = formItem[ID];
       var name = formItem[NAME];
       var form = formItem[FORM];
+      name = FormUtilities.getFormItemLabel(form, name); 
+      print(name);
       var ts = formItem[TS];
       var x = formItem[X];
       var y = formItem[Y];
@@ -266,7 +268,7 @@ class MapstateModel extends ChangeNotifier {
         color: colorExt,
       );
       markers.add(
-          buildFormNote(this, x, y, name, form, noteId, iconData, size, colorExt));
+          buildFormNote(this, x, y, name, noteId, iconData, size, colorExt));
 
       var surveyor = formItem[SURVEYOR];
       var project = formItem[PROJECT];

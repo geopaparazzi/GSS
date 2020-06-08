@@ -57,6 +57,17 @@ import spark.Request;
 
 public class GssServerApi implements Vars {
 
+    static final String ROUTES_DELETE_TYPE = "/delete/:type";
+    static final String ROUTES_UPDATE_TYPE = "/update/:type";
+    static final String ROUTES_LIST_TYPE = "/list/:type";
+    static final String ROUTES_GETDATA = "/data";
+    static final String ROUTES_GETDATA_BY_TYPE = "/data/:type/:id";
+    static final String ROUTES_GET_IMAGEDATA = "/imagedata/:userid/:dataid";
+    static final String ROUTES_UPLOAD = "/upload";
+    static final String ROUTES_LOGIN = "/login";
+    static final String ROUTES_USERSETTINGS = "/usersettings";
+    static final String ROUTES_TILES_SOURCE_Z_X_Y = "/tiles/:source/:z/:x/:y";
+
     static final String NOTE_OBJID = "note";
     static final String IMAGE_OBJID = "image";
     static final String LOG_OBJID = "gpslog";
@@ -134,7 +145,7 @@ public class GssServerApi implements Vars {
 
     public static void addTilesRoute(ITilesGenerator mapsforgeTilesGenerator) {
 
-        get("/tiles/:source/:z/:x/:y", (req, res) -> {
+        get(ROUTES_TILES_SOURCE_Z_X_Y, (req, res) -> {
             String source = req.params(":source");
             if (source.equals("mapsforge")) {
                 String x = req.params(":x");
@@ -163,7 +174,7 @@ public class GssServerApi implements Vars {
     }
 
     public static void addUploadRoute() {
-        post("/upload", "multipart/form-data", (req, res) -> {
+        post(ROUTES_UPLOAD, "multipart/form-data", (req, res) -> {
             MultipartConfigElement multipartConfigElement = new MultipartConfigElement(ServletUtils.tmpDir);
             req.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement);
 
@@ -367,7 +378,7 @@ public class GssServerApi implements Vars {
 
     public static void addGetDataRoute() {
 
-        post("/data", (req, res) -> {
+        post(ROUTES_GETDATA, (req, res) -> {
             KukuratusLogger.logDebug("GssServer#post(/data", "Received request from " + req.raw().getRemoteAddr());
             try {
 
@@ -436,7 +447,7 @@ public class GssServerApi implements Vars {
     public static void addGetDataByTypeRoute() {
 
         // get data from the server by type and the primary key id
-        get("/data/:type/:id", (req, res) -> {
+        get(ROUTES_GETDATA_BY_TYPE, (req, res) -> {
             // if (hasPermission(req)) {
             String type = req.params(":type");
             String id = req.params(":id");
@@ -490,7 +501,7 @@ public class GssServerApi implements Vars {
 
     public static void addGetImagedataRoute() {
         // get an image by the original project id and the userid
-        get("/imagedata/:userid/:dataid", (req, res) -> {
+        get(ROUTES_GET_IMAGEDATA, (req, res) -> {
             // if (!hasPermission(req)) {
             String userId = req.params(":userid");
             String imageDataId = req.params(":dataid");
@@ -515,7 +526,7 @@ public class GssServerApi implements Vars {
 
     public static void addLoginRoute() {
 
-        get("/login", (req, res) -> {
+        get(ROUTES_LOGIN, (req, res) -> {
             try {
                 String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
                 String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
@@ -552,7 +563,7 @@ public class GssServerApi implements Vars {
 
     public static void addUserSettingsRoute() {
 
-        post("/usersettings", (req, res) -> {
+        post(ROUTES_USERSETTINGS, (req, res) -> {
             try {
                 String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
                 String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
@@ -594,7 +605,7 @@ public class GssServerApi implements Vars {
 
     public static void addListByTypeRoute() {
 
-        get("/list/:type", (req, res) -> {
+        get(ROUTES_LIST_TYPE, (req, res) -> {
             KukuratusLogger.logDebug("GssServer#get(/list/:type", "Received request from " + req.raw().getRemoteAddr());
             try {
                 if (hasPermission(req)) {
@@ -655,7 +666,7 @@ public class GssServerApi implements Vars {
 
     public static void addUpdateByTypeRoute() {
 
-        post("/update/:type", (req, res) -> {
+        post(ROUTES_UPDATE_TYPE, (req, res) -> {
             KukuratusLogger.logDebug("GssServer#post(/update/:type",
                     "Received request from " + req.raw().getRemoteAddr());
             try {
@@ -751,7 +762,7 @@ public class GssServerApi implements Vars {
 
     public static void addDeleteByTypeRoute() {
 
-        post("/delete/:type", (req, res) -> {
+        post(ROUTES_DELETE_TYPE, (req, res) -> {
             KukuratusLogger.logDebug("GssServer#post(/delete/:type",
                     "Received request from " + req.raw().getRemoteAddr());
             try {

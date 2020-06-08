@@ -121,7 +121,7 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
 }
 
 Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
-    String form, var noteId, IconData iconData, double size, Color color) {
+    var noteId, IconData iconData, double size, Color color) {
   // List lengthHeight = guessTextDimensions(name, size);
 
   double textExtraHeight = MARKER_ICON_TEXT_EXTRA_HEIGHT;
