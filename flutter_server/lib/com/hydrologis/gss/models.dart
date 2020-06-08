@@ -266,7 +266,7 @@ class MapstateModel extends ChangeNotifier {
         color: colorExt,
       );
       markers.add(
-          buildFormNote(this, x, y, name, form, noteId, icon, size, colorExt));
+          buildFormNote(this, x, y, name, form, noteId, iconData, size, colorExt));
 
       var surveyor = formItem[SURVEYOR];
       var project = formItem[PROJECT];

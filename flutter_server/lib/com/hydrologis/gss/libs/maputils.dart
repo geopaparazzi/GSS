@@ -121,35 +121,27 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
 }
 
 Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
-    String form, var noteId, Icon icon, double size, Color color) {
-  List lengthHeight = guessTextDimensions(name, size);
+    String form, var noteId, IconData iconData, double size, Color color) {
+  // List lengthHeight = guessTextDimensions(name, size);
+
+  double textExtraHeight = MARKER_ICON_TEXT_EXTRA_HEIGHT;
+  if (name == null || name.length == 0) {
+    textExtraHeight = 0;
+  }
 
   return Marker(
-    width: lengthHeight[0],
-    height: size + lengthHeight[1],
+    width: size * MARKER_ICON_TEXT_EXTRA_WIDTH_FACTOR,
+    height: size + textExtraHeight,
     point: new LatLng(y, x),
     builder: (ctx) => new Container(
       child: GestureDetector(
-        child: Column(
-          children: <Widget>[
-            icon,
-            Container(
-              decoration: new BoxDecoration(
-                  color: color,
-                  borderRadius:
-                      new BorderRadius.all(const Radius.circular(5.0))),
-              child: new Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                        fontWeight: FontWeight.normal, color: Colors.black),
-                  ),
-                ),
-              ),
-            )
-          ],
+        child: MarkerIcon(
+          iconData,
+          color,
+          size,
+          name,
+          SmashColors.mainTextColorNeutral,
+          color.withAlpha(80),
         ),
         onTap: () async {
           // if (mapState.showAttributes) {
@@ -218,6 +210,13 @@ openNoteDialog(BuildContext context, int noteId) async {
             doScaffold: false,
             isReadOnly: true,
           ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SmashUI.smallText(
+              "Surveyor: $surveyor       Project: $project",
+              textAlign: TextAlign.center,
+              color: Colors.grey),
         ),
       ],
     );
