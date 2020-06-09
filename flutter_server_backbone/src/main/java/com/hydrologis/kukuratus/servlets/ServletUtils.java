@@ -18,10 +18,17 @@
  ******************************************************************************/
 package com.hydrologis.kukuratus.servlets;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,13 +41,24 @@ import com.hydrologis.kukuratus.utils.KukuratusSession;
 import com.hydrologis.kukuratus.utils.KukuratusStatus;
 import com.hydrologis.kukuratus.utils.Messages;
 import com.hydrologis.kukuratus.utils.NetworkUtilities;
+import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import spark.Request;
 import spark.Response;
 
 public class ServletUtils {
     public static String MOBILE_UPLOAD_PWD = ""; // set this at startup
+    public static final String MAPS = "maps"; //$NON-NLS-1$
+    public static final String PROJECTS = "projects"; //$NON-NLS-1$
+    public static final String NAME = "name"; //$NON-NLS-1$
+
+    private static Optional<File> basemapsFolder;
+    private static Optional<File> projectsFolder;
+
     private static boolean DEBUG = true;
     private static final String NO_PERMISSION = Messages.getString("ServletUtils.no_permission"); //$NON-NLS-1$
 
@@ -86,7 +104,7 @@ public class ServletUtils {
             double deltaMinutes = (now - limit) / 1000.0;
             if (deltaMinutes < KukuratusSession.timerSeconds) {
                 // register the device automatically
-                gpapUser = new GpapUsers(deviceId, deviceId, "", 1); //$NON-NLS-1$//$NON-NLS-2$
+                gpapUser = new GpapUsers(deviceId, deviceId, "", 1); //$NON-NLS-1$ //$NON-NLS-2$
                 usersDao.create(gpapUser);
             } else {
                 logAccess(Messages.getString("ServletUtils.permission_denied") + ipAddress
@@ -149,6 +167,116 @@ public class ServletUtils {
                 }
             }
         }
+    }
+
+    public static Optional<File> getBasemapsFolder() {
+        File workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
+        File baseMapsFolder = new File(workspaceFolder, MAPS);
+        if (!baseMapsFolder.exists()) {
+            if (!baseMapsFolder.mkdirs()) {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(baseMapsFolder);
+    }
+
+    public static Optional<File> getProjectsFolder() {
+        File workspaceFolder = KukuratusWorkspace.getInstance().getWorkspaceFolder();
+        File projectsFolder = new File(workspaceFolder, PROJECTS);
+        if (!projectsFolder.exists()) {
+            if (!projectsFolder.mkdirs()) {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(projectsFolder);
+    }
+
+    private static void checkFolders() {
+        basemapsFolder = getBasemapsFolder();
+        projectsFolder = getProjectsFolder();
+    }
+
+    public static List<BaseMap> getBasemaps() {
+        checkFolders();
+        List<BaseMap> maps = Collections.emptyList();
+        if (basemapsFolder.isPresent()) {
+            File[] baseMaps = basemapsFolder.get().listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return isBaseMap(name);
+                }
+            });
+
+            maps = Arrays.asList(baseMaps).stream().map(file -> {
+                BaseMap m = new BaseMap();
+                m.setMapName(file.getName());
+                return m;
+            }).collect(Collectors.toList());
+        }
+        return maps;
+    }
+
+    public static List<Projects> getProjects() {
+        checkFolders();
+        List<Projects> maps = Collections.emptyList();
+        if (projectsFolder.isPresent()) {
+            File[] overlayMaps = projectsFolder.get().listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return isProject(name);
+                }
+            });
+
+            maps = Arrays.asList(overlayMaps).stream().map(file -> {
+                Projects m = new Projects();
+                m.setName(file.getName());
+                return m;
+            }).collect(Collectors.toList());
+        }
+        return maps;
+    }
+
+    public static String getMapsListJson() {
+        List<BaseMap> basemaps = getBasemaps();
+        List<Projects> projects = getProjects();
+
+        JSONObject root = new JSONObject();
+
+        JSONArray bmArray = new JSONArray();
+        root.put(MAPS, bmArray);
+        for (BaseMap bm : basemaps) {
+            JSONObject bmObj = new JSONObject();
+            bmObj.put(NAME, bm.getMapName());
+            bmArray.put(bmObj);
+        }
+
+        JSONArray pArray = new JSONArray();
+        root.put(PROJECTS, pArray);
+        for (Projects p : projects) {
+            JSONObject pObj = new JSONObject();
+            pObj.put(NAME, p.getName());
+            pArray.put(pObj);
+        }
+
+        return root.toString();
+    }
+
+    public static boolean isBaseMap(String name) {
+        return name.toLowerCase().endsWith(".map") || name.toLowerCase().endsWith(".mbtiles")
+                || name.toLowerCase().endsWith(".sqlite") || name.toLowerCase().endsWith(".gpkg"); //$NON-NLS-1$ //$NON-NLS-2$
+    }
+
+    public static boolean isProject(String name) {
+        return name.toLowerCase().endsWith(".gpap"); //$NON-NLS-1$
+    }
+
+    public static Optional<File> getMapFile(String fileName) {
+        if (isBaseMap(fileName) && basemapsFolder.isPresent()) {
+            return Optional.of(new File(basemapsFolder.get(), fileName));
+        } else if (isProject(fileName) && projectsFolder.isPresent()) {
+            return Optional.of(new File(projectsFolder.get(), fileName));
+        }
+        return Optional.empty();
     }
 
 }
