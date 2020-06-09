@@ -260,14 +260,16 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                 ],
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: "Add a new user.",
-        child: Icon(MdiIcons.plus),
-        onPressed: () async {
-          await openNewUserDialog(context);
-          await getWebusers();
-        },
-      ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton(
+              tooltip: "Add a new user.",
+              child: Icon(MdiIcons.plus),
+              onPressed: () async {
+                await openNewUserDialog(context);
+                await getWebusers();
+              },
+            )
+          : null,
     );
   }
 

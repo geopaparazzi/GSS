@@ -19,6 +19,14 @@ const KEY_SURVEYORS = "surveyors";
 const KEY_WEBUSERS = "webusers";
 const KEY_PROJECTS = "projects";
 
+const PROJECTDATA_MAPS = "maps"; //$NON-NLS-1$
+const PROJECTDATA_PROJECTS = "projects"; //$NON-NLS-1$
+const PROJECTDATA_NAME = "name"; //$NON-NLS-1$
+const PROJECTDATA_TAGS = "tags"; //$NON-NLS-1$
+const PROJECTDATA_TAG = "tag"; //$NON-NLS-1$
+const PROJECTDATA_TAGSID = "tagsid"; //$NON-NLS-1$
+const PROJECTDATA_TAGID = "tagid"; //$NON-NLS-1$
+
 /// An ISO8601 date formatter (yyyy-MM-dd HH:mm:ss).
 final DateFormat ISO8601_TS_FORMATTER = DateFormat("yyyy-MM-dd HH:mm:ss");
 

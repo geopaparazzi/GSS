@@ -55,6 +55,9 @@ public class ServletUtils {
     public static final String MAPS = "maps"; //$NON-NLS-1$
     public static final String PROJECTS = "projects"; //$NON-NLS-1$
     public static final String NAME = "name"; //$NON-NLS-1$
+    public static final String TAGS = "tags"; //$NON-NLS-1$
+    public static final String TAG = "tag"; //$NON-NLS-1$
+    public static final String TAGID = "tagid"; //$NON-NLS-1$
 
     private static Optional<File> basemapsFolder;
     private static Optional<File> projectsFolder;
@@ -68,7 +71,7 @@ public class ServletUtils {
         tmpDir = System.getProperty("java.io.tmpdir");
     }
 
-    public static Object canProceed(Request request, Response response, String tag) throws Exception {
+    public static Object canProceed(Request request, String tag) throws Exception {
         String tagPart = ""; //$NON-NLS-1$
         if (tag != null)
             tagPart = " (" + tag + ")"; //$NON-NLS-1$ //$NON-NLS-2$

@@ -8,6 +8,7 @@ import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/about.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/projectdata.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/surveyors_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/webusers_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
@@ -78,7 +79,7 @@ class _MainMapViewState extends State<MainMapView>
     if (mapstateModel.mapMarkers != null &&
         mapstateModel.mapMarkers.isNotEmpty) {
       var markerCluster = MarkerClusterLayerOptions(
-        maxClusterRadius: 20,
+        maxClusterRadius: 5,
         size: Size(40, 40),
         fitBoundsOptions: FitBoundsOptions(
           padding: EdgeInsets.all(50),
@@ -86,10 +87,10 @@ class _MainMapViewState extends State<MainMapView>
         markers: mapstateModel.mapMarkers,
         showPolygon: false,
         zoomToBoundsOnClick: true,
-        //        polygonOptions: PolygonOptions(
-        //            borderColor: mainDecorationsDark,
-        //            color: mainDecorations.withOpacity(0.2),
-        //            borderStrokeWidth: 3),
+        polygonOptions: PolygonOptions(
+            borderColor: SmashColors.mainDecorationsDarker,
+            color: SmashColors.mainDecorationsDarker.withOpacity(0.2),
+            borderStrokeWidth: 3),
         builder: (context, markers) {
           return FloatingActionButton(
             child: Text(markers.length.toString()),
@@ -410,6 +411,24 @@ class _MainMapViewState extends State<MainMapView>
                   Navigator.of(context).pop();
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => WebUsersView()));
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.database,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Project Data"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ProjectDataView()));
                 },
               ),
             ),

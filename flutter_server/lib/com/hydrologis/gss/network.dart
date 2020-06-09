@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:http/http.dart';
 
 const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
@@ -17,6 +18,7 @@ const API_DELETE = "$WEBAPP_URL/delete";
 const API_UPDATE_SURVEYOR = "$API_UPDATE/surveyors";
 const API_UPDATE_WEBUSER = "$API_UPDATE/webusers";
 const API_DELETE_WEBUSER = "$API_DELETE/webusers";
+const API_DELETE_FORMS = "$API_DELETE/forms";
 const API_LIST_SURVEYORS = "$API_LIST/surveyors";
 const API_LIST_WEBUSERS = "$API_LIST/webusers";
 const API_LIST_PROJECTS = "$API_LIST/projects";
@@ -26,6 +28,9 @@ const API_IMAGES = "$API_DATA/images";
 const API_IMAGEDATA = "$API_DATA/imagedata";
 // const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
 const API_NOTE = "$API_DATA/notes";
+const API_DATA_DOWNLOAD_PATH = "$WEBAPP_URL/datadownload";
+const API_DATA_UPLOAD_PATH = "$WEBAPP_URL/dataupload";
+const API_TAGS_DOWNLOAD_PATH = "$WEBAPP_URL/tagsdownload";
 
 //const SERVER_IP = "172.26.181.138"; // office hydrologis
 
@@ -251,7 +256,8 @@ class ServerApi {
     }
   }
 
-  static Future<String>  deleteWebuser(String user, String pwd, dynamic webuser) async {
+  static Future<String> deleteWebuser(
+      String user, String pwd, dynamic webuser) async {
     Map<String, String> formData = {
       WEBUSER_ID_FIELD_NAME: webuser[WEBUSER_ID_FIELD_NAME].toString()
     };
@@ -259,6 +265,71 @@ class ServerApi {
     Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.postFormData(
         API_DELETE_WEBUSER, formData,
+        requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return null;
+    } else {
+      return request.response;
+    }
+  }
+
+  /// Get the list of data available for the devices to download.
+  static Future<Map<String, List<String>>> getProjectData(
+      String user, String pwd) async {
+    Map<String, List<String>> resultData = {
+      PROJECTDATA_MAPS: <String>[],
+      PROJECTDATA_PROJECTS: <String>[],
+      PROJECTDATA_TAGS: <String>[],
+      PROJECTDATA_TAGSID: <String>[],
+    };
+    String apiCall = "$API_DATA_DOWNLOAD_PATH";
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      var data = jsonDecode(request.response);
+      List<dynamic> maps = data[PROJECTDATA_MAPS];
+      if (maps != null && maps.length > 0) {
+        maps.forEach((element) {
+          resultData[PROJECTDATA_MAPS]
+              .add(element[PROJECTDATA_NAME].toString());
+        });
+      }
+      List<dynamic> projects = data[PROJECTDATA_PROJECTS];
+      if (projects != null && projects.length > 0) {
+        projects.forEach((element) {
+          resultData[PROJECTDATA_PROJECTS]
+              .add(element[PROJECTDATA_NAME].toString());
+        });
+      }
+
+      // download forms now
+      apiCall = "$API_TAGS_DOWNLOAD_PATH";
+      request = await HttpRequest.request(apiCall,
+          method: 'GET', requestHeaders: requestHeaders);
+      if (request.status == 200) {
+        var data = jsonDecode(request.response);
+        List<dynamic> tags = data[PROJECTDATA_TAGS];
+        if (tags != null && tags.length > 0) {
+          tags.forEach((element) {
+            resultData[PROJECTDATA_TAGS]
+                .add(element[PROJECTDATA_TAG].toString());
+            resultData[PROJECTDATA_TAGSID]
+                .add(element[PROJECTDATA_TAGID].toString());
+          });
+        }
+      }
+    }
+    return resultData;
+  }
+
+  static Future<String> deleteProjectForm(
+      String user, String pwd, String id) async {
+    Map<String, String> formData = {ID: id};
+
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.postFormData(
+        API_DELETE_FORMS, formData,
         requestHeaders: requestHeaders);
     if (request.status == 200) {
       return null;

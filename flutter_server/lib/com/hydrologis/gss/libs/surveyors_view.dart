@@ -47,7 +47,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
         int active = surveyor[SURVEYOR_ACTIVE_FIELD_NAME];
 
         var inputTitle = "Set new value";
-        var row = DataRow(cells: [
+        var dataCells = [
           DataCell(
             SmashUI.normalText(deviceId),
             showEditIcon: isAdmin,
@@ -123,24 +123,29 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
               }
             },
           ),
-          DataCell(
-            Checkbox(
-                value: active == 1 ? true : false,
-                onChanged: (selected) async {
-                  if (isAdmin) {
-                    surveyor[SURVEYOR_ACTIVE_FIELD_NAME] = selected ? 1 : 0;
-                    var up = SmashSession.getSessionUser();
-                    String error = await ServerApi.updateOrAddSurveyor(
-                        up[0], up[1], surveyor);
-                    if (error != null) {
-                      showErrorDialog(context, error);
-                    } else {
-                      await getSurveyors();
+        ];
+        if (isAdmin) {
+          dataCells.add(
+            DataCell(
+              Checkbox(
+                  value: active == 1 ? true : false,
+                  onChanged: (selected) async {
+                    if (isAdmin) {
+                      surveyor[SURVEYOR_ACTIVE_FIELD_NAME] = selected ? 1 : 0;
+                      var up = SmashSession.getSessionUser();
+                      String error = await ServerApi.updateOrAddSurveyor(
+                          up[0], up[1], surveyor);
+                      if (error != null) {
+                        showErrorDialog(context, error);
+                      } else {
+                        await getSurveyors();
+                      }
                     }
-                  }
-                }),
-          ),
-        ]);
+                  }),
+            ),
+          );
+        }
+        var row = DataRow(cells: dataCells);
 
         if (active == 1) {
           activeRows.add(row);
@@ -152,6 +157,16 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
     bool doActive = activeRows.length > 0;
     bool doDisabled = disabledRows.length > 0;
 
+    var dataHeader = [
+      DataColumn(label: SmashUI.normalText("Device Id", bold: true)),
+      DataColumn(label: SmashUI.normalText("Name", bold: true)),
+      DataColumn(label: SmashUI.normalText("Contact", bold: true)),
+    ];
+    if (isAdmin) {
+      dataHeader.add(
+        DataColumn(label: SmashUI.normalText("Active", bold: true)),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Center(
@@ -190,20 +205,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
                           ? Expanded(
                               child: SingleChildScrollView(
                                 child: DataTable(
-                                  columns: [
-                                    DataColumn(
-                                        label: SmashUI.normalText("Device Id",
-                                            bold: true)),
-                                    DataColumn(
-                                        label: SmashUI.normalText("Name",
-                                            bold: true)),
-                                    DataColumn(
-                                        label: SmashUI.normalText("Contact",
-                                            bold: true)),
-                                    DataColumn(
-                                        label: SmashUI.normalText("Active",
-                                            bold: true)),
-                                  ],
+                                  columns: dataHeader,
                                   rows: activeRows,
                                 ),
                               ),

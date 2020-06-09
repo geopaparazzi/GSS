@@ -26,6 +26,9 @@ dependencies:
   # OTHERS
   ############################
 
+  # BSD
+  http: ^0.12.1
+
   # MIT
   horizontal_data_table: ^1.0.5+3
 

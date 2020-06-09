@@ -106,6 +106,8 @@ public class GssServer implements Vars {
         GssServerApi.addTilesRoute(mapsforgeTilesGenerator);
         GssServerApi.addClientUploadRoute();
         GssServerApi.addClientGetBaseDataRoute();
+        GssServerApi.addClientGetFormsRoute();
+        GssServerApi.addClientProjectDataUploadRoute();
         GssServerApi.addGetDataRoute();
         GssServerApi.addGetDataByTypeRoute();
         GssServerApi.addGetImagedataRoute();
