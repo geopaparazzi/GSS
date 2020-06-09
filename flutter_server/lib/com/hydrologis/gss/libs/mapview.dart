@@ -87,10 +87,10 @@ class _MainMapViewState extends State<MainMapView>
         markers: mapstateModel.mapMarkers,
         showPolygon: false,
         zoomToBoundsOnClick: true,
-        polygonOptions: PolygonOptions(
-            borderColor: SmashColors.mainDecorationsDarker,
-            color: SmashColors.mainDecorationsDarker.withOpacity(0.2),
-            borderStrokeWidth: 3),
+        // polygonOptions: PolygonOptions(
+        //     borderColor: SmashColors.mainDecorationsDarker,
+        //     color: SmashColors.mainDecorationsDarker.withOpacity(0.2),
+        //     borderStrokeWidth: 3),
         builder: (context, markers) {
           return FloatingActionButton(
             child: Text(markers.length.toString()),
