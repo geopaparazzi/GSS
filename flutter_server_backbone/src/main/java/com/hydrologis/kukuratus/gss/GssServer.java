@@ -4,7 +4,6 @@ import static spark.Spark.before;
 import static spark.Spark.get;
 import static spark.Spark.options;
 import static spark.Spark.port;
-import static spark.Spark.secure;
 import static spark.Spark.staticFiles;
 
 import java.io.File;
@@ -12,8 +11,6 @@ import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-
-import javax.validation.constraints.Null;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
@@ -32,6 +29,9 @@ import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
 
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
+
+import spark.embeddedserver.EmbeddedServers;
+import spark.embeddedserver.jetty.EmbeddedJettyFactory;
 
 /**
  * Deploy:
@@ -66,19 +66,19 @@ public class GssServer implements Vars {
     }
 
     public void start(ASpatialDb db, String keyStorePath, String keyStorePassword) throws Exception {
-        DatabaseHandler.init(db);
-        createTables();
+        staticFiles.location("/public");
 
         /*
          * THE SERVER
          */
+        EmbeddedJettyFactory factory;
         if (keyStorePath != null && keyStorePassword != null) {
             KukuratusLogger.logInfo(this, "Using ssl with keystore: " + keyStorePath); //$NON-NLS-1$
-            secure(keyStorePath, keyStorePassword, null, null);
+            factory = EmbeddedJettyFactoryConstructor.createSsl(WEBAPP_PORT, keyStorePath, keyStorePassword);
+        } else {
+            factory = EmbeddedJettyFactoryConstructor.create(WEBAPP_PORT);
         }
-
-        port(WEBAPP_PORT);
-        staticFiles.location("/public");
+        EmbeddedServers.add(EmbeddedServers.Identifiers.JETTY, factory);
 
         // TODO Cache/Expire time -> default is no caching
         // staticFiles.expireTime(600); // ten minutes
@@ -100,8 +100,6 @@ public class GssServer implements Vars {
         // ENABLE CORS END
 
         // ROUTES START
-        activateMapsforge();
-
         GssServerApi.addCheckRoute();
         GssServerApi.addTilesRoute(mapsforgeTilesGenerator);
         GssServerApi.addClientUploadRoute();
@@ -119,9 +117,14 @@ public class GssServer implements Vars {
 
         get("/", (req, res) -> {
             res.redirect("index.html");
-            return null;
+            return "";
         });
         // ROUTES END
+
+        DatabaseHandler.init(db);
+        createTables();
+
+        activateMapsforge();
     }
 
     private void activateMapsforge() {
@@ -210,6 +213,7 @@ public class GssServer implements Vars {
 
             System.out.println("****************************************************");
             System.out.println("* Launching with parameters:");
+            System.out.println("* \tLAUNCH FOLDER: " + new File(".").getAbsolutePath());
             System.out.println("* \tWORKSPACE FOLDER: " + workspacePath);
             System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
             System.out.println("* \tMOBILE PWD: " + (mobilePwd != null ? mobilePwd : " - nv - "));
