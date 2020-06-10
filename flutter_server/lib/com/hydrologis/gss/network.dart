@@ -9,7 +9,7 @@ import 'package:http/http.dart';
 const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
 const VALUE_KEY = "v";
-const WEBAPP_URL = "http://localhost:8080"; // TODO make empty for release
+const WEBAPP_URL = "";// "http://localhost:8080"; // TODO make empty for release
 
 const API_DATA = "$WEBAPP_URL/data";
 const API_LIST = "$WEBAPP_URL/list";
