@@ -166,6 +166,12 @@ public class GssDatabaseUtilities {
             where.between(Notes.TIMESTAMP_FIELD_NAME, fromTo[0], fromTo[1]);
             needAnd = true;
         }
+
+        // get only last of the versions
+        String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME
+                + " group by ST_asText(" + Notes.GEOM_FIELD_NAME + ") )";
+        where.and().raw(versionsSql);
+
         notesList = where.query();
 
         if (notesList != null) {

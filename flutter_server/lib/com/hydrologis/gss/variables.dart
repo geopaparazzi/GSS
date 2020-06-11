@@ -48,6 +48,7 @@ const COLOR = "color";
 const SIZE = "size";
 const MARKER = "marker";
 const ID = "id";
+const PREVIOUSID = "previd";
 const DATAID = "dataid";
 const DATA = "data";
 const LOGS = "logs";

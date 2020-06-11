@@ -1,8 +1,5 @@
 package com.hydrologis.kukuratus.gss;
 
-import static spark.Spark.get;
-import static spark.Spark.post;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -18,10 +15,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -47,14 +45,12 @@ import com.hydrologis.kukuratus.utils.KukuratusSession;
 import com.hydrologis.kukuratus.utils.KukuratusStatus;
 import com.hydrologis.kukuratus.utils.Messages;
 import com.hydrologis.kukuratus.utils.NetworkUtilities;
-import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
 
+import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.objects.QueryResult;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.libs.modules.HMConstants;
-import org.hortonmachine.gears.utils.StringUtilities;
-import org.hortonmachine.gears.utils.files.FileUtilities;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
@@ -66,8 +62,8 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 
 import io.javalin.Javalin;
-import spark.Request;
-import spark.Response;
+import io.javalin.http.Context;
+import io.javalin.http.UploadedFile;
 
 public class GssServerApiJavalin implements Vars {
 
@@ -102,6 +98,7 @@ public class GssServerApiJavalin implements Vars {
     static final String IMAGE_OBJID = "image";
     static final String LOG_OBJID = "gpslog";
     static final String TYPE_KEY = "type";
+    static final String IMAGE_COUNT_KEY = "imgcount";
 
     static final String PROJECT_NAME = "PROJECT_NAME";
 
@@ -155,9 +152,9 @@ public class GssServerApiJavalin implements Vars {
     static final String LOGSDATA_COLUMN_TS = "ts";
     static final String LOGSDATA_COLUMN_LOGID = "logid";
 
-    private static User hasPermission(Request req) throws Exception {
+    private static User hasPermission(Context ctx) throws Exception {
         try {
-            String authHeader = req.headers(AUTHORIZATION); // $NON-NLS-1$
+            String authHeader = ctx.req.getHeader(AUTHORIZATION); // $NON-NLS-1$
             String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
             User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
             return user;
@@ -167,15 +164,15 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static boolean hasPermissionDoubleCheck(Request req, String tag) throws Exception {
+    private static boolean hasPermissionDoubleCheck(Context ctx, String tag) throws Exception {
         try {
-            String authHeader = req.headers(AUTHORIZATION);
+            String authHeader = ctx.req.getHeader(AUTHORIZATION);
             String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
             User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
             if (user != null) {
                 return true;
             }
-            Object procObj = ServletUtils.canProceed(req, tag);
+            Object procObj = ServletUtils.canProceed(ctx, tag);
             if (!(procObj instanceof KukuratusStatus)) {
                 return true;
             }
@@ -191,48 +188,41 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addTilesRoute(ITilesGenerator mapsforgeTilesGenerator) {
+    public static void addTilesRoute(Javalin app, ITilesGenerator mapsforgeTilesGenerator) {
 
-        get(ROUTES_TILES_SOURCE_Z_X_Y, (req, res) -> {
-            String source = req.params(":source");
+        app.get(ROUTES_TILES_SOURCE_Z_X_Y, ctx -> {
+            String source = ctx.pathParam(":source");
             if (source.equals("mapsforge")) {
-                String x = req.params(":x");
-                String y = req.params(":y");
-                String z = req.params(":z");
+                String x = ctx.pathParam(":x");
+                String y = ctx.pathParam(":y");
+                String z = ctx.pathParam(":z");
                 int xTile = Integer.parseInt(x);
                 int yTile = Integer.parseInt(y);
                 int zoom = Integer.parseInt(z);
                 try {
-                    HttpServletResponse raw = res.raw();
+                    HttpServletResponse raw = ctx.res;
                     raw.setContentType("image/png");
-                    res.header("Content-Disposition", "attachment; filename=image.png");
+                    raw.addHeader("Content-Disposition", "attachment; filename=image.png");
                     ServletOutputStream outputStream = raw.getOutputStream();
                     mapsforgeTilesGenerator.getTile(xTile, yTile, zoom, outputStream);
                     outputStream.flush();
                     outputStream.close();
-                    return raw;
                 } catch (IOException ex) {
                     ex.printStackTrace();
-                    // halt();
                 }
-                return res;
             }
-            return res;
         });
     }
 
-    public static void addClientUploadRoute() {
-        post(ROUTES_UPLOAD, "multipart/form-data", (req, res) -> {
-            MultipartConfigElement multipartConfigElement = new MultipartConfigElement(ServletUtils.tmpDir);
-            req.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement);
+    public static void addClientUploadRoute(Javalin app) {
+        app.post(ROUTES_UPLOAD, ctx -> {
+            KukuratusLogger.logDebug(ROUTES_UPLOAD, getRequestLogString(ctx, null));
 
-            KukuratusLogger.logDebug("GssServer#post(/upload", getRequestLogString(req, null));
-
-            Object procObj = ServletUtils.canProceed(req, ROUTES_UPLOAD);
+            Object procObj = ServletUtils.canProceed(ctx, ROUTES_UPLOAD);
             if (procObj instanceof KukuratusStatus) {
                 KukuratusStatus ks = (KukuratusStatus) procObj;
-                res.status(ks.getCode());
-                return ks.toJson();
+                ctx.status(ks.getCode());
+                ctx.result(ks.toJson());
             } else if (procObj instanceof String) {
                 String deviceId = (String) procObj;
 
@@ -252,17 +242,13 @@ public class GssServerApiJavalin implements Vars {
                 Dao<ImageData, ?> imageDataDao = dbHandler.getDao(ImageData.class);
                 Dao<Images, ?> imagesDao = dbHandler.getDao(Images.class);
 
-                Collection<Part> parts = req.raw().getParts();
-
                 HashMap<String, Object> partData = new HashMap<String, Object>();
-                for (Part part : parts) {
-                    String partName = part.getName();
-                    if (partName.startsWith(TABLE_IMAGE_DATA)) {
-                        byte[] byteArray = getByteArray(part);
-                        partData.put(partName, byteArray);
-                    } else {
-                        String value = getValue(part);
-                        partData.put(partName, value);
+                Map<String, List<String>> formParamMap = ctx.formParamMap();
+                Set<String> set = formParamMap.keySet();
+                for (String key : set) {
+                    List<String> list = formParamMap.get(key);
+                    if (list.size() > 0) {
+                        partData.put(key, list.get(0));
                     }
                 }
 
@@ -288,11 +274,14 @@ public class GssServerApiJavalin implements Vars {
                         Point point = gf.createPoint(coordinate);
                         Envelope env = new Envelope(coordinate);
                         env.expandBy(0.000001);
-                        QueryResult tableRecords = dbHandler.getDb().getTableRecordsMapIn(Notes.TABLE_NAME, env, 1, -1,
-                                null);
+                        ASpatialDb db = dbHandler.getDb();
+                        String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME
+                                + " group by ST_asText(" + Notes.GEOM_FIELD_NAME + ") )";
+
+                        QueryResult tableRecords = db.getTableRecordsMapIn(Notes.TABLE_NAME, env, 1, -1, versionsSql);
                         long previousId = -1;
-                        if (!tableRecords.geometries.isEmpty()) {
-                            int indexOf = tableRecords.names.indexOf(Notes.ID_FIELD_NAME);
+                        if (tableRecords.data.size() > 0 && tableRecords.geometryIndex != -1) {
+                            int indexOf = getIndexIgnoreCase(tableRecords.names, Notes.ID_FIELD_NAME);
                             if (indexOf != -1) {
                                 Object[] objects = tableRecords.data.get(0);
                                 Object idObj = objects[indexOf];
@@ -323,15 +312,22 @@ public class GssServerApiJavalin implements Vars {
                             if (!imageIds.isEmpty()) {
                                 HashMap<String, String> oldId2NewMap = new HashMap<>();
                                 for (String imageIdString : imageIds) {
-                                    byte[] imageData = (byte[]) partData.get(
+                                    UploadedFile imageFile = ctx.uploadedFile(
                                             TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
-                                    byte[] thumbData = (byte[]) partData.get(
+                                    UploadedFile thumbFile = ctx.uploadedFile(
                                             TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
+
+                                    byte[] imageData = getByteArray(imageFile.getContent()); // (byte[]) partData.get(
+                                    // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
+                                    byte[] thumbData = getByteArray(thumbFile.getContent());
+                                    // (byte[]) partData.get(
+                                    // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
                                     ImageData imgData = new ImageData(imageData, gpapUser);
                                     imageDataDao.create(imgData);
                                     Point imgPoint = gf.createPoint(new Coordinate(lon, lat));
-                                    Images img = new Images(imgPoint, altim, ts, -1, imageIdString, serverNote, imgData,
-                                            gpapUser, thumbData, project, System.currentTimeMillis());
+                                    Images img = new Images(imgPoint, altim, ts, -1, imageFile.getFilename(),
+                                            serverNote, imgData, gpapUser, thumbData, project,
+                                            System.currentTimeMillis());
                                     imagesDao.create(img);
 
                                     oldId2NewMap.put(imageIdString, String.valueOf(img.id));
@@ -353,9 +349,15 @@ public class GssServerApiJavalin implements Vars {
                         double imgLat = getDouble(partData, IMAGES_COLUMN_LAT, 0);
                         double imgAltim = getDouble(partData, IMAGES_COLUMN_ALTIM, -1);
 
-                        byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE);
-                        byte[] thumbnailData = (byte[]) partData
-                                .get(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
+                        UploadedFile imageFile = ctx.uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE);
+                        UploadedFile thumbFile = ctx.uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
+                        byte[] imageData = getByteArray(imageFile.getContent());
+                        byte[] thumbnailData = getByteArray(thumbFile.getContent());
+
+                        // byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + "_" +
+                        // IMAGESDATA_COLUMN_IMAGE);
+                        // byte[] thumbnailData = (byte[]) partData
+                        // .get(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
 
                         ImageData imgData = new ImageData(imageData, gpapUser);
                         imageDataDao.create(imgData);
@@ -412,104 +414,117 @@ public class GssServerApiJavalin implements Vars {
                 String message = Messages.getString("UploadServlet.data_uploaded");
                 ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message); //$NON-NLS-1$
                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, message);
-                res.status(ks.getCode());
-                return ks.toJson();
+                ctx.status(ks.getCode());
+                ctx.result(ks.toJson());
             } else {
-                return sendNoPermission(res);
+                sendNoPermission(ctx);
             }
         });
 
     }
 
-    public static void addClientProjectDataUploadRoute() {
-        post(ROUTES_PROJECTDATA_UPLOAD, "multipart/form-data", (req, res) -> {
-            MultipartConfigElement multipartConfigElement = new MultipartConfigElement(ServletUtils.tmpDir);
-            req.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement);
+    private static int getIndexIgnoreCase(List<String> strings, String string) {
+        for (int i = 0; i < strings.size(); i++) {
+            if (strings.get(i).equalsIgnoreCase(string)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
-            User validUser = hasPermission(req);
-            KukuratusLogger.logDebug(ROUTES_PROJECTDATA_UPLOAD, getRequestLogString(req, validUser));
+    public static void addClientProjectDataUploadRoute(Javalin app) {
+        app.post(ROUTES_PROJECTDATA_UPLOAD, ctx -> {
+            User validUser = hasPermission(ctx);
+            KukuratusLogger.logDebug(ROUTES_PROJECTDATA_UPLOAD, getRequestLogString(ctx, validUser));
             if (validUser != null) {
                 DatabaseHandler dbHandler = DatabaseHandler.instance();
                 try {
 
-                    Collection<Part> parts = req.raw().getParts();
-
                     String errorMsg = null;
-                    if (parts.size() > 0) {
-                        Part part = parts.iterator().next();
-                        String partName = part.getName();
-                        if (partName.equals("file")) {
-                            String fileName = part.getSubmittedFileName();
-                            if (fileName != null) {
-                                if (ServletUtils.isBaseMap(fileName)) {
-                                    byte[] byteArray = getByteArray(part);
-                                    File folder = ServletUtils.getBasemapsFolder().get();
-                                    File file = new File(folder, fileName);
-                                    try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
-                                        fos.write(byteArray);
-                                    }
-                                } else if (ServletUtils.isProject(fileName)) {
-                                    byte[] byteArray = getByteArray(part);
-                                    File folder = ServletUtils.getProjectsFolder().get();
-                                    File file = new File(folder, fileName);
-                                    try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
-                                        fos.write(byteArray);
-                                    }
-                                } else if (fileName.endsWith("tags.json")) {
-                                    String form = getString(part);
-                                    Dao<Forms, ?> formsDao = dbHandler.getDao(Forms.class);
-
-                                    Forms f = new Forms(fileName, form, validUser.uniqueName,
-                                            FormStatus.VISIBLE.getStatusCode());
-                                    int create = formsDao.create(f);
-                                    if (create != 1) {
-                                        errorMsg = "ERROR: An error occurred while inserting in the server.";
-                                    }
+                    UploadedFile uploadedFile = ctx.uploadedFile("file");
+                    if (uploadedFile != null) {
+                        String fileName = uploadedFile.getFilename();
+                        if (fileName != null) {
+                            if (ServletUtils.isBaseMap(fileName)) {
+                                byte[] byteArray = getByteArray(uploadedFile.getContent());
+                                File folder = ServletUtils.getBasemapsFolder().get();
+                                File file = new File(folder, fileName);
+                                try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
+                                    fos.write(byteArray);
                                 }
+                            } else if (ServletUtils.isProject(fileName)) {
+                                byte[] byteArray = getByteArray(uploadedFile.getContent());
+                                File folder = ServletUtils.getProjectsFolder().get();
+                                File file = new File(folder, fileName);
+                                try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
+                                    fos.write(byteArray);
+                                }
+                            } else if (fileName.endsWith("tags.json")) {
+                                String form = getString(uploadedFile.getContent());
+                                Dao<Forms, ?> formsDao = dbHandler.getDao(Forms.class);
 
-                            } else {
-                                errorMsg = "ERROR: No file name supplied in data sent to server.";
+                                Forms f = new Forms(fileName, form, validUser.uniqueName,
+                                        FormStatus.VISIBLE.getStatusCode());
+                                int create = formsDao.create(f);
+                                if (create != 1) {
+                                    errorMsg = "ERROR: An error occurred while inserting in the server.";
+                                }
                             }
 
                         } else {
-                            errorMsg = "ERROR: No file object found in data sent to server.";
+                            errorMsg = "ERROR: No file name supplied in data sent to server.";
                         }
+                    } else {
+                        errorMsg = "ERROR: No file object found in data sent to server.";
                     }
 
+                    // Collection<Part> parts = ctx.req.getParts();
+                    // if (parts.size() > 0) {
+                    // Part part = parts.iterator().next();
+                    // String partName = part.getName();
+                    // if (partName.equals("file")) {
+                    // String fileName = part.getSubmittedFileName();
+
+                    // } else {
+                    // errorMsg = "ERROR: No file object found in data sent to server.";
+                    // }
+                    // }
+
                     if (errorMsg != null) {
-                        KukuratusLogger.logError("GssServer#post(" + ROUTES_PROJECTDATA_UPLOAD, errorMsg, null);
+                        KukuratusLogger.logError(ROUTES_PROJECTDATA_UPLOAD, errorMsg, null);
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR,
                                 errorMsg);
-                        res.status(ks.getCode());
-                        return ks.toJson();
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
+                        return;
                     }
 
                 } catch (Exception e) {
-                    return sendServerError(res, ROUTES_PROJECTDATA_UPLOAD, e);
+                    sendServerError(ctx, ROUTES_PROJECTDATA_UPLOAD, e);
                 }
 
                 String message = Messages.getString("UploadServlet.data_uploaded");
                 ServletUtils.debug("SENDING RESPONSE MESSAGE: " + message); //$NON-NLS-1$
                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, message);
-                res.status(ks.getCode());
-                return ks.toJson();
+                ctx.status(ks.getCode());
+                ctx.result(ks.toJson());
             } else {
-                return sendNoPermission(res);
+                sendNoPermission(ctx);
             }
         });
 
     }
 
-    public static void addGetDataRoute() {
+    public static void addGetDataRoute(Javalin app) {
 
-        post(ROUTES_GETDATA, (req, res) -> {
+        app.post(ROUTES_GETDATA, ctx -> {
             try {
 
-                User validUser = hasPermission(req);
-                KukuratusLogger.logDebug(ROUTES_GETDATA, getRequestLogString(req, validUser));
+                User validUser = hasPermission(ctx);
+                KukuratusLogger.logDebug(ROUTES_GETDATA, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
-                    String surveyors = req.queryParams(SURVEYORS);
-                    String projects = req.queryParams(PROJECTS);
+                    String surveyors = ctx.formParam(SURVEYORS);
+                    String projects = ctx.formParam(PROJECTS);
 
                     JSONObject root = new JSONObject();
 
@@ -537,8 +552,8 @@ public class GssServerApiJavalin implements Vars {
                     Long from = null;
                     Long to = null;
 
-                    // Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
-                    // GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
+                    Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+                    GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
 
                     Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
 
@@ -553,25 +568,25 @@ public class GssServerApiJavalin implements Vars {
                     GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null,
                             null);
 
-                    return root.toString();
+                    ctx.result(root.toString());
                 } else {
-                    return sendNoPermission(res);
+                    sendNoPermission(ctx);
                 }
             } catch (Exception e) {
-                return sendServerError(res, ROUTES_GETDATA, e);
+                sendServerError(ctx, ROUTES_GETDATA, e);
             }
         });
     }
 
-    public static void addGetDataByTypeRoute() {
+    public static void addGetDataByTypeRoute(Javalin app) {
 
         // get data from the server by type and the primary key id
-        get(ROUTES_GETDATA_BY_TYPE, (req, res) -> {
-            User validUser = hasPermission(req);
-            KukuratusLogger.logDebug(ROUTES_GETDATA_BY_TYPE, getRequestLogString(req, validUser));
+        app.get(ROUTES_GETDATA_BY_TYPE, ctx -> {
+            User validUser = hasPermission(ctx);
+            KukuratusLogger.logDebug(ROUTES_GETDATA_BY_TYPE, getRequestLogString(ctx, validUser));
             if (validUser != null) {
-                String type = req.params(":type");
-                String id = req.params(":id");
+                String type = ctx.pathParam(":type");
+                String id = ctx.pathParam(":id");
 
                 try {
                     // images or notes are requested
@@ -581,7 +596,7 @@ public class GssServerApiJavalin implements Vars {
                             ImageData idObj = new ImageData(idLong);
                             Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
                             ImageData result = dao.queryForSameId(idObj);
-                            return result.data;
+                            ctx.result(result.data);
                         }
                     } else if (type.equals(GssDatabaseUtilities.IMAGES)) {
                         if (id != null) {
@@ -591,7 +606,7 @@ public class GssServerApiJavalin implements Vars {
                             long idLong = Long.parseLong(id);
                             JSONObject imageObj = GssDatabaseUtilities.getImageById(imagesDao, projectDao, userDao,
                                     idLong);
-                            return imageObj.toString();
+                            ctx.result(imageObj.toString());
                         }
                     } else if (type.equals(GssDatabaseUtilities.NOTES)) {
                         if (id != null) {
@@ -601,40 +616,39 @@ public class GssServerApiJavalin implements Vars {
                             long idLong = Long.parseLong(id);
                             JSONObject noteObj = GssDatabaseUtilities.getNoteById(notesDao, projectDao, userDao,
                                     idLong);
-                            return noteObj.toString();
+                            ctx.result(noteObj.toString());
                         }
                     }
-                    return "";
                 } catch (Exception e) {
-                    return sendServerError(res, ROUTES_GETDATA_BY_TYPE, e);
+                    sendServerError(ctx, ROUTES_GETDATA_BY_TYPE, e);
                 }
             } else {
-                return sendNoPermission(res);
+                sendNoPermission(ctx);
             }
         });
     }
 
-    public static void addClientGetBaseDataRoute() {
-        get(ROUTES_GET_BASEDATA, (req, res) -> {
-            if (hasPermissionDoubleCheck(req, ROUTES_GET_BASEDATA)) {
-                KukuratusLogger.logDebug("GssServer#get(" + ROUTES_GET_BASEDATA, getRequestLogString(req, null));
-                String fileName = req.queryParams("name");
+    public static void addClientGetBaseDataRoute(Javalin app) {
+        app.get(ROUTES_GET_BASEDATA, ctx -> {
+            if (hasPermissionDoubleCheck(ctx, ROUTES_GET_BASEDATA)) {
+                KukuratusLogger.logDebug(ROUTES_GET_BASEDATA, getRequestLogString(ctx, null));
+                String fileName = ctx.formParam("name");
                 try {
                     if (fileName == null) {
                         // send list
                         String mapsListJson = ServletUtils.getMapsListJson();
-                        return mapsListJson;
+                        ctx.result(mapsListJson);
                     } else {
 
-                        res.type("application/octet-stream"); //$NON-NLS-1$
-                        res.header("Content-disposition", "attachment; filename=" + fileName); //$NON-NLS-1$ //$NON-NLS-2$
+                        ctx.res.setContentType("application/octet-stream"); //$NON-NLS-1$
+                        ctx.res.setHeader("Content-disposition", "attachment; filename=" + fileName);
 
                         Optional<File> mapFileOpt = ServletUtils.getMapFile(fileName);
                         if (mapFileOpt.isPresent()) {
 
                             File file = mapFileOpt.get();
                             try (InputStream in = new BufferedInputStream(new FileInputStream(file));
-                                    ServletOutputStream out = res.raw().getOutputStream()) {
+                                    ServletOutputStream out = ctx.res.getOutputStream()) {
                                 byte[] buffer = new byte[8192];
                                 int numBytesRead;
                                 while ((numBytesRead = in.read(buffer)) > 0) {
@@ -644,27 +658,26 @@ public class GssServerApiJavalin implements Vars {
                         }
 
                     }
-                    return "";
                 } catch (Exception e) {
-                    return sendServerError(res, ROUTES_GET_BASEDATA + "/" + fileName, e);
+                    sendServerError(ctx, ROUTES_GET_BASEDATA + "/" + fileName, e);
                 }
             } else {
-                return sendNoPermission(res);
+                sendNoPermission(ctx);
             }
         });
     }
 
-    public static void addClientGetFormsRoute() {
-        get(ROUTES_GET_FORMS, (req, res) -> {
-            if (hasPermissionDoubleCheck(req, ROUTES_GET_BASEDATA)) {
-                KukuratusLogger.logDebug(ROUTES_GET_FORMS, getRequestLogString(req, null));
+    public static void addClientGetFormsRoute(Javalin app) {
+        app.get(ROUTES_GET_FORMS, ctx -> {
+            if (hasPermissionDoubleCheck(ctx, ROUTES_GET_BASEDATA)) {
+                KukuratusLogger.logDebug(ROUTES_GET_FORMS, getRequestLogString(ctx, null));
 
                 Dao<Forms, ?> formsDao = DatabaseHandler.instance().getDao(Forms.class);
-                String tagName = req.queryParams("name");
+                String tagName = ctx.formParam("name");
                 try {
                     if (tagName != null) {
                         Forms form = formsDao.queryBuilder().where().eq(Forms.NAME_FIELD_NAME, tagName).queryForFirst();
-                        return form.form;
+                        ctx.result(form.form);
                     } else {
                         List<Forms> visibleForms = formsDao.queryBuilder().orderBy(Forms.NAME_FIELD_NAME, true).query();
                         JSONObject root = new JSONObject();
@@ -677,72 +690,74 @@ public class GssServerApiJavalin implements Vars {
                             formsArray.put(formObj);
                         }
 
-                        return root.toString();
+                        ctx.result(root.toString());
                     }
                 } catch (Exception e) {
-                    return sendServerError(res, ROUTES_GET_FORMS + "/" + tagName, e);
+                    sendServerError(ctx, ROUTES_GET_FORMS + "/" + tagName, e);
                 }
             } else {
-                return sendNoPermission(res);
+                sendNoPermission(ctx);
             }
         });
     }
 
-    public static void addGetImagedataRoute() {
-        get(ROUTES_GET_IMAGEDATA, (req, res) -> {
+    public static void addGetImagedataRoute(Javalin app) {
+        app.get(ROUTES_GET_IMAGEDATA, ctx -> {
             // User validUser = hasPermission(req);
             // if (validUser != null) {
-            String imageDataId = req.params(":dataid");
-            KukuratusLogger.logDebug(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(req, null));
+            String imageDataId = ctx.pathParam(":dataid");
+            KukuratusLogger.logDebug(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
 
             try {
                 long imageDataIdLong = Long.parseLong(imageDataId);
                 Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
                 ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong)
                         .queryForFirst();
-                return imageData.data;
+                ctx.result(imageData.data);
             } catch (Exception e) {
-                return sendServerError(res, ROUTES_GET_IMAGEDATA + "/" + imageDataId, e);
+                sendServerError(ctx, ROUTES_GET_IMAGEDATA + "/" + imageDataId, e);
             }
             // } else {
             // return sendNoPermission(res);
             // }
         });
     }
-    // public static void addGetImagedataRoute() {
-    // get(ROUTES_GET_IMAGEDATA, (req, res) -> {
-    // // User validUser = hasPermission(req);
-    // // if (validUser != null) {
-    // String userId = req.params(":userid");
-    // String imageDataId = req.params(":dataid");
-    // KukuratusLogger.logDebug(ROUTES_GET_IMAGEDATA + "/" + userId + "/" +
-    // imageDataId,
-    // getRequestLogString(req, null));
+    // // public static void addGetImagedataRoute() {
+    // // get(ROUTES_GET_IMAGEDATA, (req, res) -> {
+    // // // User validUser = hasPermission(req);
+    // // // if (validUser != null) {
+    // // String userId = req.params(":userid");
+    // // String imageDataId = req.params(":dataid");
+    // // KukuratusLogger.logDebug(ROUTES_GET_IMAGEDATA + "/" + userId + "/" +
+    // // imageDataId,
+    // // getRequestLogString(req, null));
 
-    // try {
-    // long userIdLong = Long.parseLong(userId);
-    // long imageDataIdLong = Long.parseLong(imageDataId);
-    // Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
-    // ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME,
-    // imageDataIdLong).and()
-    // .eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
-    // return imageData.data;
-    // } catch (Exception e) {
-    // return sendServerError(res, ROUTES_GET_IMAGEDATA + "/" + userId + "/" +
-    // imageDataId, e);
-    // }
-    // // } else {
-    // // return sendNoPermission(res);
+    // // try {
+    // // long userIdLong = Long.parseLong(userId);
+    // // long imageDataIdLong = Long.parseLong(imageDataId);
+    // // Dao<ImageData, ?> dao =
+    // DatabaseHandler.instance().getDao(ImageData.class);
+    // // ImageData imageData =
+    // dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME,
+    // // imageDataIdLong).and()
+    // // .eq(ImageData.GPAPUSER_FIELD_NAME, userIdLong).queryForFirst();
+    // // return imageData.data;
+    // // } catch (Exception e) {
+    // // return sendServerError(res, ROUTES_GET_IMAGEDATA + "/" + userId + "/" +
+    // // imageDataId, e);
     // // }
-    // });
-    // }
+    // // // } else {
+    // // // return sendNoPermission(res);
+    // // // }
+    // // });
+    // // }
 
-    public static void addLoginRoute() {
+    public static void addLoginRoute(Javalin app) {
 
-        get(ROUTES_LOGIN, (req, res) -> {
+        app.get(ROUTES_LOGIN, ctx -> {
             try {
-                User user = hasPermission(req);
-                KukuratusLogger.logDebug(ROUTES_LOGIN, getRequestLogString(req, user));
+                User user = hasPermission(ctx);
+                KukuratusLogger.logDebug(ROUTES_LOGIN, getRequestLogString(ctx, user));
                 if (user != null) {
                     boolean admin = RegistryHandler.INSTANCE.isAdmin(user);
                     JSONObject response = new JSONObject();
@@ -756,59 +771,60 @@ public class GssServerApiJavalin implements Vars {
                     String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6",
                             user.getUniqueName());
                     response.put(KEY_MAPCENTER, xyz);
-                    res.status(KukuratusStatus.CODE_200_OK);
-                    return response.toString();
+                    ctx.status(KukuratusStatus.CODE_200_OK);
+                    ctx.result(response.toString());
+                } else {
+                    JSONObject response = new JSONObject();
+                    response.put(KEY_HASPERMISSION, false);
+                    ctx.result(response.toString());
                 }
-                JSONObject response = new JSONObject();
-                response.put(KEY_HASPERMISSION, false);
-                return response.toString();
             } catch (Exception e) {
-                return sendServerError(res, ROUTES_LOGIN, e);
+                sendServerError(ctx, ROUTES_LOGIN, e);
             }
         });
     }
 
-    public static void addUserSettingsRoute() {
+    public static void addUserSettingsRoute(Javalin app) {
 
-        post(ROUTES_USERSETTINGS, (req, res) -> {
+        app.post(ROUTES_USERSETTINGS, ctx -> {
             try {
-                User user = hasPermission(req);
-                KukuratusLogger.logDebug(ROUTES_USERSETTINGS, getRequestLogString(req, user));
+                User user = hasPermission(ctx);
+                KukuratusLogger.logDebug(ROUTES_USERSETTINGS, getRequestLogString(ctx, user));
                 if (user != null) {
-                    String baseMap = req.queryParams(KEY_BASEMAP);
+                    String baseMap = ctx.formParam(KEY_BASEMAP);
                     if (baseMap != null) {
                         Settings s = new Settings(KEY_BASEMAP, baseMap, user.getUniqueName());
                         RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
                     }
-                    String mapCenter = req.queryParams(KEY_MAPCENTER);
+                    String mapCenter = ctx.formParam(KEY_MAPCENTER);
                     if (mapCenter != null) {
                         Settings s = new Settings(KEY_MAPCENTER, mapCenter, user.getUniqueName());
                         RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
                     }
-                    String automaticRegistrationMillis = req.queryParams(KukuratusSession.KEY_AUTOMATIC_REGISTRATION);
+                    String automaticRegistrationMillis = ctx.formParam(KukuratusSession.KEY_AUTOMATIC_REGISTRATION);
                     if (automaticRegistrationMillis != null) {
                         Settings s = new Settings(KukuratusSession.KEY_AUTOMATIC_REGISTRATION,
                                 automaticRegistrationMillis, user.getUniqueName());
                         RegistryHandler.INSTANCE.insertOrUpdateGlobalSetting(s);
                     }
-                    return "OK";
+                    ctx.result("OK");
                 } else {
-                    return sendNoPermission(res);
+                    sendNoPermission(ctx);
                 }
             } catch (Exception e) {
-                return sendServerError(res, ROUTES_USERSETTINGS, e);
+                sendServerError(ctx, ROUTES_USERSETTINGS, e);
             }
         });
     }
 
-    public static void addListByTypeRoute() {
+    public static void addListByTypeRoute(Javalin app) {
 
-        get(ROUTES_LIST_TYPE, (req, res) -> {
+        app.get(ROUTES_LIST_TYPE, ctx -> {
             try {
-                User validUser = hasPermission(req);
-                KukuratusLogger.logDebug(ROUTES_LIST_TYPE, getRequestLogString(req, validUser));
+                User validUser = hasPermission(ctx);
+                KukuratusLogger.logDebug(ROUTES_LIST_TYPE, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
-                    String type = req.params(":type");
+                    String type = ctx.pathParam(":type");
                     if (type.equals(SURVEYORS)) {
                         Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
                         List<GpapUsers> users = userDao.queryForAll();
@@ -818,7 +834,7 @@ public class GssServerApiJavalin implements Vars {
                         for (GpapUsers gpapUsers : users) {
                             surveyorsArray.put(gpapUsers.toJson());
                         }
-                        return root.toString();
+                        ctx.result(root.toString());
                     } else if (type.equals(PROJECTS)) {
                         Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
                         List<GpapProject> projects = projectDao.queryForAll();
@@ -828,7 +844,7 @@ public class GssServerApiJavalin implements Vars {
                         for (GpapProject gpapProject : projects) {
                             projectsArray.put(gpapProject.name);
                         }
-                        return root.toString();
+                        ctx.result(root.toString());
                     } else if (type.equals(WEBUSERS)) {
                         JSONObject root = new JSONObject();
                         JSONArray usersArray = new JSONArray();
@@ -841,36 +857,36 @@ public class GssServerApiJavalin implements Vars {
                                 usersArray.put(user.toJson());
                             }
                         }
-                        return root.toString();
+                        ctx.result(root.toString());
+                    } else {
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
+                                "Type not recognised: type");
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     }
-
-                    KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
-                            "Type not recognised: type");
-                    res.status(ks.getCode());
-                    return ks.toJson();
                 } else {
-                    return sendNoPermission(res);
+                    sendNoPermission(ctx);
                 }
             } catch (Exception e) {
-                return sendServerError(res, ROUTES_LIST_TYPE, e);
+                sendServerError(ctx, ROUTES_LIST_TYPE, e);
             }
         });
     }
 
-    public static void addUpdateByTypeRoute() {
+    public static void addUpdateByTypeRoute(Javalin app) {
 
-        post(ROUTES_UPDATE_TYPE, (req, res) -> {
+        app.post(ROUTES_UPDATE_TYPE, ctx -> {
             try {
-                User validUser = hasPermission(req);
-                KukuratusLogger.logDebug(ROUTES_UPDATE_TYPE, getRequestLogString(req, validUser));
+                User validUser = hasPermission(ctx);
+                KukuratusLogger.logDebug(ROUTES_UPDATE_TYPE, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
-                    String type = req.params(":type");
+                    String type = ctx.pathParam(":type");
                     if (type.equals(SURVEYORS)) {
-                        String id = req.queryParams(GpapUsers.ID_FIELD_NAME);
-                        String deviceId = req.queryParams(GpapUsers.DEVICE_FIELD_NAME);
-                        String name = req.queryParams(GpapUsers.NAME_FIELD_NAME);
-                        String contact = req.queryParams(GpapUsers.CONTACT_FIELD_NAME);
-                        String active = req.queryParams(GpapUsers.ACTIVE_FIELD_NAME);
+                        String id = ctx.formParam(GpapUsers.ID_FIELD_NAME);
+                        String deviceId = ctx.formParam(GpapUsers.DEVICE_FIELD_NAME);
+                        String name = ctx.formParam(GpapUsers.NAME_FIELD_NAME);
+                        String contact = ctx.formParam(GpapUsers.CONTACT_FIELD_NAME);
+                        String active = ctx.formParam(GpapUsers.ACTIVE_FIELD_NAME);
 
                         Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
                         if (id != null) {
@@ -886,8 +902,8 @@ public class GssServerApiJavalin implements Vars {
                             } else {
                                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
                                         "No user existing by the id: " + id);
-                                res.status(ks.getCode());
-                                return ks.toJson();
+                                ctx.status(ks.getCode());
+                                ctx.result(ks.toJson());
                             }
                         } else {
                             // create new one
@@ -895,15 +911,15 @@ public class GssServerApiJavalin implements Vars {
                             userDao.create(newUser);
                         }
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
-                        res.status(ks.getCode());
-                        return ks.toJson();
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     } else if (type.equals(WEBUSERS)) {
-                        String id = req.queryParams(User.ID_FIELD_NAME);
-                        String name = req.queryParams(User.NAME_FIELD_NAME);
-                        String uniqueName = req.queryParams(User.UNIQUENAME_FIELD_NAME);
-                        String email = req.queryParams(User.EMAIL_FIELD_NAME);
-                        String pwd = req.queryParams(User.PASSWORD_FIELD_NAME);
-                        String group = req.queryParams(User.GROUP_FIELD_NAME);
+                        String id = ctx.formParam(User.ID_FIELD_NAME);
+                        String name = ctx.formParam(User.NAME_FIELD_NAME);
+                        String uniqueName = ctx.formParam(User.UNIQUENAME_FIELD_NAME);
+                        String email = ctx.formParam(User.EMAIL_FIELD_NAME);
+                        String pwd = ctx.formParam(User.PASSWORD_FIELD_NAME);
+                        String group = ctx.formParam(User.GROUP_FIELD_NAME);
 
                         if (id != null) {
                             User existingUser = RegistryHandler.INSTANCE.getUserById(Long.parseLong(id));
@@ -919,8 +935,8 @@ public class GssServerApiJavalin implements Vars {
                             } else {
                                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
                                         "No webuser existing by the id: " + id);
-                                res.status(ks.getCode());
-                                return ks.toJson();
+                                ctx.status(ks.getCode());
+                                ctx.result(ks.toJson());
                             }
                         } else {
                             // create new one
@@ -929,34 +945,34 @@ public class GssServerApiJavalin implements Vars {
                             RegistryHandler.INSTANCE.addUser(newUser);
                         }
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
-                        res.status(ks.getCode());
-                        return ks.toJson();
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     } else {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
                                 "Type not recognised: " + type);
-                        res.status(ks.getCode());
-                        return ks.toJson();
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     }
 
                 } else {
-                    return sendNoPermission(res);
+                    sendNoPermission(ctx);
                 }
             } catch (Exception e) {
-                return sendServerError(res, ROUTES_UPDATE_TYPE, e);
+                sendServerError(ctx, ROUTES_UPDATE_TYPE, e);
             }
         });
     }
 
-    public static void addDeleteByTypeRoute() {
+    public static void addDeleteByTypeRoute(Javalin app) {
 
-        post(ROUTES_DELETE_TYPE, (req, res) -> {
+        app.post(ROUTES_DELETE_TYPE, ctx -> {
             try {
-                User validUser = hasPermission(req);
-                KukuratusLogger.logDebug(ROUTES_DELETE_TYPE, getRequestLogString(req, validUser));
+                User validUser = hasPermission(ctx);
+                KukuratusLogger.logDebug(ROUTES_DELETE_TYPE, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
-                    String type = req.params(":type");
+                    String type = ctx.pathParam(":type");
                     if (type.equals(WEBUSERS)) {
-                        String id = req.queryParams(User.ID_FIELD_NAME);
+                        String id = ctx.formParam(User.ID_FIELD_NAME);
                         if (id != null) {
                             User existingUser = RegistryHandler.INSTANCE.getUserById(Long.parseLong(id));
                             if (existingUser != null) {
@@ -964,35 +980,35 @@ public class GssServerApiJavalin implements Vars {
                             } else {
                                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
                                         "No webuser existing by the id: " + id);
-                                res.status(ks.getCode());
-                                return ks.toJson();
+                                ctx.status(ks.getCode());
+                                ctx.result(ks.toJson());
                             }
                         }
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
-                        res.status(ks.getCode());
-                        return ks.toJson();
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     } else if (type.equals(FORMS)) {
-                        String id = req.queryParams(Forms.ID_FIELD_NAME);
+                        String id = ctx.formParam(Forms.ID_FIELD_NAME);
                         if (id != null) {
                             Dao<Forms, ?> formsDao = DatabaseHandler.instance().getDao(Forms.class);
                             Forms f = new Forms(Long.parseLong(id));
                             formsDao.delete(f);
                         }
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
-                        res.status(ks.getCode());
-                        return ks.toJson();
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     } else {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
                                 "Type not recognised: " + type);
-                        res.status(ks.getCode());
-                        return ks.toJson();
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     }
 
                 } else {
-                    return sendNoPermission(res);
+                    sendNoPermission(ctx);
                 }
             } catch (Exception e) {
-                return sendServerError(res, ROUTES_DELETE_TYPE, e);
+                sendServerError(ctx, ROUTES_DELETE_TYPE, e);
             }
         });
     }
@@ -1001,17 +1017,17 @@ public class GssServerApiJavalin implements Vars {
     // HELPER METHODS
     //////////////////////////////////////
 
-    private static String sendNoPermission(Response res) {
+    private static void sendNoPermission(Context ctx) {
         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
-        res.status(ks.getCode());
-        return ks.toJson();
+        ctx.status(ks.getCode());
+        ctx.result(ks.toJson());
     }
 
-    private static String sendServerError(Response res, String route, Throwable e) {
+    private static void sendServerError(Context ctx, String route, Throwable e) {
         KukuratusLogger.logError(route, e);
         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
-        res.status(ks.getCode());
-        return ks.toJson();
+        ctx.status(ks.getCode());
+        ctx.result(ks.toJson());
     }
 
     private static long getLong(HashMap<String, Object> partData, String key, long defaultValue) {
@@ -1119,6 +1135,18 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
+    private static byte[] getByteArray(InputStream is) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[1024];
+        while ((nRead = is.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+        buffer.flush();
+        byte[] byteArray = buffer.toByteArray();
+        return byteArray;
+    }
+
     private static String getString(Part part) throws IOException {
         try (InputStream is = part.getInputStream()) {
             String text = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).lines()
@@ -1127,11 +1155,17 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static String getRequestLogString(Request req, User user) {
+    private static String getString(InputStream is) throws IOException {
+        String text = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).lines()
+                .collect(Collectors.joining("\n"));
+        return text;
+    }
+
+    private static String getRequestLogString(Context ctx, User user) {
         String userStr = "";
         if (user != null) {
             userStr = " by user " + user.uniqueName;
         }
-        return "Received request" + userStr + " from " + req.raw().getRemoteAddr();
+        return "Received request" + userStr + " from " + ctx.ip();
     }
 }

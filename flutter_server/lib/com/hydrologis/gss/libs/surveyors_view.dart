@@ -184,6 +184,14 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
             ],
           ),
         ),
+        actions: [
+          IconButton(
+              tooltip: "Refresh the surveyors list.",
+              icon: Icon(MdiIcons.refresh),
+              onPressed: () async {
+                await getSurveyors();
+              })
+        ],
       ),
       body: surveyors == null
           ? SmashCircularProgress(label: "Loading surveyors...")

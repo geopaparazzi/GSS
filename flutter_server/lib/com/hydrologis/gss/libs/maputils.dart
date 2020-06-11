@@ -163,64 +163,20 @@ openNoteDialog(BuildContext context, int noteId) async {
 
   var data = await ServerApi.getNoteById(userPwd[0], userPwd[1], noteId);
   Map<String, dynamic> noteItem = jsonDecode(data);
-  var id = noteItem[ID];
-  var name = noteItem[NAME];
-  var ts = noteItem[TS];
-  var x = noteItem[X];
-  var y = noteItem[Y];
-  var p = LatLng(y, x);
-  var surveyor = noteItem[SURVEYOR];
-  var project = noteItem[PROJECT];
   var form = noteItem[FORM];
-
   var widget;
   var h = 300.0;
   var w = 400.0;
   if (form != null) {
     h = 900.0;
     w = 900.0;
-    var sectionMap = jsonDecode(form);
-    var sectionName = sectionMap[ATTR_SECTIONNAME];
-
-    widget = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SmashUI.titleText(
-            name,
-            textAlign: TextAlign.center,
-            useColor: true,
-          ),
-        ),
-        Expanded(
-          child: MasterDetailPage(
-            sectionMap,
-            SmashUI.titleText(
-              sectionName,
-              color: SmashColors.mainBackground,
-              bold: true,
-            ),
-            sectionName,
-            p,
-            noteId,
-            null, // TODO add here save function if editing is supported on web
-            getThumbnailsFromDb,
-            null, // no taking pictures permitted on web
-            doScaffold: false,
-            isReadOnly: true,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SmashUI.smallText(
-              "Surveyor: $surveyor       Project: $project",
-              textAlign: TextAlign.center,
-              color: Colors.grey),
-        ),
-      ],
-    );
+    widget = VersionedNoteWidget(noteItem);
   } else {
+    var id = noteItem[ID];
+    var name = noteItem[NAME];
+    var ts = noteItem[TS];
+    var surveyor = noteItem[SURVEYOR];
+    var project = noteItem[PROJECT];
     var map = {
       "ID": id,
       "Text": name,
@@ -251,7 +207,7 @@ openNoteDialog(BuildContext context, int noteId) async {
     );
   }
 
-  Dialog mapSelectionDialog = Dialog(
+  Dialog openNoteDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: Container(
       height: h,
@@ -260,7 +216,7 @@ openNoteDialog(BuildContext context, int noteId) async {
     ),
   );
   await showDialog(
-      context: context, builder: (BuildContext context) => mapSelectionDialog);
+      context: context, builder: (BuildContext context) => openNoteDialog);
 }
 
 openImageDialog(BuildContext context, String name, int imageId) {
@@ -306,6 +262,134 @@ openMapSelectionDialog(BuildContext context) {
   );
   showDialog(
       context: context, builder: (BuildContext context) => mapSelectionDialog);
+}
+
+class VersionedNoteWidget extends StatefulWidget {
+  final Map<String, dynamic> noteItem;
+
+  VersionedNoteWidget(this.noteItem);
+
+  @override
+  _VersionedNoteWidgetState createState() => _VersionedNoteWidgetState();
+}
+
+class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
+  Map<String, dynamic> noteItem;
+  int _initial;
+  int _current;
+  int _previous;
+  bool _hasHistory = true;
+
+  @override
+  void initState() {
+    noteItem = widget.noteItem;
+    // initially the last in time is shown, with a previous if available
+    _initial = noteItem[ID];
+    _current = _initial;
+    _previous = noteItem[PREVIOUSID];
+    if (_previous == -1) {
+      _previous = null;
+      _hasHistory = false;
+    }
+    super.initState();
+  }
+
+  Future loadNote() async {
+    var userPwd = SmashSession.getSessionUser();
+    var data = await ServerApi.getNoteById(userPwd[0], userPwd[1], _current);
+    noteItem = jsonDecode(data);
+    _current = noteItem[ID];
+    _previous = noteItem[PREVIOUSID];
+    if (_previous == -1) {
+      _previous = null;
+    }
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var name = noteItem[NAME];
+    var ts = noteItem[TS];
+    var x = noteItem[X];
+    var y = noteItem[Y];
+    var p = LatLng(y, x);
+    var surveyor = noteItem[SURVEYOR];
+    var project = noteItem[PROJECT];
+    var form = noteItem[FORM];
+    var sectionMap = jsonDecode(form);
+    var sectionName = sectionMap[ATTR_SECTIONNAME];
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SmashUI.titleText(
+            name,
+            textAlign: TextAlign.center,
+            useColor: true,
+          ),
+        ),
+        Expanded(
+          child: MasterDetailPage(
+            sectionMap,
+            SmashUI.titleText(
+              sectionName,
+              color: SmashColors.mainBackground,
+              bold: true,
+            ),
+            sectionName,
+            p,
+            _current,
+            null, // TODO add here save function if editing is supported on web
+            getThumbnailsFromDb,
+            null, // no taking pictures permitted on web
+            doScaffold: false,
+            isReadOnly: true,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SmashUI.smallText(
+                      "Surveyor: $surveyor        Project: $project       Timestamp: ${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(ts))}",
+                      textAlign: TextAlign.center,
+                      color: Colors.grey),
+                ),
+              ),
+              _previous != null
+                  ? IconButton(
+                      tooltip: "View previous version.",
+                      icon: Icon(MdiIcons.skipPrevious),
+                      color: SmashColors.mainDecorations,
+                      onPressed: () async {
+                        _current = _previous;
+                        await loadNote();
+                      },
+                    )
+                  : Container(),
+              _hasHistory && _current != _initial
+                  ? IconButton(
+                      icon: Icon(MdiIcons.skipForward),
+                      color: SmashColors.mainDecorations,
+                      tooltip: "View current version.",
+                      onPressed: () async {
+                        _current = _initial;
+                        await loadNote();
+                      },
+                    )
+                  : Container(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class BackgroundMapSelectionWidget extends StatefulWidget {

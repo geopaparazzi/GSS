@@ -47,6 +47,7 @@ import com.j256.ormlite.dao.Dao;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import io.javalin.http.Context;
 import spark.Request;
 import spark.Response;
 
@@ -78,6 +79,59 @@ public class ServletUtils {
         String ipAddress = NetworkUtilities.getIpAddress(request.raw());
 
         String authHeader = request.headers("Authorization"); //$NON-NLS-1$
+        String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
+        if (userPwd == null || !userPwd[1].equals(MOBILE_UPLOAD_PWD)) { // $NON-NLS-1$
+            String msg = ""; //$NON-NLS-1$
+            if (userPwd != null && userPwd[0] != null && userPwd[1] != null) {
+                msg = Messages.getString("ServletUtils.permission_denied") + ipAddress //$NON-NLS-1$
+                        + Messages.getString("ServletUtils.for_user") + userPwd[0] //$NON-NLS-1$
+                        + Messages.getString("ServletUtils.with_pwd") //$NON-NLS-1$
+                        + userPwd[1];
+            } else {
+                msg = Messages.getString("ServletUtils.permission_denied") + ipAddress; //$NON-NLS-1$
+            }
+            logAccess(msg);
+            KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
+                    new RuntimeException());
+            return errStatus;
+        }
+        String deviceId = userPwd[0];
+
+        DatabaseHandler dbHandler = DatabaseHandler.instance();
+        Dao<GpapUsers, ?> usersDao = dbHandler.getDao(GpapUsers.class);
+        GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
+        if (gpapUser == null) {
+            String limitStr = RegistryHandler.INSTANCE
+                    .getGlobalSettingByKey(KukuratusSession.KEY_AUTOMATIC_REGISTRATION, "0"); //$NON-NLS-1$
+            long limit = Long.parseLong(limitStr);
+            long now = System.currentTimeMillis();
+            double deltaMinutes = (now - limit) / 1000.0;
+            if (deltaMinutes < KukuratusSession.timerSeconds) {
+                // register the device automatically
+                gpapUser = new GpapUsers(deviceId, deviceId, "", 1); //$NON-NLS-1$ //$NON-NLS-2$
+                usersDao.create(gpapUser);
+            } else {
+                logAccess(Messages.getString("ServletUtils.permission_denied") + ipAddress
+                // $NON-NLS-1$
+                        + Messages.getString("ServletUtils.for_device") + deviceId + tagPart
+                        // $NON-NLS-1$
+                        + Messages.getString("ServletUtils.no_permission_error")); //$NON-NLS-1$
+                KukuratusStatus errStatus = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, NO_PERMISSION,
+                        new RuntimeException());
+                return errStatus;
+            }
+        }
+
+        debug("Connection from: " + gpapUser.name + tagPart); //$NON-NLS-1$
+        return deviceId;
+    }
+    public static Object canProceed(Context ctx, String tag) throws Exception {
+        String tagPart = ""; //$NON-NLS-1$
+        if (tag != null)
+            tagPart = " (" + tag + ")"; //$NON-NLS-1$ //$NON-NLS-2$
+        String ipAddress = NetworkUtilities.getIpAddress(ctx.req);
+
+        String authHeader = ctx.req.getHeader("Authorization"); //$NON-NLS-1$
         String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
         if (userPwd == null || !userPwd[1].equals(MOBILE_UPLOAD_PWD)) { // $NON-NLS-1$
             String msg = ""; //$NON-NLS-1$

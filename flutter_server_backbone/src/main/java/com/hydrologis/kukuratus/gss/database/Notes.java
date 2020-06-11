@@ -54,7 +54,6 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     public static final String ID_FIELD_NAME = "id"; //$NON-NLS-1$
 
     public static final String PREVIOUSID_FIELD_NAME = "previd"; //$NON-NLS-1$
-    public static final String ORIGINALID_FIELD_NAME = "originalid"; //$NON-NLS-1$
     public static final String ALTIM_FIELD_NAME = "altim"; //$NON-NLS-1$
     public static final String TIMESTAMP_FIELD_NAME = "ts"; //$NON-NLS-1$
 
@@ -473,11 +472,19 @@ public class Notes implements ISpatialTable, KmlRepresenter {
     public JSONObject toJson() {
         JSONObject noteObject = new JSONObject();
         noteObject.put(ID_FIELD_NAME, id);
+        noteObject.put(PREVIOUSID_FIELD_NAME, previousId);
         noteObject.put(GssDatabaseUtilities.NAME, text);
         noteObject.put(TIMESTAMP_FIELD_NAME, timestamp);
+        noteObject.put(UPLOADTIMESTAMP_FIELD_NAME, uploadTimestamp);
+        noteObject.put(ALTIM_FIELD_NAME, altimetry);
         noteObject.put(NOTESEXT_COLUMN_MARKER, marker);
         noteObject.put(NOTESEXT_COLUMN_SIZE, size);
         noteObject.put(NOTESEXT_COLUMN_COLOR, color);
+        noteObject.put(NOTESEXT_COLUMN_ACCURACY, accuracy);
+        noteObject.put(NOTESEXT_COLUMN_HEADING, heading);
+        noteObject.put(NOTESEXT_COLUMN_SPEED, speed);
+        noteObject.put(NOTESEXT_COLUMN_SPEEDACCURACY, speedaccuracy);
+        noteObject.put(NOTESEXT_COLUMN_ROTATION, rotation);
         if (form != null && form.length() > 0) {
             noteObject.put(FORM_FIELD_NAME, form);
         }

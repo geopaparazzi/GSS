@@ -51,7 +51,7 @@ public class GssServerJavalin implements Vars {
     public void start(ASpatialDb db, String keyStorePath, String keyStorePassword) throws Exception {
 
         Javalin app = Javalin.create(config -> {
-
+            config.enableCorsForAllOrigins();
             config.server(() -> {
                 Server server = new Server();
                 if (keyStorePath != null && keyStorePassword != null) {
@@ -71,31 +71,36 @@ public class GssServerJavalin implements Vars {
                 return server;
             });
             config.addStaticFiles("public", Location.EXTERNAL);
-            config.enforceSsl = true;
+            if (keyStorePath != null && keyStorePassword != null) {
+                config.enforceSsl = true;
+            }
         }).start(WEBAPP_PORT);
+
+        activateMapsforge();
         // ROUTES START
+        // app.before(ctx -> {
+        //     KukuratusLogger.logDebug(this, ctx.req.getPathInfo());
+        // });
         GssServerApiJavalin.addCheckRoute(app);
-        // GssServerApiJavalin.addTilesRoute(mapsforgeTilesGenerator);
-        // GssServerApiJavalin.addClientUploadRoute();
-        // GssServerApiJavalin.addClientGetBaseDataRoute();
-        // GssServerApiJavalin.addClientGetFormsRoute();
-        // GssServerApiJavalin.addClientProjectDataUploadRoute();
-        // GssServerApiJavalin.addGetDataRoute();
-        // GssServerApiJavalin.addGetDataByTypeRoute();
-        // GssServerApiJavalin.addGetImagedataRoute();
-        // GssServerApiJavalin.addLoginRoute();
-        // GssServerApiJavalin.addUserSettingsRoute();
-        // GssServerApiJavalin.addListByTypeRoute();
-        // GssServerApiJavalin.addUpdateByTypeRoute();
-        // GssServerApiJavalin.addDeleteByTypeRoute();
+        GssServerApiJavalin.addTilesRoute(app, mapsforgeTilesGenerator);
+        GssServerApiJavalin.addClientUploadRoute(app);
+        GssServerApiJavalin.addClientGetBaseDataRoute(app);
+        GssServerApiJavalin.addClientGetFormsRoute(app);
+        GssServerApiJavalin.addClientProjectDataUploadRoute(app);
+        GssServerApiJavalin.addGetDataRoute(app);
+        GssServerApiJavalin.addGetDataByTypeRoute(app);
+        GssServerApiJavalin.addGetImagedataRoute(app);
+        GssServerApiJavalin.addLoginRoute(app);
+        GssServerApiJavalin.addUserSettingsRoute(app);
+        GssServerApiJavalin.addListByTypeRoute(app);
+        GssServerApiJavalin.addUpdateByTypeRoute(app);
+        GssServerApiJavalin.addDeleteByTypeRoute(app);
 
         app.get("/", ctx -> ctx.redirect("index.html"));
         // ROUTES END
 
         DatabaseHandler.init(db);
         createTables();
-
-        activateMapsforge();
 
     }
 
