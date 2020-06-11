@@ -12,14 +12,12 @@ import 'package:smashlibs/smashlibs.dart';
 export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
 void main() {
-  print(WEBAPP_URL);
   runApp(GssApp());
 }
 
 class GssApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MapstateModel()),
