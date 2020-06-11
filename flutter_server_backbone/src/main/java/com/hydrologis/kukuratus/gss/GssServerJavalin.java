@@ -1,5 +1,6 @@
 package com.hydrologis.kukuratus.gss;
 
+import java.io.Console;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
@@ -79,7 +80,7 @@ public class GssServerJavalin implements Vars {
         activateMapsforge();
         // ROUTES START
         // app.before(ctx -> {
-        //     KukuratusLogger.logDebug(this, ctx.req.getPathInfo());
+        // KukuratusLogger.logDebug(this, ctx.req.getPathInfo());
         // });
         GssServerApiJavalin.addCheckRoute(app);
         GssServerApiJavalin.addTilesRoute(app, mapsforgeTilesGenerator);
@@ -167,61 +168,62 @@ public class GssServerJavalin implements Vars {
             }
         }
 
-        try (Scanner in = new Scanner(System.in)) {
-
-            ASpatialDb db = null;
-            if (postgresUrl != null) {
-                db = EDb.POSTGIS.getSpatialDb();
-                System.out.println("Please enter the postgresql username and password (one on each line):");
-                String user = in.nextLine();
-                String pwd = in.nextLine();
-                db.setCredentials(user, pwd);
-                db.open(postgresUrl);
-            } else {
-                KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
-                File dataFolder = workspace.getDataFolder();
-                File dbFile = new File(dataFolder, "gss_database.mv.db"); //$NON-NLS-1$
-                if (!dbFile.exists()) {
-                    KukuratusLogger.logInfo("main", "No database present in folder, creating one."); //$NON-NLS-1$
-                }
-                db = EDb.H2GIS.getSpatialDb();
-                db.open(dbFile.getAbsolutePath());
-            }
-
-            System.out.println("****************************************************");
-            System.out.println("* Launching with parameters:");
-            System.out.println("* \tLAUNCH FOLDER: " + new File(".").getAbsolutePath());
-            System.out.println("* \tWORKSPACE FOLDER: " + workspacePath);
-            System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
-            System.out.println("* \tMOBILE PWD: " + (mobilePwd != null ? mobilePwd : " - nv - "));
-            if (postgresUrl != null) {
-                System.out.println("* \tDATABASE: " + postgresUrl);
-            } else {
-                System.out.println("* \tDATABASE: " + db.getDatabasePath());
-            }
-            System.out.println("****************************************************");
-
-            if (mobilePwd != null) {
-                // pwd was supplied
-                ServletUtils.MOBILE_UPLOAD_PWD = mobilePwd;
-            } else {
-                ServletUtils.MOBILE_UPLOAD_PWD = "gss_Master_Survey_Forever_2018";
-            }
-
-            String keyStorePassword = null;
-            if (keyStorePath != null) {
-                // ask for the password at startup
-                System.out.println("Please enter the keystore password and press return:");
-                keyStorePassword = in.nextLine();
-                if (keyStorePassword.trim().length() == 0) {
-                    System.out.println("Disabling keystore use due to empty password.");
-                    keyStorePassword = null;
-                    keyStorePath = null;
-                }
-            }
-
-            GssServerJavalin gssServer = new GssServerJavalin();
-            gssServer.start(db, keyStorePath, keyStorePassword);
+        Console console = System.console();
+        if (console == null) {
+            System.out.println("Couldn't get Console instance");
+            System.exit(0);
         }
+        ASpatialDb db = null;
+        if (postgresUrl != null) {
+            db = EDb.POSTGIS.getSpatialDb();
+            String user = console.readLine("Please enter the postgresql username: ");
+            char[] pwdChars = console.readPassword("Please enter the postgresql password: ");
+            db.setCredentials(user, new String(pwdChars));
+            db.open(postgresUrl);
+        } else {
+            KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
+            File dataFolder = workspace.getDataFolder();
+            File dbFile = new File(dataFolder, "gss_database.mv.db"); //$NON-NLS-1$
+            if (!dbFile.exists()) {
+                KukuratusLogger.logInfo("main", "No database present in folder, creating one."); //$NON-NLS-1$
+            }
+            db = EDb.H2GIS.getSpatialDb();
+            db.open(dbFile.getAbsolutePath());
+        }
+
+        System.out.println("****************************************************");
+        System.out.println("* Launching with parameters:");
+        System.out.println("* \tLAUNCH FOLDER: " + new File(".").getAbsolutePath());
+        System.out.println("* \tWORKSPACE FOLDER: " + workspacePath);
+        System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
+        System.out.println("* \tMOBILE PWD: " + (mobilePwd != null ? mobilePwd : " - nv - "));
+        if (postgresUrl != null) {
+            System.out.println("* \tDATABASE: " + postgresUrl);
+        } else {
+            System.out.println("* \tDATABASE: " + db.getDatabasePath());
+        }
+        System.out.println("****************************************************");
+
+        if (mobilePwd != null) {
+            // pwd was supplied
+            ServletUtils.MOBILE_UPLOAD_PWD = mobilePwd;
+        } else {
+            ServletUtils.MOBILE_UPLOAD_PWD = "gss_Master_Survey_Forever_2018";
+        }
+
+        String keyStorePassword = null;
+        if (keyStorePath != null) {
+            // ask for the password at startup
+            char[] pwdChars = console.readPassword("Please enter the keystore password: ");
+            keyStorePassword = new String(pwdChars);
+            if (keyStorePassword.trim().length() == 0) {
+                System.out.println("Disabling keystore use due to empty password.");
+                keyStorePassword = null;
+                keyStorePath = null;
+            }
+        }
+
+        GssServerJavalin gssServer = new GssServerJavalin();
+        gssServer.start(db, keyStorePath, keyStorePassword);
     }
 }
