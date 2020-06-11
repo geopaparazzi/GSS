@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/mapview.dart';
 import 'package:flutter_server/com/hydrologis/gss/models.dart';
+import 'package:flutter_server/com/hydrologis/gss/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/variables.dart';
 import 'package:provider/provider.dart';
@@ -11,12 +12,14 @@ import 'package:smashlibs/smashlibs.dart';
 export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
 void main() {
+  print(WEBAPP_URL);
   runApp(GssApp());
 }
 
 class GssApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MapstateModel()),

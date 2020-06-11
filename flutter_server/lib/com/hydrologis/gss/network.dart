@@ -9,30 +9,29 @@ import 'package:http/http.dart';
 const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
 const VALUE_KEY = "v";
-const WEBAPP_URL = "http://localhost:8080"; // TODO make empty for release
+const doLocal = String.fromEnvironment('DOLOCAL', defaultValue: 'false');
+final WEBAPP_URL = doLocal == 'true' ? "http://localhost:8080" : "";
 
-const API_DATA = "$WEBAPP_URL/data";
-const API_LIST = "$WEBAPP_URL/list";
-const API_UPDATE = "$WEBAPP_URL/update";
-const API_DELETE = "$WEBAPP_URL/delete";
-const API_UPDATE_SURVEYOR = "$API_UPDATE/surveyors";
-const API_UPDATE_WEBUSER = "$API_UPDATE/webusers";
-const API_DELETE_WEBUSER = "$API_DELETE/webusers";
-const API_DELETE_FORMS = "$API_DELETE/forms";
-const API_LIST_SURVEYORS = "$API_LIST/surveyors";
-const API_LIST_WEBUSERS = "$API_LIST/webusers";
-const API_LIST_PROJECTS = "$API_LIST/projects";
-const API_LOGIN = "$WEBAPP_URL/login";
-const API_USERSETTINGS = "$WEBAPP_URL/usersettings";
-const API_IMAGES = "$API_DATA/images";
-const API_IMAGEDATA = "$API_DATA/imagedata";
-// const API_IMAGEDATA = "$WEBAPP_URL/imagedata";
-const API_NOTE = "$API_DATA/notes";
-const API_DATA_DOWNLOAD_PATH = "$WEBAPP_URL/datadownload";
-const API_DATA_UPLOAD_PATH = "$WEBAPP_URL/dataupload";
-const API_TAGS_DOWNLOAD_PATH = "$WEBAPP_URL/tagsdownload";
-
-//const SERVER_IP = "172.26.181.138"; // office hydrologis
+final API_DATA = "$WEBAPP_URL/data";
+final API_LIST = "$WEBAPP_URL/list";
+final API_UPDATE = "$WEBAPP_URL/update";
+final API_DELETE = "$WEBAPP_URL/delete";
+final API_UPDATE_SURVEYOR = "$API_UPDATE/surveyors";
+final API_UPDATE_WEBUSER = "$API_UPDATE/webusers";
+final API_DELETE_WEBUSER = "$API_DELETE/webusers";
+final API_DELETE_FORMS = "$API_DELETE/forms";
+final API_LIST_SURVEYORS = "$API_LIST/surveyors";
+final API_LIST_WEBUSERS = "$API_LIST/webusers";
+final API_LIST_PROJECTS = "$API_LIST/projects";
+final API_LOGIN = "$WEBAPP_URL/login";
+final API_USERSETTINGS = "$WEBAPP_URL/usersettings";
+final API_IMAGES = "$API_DATA/images";
+final API_IMAGEDATA = "$API_DATA/imagedata";
+// final API_IMAGEDATA = "$WEBAPP_URL/imagedata";
+final API_NOTE = "$API_DATA/notes";
+final API_DATA_DOWNLOAD_PATH = "$WEBAPP_URL/datadownload";
+final API_DATA_UPLOAD_PATH = "$WEBAPP_URL/dataupload";
+final API_TAGS_DOWNLOAD_PATH = "$WEBAPP_URL/tagsdownload";
 
 class ServerApi {
   static Map<String, String> getAuthRequestHeader(String user, String pwd) {
