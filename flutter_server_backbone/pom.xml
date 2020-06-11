@@ -27,11 +27,6 @@
 			<version>3.9.0</version>
 		</dependency>
 		<dependency>
-			<groupId>com.sparkjava</groupId>
-			<artifactId>spark-core</artifactId>
-			<version>2.9.1</version>
-		</dependency>
-		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.5</version>
@@ -227,7 +222,7 @@
             <manifest>
                 <addClasspath>true</addClasspath>
                 <classpathPrefix>lib/</classpathPrefix>
-                <mainClass>com.hydrologis.kukuratus.gss.GssServer</mainClass>
+                <mainClass>com.hydrologis.kukuratus.gss.GssServerJavalin</mainClass>
             </manifest>
         </archive>
     </configuration>
