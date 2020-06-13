@@ -177,7 +177,7 @@ public class GssDatabaseUtilities {
         String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME
                 + " group by ST_asText(" + Notes.GEOM_FIELD_NAME + ") )";
         where.and().raw(versionsSql);
-
+        qb.orderBy(Notes.ID_FIELD_NAME, false);
         notesList = where.query();
 
         if (notesList != null) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:smashlibs/smashlibs.dart';
@@ -30,7 +31,12 @@ class ServerFormHelper implements AFormhelper {
       Image img = Image.memory(bytes);
       Widget withBorder = Container(
         padding: SmashUI.defaultPadding(),
-        child: img,
+        child: GestureDetector(
+          onDoubleTap: () {
+            openImageDialog(context, "", id);
+          },
+          child: img,
+        ),
       );
       thumbList.add(withBorder);
     }

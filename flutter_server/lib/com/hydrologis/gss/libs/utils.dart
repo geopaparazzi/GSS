@@ -10,8 +10,8 @@ import 'package:smashlibs/smashlibs.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 class NetworkImageWidget extends StatelessWidget {
-  double _height;
-  String _imageUrl;
+  final double _height;
+  final String _imageUrl;
 
   NetworkImageWidget(this._imageUrl, this._height);
 

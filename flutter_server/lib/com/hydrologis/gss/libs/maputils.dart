@@ -20,8 +20,6 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 
-
-
 Marker buildSimpleNote(MapstateModel mapState, var x, var y, String name,
     int noteId, Icon icon, double size, Color color) {
   List lengthHeight = guessTextDimensions(name, size);
@@ -222,7 +220,7 @@ openNoteDialog(BuildContext context, int noteId) async {
 
 openImageDialog(BuildContext context, String name, int imageId) {
   var h = MediaQuery.of(context).size.height;
-  var size = 600.0;
+  var size = 700.0;
   Dialog mapSelectionDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: Container(
@@ -232,13 +230,15 @@ openImageDialog(BuildContext context, String name, int imageId) {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SmashUI.titleText(
-                name,
-                textAlign: TextAlign.center,
-              ),
-            ),
+            name.isNotEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SmashUI.titleText(
+                      name,
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : Container(),
             NetworkImageWidget("$WEBAPP_URL/imagedata/$imageId", h * 0.6),
             // TODO change once the NetworkImageWidget has auth
             // NetworkImageWidget("$API_IMAGEDATA/$imageId", h * 0.6),
@@ -356,7 +356,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
             sectionName,
             p,
             _current,
-            ServerFormHelper(), 
+            ServerFormHelper(),
             doScaffold: false,
             isReadOnly: true,
           ),
@@ -736,6 +736,9 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                       onPressed: () {
                         mapstateModel.mapController.fitBounds(b);
                         mapstateModel.currentMapBounds = b;
+                        Provider.of<AttributesTableStateModel>(context,
+                                listen: false)
+                            .refresh();
                         Navigator.pop(context);
                       },
                     ),
@@ -973,4 +976,3 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
     );
   }
 }
-
