@@ -38,14 +38,14 @@ class ServerFormHelper implements AFormhelper {
   }
 
   @override
-  Future<void> onSaveFunction(
-      BuildContext context, noteId, sectionName, sectionMap, _position) {
+  Future onSaveFunction(
+      BuildContext context, noteId, sectionName, sectionMap, _position) async {
     // saving serverside is not implemented yet.
   }
 
   @override
   Future<String> takePictureForForms(BuildContext context, noteId, sectionN,
-      bool sectionMap, List<String> _position) {
+      bool sectionMap, List<String> _position) async {
     // Adding pictures serverside is nor implemented yet.
     return null;
   }
