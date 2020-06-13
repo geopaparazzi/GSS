@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/formutils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
@@ -19,7 +20,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 
-const IMAGE_ID_SEPARATOR = ";";
+
 
 Marker buildSimpleNote(MapstateModel mapState, var x, var y, String name,
     int noteId, Icon icon, double size, Color color) {
@@ -355,9 +356,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
             sectionName,
             p,
             _current,
-            null, // TODO add here save function if editing is supported on web
-            getThumbnailsFromDb,
-            null, // no taking pictures permitted on web
+            ServerFormHelper(), 
             doScaffold: false,
             isReadOnly: true,
           ),
@@ -975,33 +974,3 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
   }
 }
 
-/// Get thumbnails from the database
-Future<List<Widget>> getThumbnailsFromDb(
-    BuildContext context, var itemMap, List<String> imageSplit) async {
-  List<Widget> thumbList = [];
-  String value = ""; //$NON-NLS-1$
-  if (itemMap.containsKey(TAG_VALUE)) {
-    value = itemMap[TAG_VALUE].trim();
-  }
-  if (value.isNotEmpty) {
-    imageSplit.clear();
-    imageSplit.addAll(value.split(IMAGE_ID_SEPARATOR));
-  } else {
-    return Future.value(thumbList);
-  }
-
-  var userPwd = SmashSession.getSessionUser();
-
-  for (int i = 0; i < imageSplit.length; i++) {
-    var id = int.parse(imageSplit[i]);
-    var bytes =
-        await ServerApi.getImageThumbnailById(userPwd[0], userPwd[1], id);
-    Image img = Image.memory(bytes);
-    Widget withBorder = Container(
-      padding: SmashUI.defaultPadding(),
-      child: img,
-    );
-    thumbList.add(withBorder);
-  }
-  return thumbList;
-}
