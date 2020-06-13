@@ -330,6 +330,23 @@ class _MainMapViewState extends State<MainMapView>
                     height: _mapIconsSizeMini,
                     child: FloatingActionButton(
                       backgroundColor: SmashColors.mainDecorations,
+                      heroTag: "zoombookmarks",
+                      mini: true,
+                      tooltip: "Bookmarks",
+                      onPressed: () async {
+                        await openBookmarksDialog(context);
+                      },
+                      child: Icon(MdiIcons.bookmark),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    width: _mapIconsSizeMini,
+                    height: _mapIconsSizeMini,
+                    child: FloatingActionButton(
+                      backgroundColor: SmashColors.mainDecorations,
                       heroTag: "zoomout",
                       mini: true,
                       onPressed: () {

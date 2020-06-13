@@ -13,6 +13,7 @@ const KEY_USER = "user";
 const KEY_PWD = "pwd";
 const KEY_BASEMAP = "basemap";
 const KEY_MAPCENTER = "mapcenter_xyz";
+const KEY_BOOKMARKS = "bookmarks";
 const KEY_AUTOMATIC_REGISTRATION = "GSS_KEY_AUTOMATIC_REGISTRATION";
 
 const KEY_SURVEYORS = "surveyors";

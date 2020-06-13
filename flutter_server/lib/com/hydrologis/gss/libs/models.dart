@@ -248,7 +248,6 @@ class MapstateModel extends ChangeNotifier {
       var name = formItem[NAME];
       var form = formItem[FORM];
       name = FormUtilities.getFormItemLabel(form, name); 
-      print(name);
       var ts = formItem[TS];
       var x = formItem[X];
       var y = formItem[Y];

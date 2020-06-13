@@ -92,6 +92,7 @@ public class GssServerApiJavalin implements Vars {
     static final String ROUTES_PROJECTDATA_UPLOAD = "/dataupload";
     static final String ROUTES_LOGIN = "/login";
     static final String ROUTES_USERSETTINGS = "/usersettings";
+    static final String ROUTES_USERSETTINGS_BY_TYPE = "/usersettings/:type";
     static final String ROUTES_TILES_SOURCE_Z_X_Y = "/tiles/:source/:z/:x/:y";
 
     static final String NOTE_OBJID = "note";
@@ -284,6 +285,7 @@ public class GssServerApiJavalin implements Vars {
                             int indexOf = getIndexIgnoreCase(tableRecords.names, Notes.ID_FIELD_NAME);
                             if (indexOf != -1) {
                                 Object[] objects = tableRecords.data.get(0);
+                                // TODO here it would be best to find the nearest
                                 Object idObj = objects[indexOf];
                                 if (idObj instanceof Long) {
                                     previousId = (Long) idObj;
@@ -801,6 +803,11 @@ public class GssServerApiJavalin implements Vars {
                         Settings s = new Settings(KEY_MAPCENTER, mapCenter, user.getUniqueName());
                         RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
                     }
+                    String bookmarks = ctx.formParam(KEY_BOOKMARKS);
+                    if (bookmarks != null) {
+                        Settings s = new Settings(KEY_BOOKMARKS, bookmarks, user.getUniqueName());
+                        RegistryHandler.INSTANCE.insertOrUpdateSetting(s);
+                    }
                     String automaticRegistrationMillis = ctx.formParam(KukuratusSession.KEY_AUTOMATIC_REGISTRATION);
                     if (automaticRegistrationMillis != null) {
                         Settings s = new Settings(KukuratusSession.KEY_AUTOMATIC_REGISTRATION,
@@ -808,6 +815,33 @@ public class GssServerApiJavalin implements Vars {
                         RegistryHandler.INSTANCE.insertOrUpdateGlobalSetting(s);
                     }
                     ctx.result("OK");
+                } else {
+                    sendNoPermission(ctx);
+                }
+            } catch (Exception e) {
+                sendServerError(ctx, ROUTES_USERSETTINGS, e);
+            }
+        });
+
+        app.get(ROUTES_USERSETTINGS_BY_TYPE, ctx -> {
+            try {
+                User user = hasPermission(ctx);
+                KukuratusLogger.logDebug(ROUTES_USERSETTINGS, getRequestLogString(ctx, user));
+                if (user != null) {
+                    String type = ctx.pathParam(":type");
+                    if (type.equals(KEY_BASEMAP)) {
+                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "mapsforge",
+                                user.getUniqueName());
+                        ctx.result(setting);
+                    } else if (type.equals(KEY_MAPCENTER)) {
+                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0;0;6",
+                                user.getUniqueName());
+                        ctx.result(setting);
+                    } else if (type.equals(KEY_BOOKMARKS)) {
+                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BOOKMARKS,
+                                "earth:-160.0,160.0,-85.0,85.0", user.getUniqueName());
+                        ctx.result(setting);
+                    }
                 } else {
                     sendNoPermission(ctx);
                 }

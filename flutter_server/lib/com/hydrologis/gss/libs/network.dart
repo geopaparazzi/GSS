@@ -3,8 +3,10 @@ import 'dart:html';
 import 'dart:typed_data';
 
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:http/http.dart';
+import 'package:latlong/latlong.dart';
 
 const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
@@ -122,6 +124,40 @@ class ServerApi {
     Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
         requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
+  }
+
+  /// Send a user setting to the server.
+  ///
+  /// The setting is identified by the [key].
+  static Future<String> setUserSetting(
+      String user, String pwd, String key, String value) async {
+    String apiCall = "$API_USERSETTINGS";
+
+    Map<String, String> formData = {};
+    formData[key] = value;
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
+        requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
+  }
+
+  // Get a single string user setting from the server by its [key].
+  static Future<String> getUserSetting(
+      String user, String pwd, String key) async {
+    String apiCall = "$API_USERSETTINGS/$key";
+
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: requestHeaders);
     if (request.status == 200) {
       return request.response;
     } else {

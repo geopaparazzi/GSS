@@ -264,6 +264,20 @@ openMapSelectionDialog(BuildContext context) {
       context: context, builder: (BuildContext context) => mapSelectionDialog);
 }
 
+Future openBookmarksDialog(BuildContext context) async {
+  var size = 500.0;
+  Dialog bookmarksDialog = Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+    child: Container(
+      height: size,
+      width: size,
+      child: BookmarksWidget(),
+    ),
+  );
+  showDialog(
+      context: context, builder: (BuildContext context) => bookmarksDialog);
+}
+
 class VersionedNoteWidget extends StatefulWidget {
   final Map<String, dynamic> noteItem;
 
@@ -646,6 +660,129 @@ class _FilterWidgetState extends State<FilterWidget>
                   mapstateModel.fitbounds();
                   mapstateModel.reloadMap();
                   Navigator.pop(context);
+                },
+              ),
+            ],
+          )
+        ],
+      );
+    }
+  }
+}
+
+class BookmarksWidget extends StatefulWidget {
+  BookmarksWidget();
+  _BookmarksWidgetState createState() => _BookmarksWidgetState();
+}
+
+class _BookmarksWidgetState extends State<BookmarksWidget>
+    with AfterLayoutMixin<BookmarksWidget> {
+  List<String> bookmarks;
+  bool _dataLoaded = false;
+
+  @override
+  Future<void> afterFirstLayout(BuildContext context) async {
+    var up = SmashSession.getSessionUser();
+    var bookmarksString =
+        await ServerApi.getUserSetting(up[0], up[1], KEY_BOOKMARKS);
+    bookmarks = bookmarksString.split("@");
+    setState(() {
+      _dataLoaded = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    MapstateModel mapstateModel =
+        Provider.of<MapstateModel>(context, listen: false);
+
+    if (!_dataLoaded) {
+      return SmashCircularProgress();
+    } else {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SmashUI.titleText("Bookmarks", useColor: true),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListView.builder(
+                itemCount: bookmarks.length,
+                itemBuilder: (BuildContext context, int index) {
+                  var bookmark = bookmarks[index];
+
+                  var name2bounds = bookmark.split(":");
+                  var name = name2bounds[0];
+                  var coordsList = name2bounds[1].split(",");
+                  var west = double.parse(coordsList[0]);
+                  var east = double.parse(coordsList[1]);
+                  var south = double.parse(coordsList[2]);
+                  var north = double.parse(coordsList[3]);
+
+                  LatLngBounds b = new LatLngBounds.fromPoints(
+                      [LatLng(south, west), LatLng(north, east)]);
+
+                  return ListTile(
+                    title: Text(name),
+                    subtitle: Text(
+                        "w:${west.toStringAsFixed(3)}, e:${east.toStringAsFixed(3)}, s:${south.toStringAsFixed(3)}, n:${north.toStringAsFixed(3)}"),
+                    leading: IconButton(
+                      icon: Icon(
+                        MdiIcons.magnify,
+                        color: SmashColors.mainDecorations,
+                      ),
+                      onPressed: () {
+                        mapstateModel.mapController.fitBounds(b);
+                        mapstateModel.currentMapBounds = b;
+                        Navigator.pop(context);
+                      },
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        MdiIcons.trashCan,
+                      ),
+                      onPressed: () async {
+                        bookmarks.removeWhere((element) {
+                          return element.startsWith("$name:");
+                        });
+                        setState(() {});
+                        var up = SmashSession.getSessionUser();
+                        await ServerApi.setUserSetting(
+                            up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          ButtonBar(
+            alignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              FlatButton(
+                child: const Text('CANCEL'),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              FlatButton(
+                child: const Text('ADD CURRENT'),
+                onPressed: () async {
+                  String name = await showInputDialog(
+                      context, "BOOKMARK", "Enter a name for the bookmark.");
+                  if (name.trim().isNotEmpty) {
+                    var b = mapstateModel.currentMapBounds;
+                    String bm =
+                        "$name:${b.west},${b.east},${b.south},${b.north}";
+                    bookmarks.insert(0, bm);
+                    setState(() {});
+                    var up = SmashSession.getSessionUser();
+                    await ServerApi.setUserSetting(
+                        up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
+                  }
                 },
               ),
             ],
