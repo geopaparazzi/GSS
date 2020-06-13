@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
-import 'package:flutter_server/com/hydrologis/gss/layers.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/about.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/projectdata.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/surveyors_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/webusers_view.dart';
-import 'package:flutter_server/com/hydrologis/gss/models.dart';
-import 'package:flutter_server/com/hydrologis/gss/session.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/main.dart';
 import 'package:latlong/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -31,7 +31,7 @@ class _MainMapViewState extends State<MainMapView>
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   MapController _mapController;
   AttributesTableWidget attributesTableWidget;
-  final maxZoom = 22.0;
+  final maxZoom = 25.0;
   final minZoom = 1.0;
 
   int _heroCount;
@@ -79,7 +79,7 @@ class _MainMapViewState extends State<MainMapView>
     if (mapstateModel.mapMarkers != null &&
         mapstateModel.mapMarkers.isNotEmpty) {
       var markerCluster = MarkerClusterLayerOptions(
-        maxClusterRadius: 5,
+        maxClusterRadius: 20,
         size: Size(40, 40),
         fitBoundsOptions: FitBoundsOptions(
           padding: EdgeInsets.all(50),

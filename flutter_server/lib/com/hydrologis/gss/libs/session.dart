@@ -1,8 +1,8 @@
 import 'dart:convert' as JSON;
 import 'dart:html' as html;
 
-import 'package:flutter_server/com/hydrologis/gss/network.dart';
-import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 
 class SmashSession {
   static Future<bool> login(String user, String password) async {

@@ -1,5 +1,5 @@
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_server/com/hydrologis/gss/network.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 
 const MAPSFORGE = "Mapsforge";
 
@@ -8,6 +8,8 @@ final AVAILABLE_MAPS = {
     tms: false,
     urlTemplate: '$WEBAPP_URL/tiles/mapsforge/{z}/{x}/{y}',
     tileProvider: NonCachingNetworkTileProvider(),
+    maxZoom: 25,
+    maxNativeZoom: 25,
   ),
   'Openstreetmap': TileLayerOptions(
     tms: false,

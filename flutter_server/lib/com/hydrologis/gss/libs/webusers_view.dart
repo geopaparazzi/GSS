@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_server/com/hydrologis/gss/network.dart';
-import 'package:flutter_server/com/hydrologis/gss/session.dart';
-import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:smashlibs/smashlibs.dart';
 

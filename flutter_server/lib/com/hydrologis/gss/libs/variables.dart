@@ -1,4 +1,4 @@
-import 'package:flutter_server/com/hydrologis/gss/layers.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:intl/intl.dart';
 
 const TITLE = 'Geopaparazzi Survey Server';

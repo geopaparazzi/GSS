@@ -59,22 +59,25 @@ public class GssDatabaseUtilities {
             List<GpapProject> projects, long[] fromTo, String textMatching) throws SQLException {
         QueryBuilder<GpsLogs, ?> qb = logsDao.queryBuilder();
         List<GpsLogs> gpsLogs;
-        if (users != null || projects != null || fromTo != null || textMatching != null) {
+        boolean hasUsers = users != null && users.size() > 0;
+        boolean hasProjects = projects != null;
+        boolean hasTime = fromTo != null;
+        if (hasUsers || hasProjects || hasTime || textMatching != null) {
             Where<GpsLogs, ?> where = qb.where();
             boolean needAnd = false;
-            if (users != null) {
+            if (hasUsers) {
                 if (needAnd)
                     where = where.and();
                 where = where.in(GpsLogs.GPAPUSER_FIELD_NAME, users);
                 needAnd = true;
             }
-            if (projects != null) {
+            if (hasProjects) {
                 if (needAnd)
                     where = where.and();
                 where = where.in(GpsLogs.GPAPPROJECT_FIELD_NAME, projects);
                 needAnd = true;
             }
-            if (fromTo != null) {
+            if (hasTime) {
                 if (needAnd)
                     where = where.and();
                 where = where.and().ge(GpsLogs.STARTTS_FIELD_NAME, fromTo[0]).and().le(GpsLogs.ENDTS_FIELD_NAME,
@@ -129,6 +132,9 @@ public class GssDatabaseUtilities {
         List<Notes> notesList;
         Where<Notes, ?> where = qb.where();
         boolean needAnd = false;
+        boolean hasUsers = users != null && users.size() > 0;
+        boolean hasProjects = projects != null;
+        boolean hasTime = fromTo != null;
         JSONArray jsonNotes = new JSONArray();
         if (typeForm) {
             if (needAnd)
@@ -147,20 +153,20 @@ public class GssDatabaseUtilities {
             root.put(NOTES, jsonNotes);
             needAnd = true;
         }
-        if (users != null) {
+        if (hasUsers) {
             if (needAnd)
                 where.and();
             where.in(Notes.GPAPUSER_FIELD_NAME, users);
             needAnd = true;
         }
-        if (projects != null) {
+        if (hasProjects) {
             if (needAnd)
                 where.and();
 
             where.in(Notes.GPAPPROJECT_FIELD_NAME, projects);
             needAnd = true;
         }
-        if (fromTo != null) {
+        if (hasTime) {
             if (needAnd)
                 where.and();
             where.between(Notes.TIMESTAMP_FIELD_NAME, fromTo[0], fromTo[1]);
@@ -208,20 +214,23 @@ public class GssDatabaseUtilities {
         List<Images> imagesList;
         Where<Images, ?> where = qb.where();
         boolean needAnd = false;
-        if (users != null || projects != null || fromTo != null || textMatching != null) {
-            if (users != null) {
+        boolean hasUsers = users != null && users.size() > 0;
+        boolean hasProjects = projects != null;
+        boolean hasTime = fromTo != null;
+        if (hasUsers || hasProjects || hasTime || textMatching != null) {
+            if (hasUsers) {
                 if (needAnd)
                     where = where.and();
                 where = where.in(Images.GPAPUSER_FIELD_NAME, users);
                 needAnd = true;
             }
-            if (projects != null) {
+            if (hasProjects) {
                 if (needAnd)
                     where = where.and();
                 where = where.in(Images.GPAPPROJECT_FIELD_NAME, projects);
                 needAnd = true;
             }
-            if (fromTo != null) {
+            if (hasTime) {
                 if (needAnd)
                     where = where.and();
                 where = where.ge(Images.TIMESTAMP_FIELD_NAME, fromTo[0]).and().le(Images.TIMESTAMP_FIELD_NAME,

@@ -3,7 +3,7 @@ import 'dart:html';
 import 'dart:typed_data';
 
 import 'package:charts_flutter/flutter.dart' as charts;
-import 'package:flutter_server/com/hydrologis/gss/variables.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:http/http.dart';
 
 const DATA_NV_INTERVAL_SECONDS = 600;
