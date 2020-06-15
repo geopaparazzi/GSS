@@ -34,8 +34,8 @@ class _ProjectDataViewState extends State<ProjectDataView>
     var up = SmashSession.getSessionUser();
     Map<String, List<String>> map =
         await ServerApi.getProjectData(up[0], up[1]);
-    projects = map[PROJECTDATA_MAPS] ?? [];
-    basemaps = map[PROJECTDATA_PROJECTS] ?? [];
+    projects = map[PROJECTDATA_PROJECTS] ?? [];
+    basemaps = map[PROJECTDATA_MAPS] ?? [];
     forms = map[PROJECTDATA_TAGS] ?? [];
     formIds = map[PROJECTDATA_TAGSID] ?? [];
     setState(() {});
@@ -50,7 +50,10 @@ class _ProjectDataViewState extends State<ProjectDataView>
     if (basemaps != null) {
       bm = basemaps.map((name) {
         return ListTile(
-          leading: Icon(SmashIcons.forPath(name)),
+          leading: Icon(
+            SmashIcons.forPath(name),
+            color: SmashColors.mainDecorations,
+            ),
           title: SmashUI.normalText(name),
         );
       }).toList();
@@ -60,7 +63,10 @@ class _ProjectDataViewState extends State<ProjectDataView>
     if (projects != null) {
       p = projects.map((name) {
         return ListTile(
-          leading: Icon(SmashIcons.forPath(name)),
+          leading: Icon(
+            SmashIcons.forPath(name),
+            color: SmashColors.mainDecorations,
+          ),
           title: SmashUI.normalText(name),
         );
       }).toList();
@@ -71,7 +77,10 @@ class _ProjectDataViewState extends State<ProjectDataView>
         var name = forms[i];
         var id = formIds[i];
         f.add(ListTile(
-          leading: Icon(SmashIcons.forPath(name)),
+          leading: Icon(
+            SmashIcons.forPath(name),
+            color: SmashColors.mainDecorations,
+          ),
           title: SmashUI.normalText(name),
           trailing: isAdmin
               ? IconButton(
