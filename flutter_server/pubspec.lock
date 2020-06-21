@@ -199,8 +199,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: "1ec33f83ee65c6aaaadcf4014fdd83534b648645"
+      ref: version4smash
+      resolved-ref: "7fc7fa5d6b5ed7943270c3fcc64f32b787c588c8"
       url: "https://github.com/moovida/flutter_map.git"
     source: git
     version: "0.9.0"
@@ -208,8 +208,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
-      resolved-ref: feed966e017b7c5ec4f8551ff1ce7c470d0d3936
+      ref: version4smash
+      resolved-ref: d8a0a6b81a247d439ea6b8ca0a1ff2cb25ea6dc4
       url: "https://github.com/moovida/flutter_map_marker_cluster.git"
     source: git
     version: "0.2.7"

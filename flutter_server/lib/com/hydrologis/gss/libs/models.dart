@@ -139,33 +139,33 @@ class MapstateModel extends ChangeNotifier {
     dataBounds = LatLngBounds();
 
     // TODO find a fix for logs
-//   List<dynamic> logsList = json[LOGS];
-//   if (logsList != null) {
-//     List<Polyline> lines = [];
-//     for (int i = 0; i < logsList.length; i++) {
-//       dynamic logItem = logsList[i];
-// //        var id = logItem[ID];
-//       // var name = logItem[NAME];
-//       var colorHex = logItem[COLOR];
-//       var width = logItem[WIDTH];
-//       var coords = logItem[COORDS];
+  List<dynamic> logsList = json[LOGS];
+  if (logsList != null) {
+    List<Polyline> lines = [];
+    for (int i = 0; i < logsList.length; i++) {
+      dynamic logItem = logsList[i];
+//        var id = logItem[ID];
+      // var name = logItem[NAME];
+      var colorHex = logItem[COLOR];
+      var width = logItem[WIDTH];
+      var coords = logItem[COORDS];
 
-//       List<LatLng> points = [];
-//       for (int j = 0; j < coords.length; j++) {
-//         var coord = coords[j];
-//         var latLng = LatLng(coord[Y], coord[X]);
-//         _dataBounds.extend(latLng);
-//         points.add(latLng);
-//       }
+      List<LatLng> points = [];
+      for (int j = 0; j < coords.length; j++) {
+        var coord = coords[j];
+        var latLng = LatLng(coord[Y], coord[X]);
+        dataBounds.extend(latLng);
+        points.add(latLng);
+      }
 
-//       lines.add(Polyline(
-//           points: points, strokeWidth: width, color: ColorExt(colorHex)));
-//     }
-//     _logs = PolylineLayerOptions(
-//       polylines: lines,
-//       polylineCulling: true,
-//     );
-//   }
+      lines.add(Polyline(
+          points: points, strokeWidth: width, color: ColorExt(colorHex)));
+    }
+    logs = PolylineLayerOptions(
+      polylines: lines,
+      polylineCulling: true,
+    );
+  }
 
     List<Marker> markers = <Marker>[];
     List<Attributes> attributesList = [];
