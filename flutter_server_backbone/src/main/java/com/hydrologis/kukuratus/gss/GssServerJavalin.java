@@ -176,9 +176,17 @@ public class GssServerJavalin implements Vars {
         ASpatialDb db = null;
         if (postgresUrl != null) {
             db = EDb.POSTGIS.getSpatialDb();
-            String user = console.readLine("Please enter the postgresql username: ");
-            char[] pwdChars = console.readPassword("Please enter the postgresql password: ");
-            db.setCredentials(user, new String(pwdChars));
+            String user;
+            String pwd;
+            if (postgresUrl.endsWith("test")) {
+                user = "test";
+                pwd = "test";
+            } else {
+                user = console.readLine("Please enter the postgresql username: ");
+                char[] pwdChars = console.readPassword("Please enter the postgresql password: ");
+                pwd = new String(pwdChars);
+            }
+            db.setCredentials(user, pwd);
             db.open(postgresUrl);
         } else {
             KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
