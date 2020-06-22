@@ -68,6 +68,29 @@ public enum RegistryHandler implements IDbVisitor {
     private RegistryHandler() {
     }
 
+    /**
+     * Initialize the registry with an existing db.
+     * 
+     * <p>
+     * This needs to be done before any other action else automatic db creationg
+     * will kick in.
+     * 
+     * @param existingDb the db to use for the registry.
+     */
+    public void initWithDb(ADb existingDb) {
+        if (db != null) {
+            throw new IllegalArgumentException("The db for the registry has already been set. Check your settings.");
+        }
+        try {
+            db = existingDb;
+            db.accept(this);
+
+            initTablesIfNeeded();
+        } catch (Exception e) {
+            KukuratusLogger.logError(this, e);
+        }
+    }
+
     private void checkInit() {
         if (db == null) {
             try {
@@ -76,41 +99,51 @@ public enum RegistryHandler implements IDbVisitor {
                 db.open(registryDatabase.getAbsolutePath());
                 db.accept(this);
 
-                authorizationDao = DaoManager.createDao(connectionSource, Authorization.class);
-                groupDao = DaoManager.createDao(connectionSource, Group.class);
-                userDao = DaoManager.createDao(connectionSource, User.class);
-                settingsDao = DaoManager.createDao(connectionSource, Settings.class);
-
-                if (!db.hasTable(getTableName(Authorization.class))) {
-                    TableUtils.createTableIfNotExists(connectionSource, Authorization.class);
-
-                    // and create some default data
-                    Authorization adminAuth = new Authorization(IRegistryVars.adminAuthorization);
-                    Authorization userAuth = new Authorization(IRegistryVars.userAuthorization);
-                    authorizationDao.createIfNotExists(adminAuth);
-                    authorizationDao.createIfNotExists(userAuth);
-
-                    TableUtils.createTableIfNotExists(connectionSource, Group.class);
-                    TableUtils.createTableIfNotExists(connectionSource, User.class);
-
-                    Group adminsGroup = new Group(IRegistryVars.adminGroup, adminAuth);
-                    Group usersGroup = new Group(IRegistryVars.userGroup, userAuth);
-                    groupDao.createIfNotExists(adminsGroup);
-                    groupDao.createIfNotExists(usersGroup);
-
-                    User adminUser = new User(IRegistryVars.FIRST_ADMIN_USERNAME, IRegistryVars.FIRST_ADMIN_UNIQUE_USER,
-                            IRegistryVars.FIRST_ADMIN_EMAIL, IRegistryVars.FIRST_ADMIN_PWD, adminsGroup);
-                    userDao.createIfNotExists(adminUser);
-                    User normalUser = new User(IRegistryVars.FIRST_USER_USERNAME, IRegistryVars.FIRST_USER_UNIQUE_USER,
-                            IRegistryVars.FIRST_USER_EMAIL, IRegistryVars.FIRST_USER_PWD, usersGroup);
-                    userDao.createIfNotExists(normalUser);
-
-                    TableUtils.createTableIfNotExists(connectionSource, Settings.class);
-                }
+                initTablesIfNeeded();
 
             } catch (Exception e) {
                 KukuratusLogger.logError(this, e);
             }
+        }
+    }
+
+    private void initTablesIfNeeded() throws SQLException, Exception {
+        if (authorizationDao != null) {
+            KukuratusLogger.logError(this, "Init called with already existing DAOs. Should not happen.",
+                    new RuntimeException());
+            return;
+        }
+
+        authorizationDao = DaoManager.createDao(connectionSource, Authorization.class);
+        groupDao = DaoManager.createDao(connectionSource, Group.class);
+        userDao = DaoManager.createDao(connectionSource, User.class);
+        settingsDao = DaoManager.createDao(connectionSource, Settings.class);
+
+        if (!db.hasTable(getTableName(Authorization.class))) {
+            TableUtils.createTableIfNotExists(connectionSource, Authorization.class);
+
+            // and create some default data
+            Authorization adminAuth = new Authorization(IRegistryVars.adminAuthorization);
+            Authorization userAuth = new Authorization(IRegistryVars.userAuthorization);
+            authorizationDao.createIfNotExists(adminAuth);
+            authorizationDao.createIfNotExists(userAuth);
+
+            TableUtils.createTableIfNotExists(connectionSource, Group.class);
+            TableUtils.createTableIfNotExists(connectionSource, User.class);
+
+            Group adminsGroup = new Group(IRegistryVars.adminGroup, adminAuth);
+            Group usersGroup = new Group(IRegistryVars.userGroup, userAuth);
+            groupDao.createIfNotExists(adminsGroup);
+            groupDao.createIfNotExists(usersGroup);
+
+            User adminUser = new User(IRegistryVars.FIRST_ADMIN_USERNAME, IRegistryVars.FIRST_ADMIN_UNIQUE_USER,
+                    IRegistryVars.FIRST_ADMIN_EMAIL, IRegistryVars.FIRST_ADMIN_PWD, adminsGroup);
+            userDao.createIfNotExists(adminUser);
+            User normalUser = new User(IRegistryVars.FIRST_USER_USERNAME, IRegistryVars.FIRST_USER_UNIQUE_USER,
+                    IRegistryVars.FIRST_USER_EMAIL, IRegistryVars.FIRST_USER_PWD, usersGroup);
+            userDao.createIfNotExists(normalUser);
+
+            TableUtils.createTableIfNotExists(connectionSource, Settings.class);
         }
     }
 
@@ -296,8 +329,8 @@ public enum RegistryHandler implements IDbVisitor {
     public List<User> getUsersOfGroup(Group group) throws SQLException {
         checkInit();
         QueryBuilder<User, Integer> queryBuilder = userDao.queryBuilder();
-        queryBuilder.where().like(User.GROUP_FIELD_NAME, group.getId());
-        List<User> users = userDao.query(queryBuilder.prepare());
+        queryBuilder.where().eq(User.GROUP_FIELD_NAME, group.getId());
+        List<User> users = queryBuilder.query();
         return users;
     }
 
@@ -320,8 +353,8 @@ public enum RegistryHandler implements IDbVisitor {
     public Group getGroupByName(String groupName) throws SQLException {
         checkInit();
         QueryBuilder<Group, Integer> queryBuilder = groupDao.queryBuilder();
-        queryBuilder.where().like(Group.DESCR_FIELD_NAME, groupName);
-        List<Group> groups = groupDao.query(queryBuilder.prepare());
+        queryBuilder.where().eq(Group.DESCR_FIELD_NAME, groupName);
+        List<Group> groups = queryBuilder.query();
         if (groups.size() == 0) {
             return null;
         }
@@ -338,8 +371,8 @@ public enum RegistryHandler implements IDbVisitor {
     public Authorization getAuthorizationByName(String authName) throws SQLException {
         checkInit();
         QueryBuilder<Authorization, Integer> queryBuilder = authorizationDao.queryBuilder();
-        queryBuilder.where().like(Authorization.NAME_FIELD_NAME, authName);
-        List<Authorization> auth = authorizationDao.query(queryBuilder.prepare());
+        queryBuilder.where().eq(Authorization.NAME_FIELD_NAME, authName);
+        List<Authorization> auth = queryBuilder.query();
         if (auth.size() == 0) {
             return null;
         }
@@ -522,7 +555,7 @@ public enum RegistryHandler implements IDbVisitor {
     }
 
     /**
-     * Get the name of the table, the class describes.
+     * Get the name of the table the class describes.
      * 
      * @param ormliteClass the ormlite annotated class.
      * @return the name of the table.

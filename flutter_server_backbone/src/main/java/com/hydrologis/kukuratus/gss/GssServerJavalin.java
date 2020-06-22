@@ -15,6 +15,7 @@ import com.hydrologis.kukuratus.gss.database.GpsLogsData;
 import com.hydrologis.kukuratus.gss.database.ImageData;
 import com.hydrologis.kukuratus.gss.database.Images;
 import com.hydrologis.kukuratus.gss.database.Notes;
+import com.hydrologis.kukuratus.registry.RegistryHandler;
 import com.hydrologis.kukuratus.servlets.ServletUtils;
 import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.tiles.MapsforgeTilesGenerator;
@@ -199,6 +200,7 @@ public class GssServerJavalin implements Vars {
             db = EDb.H2GIS.getSpatialDb();
             db.open(dbFile.getAbsolutePath());
         }
+        RegistryHandler.INSTANCE.initWithDb(db);
 
         System.out.println("****************************************************");
         System.out.println("* Launching with parameters:");
