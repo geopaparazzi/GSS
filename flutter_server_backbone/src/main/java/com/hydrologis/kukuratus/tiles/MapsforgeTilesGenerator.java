@@ -25,16 +25,13 @@ import java.io.OutputStream;
 import javax.imageio.ImageIO;
 
 import org.mapsforge.map.awt.graphics.AwtGraphicFactory;
-import org.mapsforge.map.controller.FrameBufferController;
 import org.mapsforge.map.datastore.MultiMapDataStore;
 import org.mapsforge.map.datastore.MultiMapDataStore.DataPolicy;
 import org.mapsforge.map.layer.cache.InMemoryTileCache;
 import org.mapsforge.map.layer.labels.TileBasedLabelStore;
 import org.mapsforge.map.layer.renderer.DatabaseRenderer;
-import org.mapsforge.map.layer.renderer.MapWorkerPool;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapFile;
-import org.mapsforge.map.reader.ReadBuffer;
 import org.mapsforge.map.rendertheme.InternalRenderTheme;
 import org.mapsforge.map.rendertheme.rule.RenderThemeFuture;
 

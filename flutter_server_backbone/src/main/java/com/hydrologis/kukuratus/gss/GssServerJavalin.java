@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
@@ -115,9 +114,11 @@ public class GssServerJavalin implements Vars {
                 }
             });
 
-            float factor = 1f;
-            int tile = 256;
-            mapsforgeTilesGenerator = new MapsforgeTilesGenerator("mapsforge", mapfiles, tile, factor, null); //$NON-NLS-1$
+            if (mapfiles != null && mapfiles.length > 0) {
+                float factor = 1f;
+                int tile = 256;
+                mapsforgeTilesGenerator = new MapsforgeTilesGenerator("mapsforge", mapfiles, tile, factor, null); //$NON-NLS-1$
+            }
         } catch (Exception e) {
             KukuratusLogger.logError(this, e);
         }

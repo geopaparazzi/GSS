@@ -13,6 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.awt.image.BufferedImage;
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.imageio.ImageIO;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -192,24 +196,42 @@ public class GssServerApiJavalin implements Vars {
     public static void addTilesRoute(Javalin app, ITilesGenerator mapsforgeTilesGenerator) {
 
         app.get(ROUTES_TILES_SOURCE_Z_X_Y, ctx -> {
-            String source = ctx.pathParam(":source");
-            if (source.equals("mapsforge")) {
-                String x = ctx.pathParam(":x");
-                String y = ctx.pathParam(":y");
-                String z = ctx.pathParam(":z");
-                int xTile = Integer.parseInt(x);
-                int yTile = Integer.parseInt(y);
-                int zoom = Integer.parseInt(z);
-                try {
-                    HttpServletResponse raw = ctx.res;
-                    raw.setContentType("image/png");
-                    raw.addHeader("Content-Disposition", "attachment; filename=image.png");
-                    ServletOutputStream outputStream = raw.getOutputStream();
-                    mapsforgeTilesGenerator.getTile(xTile, yTile, zoom, outputStream);
-                    outputStream.flush();
-                    outputStream.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+            if (mapsforgeTilesGenerator == null) {
+                // serve empty images
+                HttpServletResponse raw = ctx.res;
+                raw.setContentType("image/png");
+                raw.addHeader("Content-Disposition", "attachment; filename=image.png");
+                ServletOutputStream outputStream = raw.getOutputStream();
+                
+                BufferedImage transparent = new BufferedImage ( 256, 256, BufferedImage.TYPE_INT_ARGB );
+                Graphics2D g = transparent.createGraphics();
+                g.setColor( new Color ( 0, 0, 0, 0 ));
+                g.fillRect(0, 0, 256, 256);
+                g.dispose();
+                ImageIO.write(transparent, "png", outputStream);
+
+                outputStream.flush();
+                outputStream.close();
+            } else {
+                String source = ctx.pathParam(":source");
+                if (source.equals("mapsforge")) {
+                    String x = ctx.pathParam(":x");
+                    String y = ctx.pathParam(":y");
+                    String z = ctx.pathParam(":z");
+                    int xTile = Integer.parseInt(x);
+                    int yTile = Integer.parseInt(y);
+                    int zoom = Integer.parseInt(z);
+                    try {
+                        HttpServletResponse raw = ctx.res;
+                        raw.setContentType("image/png");
+                        raw.addHeader("Content-Disposition", "attachment; filename=image.png");
+                        ServletOutputStream outputStream = raw.getOutputStream();
+                        mapsforgeTilesGenerator.getTile(xTile, yTile, zoom, outputStream);
+                        outputStream.flush();
+                        outputStream.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         });
