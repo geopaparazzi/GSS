@@ -33,7 +33,7 @@ import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
  */
 public class KukuratusLogger {
 
-    private static Logger logger = null;
+    public static Logger logger = null;
     static {
         try {
             logger = KukuratusWorkspace.getInstance().getLogDb();

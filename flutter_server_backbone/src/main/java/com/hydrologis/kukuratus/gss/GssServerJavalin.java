@@ -28,6 +28,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.hortonmachine.dbs.compat.ASpatialDb;
 import org.hortonmachine.dbs.compat.EDb;
+import org.hortonmachine.dbs.log.Logger;
 
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -200,6 +201,9 @@ public class GssServerJavalin implements Vars {
             db = EDb.H2GIS.getSpatialDb();
             db.open(dbFile.getAbsolutePath());
         }
+        // set registry and logger on current db
+        Logger.INSTANCE.init(db);
+        KukuratusLogger.logger = Logger.INSTANCE;
         RegistryHandler.INSTANCE.initWithDb(db);
 
         System.out.println("****************************************************");
