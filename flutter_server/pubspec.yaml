@@ -16,11 +16,11 @@ dependencies:
   ###########################
 
   smashlibs:
-    path: ../../../SMASH/smashlibs/
-    # git:
-    #   url: https://github.com/moovida/smashlibs.git
+    # path: ../../../SMASH/smashlibs/
+    git:
+      url: https://github.com/moovida/smashlibs.git
 
-  dart_hydrologis_utils: ^0.4.0
+  dart_hydrologis_utils: ^0.4.1
 
   ###########################
   # OTHERS
@@ -46,9 +46,6 @@ dependencies:
 
   # apache
   latlong: 0.6.1
-
-  # MIT
-  fab_circular_menu: ^1.0.0
 
   # MIT
   flutter_tags: ^0.4.8+1

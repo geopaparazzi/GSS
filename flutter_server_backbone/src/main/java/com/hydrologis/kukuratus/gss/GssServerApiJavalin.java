@@ -656,7 +656,7 @@ public class GssServerApiJavalin implements Vars {
         app.get(ROUTES_GET_BASEDATA, ctx -> {
             if (hasPermissionDoubleCheck(ctx, ROUTES_GET_BASEDATA)) {
                 KukuratusLogger.logDebug(ROUTES_GET_BASEDATA, getRequestLogString(ctx, null));
-                String fileName = ctx.formParam("name");
+                String fileName = ctx.queryParam("name");
                 try {
                     if (fileName == null) {
                         // send list
@@ -693,11 +693,11 @@ public class GssServerApiJavalin implements Vars {
 
     public static void addClientGetFormsRoute(Javalin app) {
         app.get(ROUTES_GET_FORMS, ctx -> {
-            if (hasPermissionDoubleCheck(ctx, ROUTES_GET_BASEDATA)) {
+            if (hasPermissionDoubleCheck(ctx, ROUTES_GET_FORMS)) {
                 KukuratusLogger.logDebug(ROUTES_GET_FORMS, getRequestLogString(ctx, null));
 
                 Dao<Forms, ?> formsDao = DatabaseHandler.instance().getDao(Forms.class);
-                String tagName = ctx.formParam("name");
+                String tagName = ctx.queryParam("name");
                 try {
                     if (tagName != null) {
                         Forms form = formsDao.queryBuilder().where().eq(Forms.NAME_FIELD_NAME, tagName).queryForFirst();
