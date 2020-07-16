@@ -51,10 +51,10 @@ dependencies:
   flutter_tags: ^0.4.8+1
 
   # BSD
-  flutter_map: #^0.9.0
-    git:
-      url: https://github.com/moovida/flutter_map.git
-      ref: version4smash
+  flutter_map: ^0.10.1
+    # git:
+    #   url: https://github.com/moovida/flutter_map.git
+    #   ref: version4smash
   
   # BSD
   flutter_map_marker_cluster: #^0.2.7
