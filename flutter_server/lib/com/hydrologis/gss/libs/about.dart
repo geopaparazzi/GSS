@@ -54,7 +54,7 @@ class AboutPageState extends State<AboutPage> {
             title: SmashUI.normalText("Geopaparazzi Survey Server",
                 bold: true, color: SmashColors.mainDecorations),
             subtitle: SmashUI.smallText(
-                "Web application dedicated to the centralization and sync of data from figital surveys.",
+                "Web application dedicated to the centralization and sync of data from digital field surveys.",
                 overflow: null),
           ),
           ListTile(
@@ -66,7 +66,7 @@ class AboutPageState extends State<AboutPage> {
             title: SmashUI.normalText("License",
                 bold: true, color: SmashColors.mainDecorations),
             subtitle: SmashUI.smallText(
-                "The GSS is a free and open sourtce application and is available under the General Public License, version 3.",
+                "The GSS is a free and open source application and is available under the General Public License, version 3.",
                 overflow: null),
           ),
           ListTile(
