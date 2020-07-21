@@ -40,7 +40,7 @@ class AboutPage extends StatefulWidget {
 }
 
 class AboutPageState extends State<AboutPage> {
-  String _version = "3.0.0alpha";
+  String _version = "3.0.0";
 
   @override
   Widget build(BuildContext context) {
