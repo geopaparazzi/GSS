@@ -156,8 +156,11 @@ public class GssServerApiJavalin implements Vars {
     static final String LOGSDATA_COLUMN_ALTIM = "altim";
     static final String LOGSDATA_COLUMN_TS = "ts";
     static final String LOGSDATA_COLUMN_LOGID = "logid";
+    static final String LOGSDATA_COLUMN_LON_FILTERED = "filtered_lon";
+    static final String LOGSDATA_COLUMN_LAT_FILTERED = "filtered_lat";
+    static final String LOGSDATA_COLUMN_ACCURACY_FILTERED = "filtered_accuracy";
 
-    private static User hasPermission(Context ctx) throws Exception {
+    private static User hasPermission( Context ctx ) throws Exception {
         try {
             String authHeader = ctx.req.getHeader(AUTHORIZATION); // $NON-NLS-1$
             String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
@@ -169,7 +172,7 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static boolean hasPermissionDoubleCheck(Context ctx, String tag) throws Exception {
+    private static boolean hasPermissionDoubleCheck( Context ctx, String tag ) throws Exception {
         try {
             String authHeader = ctx.req.getHeader(AUTHORIZATION);
             String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
@@ -187,13 +190,13 @@ public class GssServerApiJavalin implements Vars {
         return false;
     }
 
-    public static void addCheckRoute(Javalin app) {
+    public static void addCheckRoute( Javalin app ) {
         app.get("/check", ctx -> {
             ctx.result("It works. " + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS));
         });
     }
 
-    public static void addTilesRoute(Javalin app, ITilesGenerator mapsforgeTilesGenerator) {
+    public static void addTilesRoute( Javalin app, ITilesGenerator mapsforgeTilesGenerator ) {
 
         app.get(ROUTES_TILES_SOURCE_Z_X_Y, ctx -> {
             if (mapsforgeTilesGenerator == null) {
@@ -202,10 +205,10 @@ public class GssServerApiJavalin implements Vars {
                 raw.setContentType("image/png");
                 raw.addHeader("Content-Disposition", "attachment; filename=image.png");
                 ServletOutputStream outputStream = raw.getOutputStream();
-                
-                BufferedImage transparent = new BufferedImage ( 256, 256, BufferedImage.TYPE_INT_ARGB );
+
+                BufferedImage transparent = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D g = transparent.createGraphics();
-                g.setColor( new Color ( 0, 0, 0, 0 ));
+                g.setColor(new Color(0, 0, 0, 0));
                 g.fillRect(0, 0, 256, 256);
                 g.dispose();
                 ImageIO.write(transparent, "png", outputStream);
@@ -237,7 +240,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addClientUploadRoute(Javalin app) {
+    public static void addClientUploadRoute( Javalin app ) {
         app.post(ROUTES_UPLOAD, ctx -> {
             KukuratusLogger.logDebug(ROUTES_UPLOAD, getRequestLogString(ctx, null));
 
@@ -251,24 +254,23 @@ public class GssServerApiJavalin implements Vars {
 
                 DatabaseHandler dbHandler = DatabaseHandler.instance();
                 GeometryFactory gf = GeometryUtilities.gf();
-                Dao<GpapUsers, ?> usersDao = dbHandler.getDao(GpapUsers.class);
-                GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId)
-                        .queryForFirst();
+                Dao<GpapUsers, ? > usersDao = dbHandler.getDao(GpapUsers.class);
+                GpapUsers gpapUser = usersDao.queryBuilder().where().eq(GpapUsers.DEVICE_FIELD_NAME, deviceId).queryForFirst();
 
-                Dao<GpapProject, ?> projectDao = dbHandler.getDao(GpapProject.class);
+                Dao<GpapProject, ? > projectDao = dbHandler.getDao(GpapProject.class);
 
-                Dao<Notes, ?> notesDao = dbHandler.getDao(Notes.class);
+                Dao<Notes, ? > notesDao = dbHandler.getDao(Notes.class);
 
-                Dao<GpsLogs, ?> logsDao = dbHandler.getDao(GpsLogs.class);
-                Dao<GpsLogsData, ?> logsDataDao = dbHandler.getDao(GpsLogsData.class);
+                Dao<GpsLogs, ? > logsDao = dbHandler.getDao(GpsLogs.class);
+                Dao<GpsLogsData, ? > logsDataDao = dbHandler.getDao(GpsLogsData.class);
 
-                Dao<ImageData, ?> imageDataDao = dbHandler.getDao(ImageData.class);
-                Dao<Images, ?> imagesDao = dbHandler.getDao(Images.class);
+                Dao<ImageData, ? > imageDataDao = dbHandler.getDao(ImageData.class);
+                Dao<Images, ? > imagesDao = dbHandler.getDao(Images.class);
 
                 HashMap<String, Object> partData = new HashMap<String, Object>();
                 Map<String, List<String>> formParamMap = ctx.formParamMap();
                 Set<String> set = formParamMap.keySet();
-                for (String key : set) {
+                for( String key : set ) {
                     List<String> list = formParamMap.get(key);
                     if (list.size() > 0) {
                         partData.put(key, list.get(0));
@@ -285,154 +287,166 @@ public class GssServerApiJavalin implements Vars {
                     projectDao.create(project);
                 }
 
-                switch (type) {
-                    case NOTE_OBJID:
-                        String text = getString(partData, NOTES_COLUMN_TEXT, "- nv -");
-                        String descr = getString(partData, NOTES_COLUMN_DESCRIPTION, "");
-                        long ts = getLong(partData, NOTES_COLUMN_TS, 0);
+                switch( type ) {
+                case NOTE_OBJID:
+                    String text = getString(partData, NOTES_COLUMN_TEXT, "- nv -");
+                    String descr = getString(partData, NOTES_COLUMN_DESCRIPTION, "");
+                    long ts = getLong(partData, NOTES_COLUMN_TS, 0);
 
-                        double lon = getDouble(partData, NOTES_COLUMN_LON, 0);
-                        double lat = getDouble(partData, NOTES_COLUMN_LAT, 0);
-                        Coordinate coordinate = new Coordinate(lon, lat);
-                        Point point = gf.createPoint(coordinate);
-                        Envelope env = new Envelope(coordinate);
-                        env.expandBy(0.000001);
-                        ASpatialDb db = dbHandler.getDb();
-                        String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME
-                                + " group by ST_asText(" + Notes.GEOM_FIELD_NAME + ") )";
+                    double lon = getDouble(partData, NOTES_COLUMN_LON, 0);
+                    double lat = getDouble(partData, NOTES_COLUMN_LAT, 0);
+                    Coordinate coordinate = new Coordinate(lon, lat);
+                    Point point = gf.createPoint(coordinate);
+                    Envelope env = new Envelope(coordinate);
+                    env.expandBy(0.000001);
+                    ASpatialDb db = dbHandler.getDb();
+                    String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME
+                            + " group by ST_asText(" + Notes.GEOM_FIELD_NAME + ") )";
 
-                        QueryResult tableRecords = db.getTableRecordsMapIn(Notes.TABLE_NAME, env, 1, -1, versionsSql);
-                        long previousId = -1;
-                        if (tableRecords.data.size() > 0 && tableRecords.geometryIndex != -1) {
-                            int indexOf = getIndexIgnoreCase(tableRecords.names, Notes.ID_FIELD_NAME);
-                            if (indexOf != -1) {
-                                Object[] objects = tableRecords.data.get(0);
-                                // TODO here it would be best to find the nearest
-                                Object idObj = objects[indexOf];
-                                if (idObj instanceof Long) {
-                                    previousId = (Long) idObj;
-                                }
+                    QueryResult tableRecords = db.getTableRecordsMapIn(Notes.TABLE_NAME, env, 1, -1, versionsSql);
+                    long previousId = -1;
+                    if (tableRecords.data.size() > 0 && tableRecords.geometryIndex != -1) {
+                        int indexOf = getIndexIgnoreCase(tableRecords.names, Notes.ID_FIELD_NAME);
+                        if (indexOf != -1) {
+                            Object[] objects = tableRecords.data.get(0);
+                            // TODO here it would be best to find the nearest
+                            Object idObj = objects[indexOf];
+                            if (idObj instanceof Long) {
+                                previousId = (Long) idObj;
                             }
                         }
+                    }
 
-                        double altim = getDouble(partData, NOTES_COLUMN_ALTIM, 0);
-                        String form = getString(partData, NOTES_COLUMN_FORM, null);
+                    double altim = getDouble(partData, NOTES_COLUMN_ALTIM, 0);
+                    String form = getString(partData, NOTES_COLUMN_FORM, null);
 
-                        String marker = getString(partData, Notes.NOTESEXT_COLUMN_MARKER, "mapMarker");
-                        double size = getDouble(partData, Notes.NOTESEXT_COLUMN_SIZE, 10);
-                        double rotation = getDouble(partData, Notes.NOTESEXT_COLUMN_ROTATION, 0);
-                        String color = getString(partData, Notes.NOTESEXT_COLUMN_COLOR, "#FFFFFF");
-                        double accuracy = getDouble(partData, Notes.NOTESEXT_COLUMN_ACCURACY, 0);
-                        double heading = getDouble(partData, Notes.NOTESEXT_COLUMN_HEADING, 0);
-                        double speed = getDouble(partData, Notes.NOTESEXT_COLUMN_SPEED, 0);
-                        double speedaccuracy = getDouble(partData, Notes.NOTESEXT_COLUMN_SPEEDACCURACY, 0);
+                    String marker = getString(partData, Notes.NOTESEXT_COLUMN_MARKER, "mapMarker");
+                    double size = getDouble(partData, Notes.NOTESEXT_COLUMN_SIZE, 10);
+                    double rotation = getDouble(partData, Notes.NOTESEXT_COLUMN_ROTATION, 0);
+                    String color = getString(partData, Notes.NOTESEXT_COLUMN_COLOR, "#FFFFFF");
+                    double accuracy = getDouble(partData, Notes.NOTESEXT_COLUMN_ACCURACY, 0);
+                    double heading = getDouble(partData, Notes.NOTESEXT_COLUMN_HEADING, 0);
+                    double speed = getDouble(partData, Notes.NOTESEXT_COLUMN_SPEED, 0);
+                    double speedaccuracy = getDouble(partData, Notes.NOTESEXT_COLUMN_SPEEDACCURACY, 0);
 
-                        Notes serverNote = new Notes(point, altim, ts, descr, text, form, marker, size, rotation, color,
-                                accuracy, heading, speed, speedaccuracy, gpapUser, project, previousId,
-                                System.currentTimeMillis());
-                        notesDao.create(serverNote);
-                        if (form != null) {
-                            List<String> imageIds = Utilities.getImageIds(form);
-                            if (!imageIds.isEmpty()) {
-                                HashMap<String, String> oldId2NewMap = new HashMap<>();
-                                for (String imageIdString : imageIds) {
-                                    UploadedFile imageFile = ctx.uploadedFile(
-                                            TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
-                                    UploadedFile thumbFile = ctx.uploadedFile(
-                                            TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
+                    Notes serverNote = new Notes(point, altim, ts, descr, text, form, marker, size, rotation, color, accuracy,
+                            heading, speed, speedaccuracy, gpapUser, project, previousId, System.currentTimeMillis());
+                    notesDao.create(serverNote);
+                    if (form != null) {
+                        List<String> imageIds = Utilities.getImageIds(form);
+                        if (!imageIds.isEmpty()) {
+                            HashMap<String, String> oldId2NewMap = new HashMap<>();
+                            for( String imageIdString : imageIds ) {
+                                UploadedFile imageFile = ctx
+                                        .uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
+                                UploadedFile thumbFile = ctx
+                                        .uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
 
-                                    byte[] imageData = getByteArray(imageFile.getContent()); // (byte[]) partData.get(
-                                    // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
-                                    byte[] thumbData = getByteArray(thumbFile.getContent());
-                                    // (byte[]) partData.get(
-                                    // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
-                                    ImageData imgData = new ImageData(imageData, gpapUser);
-                                    imageDataDao.create(imgData);
-                                    Point imgPoint = gf.createPoint(new Coordinate(lon, lat));
-                                    Images img = new Images(imgPoint, altim, ts, -1, imageFile.getFilename(),
-                                            serverNote, imgData, gpapUser, thumbData, project,
-                                            System.currentTimeMillis());
-                                    imagesDao.create(img);
+                                byte[] imageData = getByteArray(imageFile.getContent()); // (byte[]) partData.get(
+                                // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
+                                byte[] thumbData = getByteArray(thumbFile.getContent());
+                                // (byte[]) partData.get(
+                                // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
+                                ImageData imgData = new ImageData(imageData, gpapUser);
+                                imageDataDao.create(imgData);
+                                Point imgPoint = gf.createPoint(new Coordinate(lon, lat));
+                                Images img = new Images(imgPoint, altim, ts, -1, imageFile.getFilename(), serverNote, imgData,
+                                        gpapUser, thumbData, project, System.currentTimeMillis());
+                                imagesDao.create(img);
 
-                                    oldId2NewMap.put(imageIdString, String.valueOf(img.id));
-                                }
-                                form = GssDatabaseUtilities.updateImagesIds(form, oldId2NewMap);
-
-                                serverNote.form = form;
-                                notesDao.update(serverNote);
+                                oldId2NewMap.put(imageIdString, String.valueOf(img.id));
                             }
+                            form = GssDatabaseUtilities.updateImagesIds(form, oldId2NewMap);
+
+                            serverNote.form = form;
+                            notesDao.update(serverNote);
                         }
+                    }
 
-                        ServletUtils.debug("Uploaded note: " + serverNote.text);
-                        break;
-                    case IMAGE_OBJID:
-                        // long imgId = getLong(partData, NOTES_COLUMN_ID, -1);
-                        String imgText = getString(partData, IMAGES_COLUMN_TEXT, "- nv -");
-                        long imgTs = getLong(partData, IMAGES_COLUMN_TS, 0);
-                        double imgLon = getDouble(partData, IMAGES_COLUMN_LON, 0);
-                        double imgLat = getDouble(partData, IMAGES_COLUMN_LAT, 0);
-                        double imgAltim = getDouble(partData, IMAGES_COLUMN_ALTIM, -1);
+                    ServletUtils.debug("Uploaded note: " + serverNote.text);
+                    break;
+                case IMAGE_OBJID:
+                    // long imgId = getLong(partData, NOTES_COLUMN_ID, -1);
+                    String imgText = getString(partData, IMAGES_COLUMN_TEXT, "- nv -");
+                    long imgTs = getLong(partData, IMAGES_COLUMN_TS, 0);
+                    double imgLon = getDouble(partData, IMAGES_COLUMN_LON, 0);
+                    double imgLat = getDouble(partData, IMAGES_COLUMN_LAT, 0);
+                    double imgAltim = getDouble(partData, IMAGES_COLUMN_ALTIM, -1);
 
-                        UploadedFile imageFile = ctx.uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE);
-                        UploadedFile thumbFile = ctx.uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
-                        byte[] imageData = getByteArray(imageFile.getContent());
-                        byte[] thumbnailData = getByteArray(thumbFile.getContent());
+                    UploadedFile imageFile = ctx.uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE);
+                    UploadedFile thumbFile = ctx.uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
+                    byte[] imageData = getByteArray(imageFile.getContent());
+                    byte[] thumbnailData = getByteArray(thumbFile.getContent());
 
-                        // byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + "_" +
-                        // IMAGESDATA_COLUMN_IMAGE);
-                        // byte[] thumbnailData = (byte[]) partData
-                        // .get(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
+                    // byte[] imageData = (byte[]) partData.get(TABLE_IMAGE_DATA + "_" +
+                    // IMAGESDATA_COLUMN_IMAGE);
+                    // byte[] thumbnailData = (byte[]) partData
+                    // .get(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL);
 
-                        ImageData imgData = new ImageData(imageData, gpapUser);
-                        imageDataDao.create(imgData);
-                        Point imgPoint = gf.createPoint(new Coordinate(imgLon, imgLat));
-                        Images img = new Images(imgPoint, imgAltim, imgTs, -1, imgText, null, imgData, gpapUser,
-                                thumbnailData, project, System.currentTimeMillis());
-                        imagesDao.create(img);
+                    ImageData imgData = new ImageData(imageData, gpapUser);
+                    imageDataDao.create(imgData);
+                    Point imgPoint = gf.createPoint(new Coordinate(imgLon, imgLat));
+                    Images img = new Images(imgPoint, imgAltim, imgTs, -1, imgText, null, imgData, gpapUser, thumbnailData,
+                            project, System.currentTimeMillis());
+                    imagesDao.create(img);
 
-                        ServletUtils.debug("Uploaded image: " + imgText);
-                        break;
-                    case LOG_OBJID:
-                        String logText = getString(partData, LOGS_COLUMN_TEXT, "- nv -");
-                        long startts = getLong(partData, LOGS_COLUMN_STARTTS, 0);
-                        long endts = getLong(partData, LOGS_COLUMN_ENDTS, 0);
-                        float width = getFloat(partData, LOGSPROP_COLUMN_WIDTH, 3);
-                        String logColor = getString(partData, LOGSPROP_COLUMN_COLOR, "#FFFFFF");
-                        if (logColor.length() == 9) {
-                            // has also alpha, remove it
-                            logColor = "#" + logColor.substring(3);
+                    ServletUtils.debug("Uploaded image: " + imgText);
+                    break;
+                case LOG_OBJID:
+                    String logText = getString(partData, LOGS_COLUMN_TEXT, "- nv -");
+                    long startts = getLong(partData, LOGS_COLUMN_STARTTS, 0);
+                    long endts = getLong(partData, LOGS_COLUMN_ENDTS, 0);
+                    float width = getFloat(partData, LOGSPROP_COLUMN_WIDTH, 3);
+                    String logColor = getString(partData, LOGSPROP_COLUMN_COLOR, "#FFFFFF");
+                    if (logColor.length() == 9) {
+                        // has also alpha, remove it
+                        logColor = "#" + logColor.substring(3);
+                    }
+
+                    String logDataJson = (String) partData.get(TABLE_GPSLOG_DATA);
+                    JSONArray root = new JSONArray(logDataJson);
+                    int length = root.length();
+                    Coordinate[] coords = new Coordinate[length];
+                    List<GpsLogsData> logsData = new ArrayList<>();
+                    for( int i = 0; i < coords.length; i++ ) {
+                        JSONObject pointObj = root.getJSONObject(i);
+                        double pLat = 0;
+                        double pLon = 0;
+                        double pAltim = 0;
+
+                        try {
+                            pLat = pointObj.getDouble(LOGSDATA_COLUMN_LAT_FILTERED);
+                            pLon = pointObj.getDouble(LOGSDATA_COLUMN_LON_FILTERED);
+                            pAltim = pointObj.getDouble(LOGSDATA_COLUMN_ALTIM);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-
-                        String logDataJson = (String) partData.get(TABLE_GPSLOG_DATA);
-                        JSONArray root = new JSONArray(logDataJson);
-                        int length = root.length();
-                        Coordinate[] coords = new Coordinate[length];
-                        List<GpsLogsData> logsData = new ArrayList<>();
-                        for (int i = 0; i < coords.length; i++) {
-                            JSONObject pointObj = root.getJSONObject(i);
-                            double pLat = pointObj.getDouble(LOGSDATA_COLUMN_LAT);
-                            double pLon = pointObj.getDouble(LOGSDATA_COLUMN_LON);
-                            double pAltim = pointObj.getDouble(LOGSDATA_COLUMN_ALTIM);
-                            long pTs = pointObj.getLong(LOGSDATA_COLUMN_TS);
-
-                            Coordinate coord = new Coordinate(pLon, pLat);
-                            coords[i] = coord;
-                            Point logPoint = gf.createPoint(coord);
-                            GpsLogsData gpsLogsData = new GpsLogsData(logPoint, pAltim, pTs, null);
-                            logsData.add(gpsLogsData);
+                        if (pLat == 0 && pLon == 0 && pAltim == 0) {
+                            // then use the standard
+                            pLat = pointObj.getDouble(LOGSDATA_COLUMN_LAT);
+                            pLon = pointObj.getDouble(LOGSDATA_COLUMN_LON);
+                            pAltim = pointObj.getDouble(LOGSDATA_COLUMN_ALTIM);
                         }
-                        LineString logLine = gf.createLineString(coords);
-                        GpsLogs newLog = new GpsLogs(logText, startts, endts, logLine, logColor, width, gpapUser,
-                                project, System.currentTimeMillis());
-                        logsData.forEach(ld -> ld.gpsLog = newLog);
+                        long pTs = pointObj.getLong(LOGSDATA_COLUMN_TS);
 
-                        logsDao.create(newLog);
-                        logsDataDao.create(logsData);
-                        ServletUtils.debug("Uploaded log: " + logText);
-                        break;
+                        Coordinate coord = new Coordinate(pLon, pLat);
+                        coords[i] = coord;
+                        Point logPoint = gf.createPoint(coord);
+                        GpsLogsData gpsLogsData = new GpsLogsData(logPoint, pAltim, pTs, null);
+                        logsData.add(gpsLogsData);
+                    }
+                    LineString logLine = gf.createLineString(coords);
+                    GpsLogs newLog = new GpsLogs(logText, startts, endts, logLine, logColor, width, gpapUser, project,
+                            System.currentTimeMillis());
+                    logsData.forEach(ld -> ld.gpsLog = newLog);
 
-                    default:
-                        break;
+                    logsDao.create(newLog);
+                    logsDataDao.create(logsData);
+                    ServletUtils.debug("Uploaded log: " + logText);
+                    break;
+
+                default:
+                    break;
                 }
 
                 String message = Messages.getString("UploadServlet.data_uploaded");
@@ -447,8 +461,8 @@ public class GssServerApiJavalin implements Vars {
 
     }
 
-    private static int getIndexIgnoreCase(List<String> strings, String string) {
-        for (int i = 0; i < strings.size(); i++) {
+    private static int getIndexIgnoreCase( List<String> strings, String string ) {
+        for( int i = 0; i < strings.size(); i++ ) {
             if (strings.get(i).equalsIgnoreCase(string)) {
                 return i;
             }
@@ -456,7 +470,7 @@ public class GssServerApiJavalin implements Vars {
         return -1;
     }
 
-    public static void addClientProjectDataUploadRoute(Javalin app) {
+    public static void addClientProjectDataUploadRoute( Javalin app ) {
         app.post(ROUTES_PROJECTDATA_UPLOAD, ctx -> {
             User validUser = hasPermission(ctx);
             KukuratusLogger.logDebug(ROUTES_PROJECTDATA_UPLOAD, getRequestLogString(ctx, validUser));
@@ -485,10 +499,9 @@ public class GssServerApiJavalin implements Vars {
                                 }
                             } else if (fileName.endsWith("tags.json")) {
                                 String form = getString(uploadedFile.getContent());
-                                Dao<Forms, ?> formsDao = dbHandler.getDao(Forms.class);
+                                Dao<Forms, ? > formsDao = dbHandler.getDao(Forms.class);
 
-                                Forms f = new Forms(fileName, form, validUser.uniqueName,
-                                        FormStatus.VISIBLE.getStatusCode());
+                                Forms f = new Forms(fileName, form, validUser.uniqueName, FormStatus.VISIBLE.getStatusCode());
                                 int create = formsDao.create(f);
                                 if (create != 1) {
                                     errorMsg = "ERROR: An error occurred while inserting in the server.";
@@ -516,8 +529,7 @@ public class GssServerApiJavalin implements Vars {
 
                     if (errorMsg != null) {
                         KukuratusLogger.logError(ROUTES_PROJECTDATA_UPLOAD, errorMsg, null);
-                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR,
-                                errorMsg);
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, errorMsg);
                         ctx.status(ks.getCode());
                         ctx.result(ks.toJson());
                         return;
@@ -539,7 +551,7 @@ public class GssServerApiJavalin implements Vars {
 
     }
 
-    public static void addGetDataRoute(Javalin app) {
+    public static void addGetDataRoute( Javalin app ) {
 
         app.post(ROUTES_GETDATA, ctx -> {
             try {
@@ -552,7 +564,7 @@ public class GssServerApiJavalin implements Vars {
 
                     JSONObject root = new JSONObject();
 
-                    Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                    Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
 
                     List<GpapUsers> users = null;
 
@@ -564,7 +576,7 @@ public class GssServerApiJavalin implements Vars {
                         users = userDao.queryBuilder().where().eq(GpapUsers.ACTIVE_FIELD_NAME, 1).query();
                     }
 
-                    Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                    Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
                     List<GpapProject> projectsList = null;
                     if (projects != null) {
                         String[] projectsArray = projects.split(";");
@@ -576,21 +588,18 @@ public class GssServerApiJavalin implements Vars {
                     Long from = null;
                     Long to = null;
 
-                    Dao<GpsLogs, ?> logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+                    Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
                     GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
 
-                    Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
+                    Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
 
                     // simple notes
-                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
-                            false);
+                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null, false);
                     // form notes
-                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
-                            true);
+                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null, true);
 
-                    Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                    GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null,
-                            null);
+                    Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
+                    GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null, null);
 
                     ctx.result(root.toString());
                 } else {
@@ -602,7 +611,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addGetDataByTypeRoute(Javalin app) {
+    public static void addGetDataByTypeRoute( Javalin app ) {
 
         // get data from the server by type and the primary key id
         app.get(ROUTES_GETDATA_BY_TYPE, ctx -> {
@@ -618,28 +627,26 @@ public class GssServerApiJavalin implements Vars {
                         if (id != null) {
                             long idLong = Long.parseLong(id);
                             ImageData idObj = new ImageData(idLong);
-                            Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
+                            Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
                             ImageData result = dao.queryForSameId(idObj);
                             ctx.result(result.data);
                         }
                     } else if (type.equals(GssDatabaseUtilities.IMAGES)) {
                         if (id != null) {
-                            Dao<Images, ?> imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                            Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
-                            Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                            Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
+                            Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                            Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
                             long idLong = Long.parseLong(id);
-                            JSONObject imageObj = GssDatabaseUtilities.getImageById(imagesDao, projectDao, userDao,
-                                    idLong);
+                            JSONObject imageObj = GssDatabaseUtilities.getImageById(imagesDao, projectDao, userDao, idLong);
                             ctx.result(imageObj.toString());
                         }
                     } else if (type.equals(GssDatabaseUtilities.NOTES)) {
                         if (id != null) {
-                            Dao<Notes, ?> notesDao = DatabaseHandler.instance().getDao(Notes.class);
-                            Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
-                            Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                            Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
+                            Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                            Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
                             long idLong = Long.parseLong(id);
-                            JSONObject noteObj = GssDatabaseUtilities.getNoteById(notesDao, projectDao, userDao,
-                                    idLong);
+                            JSONObject noteObj = GssDatabaseUtilities.getNoteById(notesDao, projectDao, userDao, idLong);
                             ctx.result(noteObj.toString());
                         }
                     }
@@ -652,7 +659,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addClientGetBaseDataRoute(Javalin app) {
+    public static void addClientGetBaseDataRoute( Javalin app ) {
         app.get(ROUTES_GET_BASEDATA, ctx -> {
             if (hasPermissionDoubleCheck(ctx, ROUTES_GET_BASEDATA)) {
                 KukuratusLogger.logDebug(ROUTES_GET_BASEDATA, getRequestLogString(ctx, null));
@@ -675,7 +682,7 @@ public class GssServerApiJavalin implements Vars {
                                     ServletOutputStream out = ctx.res.getOutputStream()) {
                                 byte[] buffer = new byte[8192];
                                 int numBytesRead;
-                                while ((numBytesRead = in.read(buffer)) > 0) {
+                                while( (numBytesRead = in.read(buffer)) > 0 ) {
                                     out.write(buffer, 0, numBytesRead);
                                 }
                             }
@@ -691,12 +698,12 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addClientGetFormsRoute(Javalin app) {
+    public static void addClientGetFormsRoute( Javalin app ) {
         app.get(ROUTES_GET_FORMS, ctx -> {
             if (hasPermissionDoubleCheck(ctx, ROUTES_GET_FORMS)) {
                 KukuratusLogger.logDebug(ROUTES_GET_FORMS, getRequestLogString(ctx, null));
 
-                Dao<Forms, ?> formsDao = DatabaseHandler.instance().getDao(Forms.class);
+                Dao<Forms, ? > formsDao = DatabaseHandler.instance().getDao(Forms.class);
                 String tagName = ctx.queryParam("name");
                 try {
                     if (tagName != null) {
@@ -707,7 +714,7 @@ public class GssServerApiJavalin implements Vars {
                         JSONObject root = new JSONObject();
                         JSONArray formsArray = new JSONArray();
                         root.put(ServletUtils.TAGS, formsArray); // $NON-NLS-1$
-                        for (Forms form : visibleForms) {
+                        for( Forms form : visibleForms ) {
                             JSONObject formObj = new JSONObject();
                             formObj.put(ServletUtils.TAG, form.name); // $NON-NLS-1$
                             formObj.put(ServletUtils.TAGID, form.id); // $NON-NLS-1$
@@ -725,7 +732,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addGetImagedataRoute(Javalin app) {
+    public static void addGetImagedataRoute( Javalin app ) {
         app.get(ROUTES_GET_IMAGEDATA, ctx -> {
             // User validUser = hasPermission(req);
             // if (validUser != null) {
@@ -734,9 +741,8 @@ public class GssServerApiJavalin implements Vars {
 
             try {
                 long imageDataIdLong = Long.parseLong(imageDataId);
-                Dao<ImageData, ?> dao = DatabaseHandler.instance().getDao(ImageData.class);
-                ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong)
-                        .queryForFirst();
+                Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
+                ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong).queryForFirst();
                 ctx.result(imageData.data);
             } catch (Exception e) {
                 sendServerError(ctx, ROUTES_GET_IMAGEDATA + "/" + imageDataId, e);
@@ -776,7 +782,7 @@ public class GssServerApiJavalin implements Vars {
     // // });
     // // }
 
-    public static void addLoginRoute(Javalin app) {
+    public static void addLoginRoute( Javalin app ) {
 
         app.get(ROUTES_LOGIN, ctx -> {
             try {
@@ -789,11 +795,9 @@ public class GssServerApiJavalin implements Vars {
                     response.put(KEY_ISADMIN, admin);
 
                     // also get last used map background and map position
-                    String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge",
-                            user.getUniqueName());
+                    String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge", user.getUniqueName());
                     response.put(KEY_BASEMAP, baseMap);
-                    String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6",
-                            user.getUniqueName());
+                    String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6", user.getUniqueName());
                     response.put(KEY_MAPCENTER, xyz);
                     ctx.status(KukuratusStatus.CODE_200_OK);
                     ctx.result(response.toString());
@@ -808,7 +812,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addUserSettingsRoute(Javalin app) {
+    public static void addUserSettingsRoute( Javalin app ) {
 
         app.post(ROUTES_USERSETTINGS, ctx -> {
             try {
@@ -832,8 +836,8 @@ public class GssServerApiJavalin implements Vars {
                     }
                     String automaticRegistrationMillis = ctx.formParam(KukuratusSession.KEY_AUTOMATIC_REGISTRATION);
                     if (automaticRegistrationMillis != null) {
-                        Settings s = new Settings(KukuratusSession.KEY_AUTOMATIC_REGISTRATION,
-                                automaticRegistrationMillis, user.getUniqueName());
+                        Settings s = new Settings(KukuratusSession.KEY_AUTOMATIC_REGISTRATION, automaticRegistrationMillis,
+                                user.getUniqueName());
                         RegistryHandler.INSTANCE.insertOrUpdateGlobalSetting(s);
                     }
                     ctx.result("OK");
@@ -852,16 +856,14 @@ public class GssServerApiJavalin implements Vars {
                 if (user != null) {
                     String type = ctx.pathParam(":type");
                     if (type.equals(KEY_BASEMAP)) {
-                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "mapsforge",
-                                user.getUniqueName());
+                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "mapsforge", user.getUniqueName());
                         ctx.result(setting);
                     } else if (type.equals(KEY_MAPCENTER)) {
-                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0;0;6",
-                                user.getUniqueName());
+                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0;0;6", user.getUniqueName());
                         ctx.result(setting);
                     } else if (type.equals(KEY_BOOKMARKS)) {
-                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BOOKMARKS,
-                                "earth:-160.0,160.0,-85.0,85.0", user.getUniqueName());
+                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BOOKMARKS, "earth:-160.0,160.0,-85.0,85.0",
+                                user.getUniqueName());
                         ctx.result(setting);
                     }
                 } else {
@@ -873,7 +875,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addListByTypeRoute(Javalin app) {
+    public static void addListByTypeRoute( Javalin app ) {
 
         app.get(ROUTES_LIST_TYPE, ctx -> {
             try {
@@ -882,22 +884,22 @@ public class GssServerApiJavalin implements Vars {
                 if (validUser != null) {
                     String type = ctx.pathParam(":type");
                     if (type.equals(SURVEYORS)) {
-                        Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                        Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
                         List<GpapUsers> users = userDao.queryForAll();
                         JSONObject root = new JSONObject();
                         JSONArray surveyorsArray = new JSONArray();
                         root.put(SURVEYORS, surveyorsArray);
-                        for (GpapUsers gpapUsers : users) {
+                        for( GpapUsers gpapUsers : users ) {
                             surveyorsArray.put(gpapUsers.toJson());
                         }
                         ctx.result(root.toString());
                     } else if (type.equals(PROJECTS)) {
-                        Dao<GpapProject, ?> projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                        Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
                         List<GpapProject> projects = projectDao.queryForAll();
                         JSONObject root = new JSONObject();
                         JSONArray projectsArray = new JSONArray();
                         root.put(PROJECTS, projectsArray);
-                        for (GpapProject gpapProject : projects) {
+                        for( GpapProject gpapProject : projects ) {
                             projectsArray.put(gpapProject.name);
                         }
                         ctx.result(root.toString());
@@ -906,17 +908,16 @@ public class GssServerApiJavalin implements Vars {
                         JSONArray usersArray = new JSONArray();
                         root.put(WEBUSERS, usersArray);
                         List<Group> groups = RegistryHandler.INSTANCE.getGroupsWithAuthorizations();
-                        for (Group group : groups) {
+                        for( Group group : groups ) {
                             List<User> usersList = RegistryHandler.INSTANCE.getUsersOfGroup(group);
-                            for (User user : usersList) {
+                            for( User user : usersList ) {
                                 user.setGroup(group);
                                 usersArray.put(user.toJson());
                             }
                         }
                         ctx.result(root.toString());
                     } else {
-                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
-                                "Type not recognised: type");
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND, "Type not recognised: type");
                         ctx.status(ks.getCode());
                         ctx.result(ks.toJson());
                     }
@@ -929,7 +930,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addUpdateByTypeRoute(Javalin app) {
+    public static void addUpdateByTypeRoute( Javalin app ) {
 
         app.post(ROUTES_UPDATE_TYPE, ctx -> {
             try {
@@ -944,7 +945,7 @@ public class GssServerApiJavalin implements Vars {
                         String contact = ctx.formParam(GpapUsers.CONTACT_FIELD_NAME);
                         String active = ctx.formParam(GpapUsers.ACTIVE_FIELD_NAME);
 
-                        Dao<GpapUsers, ?> userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
+                        Dao<GpapUsers, ? > userDao = DatabaseHandler.instance().getDao(GpapUsers.class);
                         if (id != null) {
                             GpapUsers existingUser = userDao.queryBuilder().where()
                                     .eq(GpapUsers.ID_FIELD_NAME, Long.parseLong(id)).queryForFirst();
@@ -1019,7 +1020,7 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
-    public static void addDeleteByTypeRoute(Javalin app) {
+    public static void addDeleteByTypeRoute( Javalin app ) {
 
         app.post(ROUTES_DELETE_TYPE, ctx -> {
             try {
@@ -1046,7 +1047,7 @@ public class GssServerApiJavalin implements Vars {
                     } else if (type.equals(FORMS)) {
                         String id = ctx.formParam(Forms.ID_FIELD_NAME);
                         if (id != null) {
-                            Dao<Forms, ?> formsDao = DatabaseHandler.instance().getDao(Forms.class);
+                            Dao<Forms, ? > formsDao = DatabaseHandler.instance().getDao(Forms.class);
                             Forms f = new Forms(Long.parseLong(id));
                             formsDao.delete(f);
                         }
@@ -1073,20 +1074,20 @@ public class GssServerApiJavalin implements Vars {
     // HELPER METHODS
     //////////////////////////////////////
 
-    private static void sendNoPermission(Context ctx) {
+    private static void sendNoPermission( Context ctx ) {
         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_403_FORBIDDEN, "No permission for request.");
         ctx.status(ks.getCode());
         ctx.result(ks.toJson());
     }
 
-    private static void sendServerError(Context ctx, String route, Throwable e) {
+    private static void sendServerError( Context ctx, String route, Throwable e ) {
         KukuratusLogger.logError(route, e);
         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR, "ERROR", e);
         ctx.status(ks.getCode());
         ctx.result(ks.toJson());
     }
 
-    private static long getLong(HashMap<String, Object> partData, String key, long defaultValue) {
+    private static long getLong( HashMap<String, Object> partData, String key, long defaultValue ) {
         if (partData.containsKey(key)) {
             Object object = partData.get(key);
             if (object instanceof String) {
@@ -1104,7 +1105,7 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static String getString(HashMap<String, Object> partData, String key, String defaultValue) {
+    private static String getString( HashMap<String, Object> partData, String key, String defaultValue ) {
         if (partData.containsKey(key)) {
             Object object = partData.get(key);
             if (object instanceof String) {
@@ -1122,7 +1123,7 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static double getDouble(HashMap<String, Object> partData, String key, double defaultValue) {
+    private static double getDouble( HashMap<String, Object> partData, String key, double defaultValue ) {
         if (partData.containsKey(key)) {
             Object object = partData.get(key);
             if (object instanceof String) {
@@ -1140,7 +1141,7 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static float getFloat(HashMap<String, Object> partData, String key, float defaultValue) {
+    private static float getFloat( HashMap<String, Object> partData, String key, float defaultValue ) {
         if (partData.containsKey(key)) {
             Object object = partData.get(key);
             if (object instanceof String) {
@@ -1158,8 +1159,8 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static String getFilename(Part part) {
-        for (String cd : part.getHeader("content-disposition").split(";")) {
+    private static String getFilename( Part part ) {
+        for( String cd : part.getHeader("content-disposition").split(";") ) {
             if (cd.trim().startsWith("filename")) {
                 return cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "");
             }
@@ -1167,22 +1168,22 @@ public class GssServerApiJavalin implements Vars {
         return null;
     }
 
-    private static String getValue(Part part) throws IOException {
+    private static String getValue( Part part ) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(part.getInputStream(), "UTF-8"));
         StringBuilder value = new StringBuilder();
         char[] buffer = new char[1024];
-        for (int length = 0; (length = reader.read(buffer)) > 0;) {
+        for( int length = 0; (length = reader.read(buffer)) > 0; ) {
             value.append(buffer, 0, length);
         }
         return value.toString();
     }
 
-    private static byte[] getByteArray(Part part) throws IOException {
+    private static byte[] getByteArray( Part part ) throws IOException {
         try (InputStream is = part.getInputStream()) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             int nRead;
             byte[] data = new byte[1024];
-            while ((nRead = is.read(data, 0, data.length)) != -1) {
+            while( (nRead = is.read(data, 0, data.length)) != -1 ) {
                 buffer.write(data, 0, nRead);
             }
             buffer.flush();
@@ -1191,11 +1192,11 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static byte[] getByteArray(InputStream is) throws IOException {
+    private static byte[] getByteArray( InputStream is ) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int nRead;
         byte[] data = new byte[1024];
-        while ((nRead = is.read(data, 0, data.length)) != -1) {
+        while( (nRead = is.read(data, 0, data.length)) != -1 ) {
             buffer.write(data, 0, nRead);
         }
         buffer.flush();
@@ -1203,7 +1204,7 @@ public class GssServerApiJavalin implements Vars {
         return byteArray;
     }
 
-    private static String getString(Part part) throws IOException {
+    private static String getString( Part part ) throws IOException {
         try (InputStream is = part.getInputStream()) {
             String text = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).lines()
                     .collect(Collectors.joining("\n"));
@@ -1211,13 +1212,13 @@ public class GssServerApiJavalin implements Vars {
         }
     }
 
-    private static String getString(InputStream is) throws IOException {
+    private static String getString( InputStream is ) throws IOException {
         String text = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).lines()
                 .collect(Collectors.joining("\n"));
         return text;
     }
 
-    private static String getRequestLogString(Context ctx, User user) {
+    private static String getRequestLogString( Context ctx, User user ) {
         String userStr = "";
         if (user != null) {
             userStr = " by user " + user.uniqueName;

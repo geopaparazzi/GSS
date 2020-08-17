@@ -1,6 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.hydrologis</groupId>
 	<artifactId>gss-backbone</artifactId>
@@ -108,7 +106,6 @@
 	</dependencies>
 
 
-
 	<!-- Build configuration -->
 	<build>
 		<extensions>
@@ -125,17 +122,20 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-                    <source>1.8</source>
-					<target>1.8</target>
+					<!-- <source>1.8</source>
+					<target>1.8</target> -->
+					<release>
+						14
+					</release>
 					<encoding>UTF-8</encoding>
-                    <debug>true</debug>
-                    <!--
+					<debug>true</debug>
+					<!--
                      activate in case of java 13
                     <release>13</release>
                     -->
 				</configuration>
 			</plugin>
-                    <!--
+			<!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -149,84 +149,84 @@
                     -->
 
 
-         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.0.0</version>
-            <executions>
-              <execution>
-                <id>remove_hm_from_modulename</id>
-                <goals>
-                  <goal>regex-property</goal>
-                </goals>
-                <configuration>
-                  <name>moduleIdentifierStep1</name>
-                  <value>${project.groupId}.${project.artifactId}</value>
-                  <regex>hm-</regex>
-                  <replacement></replacement>
-                  <failIfNoMatch>false</failIfNoMatch>
-                </configuration>
-              </execution>
-              <execution>
-                <id>remove_dashes_from_modulename</id>
-                <goals>
-                  <goal>regex-property</goal>
-                </goals>
-                <configuration>
-                  <name>moduleIdentifier</name>
-                  <value>${moduleIdentifierStep1}</value>
-                  <regex>-</regex>
-                  <replacement>_</replacement>
-                  <failIfNoMatch>false</failIfNoMatch>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-            
-            <!-- 
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>remove_hm_from_modulename</id>
+						<goals>
+							<goal>regex-property</goal>
+						</goals>
+						<configuration>
+							<name>moduleIdentifierStep1</name>
+							<value>${project.groupId}.${project.artifactId}</value>
+							<regex>hm-</regex>
+							<replacement></replacement>
+							<failIfNoMatch>false</failIfNoMatch>
+						</configuration>
+					</execution>
+					<execution>
+						<id>remove_dashes_from_modulename</id>
+						<goals>
+							<goal>regex-property</goal>
+						</goals>
+						<configuration>
+							<name>moduleIdentifier</name>
+							<value>${moduleIdentifierStep1}</value>
+							<regex>-</regex>
+							<replacement>_</replacement>
+							<failIfNoMatch>false</failIfNoMatch>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- 
                 can be used to find newest versions fo plugins: mvn versions:display-plugin-updates
             -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>versions-maven-plugin</artifactId>
-                <version>2.5</version>
-                <configuration>
-                    <generateBackupPoms>false</generateBackupPoms>
-                </configuration>
-            </plugin>
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-dependency-plugin</artifactId>
-    <executions>
-        <execution>
-            <id>copy-dependencies</id>
-            <phase>prepare-package</phase>
-            <goals>
-                <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-                <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                <overWriteReleases>false</overWriteReleases>
-                <overWriteSnapshots>false</overWriteSnapshots>
-                <overWriteIfNewer>true</overWriteIfNewer>
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-jar-plugin</artifactId>
-    <version>3.2.0</version>
-    <configuration>
-        <archive>
-            <manifest>
-                <addClasspath>true</addClasspath>
-                <classpathPrefix>lib/</classpathPrefix>
-                <mainClass>com.hydrologis.kukuratus.gss.GssServerJavalin</mainClass>
-            </manifest>
-        </archive>
-    </configuration>
-</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
+				<version>2.5</version>
+				<configuration>
+					<generateBackupPoms>false</generateBackupPoms>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>com.hydrologis.kukuratus.gss.GssServerJavalin</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>3.1.0</version>
@@ -252,17 +252,17 @@
 				<version>3.1.1</version>
 				<executions>
 					<execution>
-                        <id>main-javadoc</id>
-                        <phase>package</phase>
+						<id>main-javadoc</id>
+						<phase>package</phase>
 						<goals>
 							<goal>jar</goal>
 						</goals>
 						<configuration>
-                            <source>8</source>
-                            <doclint>none</doclint>
-                            <quiet>true</quiet>
-                            <failOnWarnings>false</failOnWarnings>
-                            <failOnError>true</failOnError>
+							<source>8</source>
+							<doclint>none</doclint>
+							<quiet>true</quiet>
+							<failOnWarnings>false</failOnWarnings>
+							<failOnError>true</failOnError>
 						</configuration>
 					</execution>
 				</executions>
@@ -279,17 +279,17 @@
 					</rules>
 				</configuration>
 			</plugin>
-            <plugin>
-              <groupId>org.sonatype.plugins</groupId>
-              <artifactId>nexus-staging-maven-plugin</artifactId>
-              <version>1.6.7</version>
-              <extensions>true</extensions>
-              <configuration>
-           	     <serverId>ossrh</serverId>
-                 <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                 <autoReleaseAfterClose>true</autoReleaseAfterClose>
-              </configuration>
-            </plugin>
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.7</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 </project>
