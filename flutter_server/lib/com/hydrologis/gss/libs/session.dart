@@ -5,9 +5,10 @@ import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 
 class SmashSession {
-  static Future<bool> login(String user, String password) async {
+  /// Checks credentials and returns an error message or null if login is ok.
+  static Future<String> login(String user, String password) async {
     var responsJson = await ServerApi.login(user, password);
-    if (responsJson != null) {
+    if (!responsJson.startsWith(NETWORKERROR_PREFIX)) {
       var jsonMap = JSON.jsonDecode(responsJson);
       var hasPermission = jsonMap[KEY_HASPERMISSION];
       if (hasPermission) {
@@ -28,9 +29,9 @@ class SmashSession {
           html.window.sessionStorage[KEY_MAPCENTER] = "$lastMapcenter";
         }
       }
-      return hasPermission;
+      return null;
     } else {
-      return false;
+      return responsJson;
     }
   }
 

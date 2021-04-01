@@ -225,7 +225,8 @@ class _ProjectDataViewState extends State<ProjectDataView>
                           init(context);
                         }).catchError((e) {
                           final snackBar = SnackBar(
-                            content: Text('An error occurred: ${e.toString()}'),
+                            content:
+                                Text('An error occurred: ${e?.toString()}'),
                             duration: Duration(seconds: 3),
                             backgroundColor: Colors.red,
                           );
@@ -243,7 +244,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
                     });
                     reader.onError.listen((e) {
                       final snackBar = SnackBar(
-                        content: Text('An error occurred: ${e.toString()}'),
+                        content: Text('An error occurred: ${e?.toString()}'),
                         duration: Duration(seconds: 3),
                         backgroundColor: Colors.red,
                       );

@@ -462,13 +462,13 @@ class _BackgroundMapSelectionWidgetState
         ButtonBar(
           alignment: MainAxisAlignment.spaceEvenly,
           children: [
-            FlatButton(
+            TextButton(
               child: const Text('CANCEL'),
               onPressed: () {
                 Navigator.pop(context);
               },
             ),
-            FlatButton(
+            TextButton(
               child: const Text('NEXT'),
               onPressed: () {
                 setState(() {
@@ -479,7 +479,7 @@ class _BackgroundMapSelectionWidgetState
                 });
               },
             ),
-            FlatButton(
+            TextButton(
               child: const Text('OK'),
               onPressed: () {
                 SmashSession.setBasemap(_names[_index]);

@@ -1,17 +1,17 @@
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 
-const MAPSFORGE = "Mapsforge";
+const DEFAULTMAP = "Openstreetmap";
 
 final AVAILABLE_MAPS = {
-  '$MAPSFORGE': TileLayerOptions(
+  'Mapsforge': TileLayerOptions(
     tms: false,
     urlTemplate: '$WEBAPP_URL/tiles/mapsforge/{z}/{x}/{y}',
     tileProvider: NonCachingNetworkTileProvider(),
     maxZoom: 25,
     maxNativeZoom: 25,
   ),
-  'Openstreetmap': TileLayerOptions(
+  DEFAULTMAP: TileLayerOptions(
     tms: false,
     subdomains: const ['a', 'b', 'c'],
     maxZoom: 19,

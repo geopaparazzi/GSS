@@ -163,8 +163,10 @@ public class GssServerApiJavalin implements Vars {
     private static User hasPermission( Context ctx ) throws Exception {
         try {
             String authHeader = ctx.req.getHeader(AUTHORIZATION); // $NON-NLS-1$
+            KukuratusLogger.logDebug("HAS_PERMISSION", "Checking Auth: " + authHeader);
             String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
             User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
+            KukuratusLogger.logDebug("HAS_PERMISSION", "Checked and found user: " + user);
             return user;
         } catch (Exception e) {
             KukuratusLogger.logError("GssServerApi#hasPermission", e);
@@ -342,11 +344,14 @@ public class GssServerApiJavalin implements Vars {
                                 UploadedFile thumbFile = ctx
                                         .uploadedFile(TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
 
-                                byte[] imageData = getByteArray(imageFile.getContent()); // (byte[]) partData.get(
-                                // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" + imageIdString);
+                                byte[] imageData = getByteArray(imageFile.getContent()); // (byte[])
+                                                                                         // partData.get(
+                                // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_IMAGE + "_" +
+                                // imageIdString);
                                 byte[] thumbData = getByteArray(thumbFile.getContent());
                                 // (byte[]) partData.get(
-                                // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" + imageIdString);
+                                // TABLE_IMAGE_DATA + "_" + IMAGESDATA_COLUMN_THUMBNAIL + "_" +
+                                // imageIdString);
                                 ImageData imgData = new ImageData(imageData, gpapUser);
                                 imageDataDao.create(imgData);
                                 Point imgPoint = gf.createPoint(new Coordinate(lon, lat));
@@ -414,14 +419,12 @@ public class GssServerApiJavalin implements Vars {
                         double pLon = 0;
                         double pAltim = 0;
 
-                        try {
+                        if (pointObj.has(LOGSDATA_COLUMN_LAT_FILTERED) && pointObj.has(LOGSDATA_COLUMN_LON_FILTERED)
+                                && pointObj.has(LOGSDATA_COLUMN_ALTIM)) {
                             pLat = pointObj.getDouble(LOGSDATA_COLUMN_LAT_FILTERED);
                             pLon = pointObj.getDouble(LOGSDATA_COLUMN_LON_FILTERED);
                             pAltim = pointObj.getDouble(LOGSDATA_COLUMN_ALTIM);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        if (pLat == 0 && pLon == 0 && pAltim == 0) {
+                        } else {
                             // then use the standard
                             pLat = pointObj.getDouble(LOGSDATA_COLUMN_LAT);
                             pLon = pointObj.getDouble(LOGSDATA_COLUMN_LON);
@@ -786,6 +789,7 @@ public class GssServerApiJavalin implements Vars {
 
         app.get(ROUTES_LOGIN, ctx -> {
             try {
+                KukuratusLogger.logDebug(ROUTES_LOGIN, getRequestLogString(ctx, null));
                 User user = hasPermission(ctx);
                 KukuratusLogger.logDebug(ROUTES_LOGIN, getRequestLogString(ctx, user));
                 if (user != null) {
@@ -795,7 +799,7 @@ public class GssServerApiJavalin implements Vars {
                     response.put(KEY_ISADMIN, admin);
 
                     // also get last used map background and map position
-                    String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Mapsforge", user.getUniqueName());
+                    String baseMap = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Openstreetmap", user.getUniqueName());
                     response.put(KEY_BASEMAP, baseMap);
                     String xyz = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0.0;0.0;6", user.getUniqueName());
                     response.put(KEY_MAPCENTER, xyz);
@@ -856,7 +860,8 @@ public class GssServerApiJavalin implements Vars {
                 if (user != null) {
                     String type = ctx.pathParam(":type");
                     if (type.equals(KEY_BASEMAP)) {
-                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "mapsforge", user.getUniqueName());
+                        String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_BASEMAP, "Openstreetmap",
+                                user.getUniqueName());
                         ctx.result(setting);
                     } else if (type.equals(KEY_MAPCENTER)) {
                         String setting = RegistryHandler.INSTANCE.getSettingByKey(KEY_MAPCENTER, "0;0;6", user.getUniqueName());

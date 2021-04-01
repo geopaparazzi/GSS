@@ -142,7 +142,7 @@ class _MainMapViewState extends State<MainMapView>
                   onPointerUp: (details) {
                     mapPointers--;
                     if (mapPointers == 0) {
-                      print("onMoveEnd");
+                      // print("onMoveEnd");
                       var bounds = _mapController.bounds;
                       mapstateModel.currentMapBounds = bounds;
                       Provider.of<AttributesTableStateModel>(context,

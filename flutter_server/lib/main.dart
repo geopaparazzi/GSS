@@ -129,8 +129,8 @@ class _MainPageState extends State<MainPage> {
           String user = userNameController.text;
           String password = passwordController.text;
           var loginOk = await SmashSession.login(user, password);
-          if (!loginOk) {
-            _errortext = "The used credentials are wrong.";
+          if (loginOk != null) {
+            _errortext = loginOk;
           }
           setState(() {});
         },

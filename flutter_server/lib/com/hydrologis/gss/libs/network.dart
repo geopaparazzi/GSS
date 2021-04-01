@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:html';
 import 'dart:typed_data';
-import 'package:dio/dio.dart';
 
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
-import 'package:smashlibs/smashlibs.dart';
+
+const NETWORKERROR_PREFIX = "ERROR:";
 
 const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
@@ -95,30 +95,24 @@ class ServerApi {
     }
   }
 
+  /// Check credentials with server call.
+  ///
+  /// Returns a string starting with ERROR if problems arised.
   static Future<String> login(String user, String pwd) async {
     String apiCall = "$API_LOGIN";
 
     Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-    try {
-      Dio dio = NetworkHelper.getNewDioInstance(allowSelfCert: true);
-      var response =
-          await dio.get(apiCall, options: Options(headers: requestHeaders));
-
-      if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        return null;
-      }
-    } catch (e, s) {
-      print("ERROR");
-      print(e);
-      print(s);
-      return null;
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return NETWORKERROR_PREFIX + request.responseText;
     }
   }
 
   static Future<String> logout(String user, String pwd,
-      {basemap = "Mapsforge", mapCenter = "0;0;6"}) async {
+      {basemap = "Openstreetmap", mapCenter = "0;0;6"}) async {
     String apiCall = "$API_USERSETTINGS";
 
     Map<String, String> formData = {};
