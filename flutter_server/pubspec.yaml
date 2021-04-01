@@ -17,9 +17,10 @@ dependencies:
   ###########################
 
   smashlibs:
-    path: ../../../SMASH/smashlibs/
-    # git:
-    #   url: https://github.com/moovida/smashlibs.git
+    #path: ../../../SMASH/smashlibs/
+    git:
+      url: https://github.com/moovida/smashlibs.git
+      ref: 152cd2a
 
   dart_hydrologis_utils: ^0.5.4
 
