@@ -52,7 +52,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
           showEditIcon: isAdmin,
           onTap: () async {
             if (isAdmin) {
-              var result = await showInputDialog(
+              var result = await SmashDialogs.showInputDialog(
                 context,
                 inputTitle,
                 "Username",
@@ -64,7 +64,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                 String error =
                     await ServerApi.updateOrAddWebuser(up[0], up[1], webuser);
                 if (error != null) {
-                  showErrorDialog(context, error);
+                  SmashDialogs.showErrorDialog(context, error);
                 } else {
                   setState(() {});
                 }
@@ -77,7 +77,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
           showEditIcon: isAdmin,
           onTap: () async {
             if (isAdmin) {
-              var result = await showInputDialog(
+              var result = await SmashDialogs.showInputDialog(
                 context,
                 inputTitle,
                 "Name",
@@ -89,7 +89,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                 String error =
                     await ServerApi.updateOrAddWebuser(up[0], up[1], webuser);
                 if (error != null) {
-                  showErrorDialog(context, error);
+                  SmashDialogs.showErrorDialog(context, error);
                 } else {
                   await getWebusers();
                 }
@@ -102,7 +102,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
           showEditIcon: isAdmin,
           onTap: () async {
             if (isAdmin) {
-              var result = await showInputDialog(
+              var result = await SmashDialogs.showInputDialog(
                 context,
                 inputTitle,
                 "Contact",
@@ -114,7 +114,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                 String error =
                     await ServerApi.updateOrAddWebuser(up[0], up[1], webuser);
                 if (error != null) {
-                  showErrorDialog(context, error);
+                  SmashDialogs.showErrorDialog(context, error);
                 } else {
                   await getWebusers();
                 }
@@ -134,7 +134,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                   tooltip: "Change password for $name.",
                   onPressed: () async {
                     if (isAdmin) {
-                      String result = await showInputDialog(
+                      String result = await SmashDialogs.showInputDialog(
                           context,
                           "CHANGE PASSWORD",
                           "Insert new password for user $name?",
@@ -145,7 +145,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                         String error = await ServerApi.updateOrAddWebuser(
                             up[0], up[1], webuser);
                         if (error != null) {
-                          showErrorDialog(context, error);
+                          SmashDialogs.showErrorDialog(context, error);
                         } else {
                           await getWebusers();
                         }
@@ -158,7 +158,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                   tooltip: "Delete user $name",
                   onPressed: () async {
                     if (isAdmin) {
-                      bool result = await showConfirmDialog(
+                      bool result = await SmashDialogs.showConfirmDialog(
                           context,
                           "DELETE USER",
                           "Are you sure you want to delete user $name?");
@@ -167,7 +167,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                         String error = await ServerApi.deleteWebuser(
                             up[0], up[1], webuser);
                         if (error != null) {
-                          showErrorDialog(context, error);
+                          SmashDialogs.showErrorDialog(context, error);
                         } else {
                           await getWebusers();
                         }
@@ -421,13 +421,13 @@ class _NewUserFormState extends State<NewUserForm> {
             ),
             ButtonBar(
               children: [
-                FlatButton(
+                TextButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
                   child: Text('CANCEL'),
                 ),
-                FlatButton(
+                TextButton(
                   onPressed: () async {
                     if (_formKey.currentState.validate()) {
                       dynamic webuser = {}
@@ -441,7 +441,7 @@ class _NewUserFormState extends State<NewUserForm> {
                       var error = await ServerApi.updateOrAddWebuser(
                           up[0], up[1], webuser);
                       if (error != null) {
-                        showWarningDialog(context, error);
+                        SmashDialogs.showWarningDialog(context, error);
                       } else {
                         Navigator.pop(context);
                       }

@@ -53,7 +53,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
           leading: Icon(
             SmashIcons.forPath(name),
             color: SmashColors.mainDecorations,
-            ),
+          ),
           title: SmashUI.normalText(name),
         );
       }).toList();
@@ -86,7 +86,9 @@ class _ProjectDataViewState extends State<ProjectDataView>
               ? IconButton(
                   icon: Icon(MdiIcons.trashCan, color: SmashColors.mainDanger),
                   onPressed: () async {
-                    var delete = await showConfirmDialog(context, "DELETE",
+                    var delete = await SmashDialogs.showConfirmDialog(
+                        context,
+                        "DELETE",
                         "Are you sure you want to remove the form: $name");
                     if (delete) {
                       var up = SmashSession.getSessionUser();
@@ -120,7 +122,6 @@ class _ProjectDataViewState extends State<ProjectDataView>
     );
 
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
         title: Center(
           child: Row(
@@ -190,7 +191,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
                         duration: Duration(seconds: 3),
                         // backgroundColor: MAIN_COLOR,
                       );
-                      _scaffoldKey.currentState.showSnackBar(snackBar);
+                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     });
                     reader.onLoadEnd.listen((e) async {
                       var result = reader.result;
@@ -220,7 +221,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
                             duration: Duration(seconds: 3),
                             // backgroundColor: MAIN_COLOR,
                           );
-                          _scaffoldKey.currentState.showSnackBar(snackBar);
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
                           init(context);
                         }).catchError((e) {
                           final snackBar = SnackBar(
@@ -228,7 +229,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
                             duration: Duration(seconds: 3),
                             backgroundColor: Colors.red,
                           );
-                          _scaffoldKey.currentState.showSnackBar(snackBar);
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
                         });
                       } catch (ex, stack) {
                         print(stack);
@@ -237,7 +238,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
                           duration: Duration(seconds: 3),
                           backgroundColor: Colors.red,
                         );
-                        _scaffoldKey.currentState.showSnackBar(snackBar);
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       }
                     });
                     reader.onError.listen((e) {
@@ -246,7 +247,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
                         duration: Duration(seconds: 3),
                         backgroundColor: Colors.red,
                       );
-                      _scaffoldKey.currentState.showSnackBar(snackBar);
+                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     });
                     if (file.name.endsWith("tags.json")) {
                       reader.readAsText(file);

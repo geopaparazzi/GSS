@@ -53,7 +53,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
             showEditIcon: isAdmin,
             onTap: () async {
               if (isAdmin) {
-                var result = await showInputDialog(
+                var result = await SmashDialogs.showInputDialog(
                   context,
                   inputTitle,
                   "Device id",
@@ -65,7 +65,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
                   String error = await ServerApi.updateOrAddSurveyor(
                       up[0], up[1], surveyor);
                   if (error != null) {
-                    showErrorDialog(context, error);
+                    SmashDialogs.showErrorDialog(context, error);
                   } else {
                     setState(() {});
                   }
@@ -78,7 +78,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
             showEditIcon: isAdmin,
             onTap: () async {
               if (isAdmin) {
-                var result = await showInputDialog(
+                var result = await SmashDialogs.showInputDialog(
                   context,
                   inputTitle,
                   "Name",
@@ -90,7 +90,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
                   String error = await ServerApi.updateOrAddSurveyor(
                       up[0], up[1], surveyor);
                   if (error != null) {
-                    showErrorDialog(context, error);
+                    SmashDialogs.showErrorDialog(context, error);
                   } else {
                     await getSurveyors();
                   }
@@ -103,7 +103,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
             showEditIcon: isAdmin,
             onTap: () async {
               if (isAdmin) {
-                var result = await showInputDialog(
+                var result = await SmashDialogs.showInputDialog(
                   context,
                   inputTitle,
                   "Contact",
@@ -115,7 +115,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
                   String error = await ServerApi.updateOrAddSurveyor(
                       up[0], up[1], surveyor);
                   if (error != null) {
-                    showErrorDialog(context, error);
+                    SmashDialogs.showErrorDialog(context, error);
                   } else {
                     await getSurveyors();
                   }
@@ -136,7 +136,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
                       String error = await ServerApi.updateOrAddSurveyor(
                           up[0], up[1], surveyor);
                       if (error != null) {
-                        showErrorDialog(context, error);
+                        SmashDialogs.showErrorDialog(context, error);
                       } else {
                         await getSurveyors();
                       }
@@ -262,7 +262,7 @@ class _SurveyorsViewState extends State<SurveyorsView> with AfterLayoutMixin {
                       final snackBar = SnackBar(
                           content: Text(
                               'Automatic registration of surveyor devices enabled for 30 seconds.'));
-                      Scaffold.of(context).showSnackBar(snackBar);
+                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     },
                     icon: Icon(MdiIcons.doorOpen),
                     tooltip: "Activate automatic registration for 30 seconds.",

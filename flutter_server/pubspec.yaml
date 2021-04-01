@@ -1,7 +1,8 @@
 name: flutter_server
 description: Geopaparazzi Survey Server.
 
-version: 3.0.0
+version: 3.1.0
+publish_to: none
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
@@ -16,11 +17,11 @@ dependencies:
   ###########################
 
   smashlibs:
-    # path: ../../../SMASH/smashlibs/
-    git:
-      url: https://github.com/moovida/smashlibs.git
+    path: ../../../SMASH/smashlibs/
+    # git:
+    #   url: https://github.com/moovida/smashlibs.git
 
-  dart_hydrologis_utils: ^0.4.1
+  dart_hydrologis_utils: ^0.5.4
 
   ###########################
   # OTHERS

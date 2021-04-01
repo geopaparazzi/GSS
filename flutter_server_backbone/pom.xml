@@ -2,13 +2,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.hydrologis</groupId>
 	<artifactId>gss-backbone</artifactId>
-	<version>3.0.0</version>
+	<version>3.1.0</version>
 	<name>Geopaparazzi Survey Server</name>
 
 
 	<properties>
-		<hortonmachine.version>0.9.13-SNAPSHOT</hortonmachine.version>
-		<ormlite.version>5.1</ormlite.version>
+		<hortonmachine.version>0.10.1</hortonmachine.version>
+		<javalin.version>3.13.4</javalin.version>
+		<ormlite.version>5.3</ormlite.version>
 		<mapsforge.version>0.9.1</mapsforge.version>
 
 
@@ -22,7 +23,7 @@
 		<dependency>
 			<groupId>io.javalin</groupId>
 			<artifactId>javalin</artifactId>
-			<version>3.9.0</version>
+			<version>${javalin.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>

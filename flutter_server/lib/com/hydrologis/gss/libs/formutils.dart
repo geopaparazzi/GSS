@@ -7,9 +7,57 @@ import 'package:smashlibs/smashlibs.dart';
 const IMAGE_ID_SEPARATOR = ";";
 
 class ServerFormHelper implements AFormhelper {
+  String _sectionName;
+  Map<String, dynamic> _sectionMap;
+  Widget _titleWidget;
+  int _id;
+  dynamic _position;
+
+  ServerFormHelper(this._id, this._sectionName, this._sectionMap,
+      this._titleWidget, this._position);
+
+  @override
+  Future<bool> init() async {
+    return true;
+  }
+
+  @override
+  bool hasForm() {
+    // notes always have forms
+    return true;
+  }
+
+  @override
+  Widget getFormTitleWidget() {
+    return _titleWidget;
+  }
+
+  @override
+  int getId() {
+    return _id;
+  }
+
+  @override
+  getPosition() {
+    return _position;
+  }
+
+  @override
+  Map<String, dynamic> getSectionMap() {
+    return _sectionMap;
+  }
+
+  @override
+  String getSectionName() {
+    return _sectionName;
+  }
+
   /// Get thumbnails from the database
   Future<List<Widget>> getThumbnailsFromDb(
-      BuildContext context, var itemMap, List<String> imageSplit) async {
+    BuildContext context,
+    Map<String, dynamic> itemMap,
+    List<String> imageSplit,
+  ) async {
     List<Widget> thumbList = [];
     String value = ""; //$NON-NLS-1$
     if (itemMap.containsKey(TAG_VALUE)) {
@@ -44,14 +92,13 @@ class ServerFormHelper implements AFormhelper {
   }
 
   @override
-  Future onSaveFunction(
-      BuildContext context, noteId, sectionName, sectionMap, _position) async {
+  Future onSaveFunction(BuildContext context) async {
     // saving serverside is not implemented yet.
   }
 
   @override
-  Future<String> takePictureForForms(BuildContext context, noteId, sectionN,
-      bool sectionMap, List<String> _position) async {
+  Future<String> takePictureForForms(
+      BuildContext context, bool fromGallery, List<String> _position) async {
     // Adding pictures serverside is nor implemented yet.
     return null;
   }

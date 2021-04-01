@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
@@ -34,7 +35,7 @@ import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 
 public class GssServerJavalin implements Vars {
-    private List<Class<?>> tableClasses = Arrays.asList(//
+    private List<Class< ? >> tableClasses = Arrays.asList(//
             GpapProject.class, //
             GpapUsers.class, //
             Notes.class, //
@@ -46,11 +47,11 @@ public class GssServerJavalin implements Vars {
 
     private ITilesGenerator mapsforgeTilesGenerator;
 
-    public void start(ASpatialDb db) throws Exception {
+    public void start( ASpatialDb db ) throws Exception {
         start(db, null, null);
     }
 
-    public void start(ASpatialDb db, String keyStorePath, String keyStorePassword) throws Exception {
+    public void start( ASpatialDb db, String keyStorePath, String keyStorePassword ) throws Exception {
 
         Javalin app = Javalin.create(config -> {
             config.enableCorsForAllOrigins();
@@ -64,11 +65,11 @@ public class GssServerJavalin implements Vars {
                     sslConnector.setPort(443);
                     ServerConnector connector = new ServerConnector(server);
                     connector.setPort(WEBAPP_PORT);
-                    server.setConnectors(new Connector[] { sslConnector, connector });
+                    server.setConnectors(new Connector[]{sslConnector, connector});
                 } else {
                     ServerConnector connector = new ServerConnector(server);
                     connector.setPort(WEBAPP_PORT);
-                    server.setConnectors(new Connector[] { connector });
+                    server.setConnectors(new Connector[]{connector});
                 }
                 return server;
             });
@@ -109,9 +110,9 @@ public class GssServerJavalin implements Vars {
     private void activateMapsforge() {
         try {
             File dataFolder = KukuratusWorkspace.getInstance().getDataFolder();
-            File[] mapfiles = dataFolder.listFiles(new FilenameFilter() {
+            File[] mapfiles = dataFolder.listFiles(new FilenameFilter(){
                 @Override
-                public boolean accept(File dir, String name) {
+                public boolean accept( File dir, String name ) {
                     return name.endsWith(".map"); //$NON-NLS-1$
                 }
             });
@@ -128,7 +129,7 @@ public class GssServerJavalin implements Vars {
 
     private void createTables() throws Exception {
         DatabaseHandler dbHandler = DatabaseHandler.instance();
-        for (Class<?> tClass : tableClasses) {
+        for( Class< ? > tClass : tableClasses ) {
             String tableName = DatabaseHandler.getTableName(tClass);
             if (dbHandler.getDb().hasTable(tableName)) {
                 KukuratusLogger.logDebug(this, "Table exists already: " + tableName); //$NON-NLS-1$
@@ -140,7 +141,7 @@ public class GssServerJavalin implements Vars {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main( String[] args ) throws Exception {
 
         if (args.length == 0) {
             System.err.println("The workspace folder needs to be supplied as argument.");
@@ -158,7 +159,7 @@ public class GssServerJavalin implements Vars {
         String mobilePwd = null;
         String keyStorePath = null;
         String postgresUrl = null;
-        for (int i = 1; i < args.length; i++) {
+        for( int i = 1; i < args.length; i++ ) {
             String arg = args[i];
             if (new File(arg).exists()) {
                 // assuming it is the keystore
@@ -173,8 +174,7 @@ public class GssServerJavalin implements Vars {
 
         Console console = System.console();
         if (console == null) {
-            System.out.println("Couldn't get Console instance");
-            System.exit(0);
+            System.err.println("WARNING: no console available. PostGIS mode won't work.");
         }
         ASpatialDb db = null;
         if (postgresUrl != null) {
@@ -229,8 +229,15 @@ public class GssServerJavalin implements Vars {
         String keyStorePassword = null;
         if (keyStorePath != null) {
             // ask for the password at startup
-            char[] pwdChars = console.readPassword("Please enter the keystore password: ");
-            keyStorePassword = new String(pwdChars);
+            if (console != null) {
+                char[] pwdChars = console.readPassword("Please enter the keystore password: ");
+                keyStorePassword = new String(pwdChars);
+            } else {
+                try (Scanner in = new Scanner(System.in)) {
+                    System.out.print("Please enter the keystore password: ");
+                    keyStorePassword = in.nextLine();
+                }
+            }
             if (keyStorePassword.trim().length() == 0) {
                 System.out.println("Disabling keystore use due to empty password.");
                 keyStorePassword = null;

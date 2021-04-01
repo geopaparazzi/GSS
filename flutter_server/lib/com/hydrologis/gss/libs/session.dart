@@ -7,27 +7,31 @@ import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 class SmashSession {
   static Future<bool> login(String user, String password) async {
     var responsJson = await ServerApi.login(user, password);
-    var jsonMap = JSON.jsonDecode(responsJson);
-    var hasPermission = jsonMap[KEY_HASPERMISSION];
-    if (hasPermission) {
-      setSessionUser(user, password);
-      var isAdmin = jsonMap[KEY_ISADMIN];
-      if (isAdmin != null) {
-        html.window.sessionStorage[KEY_ISADMIN] = "$isAdmin";
-      } else {
-        html.window.sessionStorage[KEY_ISADMIN] = "false";
-      }
+    if (responsJson != null) {
+      var jsonMap = JSON.jsonDecode(responsJson);
+      var hasPermission = jsonMap[KEY_HASPERMISSION];
+      if (hasPermission) {
+        setSessionUser(user, password);
+        var isAdmin = jsonMap[KEY_ISADMIN];
+        if (isAdmin != null) {
+          html.window.sessionStorage[KEY_ISADMIN] = "$isAdmin";
+        } else {
+          html.window.sessionStorage[KEY_ISADMIN] = "false";
+        }
 
-      var lastBasemap = jsonMap[KEY_BASEMAP];
-      if (lastBasemap != null) {
-        html.window.sessionStorage[KEY_BASEMAP] = "$lastBasemap";
+        var lastBasemap = jsonMap[KEY_BASEMAP];
+        if (lastBasemap != null) {
+          html.window.sessionStorage[KEY_BASEMAP] = "$lastBasemap";
+        }
+        var lastMapcenter = jsonMap[KEY_MAPCENTER];
+        if (lastMapcenter != null) {
+          html.window.sessionStorage[KEY_MAPCENTER] = "$lastMapcenter";
+        }
       }
-      var lastMapcenter = jsonMap[KEY_MAPCENTER];
-      if (lastMapcenter != null) {
-        html.window.sessionStorage[KEY_MAPCENTER] = "$lastMapcenter";
-      }
+      return hasPermission;
+    } else {
+      return false;
     }
-    return hasPermission;
   }
 
   static bool isLogged() {

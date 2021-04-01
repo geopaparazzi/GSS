@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/mapview.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:provider/provider.dart';

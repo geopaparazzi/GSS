@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:after_layout/after_layout.dart';
-import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
+import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart'
+    hide TextStyle;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -334,6 +335,14 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
     var sectionMap = jsonDecode(form);
     var sectionName = sectionMap[ATTR_SECTIONNAME];
 
+    var titleWidget = SmashUI.titleText(
+      sectionName,
+      color: SmashColors.mainBackground,
+      bold: true,
+    );
+    var formHelper =
+        ServerFormHelper(_current, sectionName, sectionMap, titleWidget, p);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -347,16 +356,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
         ),
         Expanded(
           child: MasterDetailPage(
-            sectionMap,
-            SmashUI.titleText(
-              sectionName,
-              color: SmashColors.mainBackground,
-              bold: true,
-            ),
-            sectionName,
-            p,
-            _current,
-            ServerFormHelper(),
+            formHelper,
             doScaffold: false,
             isReadOnly: true,
           ),
@@ -764,16 +764,16 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
           ButtonBar(
             alignment: MainAxisAlignment.spaceEvenly,
             children: [
-              FlatButton(
+              TextButton(
                 child: const Text('CANCEL'),
                 onPressed: () {
                   Navigator.pop(context);
                 },
               ),
-              FlatButton(
+              TextButton(
                 child: const Text('ADD CURRENT'),
                 onPressed: () async {
-                  String name = await showInputDialog(
+                  String name = await SmashDialogs.showInputDialog(
                       context, "BOOKMARK", "Enter a name for the bookmark.");
                   if (name.trim().isNotEmpty) {
                     var b = mapstateModel.currentMapBounds;
