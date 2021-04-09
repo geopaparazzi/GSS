@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/about.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/logview.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/projectdata.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/surveyors_view.dart';
@@ -479,21 +480,23 @@ class _MainMapViewState extends State<MainMapView>
             //     },
             //   ),
             // ),
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: ListTile(
-            //     leading: new Icon(
-            //       MdiIcons.bug,
-            //       color: SmashColors.mainDecorations,
-            //       size: iconSize,
-            //     ),
-            //     title: Text("Log"),
-            //     onTap: () {
-            //       // TODO
-            //       Navigator.of(context).pop();
-            //     },
-            //   ),
-            // ),
+            if (SmashSession.isAdmin())
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  leading: new Icon(
+                    MdiIcons.bug,
+                    color: SmashColors.mainDecorations,
+                    size: iconSize,
+                  ),
+                  title: Text("Log"),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => LogView()));
+                  },
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: ListTile(

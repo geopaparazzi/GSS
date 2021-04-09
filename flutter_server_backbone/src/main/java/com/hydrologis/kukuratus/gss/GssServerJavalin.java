@@ -98,6 +98,7 @@ public class GssServerJavalin implements Vars {
         GssServerApiJavalin.addListByTypeRoute(app);
         GssServerApiJavalin.addUpdateByTypeRoute(app);
         GssServerApiJavalin.addDeleteByTypeRoute(app);
+        GssServerApiJavalin.addLogRoute(app);
 
         app.get("/", ctx -> ctx.redirect("index.html"));
         // ROUTES END

@@ -57,6 +57,10 @@ public class ServletUtils {
     public static final String TAGS = "tags"; //$NON-NLS-1$
     public static final String TAG = "tag"; //$NON-NLS-1$
     public static final String TAGID = "tagid"; //$NON-NLS-1$
+    public static final String LOG = "log"; //$NON-NLS-1$
+    public static final String LOGTS = "ts"; //$NON-NLS-1$
+    public static final String LOGTYPE = "type"; //$NON-NLS-1$
+    public static final String LOGMSG = "msg"; //$NON-NLS-1$
 
     private static Optional<File> basemapsFolder;
     private static Optional<File> projectsFolder;
@@ -120,7 +124,7 @@ public class ServletUtils {
             }
         }
 
-        debug("Connection from: " + gpapUser.name + tagPart); //$NON-NLS-1$
+        logAccess("Connection from: " + gpapUser.name + tagPart); //$NON-NLS-1$
         return deviceId;
     }
 

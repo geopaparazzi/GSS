@@ -13,6 +13,7 @@ const doLocal = String.fromEnvironment('DOLOCAL', defaultValue: 'false');
 const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8080" : "";
 
 const API_DATA = "$WEBAPP_URL/data";
+const API_LOG = "$WEBAPP_URL/log";
 const API_LIST = "$WEBAPP_URL/list";
 const API_UPDATE = "$WEBAPP_URL/update";
 const API_DELETE = "$WEBAPP_URL/delete";
@@ -33,11 +34,30 @@ const API_DATA_DOWNLOAD_PATH = "$WEBAPP_URL/datadownload";
 const API_DATA_UPLOAD_PATH = "$WEBAPP_URL/dataupload";
 const API_TAGS_DOWNLOAD_PATH = "$WEBAPP_URL/tagsdownload";
 
+const LOG = "log";
+const LOGTS = "ts";
+const LOGTYPE = "type";
+const LOGMSG = "msg";
+
 class ServerApi {
   static Map<String, String> getAuthRequestHeader(String user, String pwd) {
     String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
     var requestHeaders = {"authorization": basicAuth};
     return requestHeaders;
+  }
+
+  static Future<String> getLog(String user, String pwd,
+      {String type = "ALL", int limit = 1000}) async {
+    String apiCall = "$API_LOG/$type/$limit";
+
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
   }
 
   static Future<String> getData(String user, String pwd,

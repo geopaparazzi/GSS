@@ -19,7 +19,6 @@ class ProjectDataView extends StatefulWidget {
 
 class _ProjectDataViewState extends State<ProjectDataView>
     with AfterLayoutMixin {
-  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<String> projects;
   List<String> basemaps;
   List<String> forms;
@@ -71,6 +70,7 @@ class _ProjectDataViewState extends State<ProjectDataView>
         );
       }).toList();
     }
+
     List<Widget> f = [];
     if (forms != null) {
       for (var i = 0; i < forms.length; i++) {

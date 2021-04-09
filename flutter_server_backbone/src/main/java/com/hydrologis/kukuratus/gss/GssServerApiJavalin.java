@@ -1,5 +1,8 @@
 package com.hydrologis.kukuratus.gss;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -10,12 +13,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.awt.image.BufferedImage;
-import java.awt.Color;
-import java.awt.Graphics2D;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,23 @@ import javax.imageio.ImageIO;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+
+import org.hortonmachine.dbs.compat.ASpatialDb;
+import org.hortonmachine.dbs.compat.objects.QueryResult;
+import org.hortonmachine.dbs.log.EMessageType;
+import org.hortonmachine.dbs.log.Logger;
+import org.hortonmachine.dbs.log.Message;
+import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
+import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
+import org.joda.time.DateTime;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Point;
 
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
@@ -49,27 +67,16 @@ import com.hydrologis.kukuratus.utils.KukuratusSession;
 import com.hydrologis.kukuratus.utils.KukuratusStatus;
 import com.hydrologis.kukuratus.utils.Messages;
 import com.hydrologis.kukuratus.utils.NetworkUtilities;
+import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
 import com.j256.ormlite.dao.Dao;
-
-import org.hortonmachine.dbs.compat.ASpatialDb;
-import org.hortonmachine.dbs.compat.objects.QueryResult;
-import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
-import org.hortonmachine.gears.libs.modules.HMConstants;
-import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
-import org.joda.time.DateTime;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.Point;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
 
 public class GssServerApiJavalin implements Vars {
+
+    static final String ROUTES_LOG = "/log/:type/:limit";
 
     static final String ROUTES_DELETE_TYPE = "/delete/:type";
     static final String ROUTES_UPDATE_TYPE = "/update/:type";
@@ -163,10 +170,10 @@ public class GssServerApiJavalin implements Vars {
     private static User hasPermission( Context ctx ) throws Exception {
         try {
             String authHeader = ctx.req.getHeader(AUTHORIZATION); // $NON-NLS-1$
-            KukuratusLogger.logDebug("HAS_PERMISSION", "Checking Auth: " + authHeader);
+//            KukuratusLogger.logDebug("HAS_PERMISSION", "Checking Auth: " + authHeader);
             String[] userPwd = NetworkUtilities.getUserPwdWithBasicAuthentication(authHeader);
             User user = RegistryHandler.INSTANCE.isLoginOk(userPwd[0], userPwd[1]);
-            KukuratusLogger.logDebug("HAS_PERMISSION", "Checked and found user: " + user);
+//            KukuratusLogger.logDebug("HAS_PERMISSION", "Checked and found user: " + user);
             return user;
         } catch (Exception e) {
             KukuratusLogger.logError("GssServerApi#hasPermission", e);
@@ -476,7 +483,7 @@ public class GssServerApiJavalin implements Vars {
     public static void addClientProjectDataUploadRoute( Javalin app ) {
         app.post(ROUTES_PROJECTDATA_UPLOAD, ctx -> {
             User validUser = hasPermission(ctx);
-            KukuratusLogger.logDebug(ROUTES_PROJECTDATA_UPLOAD, getRequestLogString(ctx, validUser));
+            KukuratusLogger.logAccess(ROUTES_PROJECTDATA_UPLOAD, getRequestLogString(ctx, validUser));
             if (validUser != null) {
                 DatabaseHandler dbHandler = DatabaseHandler.instance();
                 try {
@@ -560,7 +567,7 @@ public class GssServerApiJavalin implements Vars {
             try {
 
                 User validUser = hasPermission(ctx);
-                KukuratusLogger.logDebug(ROUTES_GETDATA, getRequestLogString(ctx, validUser));
+                KukuratusLogger.logAccess(ROUTES_GETDATA, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
                     String surveyors = ctx.formParam(SURVEYORS);
                     String projects = ctx.formParam(PROJECTS);
@@ -614,12 +621,62 @@ public class GssServerApiJavalin implements Vars {
         });
     }
 
+    public static void addLogRoute( Javalin app ) {
+
+        app.get(ROUTES_LOG, ctx -> {
+            try {
+
+                User validUser = hasPermission(ctx);
+                KukuratusLogger.logAccess(ROUTES_LOG, getRequestLogString(ctx, validUser));
+                if (validUser != null) {
+                    String type = ctx.pathParam(":type");
+                    EMessageType messageType = EMessageType.ALL;
+                    if (type != null && type.length() > 0)
+                        messageType = EMessageType.valueOf(type);
+
+                    String limit = ctx.pathParam(":limit");
+                    long lim = 1000;
+                    if (limit != null) {
+                        try {
+                            lim = Long.parseLong(limit);
+                        } catch (Exception e) {
+                            // ignore
+                        }
+                    }
+
+                    JSONObject root = new JSONObject();
+
+                    Logger logDb = KukuratusWorkspace.getInstance().getLogDb();
+                    List<Message> messagesList = logDb.getFilteredList(messageType, null, null, lim);
+
+                    JSONArray logsArray = new JSONArray();
+                    root.put(ServletUtils.LOG, logsArray); // $NON-NLS-1$
+                    SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+                    for( Message msg : messagesList ) {
+                        JSONObject msgObj = new JSONObject();
+                        msgObj.put(ServletUtils.LOGTS, f.format(new Date(msg.ts)));
+                        msgObj.put(ServletUtils.LOGTYPE, EMessageType.fromCode(msg.type).name());
+                        msgObj.put(ServletUtils.LOGMSG, msg.msg);
+                        logsArray.put(msgObj);
+                    }
+
+                    ctx.result(root.toString());
+                } else {
+                    sendNoPermission(ctx);
+                }
+            } catch (Exception e) {
+                sendServerError(ctx, ROUTES_LOG, e);
+            }
+        });
+    }
+
     public static void addGetDataByTypeRoute( Javalin app ) {
 
         // get data from the server by type and the primary key id
         app.get(ROUTES_GETDATA_BY_TYPE, ctx -> {
             User validUser = hasPermission(ctx);
-            KukuratusLogger.logDebug(ROUTES_GETDATA_BY_TYPE, getRequestLogString(ctx, validUser));
+            KukuratusLogger.logAccess(ROUTES_GETDATA_BY_TYPE, getRequestLogString(ctx, validUser));
             if (validUser != null) {
                 String type = ctx.pathParam(":type");
                 String id = ctx.pathParam(":id");
@@ -665,7 +722,7 @@ public class GssServerApiJavalin implements Vars {
     public static void addClientGetBaseDataRoute( Javalin app ) {
         app.get(ROUTES_GET_BASEDATA, ctx -> {
             if (hasPermissionDoubleCheck(ctx, ROUTES_GET_BASEDATA)) {
-                KukuratusLogger.logDebug(ROUTES_GET_BASEDATA, getRequestLogString(ctx, null));
+                KukuratusLogger.logAccess(ROUTES_GET_BASEDATA, getRequestLogString(ctx, null));
                 String fileName = ctx.queryParam("name");
                 try {
                     if (fileName == null) {
@@ -704,7 +761,7 @@ public class GssServerApiJavalin implements Vars {
     public static void addClientGetFormsRoute( Javalin app ) {
         app.get(ROUTES_GET_FORMS, ctx -> {
             if (hasPermissionDoubleCheck(ctx, ROUTES_GET_FORMS)) {
-                KukuratusLogger.logDebug(ROUTES_GET_FORMS, getRequestLogString(ctx, null));
+                KukuratusLogger.logAccess(ROUTES_GET_FORMS, getRequestLogString(ctx, null));
 
                 Dao<Forms, ? > formsDao = DatabaseHandler.instance().getDao(Forms.class);
                 String tagName = ctx.queryParam("name");
@@ -740,7 +797,7 @@ public class GssServerApiJavalin implements Vars {
             // User validUser = hasPermission(req);
             // if (validUser != null) {
             String imageDataId = ctx.pathParam(":dataid");
-            KukuratusLogger.logDebug(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
+            KukuratusLogger.logAccess(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
 
             try {
                 long imageDataIdLong = Long.parseLong(imageDataId);
@@ -789,9 +846,9 @@ public class GssServerApiJavalin implements Vars {
 
         app.get(ROUTES_LOGIN, ctx -> {
             try {
-                KukuratusLogger.logDebug(ROUTES_LOGIN, getRequestLogString(ctx, null));
+                KukuratusLogger.logAccess(ROUTES_LOGIN, getRequestLogString(ctx, null));
                 User user = hasPermission(ctx);
-                KukuratusLogger.logDebug(ROUTES_LOGIN, getRequestLogString(ctx, user));
+                KukuratusLogger.logAccess(ROUTES_LOGIN, getRequestLogString(ctx, user));
                 if (user != null) {
                     boolean admin = RegistryHandler.INSTANCE.isAdmin(user);
                     JSONObject response = new JSONObject();
@@ -821,7 +878,7 @@ public class GssServerApiJavalin implements Vars {
         app.post(ROUTES_USERSETTINGS, ctx -> {
             try {
                 User user = hasPermission(ctx);
-                KukuratusLogger.logDebug(ROUTES_USERSETTINGS, getRequestLogString(ctx, user));
+                KukuratusLogger.logAccess(ROUTES_USERSETTINGS, getRequestLogString(ctx, user));
                 if (user != null) {
                     String baseMap = ctx.formParam(KEY_BASEMAP);
                     if (baseMap != null) {
@@ -856,7 +913,7 @@ public class GssServerApiJavalin implements Vars {
         app.get(ROUTES_USERSETTINGS_BY_TYPE, ctx -> {
             try {
                 User user = hasPermission(ctx);
-                KukuratusLogger.logDebug(ROUTES_USERSETTINGS, getRequestLogString(ctx, user));
+                KukuratusLogger.logAccess(ROUTES_USERSETTINGS_BY_TYPE, getRequestLogString(ctx, user));
                 if (user != null) {
                     String type = ctx.pathParam(":type");
                     if (type.equals(KEY_BASEMAP)) {
@@ -885,7 +942,7 @@ public class GssServerApiJavalin implements Vars {
         app.get(ROUTES_LIST_TYPE, ctx -> {
             try {
                 User validUser = hasPermission(ctx);
-                KukuratusLogger.logDebug(ROUTES_LIST_TYPE, getRequestLogString(ctx, validUser));
+                KukuratusLogger.logAccess(ROUTES_LIST_TYPE, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
                     String type = ctx.pathParam(":type");
                     if (type.equals(SURVEYORS)) {
@@ -940,7 +997,7 @@ public class GssServerApiJavalin implements Vars {
         app.post(ROUTES_UPDATE_TYPE, ctx -> {
             try {
                 User validUser = hasPermission(ctx);
-                KukuratusLogger.logDebug(ROUTES_UPDATE_TYPE, getRequestLogString(ctx, validUser));
+                KukuratusLogger.logAccess(ROUTES_UPDATE_TYPE, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
                     String type = ctx.pathParam(":type");
                     if (type.equals(SURVEYORS)) {
@@ -1030,7 +1087,7 @@ public class GssServerApiJavalin implements Vars {
         app.post(ROUTES_DELETE_TYPE, ctx -> {
             try {
                 User validUser = hasPermission(ctx);
-                KukuratusLogger.logDebug(ROUTES_DELETE_TYPE, getRequestLogString(ctx, validUser));
+                KukuratusLogger.logAccess(ROUTES_DELETE_TYPE, getRequestLogString(ctx, validUser));
                 if (validUser != null) {
                     String type = ctx.pathParam(":type");
                     if (type.equals(WEBUSERS)) {
