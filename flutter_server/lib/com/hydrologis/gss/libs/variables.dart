@@ -75,6 +75,8 @@ const WEBUSER_EMAIL_FIELD_NAME = "email"; //$NON-NLS-1$
 const WEBUSER_PASSWORD_FIELD_NAME = "password"; //$NON-NLS-1$
 const WEBUSER_GROUP_FIELD_NAME = "group_id"; //$NON-NLS-1$
 
+const GPSLOGS = "gpslogs"; //$NON-NLS-1$
+
 const ADMINGROUP = "administrators"; //$NON-NLS-1$
 const USERGROUP = "users"; //$NON-NLS-1$
 

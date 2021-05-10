@@ -1116,6 +1116,37 @@ public class GssServerApiJavalin implements Vars {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
                         ctx.status(ks.getCode());
                         ctx.result(ks.toJson());
+                    } else if (type.equals(GPSLOGS)) {
+                        String idStr = ctx.formParam(ID);
+                        if (idStr != null) {
+                            long id = Long.parseLong(idStr);
+                            Dao<GpsLogs, ? > logDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+                            Dao<GpsLogsData, ? > logDataDao = DatabaseHandler.instance().getDao(GpsLogsData.class);
+
+                            GpsLogsData dataToRemove = logDataDao.queryBuilder().where().eq(GpsLogsData.GPSLOGS_FIELD_NAME, id)
+                                    .queryForFirst();
+                            int deleted = logDataDao.delete(dataToRemove);
+                            boolean error = false;
+                            if (deleted == 1) {
+                                GpsLogs logToRemove = new GpsLogs(id);
+                                deleted = logDao.delete(logToRemove);
+                                if (deleted != 1) {
+                                    error = true;
+                                }
+                            } else {
+                                error = true;
+                            }
+                            if(error) {
+                                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR,
+                                        "An error occurred while deleting the gps log.");
+                                ctx.status(ks.getCode());
+                                ctx.result(ks.toJson());
+                                return;
+                            }
+                        }
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     } else {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
                                 "Type not recognised: " + type);

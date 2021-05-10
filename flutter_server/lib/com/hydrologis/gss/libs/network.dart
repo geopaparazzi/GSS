@@ -20,6 +20,7 @@ const API_DELETE = "$WEBAPP_URL/delete";
 const API_UPDATE_SURVEYOR = "$API_UPDATE/surveyors";
 const API_UPDATE_WEBUSER = "$API_UPDATE/webusers";
 const API_DELETE_WEBUSER = "$API_DELETE/webusers";
+const API_DELETE_GPSLOG = "$API_DELETE/gpslogs";
 const API_DELETE_FORMS = "$API_DELETE/forms";
 const API_LIST_SURVEYORS = "$API_LIST/surveyors";
 const API_LIST_WEBUSERS = "$API_LIST/webusers";
@@ -321,6 +322,21 @@ class ServerApi {
     Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
     HttpRequest request = await HttpRequest.postFormData(
         API_DELETE_WEBUSER, formData,
+        requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return null;
+    } else {
+      return request.response;
+    }
+  }
+
+  static Future<String> deleteGpsLog(
+      String user, String pwd, int gpsLogId) async {
+    Map<String, String> formData = {ID: gpsLogId.toString()};
+
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.postFormData(
+        API_DELETE_GPSLOG, formData,
         requestHeaders: requestHeaders);
     if (request.status == 200) {
       return null;

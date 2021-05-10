@@ -24,6 +24,8 @@ public interface Vars {
     static final String PROJECTS = "projects";
     static final String WEBUSERS = "webusers";
     static final String FORMS = "forms";
+    static final String GPSLOGS = "gpslogs";
+    static final String ID = "id";
 
     static final String AUTHORIZATION = "Authorization";
 

@@ -10,6 +10,7 @@ import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:latlong/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
+import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class FilterStateModel extends ChangeNotifier {
   List<String> _surveyors;
@@ -93,7 +94,7 @@ class AttributesTableStateModel extends ChangeNotifier {
 }
 
 class MapstateModel extends ChangeNotifier {
-  PolylineLayerOptions logs;
+  TappablePolylineLayerOptions logs;
   List<Marker> mapMarkers = [];
   List<Attributes> attributes = [];
   LatLngBounds dataBounds = LatLngBounds();
@@ -126,6 +127,7 @@ class MapstateModel extends ChangeNotifier {
 
     var userPwd = SmashSession.getSessionUser();
 
+    // GET DATA FROM SERVER
     var data = await ServerApi.getData(
       userPwd[0],
       userPwd[1],
@@ -138,38 +140,51 @@ class MapstateModel extends ChangeNotifier {
 
     dataBounds = LatLngBounds();
 
+    // LOAD LOG DATA
     // TODO find a fix for logs
-  List<dynamic> logsList = json[LOGS];
-  if (logsList != null) {
-    List<Polyline> lines = [];
-    for (int i = 0; i < logsList.length; i++) {
-      dynamic logItem = logsList[i];
-//        var id = logItem[ID];
-      // var name = logItem[NAME];
-      var colorHex = logItem[COLOR];
-      var width = logItem[WIDTH];
-      var coords = logItem[COORDS];
+    List<dynamic> logsList = json[LOGS];
+    if (logsList != null) {
+      List<TaggedPolyline> lines = [];
+      for (int i = 0; i < logsList.length; i++) {
+        dynamic logItem = logsList[i];
+        var id = logItem[ID];
+        var name = logItem[NAME];
+        var colorHex = logItem[COLOR];
+        var width = logItem[WIDTH];
+        var coords = logItem[COORDS];
+        var startts = logItem[STARTTS];
+        var endts = logItem[ENDTS];
 
-      List<LatLng> points = [];
-      for (int j = 0; j < coords.length; j++) {
-        var coord = coords[j];
-        var latLng = LatLng(coord[Y], coord[X]);
-        dataBounds.extend(latLng);
-        points.add(latLng);
+        List<LatLng> points = [];
+        for (int j = 0; j < coords.length; j++) {
+          var coord = coords[j];
+          var latLng = LatLng(coord[Y], coord[X]);
+          dataBounds.extend(latLng);
+          points.add(latLng);
+        }
+
+        lines.add(
+          TaggedPolyline(
+            tag: "$id@$name@$startts@$endts",
+            points: points,
+            strokeWidth: width,
+            color: ColorExt(colorHex),
+          ),
+        );
       }
-
-      lines.add(Polyline(
-          points: points, strokeWidth: width, color: ColorExt(colorHex)));
+      logs = TappablePolylineLayerOptions(
+        polylines: lines,
+        polylineCulling: true,
+        onTap: (TaggedPolyline polyline) =>
+            openLogDialog(context, polyline.tag),
+        // onMiss: () => print("No polyline tapped"),
+      );
     }
-    logs = PolylineLayerOptions(
-      polylines: lines,
-      polylineCulling: true,
-    );
-  }
 
     List<Marker> markers = <Marker>[];
     List<Attributes> attributesList = [];
 
+    // LOAD SIMPLE IMAGES
     List<dynamic> imagesList = json[IMAGES];
     for (int i = 0; i < imagesList.length; i++) {
       dynamic imageItem = imagesList[i];
@@ -203,17 +218,16 @@ class MapstateModel extends ChangeNotifier {
         ..user = surveyor);
     }
 
+    // LOAD SIMPLE NOTES
     List<dynamic> simpleNotesList = json[NOTES];
     for (int i = 0; i < simpleNotesList.length; i++) {
       dynamic noteItem = simpleNotesList[i];
-//      print(noteItem);
       var id = noteItem[ID];
       var name = noteItem[NAME];
       var ts = noteItem[TS];
       var x = noteItem[X];
       var y = noteItem[Y];
       var latLng = LatLng(y, x);
-//      print("$latLng : $name");
       dataBounds.extend(latLng);
 
       var marker = noteItem[MARKER];
@@ -240,20 +254,18 @@ class MapstateModel extends ChangeNotifier {
         ..user = surveyor);
     }
 
+    // LOAD FORM NOTES
     List<dynamic> formNotesList = json[FORMS];
     for (int i = 0; i < formNotesList.length; i++) {
       dynamic formItem = formNotesList[i];
-//      print(formItem);
       var noteId = formItem[ID];
       var name = formItem[NAME];
       var form = formItem[FORM];
-      name = FormUtilities.getFormItemLabel(form, name); 
+      name = FormUtilities.getFormItemLabel(form, name);
       var ts = formItem[TS];
       var x = formItem[X];
       var y = formItem[Y];
       var latLng = LatLng(y, x);
-//      print("$latLng : $name");
-//      print(latLng);
       dataBounds.extend(latLng);
 
       var marker = formItem[MARKER];

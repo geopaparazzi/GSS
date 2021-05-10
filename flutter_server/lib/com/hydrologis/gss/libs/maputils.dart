@@ -219,6 +219,79 @@ openNoteDialog(BuildContext context, int noteId) async {
       context: context, builder: (BuildContext context) => openNoteDialog);
 }
 
+openLogDialog(BuildContext context, String logInfo) async {
+  var split = logInfo.split("@");
+  var idStr = split[0];
+  var map = {
+    "ID": idStr,
+    "Name": split[1],
+    "Start": TimeUtilities.ISO8601_TS_FORMATTER
+        .format(DateTime.fromMillisecondsSinceEpoch(int.parse(split[2]))),
+    "End": TimeUtilities.ISO8601_TS_FORMATTER
+        .format(DateTime.fromMillisecondsSinceEpoch(int.parse(split[3]))),
+    // "Project": project,
+    // "Surveyor": surveyor,
+  };
+
+  var id = int.parse(idStr);
+  var widget;
+  var h = 300.0;
+  var w = 400.0;
+
+  widget = Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SmashUI.titleText(
+          split[1],
+          textAlign: TextAlign.center,
+          useColor: true,
+        ),
+      ),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Center(child: TableUtilities.fromMap(map)),
+        ),
+      ),
+      if (SmashSession.isAdmin())
+        Align(
+          alignment: Alignment.bottomRight,
+          child: IconButton(
+              tooltip: "Delete this log from the database.",
+              icon: Icon(SmashIcons.deleteIcon),
+              color: SmashColors.mainDanger,
+              onPressed: () async {
+                Navigator.pop(context);
+                var userPwd = SmashSession.getSessionUser();
+                String response =
+                    await ServerApi.deleteGpsLog(userPwd[0], userPwd[1], id);
+                if (response != null) {
+                  SmashDialogs.showErrorDialog(context, response);
+                } else {
+                  MapstateModel mapstateModel =
+                      Provider.of<MapstateModel>(context, listen: false);
+                  await mapstateModel.getData(context);
+                  mapstateModel.reloadMap();
+                }
+              }),
+        ),
+    ],
+  );
+
+  Dialog openLogDialog = Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+    child: Container(
+      height: h,
+      width: w,
+      child: Center(child: widget),
+    ),
+  );
+  await showDialog(
+      context: context, builder: (BuildContext context) => openLogDialog);
+}
+
 openImageDialog(BuildContext context, String name, int imageId) {
   var h = MediaQuery.of(context).size.height;
   var size = 700.0;
