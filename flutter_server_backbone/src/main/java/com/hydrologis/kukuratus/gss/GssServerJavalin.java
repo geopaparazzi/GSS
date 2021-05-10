@@ -173,6 +173,29 @@ public class GssServerJavalin implements Vars {
             }
         }
 
+        // Variables can be set from environment, if not previously set
+        String user = null;
+        String pwd = null;
+        if (postgresUrl == null) {
+            String postgresUrlTmp = System.getenv("POSTGRES_URL");
+            String postgresUser = System.getenv("POSTGRES_USER");
+            String postgresPwd = System.getenv("POSTGRES_PASSWORD");
+            if (postgresUrlTmp != null && postgresUser != null && postgresPwd != null) {
+                postgresUrl = postgresUrlTmp;
+                user = postgresUser;
+                pwd = postgresPwd;
+            }
+        }
+
+        if (mobilePwd == null) {
+            String mobilePwdTmp = System.getenv("MOBILE_PASSWORD");
+            if (mobilePwdTmp != null) {
+                mobilePwd = mobilePwdTmp;
+            }
+        }
+        // end reading environment 
+        
+        
         Console console = System.console();
         if (console == null) {
             System.err.println("WARNING: no console available. PostGIS mode won't work.");
@@ -180,15 +203,15 @@ public class GssServerJavalin implements Vars {
         ASpatialDb db = null;
         if (postgresUrl != null) {
             db = EDb.POSTGIS.getSpatialDb();
-            String user;
-            String pwd;
-            if (postgresUrl.endsWith("test")) {
-                user = "test";
-                pwd = "test";
-            } else {
-                user = console.readLine("Please enter the postgresql username: ");
-                char[] pwdChars = console.readPassword("Please enter the postgresql password: ");
-                pwd = new String(pwdChars);
+            if (user == null || pwd == null) {
+                if (postgresUrl.endsWith("test")) {
+                    user = "test";
+                    pwd = "test";
+                } else {
+                    user = console.readLine("Please enter the postgresql username: ");
+                    char[] pwdChars = console.readPassword("Please enter the postgresql password: ");
+                    pwd = new String(pwdChars);
+                }
             }
             db.setCredentials(user, pwd);
             db.open(postgresUrl);
