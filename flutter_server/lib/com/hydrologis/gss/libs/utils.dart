@@ -16,7 +16,11 @@ import 'package:smashlibs/smashlibs.dart';
 class NetworkImageWidget extends StatefulWidget {
   final double _height;
   final String _imageUrl;
-  NetworkImageWidget(this._imageUrl, this._height, {Key key}) : super(key: key);
+  final String _title;
+  final bool hideRotate;
+  NetworkImageWidget(this._imageUrl, this._title, this._height,
+      {this.hideRotate = true, Key key})
+      : super(key: key);
 
   @override
   _NetworkImageWidgetState createState() =>
@@ -30,6 +34,7 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
   bool _imageReady = false;
   List<int> _bytes;
   String error;
+  int quarterTurns = 0;
 
   _NetworkImageWidgetState(this._imageUrl, this._height);
 
@@ -76,27 +81,80 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
         child: Center(child: SmashCircularProgress()),
       );
     } else {
-      // IMG.Image img = ImageUtilities.imageFromBytes(_bytes);
-      // print(img.width);
-      // print(img.height);
       Image image = Image.memory(
         _bytes,
         fit: BoxFit.none,
-        // width: 400,
-        // height: 600,
-        // width: 4608,
-        // height: 2184,
       );
 
       return Container(
-        child: Expanded(
-          flex: 1,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: image,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget._title != null && widget._title.length > 0)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: SmashUI.titleText(widget._title),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(18.0),
+              child: RotatedBox(
+                quarterTurns: quarterTurns,
+                child: image,
+              ),
+            ),
+            if (!widget.hideRotate)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: FloatingActionButton(
+                  mini: true,
+                  backgroundColor: SmashColors.mainDecorations,
+                  child: Icon(MdiIcons.rotateRight),
+                  onPressed: () {
+                    setState(() {
+                      quarterTurns++;
+                      if (quarterTurns > 3) {
+                        quarterTurns = 0;
+                      }
+                    });
+                  },
+                ),
+              )
+          ],
         ),
       );
+
+      // return Stack(
+      //   children: [
+      //     Container(
+      //       child: Expanded(
+      //         flex: 1,
+      //         child: Padding(
+      //           padding: const EdgeInsets.all(8.0),
+      //           child: RotatedBox(
+      //             quarterTurns: 0,
+      //             child: image,
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //     Align(
+      //       alignment: Alignment.bottomRight,
+      //       child: FloatingActionButton(
+      //         child: Icon(MdiIcons.rotateRight),
+      //         onPressed: () {
+      //           setState(() {
+      //             quarterTurns++;
+      //             if (quarterTurns > 3) {
+      //               quarterTurns = 0;
+      //             }
+      //           });
+      //         },
+      //       ),
+      //     )
+      //   ],
+      // );
     }
   }
 }

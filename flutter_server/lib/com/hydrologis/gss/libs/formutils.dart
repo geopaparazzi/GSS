@@ -81,7 +81,7 @@ class ServerFormHelper implements AFormhelper {
         padding: SmashUI.defaultPadding(),
         child: GestureDetector(
           onDoubleTap: () {
-            openImageDialog(context, "", id);
+            openImageDialog(context, "", id, hideRotate: true);
           },
           child: img,
         ),

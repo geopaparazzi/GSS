@@ -111,7 +111,8 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
           //   model.selectedNoteId = dataId;
           //   model.refresh();
           // } else {
-          openImageDialog(mapState.currentMapContext, name, dataId);
+          openImageDialog(mapState.currentMapContext, name, dataId,
+              hideRotate: false);
           // }
         },
         child: imageWidget,
@@ -292,33 +293,16 @@ openLogDialog(BuildContext context, String logInfo) async {
       context: context, builder: (BuildContext context) => openLogDialog);
 }
 
-openImageDialog(BuildContext context, String name, int imageId) {
+openImageDialog(BuildContext context, String name, int imageId,
+    {hideRotate = true}) {
   var h = MediaQuery.of(context).size.height;
-  var size = 700.0;
   Dialog mapSelectionDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-    child: Container(
-      height: size,
-      width: size,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            name.isNotEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SmashUI.titleText(
-                      name,
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                : Container(),
-            NetworkImageWidget("$WEBAPP_URL/imagedata/$imageId", h * 0.8),
-            // TODO change once the NetworkImageWidget has auth
-            // NetworkImageWidget("$API_IMAGEDATA/$imageId", h * 0.6),
-          ],
-        ),
-      ),
+    child: NetworkImageWidget(
+      "$WEBAPP_URL/imagedata/$imageId",
+      name,
+      h * 0.7,
+      hideRotate: hideRotate,
     ),
   );
   showDialog(
@@ -963,7 +947,8 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
                   tooltip: "View note.",
                   onPressed: () {
                     if (attr.marker is Image) {
-                      openImageDialog(context, attr.text, attr.id);
+                      openImageDialog(context, attr.text, attr.id,
+                          hideRotate: false);
                     } else {
                       openNoteDialog(context, attr.id);
                     }
