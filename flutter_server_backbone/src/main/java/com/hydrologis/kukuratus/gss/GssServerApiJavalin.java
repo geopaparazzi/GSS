@@ -794,22 +794,22 @@ public class GssServerApiJavalin implements Vars {
 
     public static void addGetImagedataRoute( Javalin app ) {
         app.get(ROUTES_GET_IMAGEDATA, ctx -> {
-            // User validUser = hasPermission(req);
-            // if (validUser != null) {
-            String imageDataId = ctx.pathParam(":dataid");
-            KukuratusLogger.logAccess(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
+            User validUser = hasPermission(ctx);
+            if (validUser != null) {
+                String imageDataId = ctx.pathParam(":dataid");
+                KukuratusLogger.logAccess(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
 
-            try {
-                long imageDataIdLong = Long.parseLong(imageDataId);
-                Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
-                ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong).queryForFirst();
-                ctx.result(imageData.data);
-            } catch (Exception e) {
-                sendServerError(ctx, ROUTES_GET_IMAGEDATA + "/" + imageDataId, e);
+                try {
+                    long imageDataIdLong = Long.parseLong(imageDataId);
+                    Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
+                    ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong).queryForFirst();
+                    ctx.result(imageData.data);
+                } catch (Exception e) {
+                    sendServerError(ctx, ROUTES_GET_IMAGEDATA + "/" + imageDataId, e);
+                }
+            } else {
+                sendNoPermission(ctx);
             }
-            // } else {
-            // return sendNoPermission(res);
-            // }
         });
     }
     // // public static void addGetImagedataRoute() {
@@ -1136,7 +1136,7 @@ public class GssServerApiJavalin implements Vars {
                             } else {
                                 error = true;
                             }
-                            if(error) {
+                            if (error) {
                                 KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR,
                                         "An error occurred while deleting the gps log.");
                                 ctx.status(ks.getCode());

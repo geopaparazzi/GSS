@@ -7,6 +7,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.hortonmachine.dbs.compat.ASpatialDb;
+import org.hortonmachine.dbs.compat.EDb;
+import org.hortonmachine.dbs.log.Logger;
+
 import com.hydrologis.kukuratus.database.DatabaseHandler;
 import com.hydrologis.kukuratus.gss.database.Forms;
 import com.hydrologis.kukuratus.gss.database.GpapProject;
@@ -22,14 +35,6 @@ import com.hydrologis.kukuratus.tiles.ITilesGenerator;
 import com.hydrologis.kukuratus.tiles.MapsforgeTilesGenerator;
 import com.hydrologis.kukuratus.utils.KukuratusLogger;
 import com.hydrologis.kukuratus.workspace.KukuratusWorkspace;
-
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.hortonmachine.dbs.compat.ASpatialDb;
-import org.hortonmachine.dbs.compat.EDb;
-import org.hortonmachine.dbs.log.Logger;
 
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -143,47 +148,74 @@ public class GssServerJavalin implements Vars {
     }
 
     public static void main( String[] args ) throws Exception {
+        Options options = new Options();
+        options.addOption("w", "workspace", true, "The path to the workspace.");
+        options.addOption("s", "ssl", true, "The optional path to the keystore file for ssl.");
+        options.addOption("sp", "ssl_pwd", true,
+                "The optional password for the keystore file. Mandatory if the keystore file is defined.");
+        options.addOption("mp", "mobilepwd", true, "The password used by mobile devices to connect (defaults to testPwd).");
+        options.addOption("p", "psql_url", true, "The optional url to enable postgis database use (disables H2GIS).");
+        options.addOption("pu", "psql_user", true,
+                "The optional postgis user (defaults to test). Mandatory if the url is defined.");
+        options.addOption("pp", "psql_pwd", true,
+                "The optional postgis password (defaults to test). Mandatory if the url is defined.");
 
-        if (args.length == 0) {
-            System.err.println("The workspace folder needs to be supplied as argument.");
-            System.exit(1);
-        }
-
-        String workspacePath = args[0];
-        File workspaceFolder = new File(workspacePath);
-        if (!workspaceFolder.exists()) {
-            System.err.println("The workspace folder needs to exist.");
-            System.exit(1);
-        }
-        KukuratusWorkspace.setWorkspaceFolderPath(workspacePath);
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args);
 
         String mobilePwd = null;
         String keyStorePath = null;
+        String keyStorePwd = null;
         String postgresUrl = null;
-        for( int i = 1; i < args.length; i++ ) {
-            String arg = args[i];
-            if (new File(arg).exists()) {
-                // assuming it is the keystore
-                keyStorePath = arg;
-            } else if (arg.contains("jdbc:postgresql")) {
-                // jdbc:postgresql://localhost:5432/test
-                postgresUrl = arg.replaceFirst(EDb.POSTGIS.getJdbcPrefix(), "");
+        String postgresUser = null;
+        String postgresPwd = null;
+        String workspacePath = null;
+        if (!cmd.hasOption("w")) {
+            System.err.println("The workspace folder needs to be supplied as argument.");
+            help(options);
+            System.exit(1);
+        } else {
+            workspacePath = cmd.getOptionValue("w");
+            File workspaceFolder = new File(workspacePath);
+            if (!workspaceFolder.exists()) {
+                System.err.println("The workspace folder needs to exist.");
+                System.exit(1);
+            }
+            KukuratusWorkspace.setWorkspaceFolderPath(workspacePath);
+        }
+
+        if (cmd.hasOption("mp")) {
+            mobilePwd = cmd.getOptionValue("mp");
+        }
+        if (cmd.hasOption("p")) {
+            if (!cmd.hasOption("pu") || !cmd.hasOption("pp")) {
+                help(options);
+                System.exit(1);
             } else {
-                mobilePwd = arg;
+                postgresUrl = cmd.getOptionValue("p");
+                postgresUser = cmd.getOptionValue("pu");
+                postgresPwd = cmd.getOptionValue("pp");
+            }
+        }
+        if (cmd.hasOption("s")) {
+            if (!cmd.hasOption("sp")) {
+                help(options);
+                System.exit(1);
+            } else {
+                keyStorePath = cmd.getOptionValue("s");
+                keyStorePwd = cmd.getOptionValue("sp");
             }
         }
 
         // Variables can be set from environment, if not previously set
-        String user = null;
-        String pwd = null;
         if (postgresUrl == null) {
             String postgresUrlTmp = System.getenv("POSTGRES_URL");
-            String postgresUser = System.getenv("POSTGRES_USER");
-            String postgresPwd = System.getenv("POSTGRES_PASSWORD");
+            String postgresUserTmp = System.getenv("POSTGRES_USER");
+            String postgresPwdTmp = System.getenv("POSTGRES_PASSWORD");
             if (postgresUrlTmp != null && postgresUser != null && postgresPwd != null) {
                 postgresUrl = postgresUrlTmp;
-                user = postgresUser;
-                pwd = postgresPwd;
+                postgresUser = postgresUserTmp;
+                postgresPwd = postgresPwdTmp;
             }
         }
 
@@ -193,27 +225,12 @@ public class GssServerJavalin implements Vars {
                 mobilePwd = mobilePwdTmp;
             }
         }
-        // end reading environment 
-        
-        
-        Console console = System.console();
-        if (console == null) {
-            System.err.println("WARNING: no console available. PostGIS mode won't work.");
-        }
+        // end reading environment
+
         ASpatialDb db = null;
         if (postgresUrl != null) {
             db = EDb.POSTGIS.getSpatialDb();
-            if (user == null || pwd == null) {
-                if (postgresUrl.endsWith("test")) {
-                    user = "test";
-                    pwd = "test";
-                } else {
-                    user = console.readLine("Please enter the postgresql username: ");
-                    char[] pwdChars = console.readPassword("Please enter the postgresql password: ");
-                    pwd = new String(pwdChars);
-                }
-            }
-            db.setCredentials(user, pwd);
+            db.setCredentials(postgresUser, postgresPwd);
             db.open(postgresUrl);
         } else {
             KukuratusWorkspace workspace = KukuratusWorkspace.getInstance();
@@ -250,26 +267,12 @@ public class GssServerJavalin implements Vars {
             ServletUtils.MOBILE_UPLOAD_PWD = "gss_Master_Survey_Forever_2018";
         }
 
-        String keyStorePassword = null;
-        if (keyStorePath != null) {
-            // ask for the password at startup
-            if (console != null) {
-                char[] pwdChars = console.readPassword("Please enter the keystore password: ");
-                keyStorePassword = new String(pwdChars);
-            } else {
-                try (Scanner in = new Scanner(System.in)) {
-                    System.out.print("Please enter the keystore password: ");
-                    keyStorePassword = in.nextLine();
-                }
-            }
-            if (keyStorePassword.trim().length() == 0) {
-                System.out.println("Disabling keystore use due to empty password.");
-                keyStorePassword = null;
-                keyStorePath = null;
-            }
-        }
-
         GssServerJavalin gssServer = new GssServerJavalin();
-        gssServer.start(db, keyStorePath, keyStorePassword);
+        gssServer.start(db, keyStorePath, keyStorePwd);
+    }
+
+    private static void help( Options options ) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("gss ", options);
     }
 }
