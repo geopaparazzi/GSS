@@ -18,7 +18,7 @@ WORKDIR /usr/gss
 COPY --from=flutter-builder /home/flutter/flutter_server/build/web public
 COPY --from=java-builder /usr/src/gss/target/lib lib
 COPY --from=java-builder /usr/src/gss/target/gss-backbone.jar .
-COPY scripts/run.sh .
+COPY docker/run.sh .
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.8.0/wait /wait
 RUN chmod +x /wait
 RUN mkdir /workspace

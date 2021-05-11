@@ -7,7 +7,9 @@ x-common-gss:
     POSTGRES_PASSWORD: test
 services:
   gss:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     environment:
       << : *default-common-env-gss
       POSTGRES_URL: "postgres:5432/test"
