@@ -313,7 +313,7 @@ openImageDialog(BuildContext context, String name, int imageId) {
                     ),
                   )
                 : Container(),
-            NetworkImageWidget("$WEBAPP_URL/imagedata/$imageId", h * 0.6),
+            NetworkImageWidget("$WEBAPP_URL/imagedata/$imageId", h * 0.8),
             // TODO change once the NetworkImageWidget has auth
             // NetworkImageWidget("$API_IMAGEDATA/$imageId", h * 0.6),
           ],

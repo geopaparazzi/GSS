@@ -45,9 +45,10 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
     Map<String, String> requestHeaders =
         ServerApi.getAuthRequestHeader(userPwd[0], userPwd[1]);
 
+    var imageUrlWithSize = _imageUrl + "/" + _height.toInt().toString();
     var request = HttpRequest();
     request
-      ..open('GET', _imageUrl)
+      ..open('GET', imageUrlWithSize)
       ..responseType = 'arraybuffer'
       ..setRequestHeader("authorization", requestHeaders['authorization'])
       ..onLoadEnd.listen((e) => requestComplete(request))
@@ -75,11 +76,26 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
         child: Center(child: SmashCircularProgress()),
       );
     } else {
-      // IMG.Image image= ImageUtilities.imageFromBytes(_bytes);
-      Image image = Image.memory(_bytes);
+      // IMG.Image img = ImageUtilities.imageFromBytes(_bytes);
+      // print(img.width);
+      // print(img.height);
+      Image image = Image.memory(
+        _bytes,
+        fit: BoxFit.none,
+        // width: 400,
+        // height: 600,
+        // width: 4608,
+        // height: 2184,
+      );
 
       return Container(
-        child: image,
+        child: Expanded(
+          flex: 1,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: image,
+          ),
+        ),
       );
     }
   }

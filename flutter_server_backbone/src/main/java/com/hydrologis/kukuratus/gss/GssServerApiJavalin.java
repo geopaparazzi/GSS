@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,6 +38,7 @@ import org.hortonmachine.dbs.log.Message;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.libs.modules.HMConstants;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
+import org.hortonmachine.gears.utils.images.ImageUtilities;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -97,7 +99,7 @@ public class GssServerApiJavalin implements Vars {
      * Get single data items by type and id.
      */
     static final String ROUTES_GETDATA_BY_TYPE = "/data/:type/:id";
-    static final String ROUTES_GET_IMAGEDATA = "/imagedata/:dataid";
+    static final String ROUTES_GET_IMAGEDATA = "/imagedata/:dataid/:size";
     // static final String ROUTES_GET_IMAGEDATA = "/imagedata/:userid/:dataid";
     static final String ROUTES_UPLOAD = "/upload";
     static final String ROUTES_PROJECTDATA_UPLOAD = "/dataupload";
@@ -797,13 +799,26 @@ public class GssServerApiJavalin implements Vars {
             User validUser = hasPermission(ctx);
             if (validUser != null) {
                 String imageDataId = ctx.pathParam(":dataid");
+                String sizeStr = ctx.pathParam(":size");
+                int size = 800;
+                if (sizeStr!=null) {
+                    try {
+                        size = Integer.parseInt(sizeStr);
+                    } catch (Exception e) {
+                    }
+                }
+                
                 KukuratusLogger.logAccess(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
 
                 try {
                     long imageDataIdLong = Long.parseLong(imageDataId);
                     Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
                     ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong).queryForFirst();
-                    ctx.result(imageData.data);
+                    BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData.data));
+                    BufferedImage scaleImage = ImageUtilities.scaleImage(image, size);
+                    ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                    ImageIO.write(scaleImage, "jpg", bo);
+                    ctx.result(bo.toByteArray());
                 } catch (Exception e) {
                     sendServerError(ctx, ROUTES_GET_IMAGEDATA + "/" + imageDataId, e);
                 }
