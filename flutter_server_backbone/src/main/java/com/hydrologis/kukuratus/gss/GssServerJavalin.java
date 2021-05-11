@@ -204,6 +204,10 @@ public class GssServerJavalin implements Vars {
             } else {
                 keyStorePath = cmd.getOptionValue("s");
                 keyStorePwd = cmd.getOptionValue("sp");
+                if(!new File(keyStorePath).exists()) {
+                    System.err.println("Ignoring keystore file that does not exist.");
+                    keyStorePath = null;
+                }
             }
         }
 
