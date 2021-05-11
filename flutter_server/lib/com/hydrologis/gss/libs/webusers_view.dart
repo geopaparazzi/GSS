@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
+import 'package:flutter_server/main.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:smashlibs/smashlibs.dart';
 
@@ -164,12 +165,22 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                           "Are you sure you want to delete user $name?");
                       if (result) {
                         var up = SmashSession.getSessionUser();
+                        var webusername =
+                            webuser[WEBUSER_UNIQUENAME_FIELD_NAME];
+
                         String error = await ServerApi.deleteWebuser(
                             up[0], up[1], webuser);
                         if (error != null) {
                           SmashDialogs.showErrorDialog(context, error);
                         } else {
-                          await getWebusers();
+                          if (webusername == up[0]) {
+                            // trigger a logout
+                            SmashSession.logout();
+                            Navigator.pushReplacement(context,
+                                MaterialPageRoute(builder: (_) => MainPage()));
+                          } else {
+                            await getWebusers();
+                          }
                         }
                       }
                     }

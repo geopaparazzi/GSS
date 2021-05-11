@@ -395,6 +395,33 @@ class ServerApi {
     return resultData;
   }
 
+  /// Get bytes from url
+  static Future<List<int>> getBytesFromUrl(
+      String user, String pwd, String url) async {
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+
+    // var request = HttpRequest()
+    //   ..open('GET', url, async: true)
+    //   ..responseType = 'arraybuffer';
+    // request.send();
+    // await request.onLoad.first;
+    // var body = (request.response as ByteBuffer).asUint8List();
+
+    HttpRequest request = await HttpRequest.request(url,
+        method: 'GET',
+        requestHeaders: requestHeaders,
+        responseType: 'arraybuffer');
+    request.send();
+    await request.onLoad.first;
+    if (request.status == 200) {
+      var body = (request.response as ByteBuffer).asUint8List();
+      // List<int> bytes = new Uint8List.view(request.response);
+      // dynamic data = request.response;
+      return body;
+    }
+    return null;
+  }
+
   static Future<String> deleteProjectForm(
       String user, String pwd, String id) async {
     Map<String, String> formData = {ID: id};
