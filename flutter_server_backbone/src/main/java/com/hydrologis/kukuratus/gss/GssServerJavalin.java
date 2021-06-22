@@ -216,7 +216,7 @@ public class GssServerJavalin implements Vars {
             String postgresUrlTmp = System.getenv("POSTGRES_URL");
             String postgresUserTmp = System.getenv("POSTGRES_USER");
             String postgresPwdTmp = System.getenv("POSTGRES_PASSWORD");
-            if (postgresUrlTmp != null && postgresUser != null && postgresPwd != null) {
+            if (postgresUrlTmp != null && postgresUserTmp != null && postgresPwdTmp != null) {
                 postgresUrl = postgresUrlTmp;
                 postgresUser = postgresUserTmp;
                 postgresPwd = postgresPwdTmp;
