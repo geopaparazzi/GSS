@@ -150,6 +150,13 @@ class MapstateModel extends ChangeNotifier {
         var id = logItem[ID];
         var name = logItem[NAME];
         var colorHex = logItem[COLOR];
+
+        // TODO for now colortables are not supported
+        const ECOLORSEP = "@";
+        if (colorHex.contains(ECOLORSEP)) {
+          var split = colorHex.split(ECOLORSEP);
+          colorHex = split[0];
+        }
         var width = logItem[WIDTH];
         var coords = logItem[COORDS];
         var startts = logItem[STARTTS];
