@@ -41,15 +41,16 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
     var isAdmin = SmashSession.isAdmin();
 
     webusers.forEach((webuser) {
-      var uniqueName = webuser[WEBUSER_UNIQUENAME_FIELD_NAME];
-      var name = webuser[WEBUSER_NAME_FIELD_NAME];
-      var contact = webuser[WEBUSER_EMAIL_FIELD_NAME] ?? "";
-      var group = webuser[WEBUSER_GROUP_FIELD_NAME];
+      var webuserUniqueName = webuser[WEBUSER_UNIQUENAME_FIELD_NAME];
+      var webuserName = webuser[WEBUSER_NAME_FIELD_NAME];
+      var webuserContact = webuser[WEBUSER_EMAIL_FIELD_NAME] ?? "";
+      var webuserGroup = webuser[WEBUSER_GROUP_FIELD_NAME];
+      var webuserIsAdmin = webuserGroup == ADMINGROUP;
 
       var inputTitle = "Set new value";
       var cellsList = [
         DataCell(
-          SmashUI.normalText(uniqueName),
+          SmashUI.normalText(webuserUniqueName),
           showEditIcon: isAdmin,
           onTap: () async {
             if (isAdmin) {
@@ -57,7 +58,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                 context,
                 inputTitle,
                 "Username",
-                defaultText: uniqueName,
+                defaultText: webuserUniqueName,
               );
               if (result != null && result.length > 0) {
                 webuser[WEBUSER_UNIQUENAME_FIELD_NAME] = result;
@@ -74,7 +75,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
           },
         ),
         DataCell(
-          SmashUI.normalText(name),
+          SmashUI.normalText(webuserName),
           showEditIcon: isAdmin,
           onTap: () async {
             if (isAdmin) {
@@ -82,7 +83,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                 context,
                 inputTitle,
                 "Name",
-                defaultText: name,
+                defaultText: webuserName,
               );
               if (result != null && result.length > 0) {
                 webuser[WEBUSER_NAME_FIELD_NAME] = result;
@@ -99,7 +100,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
           },
         ),
         DataCell(
-          SmashUI.normalText(contact),
+          SmashUI.normalText(webuserContact),
           showEditIcon: isAdmin,
           onTap: () async {
             if (isAdmin) {
@@ -107,7 +108,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
                 context,
                 inputTitle,
                 "Contact",
-                defaultText: contact,
+                defaultText: webuserContact,
               );
               if (result != null && result.length > 0) {
                 webuser[WEBUSER_EMAIL_FIELD_NAME] = result;
@@ -129,16 +130,52 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (!webuserIsAdmin)
+                IconButton(
+                    icon: Icon(MdiIcons.arrowUpBold),
+                    color: SmashColors.mainDanger,
+                    tooltip: "Promote do admin.",
+                    onPressed: () async {
+                      if (isAdmin) {
+                        webuser[WEBUSER_GROUP_FIELD_NAME] = ADMINGROUP;
+                        var up = SmashSession.getSessionUser();
+                        String error = await ServerApi.updateOrAddWebuser(
+                            up[0], up[1], webuser);
+                        if (error != null) {
+                          SmashDialogs.showErrorDialog(context, error);
+                        } else {
+                          await getWebusers();
+                        }
+                      }
+                    }),
+              if (webuserIsAdmin)
+                IconButton(
+                    icon: Icon(MdiIcons.arrowDownBold),
+                    color: SmashColors.mainDanger,
+                    tooltip: "Remove admin rights.",
+                    onPressed: () async {
+                      if (isAdmin) {
+                        webuser[WEBUSER_GROUP_FIELD_NAME] = USERGROUP;
+                        var up = SmashSession.getSessionUser();
+                        String error = await ServerApi.updateOrAddWebuser(
+                            up[0], up[1], webuser);
+                        if (error != null) {
+                          SmashDialogs.showErrorDialog(context, error);
+                        } else {
+                          await getWebusers();
+                        }
+                      }
+                    }),
               IconButton(
                   icon: Icon(MdiIcons.lockReset),
                   color: SmashColors.mainDanger,
-                  tooltip: "Change password for $name.",
+                  tooltip: "Change password for $webuserName.",
                   onPressed: () async {
                     if (isAdmin) {
                       String result = await SmashDialogs.showInputDialog(
                           context,
                           "CHANGE PASSWORD",
-                          "Insert new password for user $name?",
+                          "Insert new password for user $webuserName?",
                           isPassword: true);
                       if (result != null && result.length > 0) {
                         webuser[WEBUSER_PASSWORD_FIELD_NAME] = result;
@@ -156,13 +193,13 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
               IconButton(
                   icon: Icon(MdiIcons.trashCan),
                   color: SmashColors.mainDanger,
-                  tooltip: "Delete user $name",
+                  tooltip: "Delete user $webuserName",
                   onPressed: () async {
                     if (isAdmin) {
                       bool result = await SmashDialogs.showConfirmDialog(
                           context,
                           "DELETE USER",
-                          "Are you sure you want to delete user $name?");
+                          "Are you sure you want to delete user $webuserName?");
                       if (result) {
                         var up = SmashSession.getSessionUser();
                         var webusername =
@@ -191,7 +228,7 @@ class _WebUsersViewState extends State<WebUsersView> with AfterLayoutMixin {
       }
       var row = DataRow(cells: cellsList);
 
-      if (group == ADMINGROUP) {
+      if (webuserIsAdmin) {
         adminsRows.add(row);
       } else {
         normalRows.add(row);

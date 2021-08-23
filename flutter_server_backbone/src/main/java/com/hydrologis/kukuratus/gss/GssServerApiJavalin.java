@@ -801,13 +801,13 @@ public class GssServerApiJavalin implements Vars {
                 String imageDataId = ctx.pathParam(":dataid");
                 String sizeStr = ctx.pathParam(":size");
                 int size = 800;
-                if (sizeStr!=null) {
+                if (sizeStr != null) {
                     try {
                         size = Integer.parseInt(sizeStr);
                     } catch (Exception e) {
                     }
                 }
-                
+
                 KukuratusLogger.logAccess(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
 
                 try {
@@ -1064,6 +1064,9 @@ public class GssServerApiJavalin implements Vars {
                                 existingUser.email = email;
                                 if (pwd != null) {
                                     existingUser.pwd = RegistryHandler.hashPwd(pwd);
+                                }
+                                if (group != null) {
+                                    existingUser.group = RegistryHandler.INSTANCE.getGroupByName(group);
                                 }
                                 RegistryHandler.INSTANCE.updateUser(existingUser);
                             } else {
