@@ -7,7 +7,7 @@ import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
@@ -175,8 +175,12 @@ class MapstateModel extends ChangeNotifier {
       logs = TappablePolylineLayerOptions(
         polylines: lines,
         polylineCulling: true,
-        onTap: (TaggedPolyline polyline) =>
-            openLogDialog(context, polyline.tag),
+        onTap: (List<TaggedPolyline> polylines, TapUpDetails details) {
+          if (polylines.isEmpty) {
+            return null;
+          }
+          return openLogDialog(context, polylines[0].tag);
+        },
         // onMiss: () => print("No polyline tapped"),
       );
     }

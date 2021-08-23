@@ -20,54 +20,55 @@ dependencies:
     #path: ../../../SMASH/smashlibs/
     git:
       url: https://github.com/moovida/smashlibs.git
-      ref: c42a8cb
+      ref: 729af63
 
-  dart_hydrologis_utils: ^0.5.4
+  dart_hydrologis_utils: ^0.6.0
 
   ###########################
   # OTHERS
   ############################
 
   # BSD
-  http: ^0.12.1
+  http: ^0.13.3
 
   # MIT
-  horizontal_data_table: ^1.0.5+3
+  horizontal_data_table: ^3.4.2
 
   # MIT
-  after_layout: ^1.0.7+2
+  after_layout: ^1.1.0
 
   # MIT
-  material_design_icons_flutter: ^4.0.5245
+  material_design_icons_flutter: ^5.0.5955-rc.1
 
   # Apache 2.0
-  charts_flutter: ^0.9.0
+  charts_flutter: ^0.11.0
 
   # MIT
-  provider: ^4.1.2
+  provider: ^5.0.0
 
   # apache
-  latlong: 0.6.1
+  latlong2: ^0.8.0
 
   # MIT
-  flutter_tags: ^0.4.8+1
+  flutter_tags: ^1.0.0-nullsafety.1
 
   # BSD
-  flutter_map: ^0.12.0
+  flutter_map: ^0.13.1
     # git:
     #   url: https://github.com/moovida/flutter_map.git
     #   ref: version4smash
   
   # BSD
-  flutter_map_marker_cluster: ^0.3.4
+  flutter_map_marker_cluster: ^0.4.0
     # git:
     #   url: https://github.com/moovida/flutter_map_marker_cluster.git
     #   ref: version4smash
 
   # GPL3
-  flutter_map_tappable_polyline: ^1.3.1
+  flutter_map_tappable_polyline: ^3.0.0
 
-  transparent_image: 1.0.0
+  # MIT
+  transparent_image: ^2.0.0
 
 dev_dependencies:
   flutter_test:

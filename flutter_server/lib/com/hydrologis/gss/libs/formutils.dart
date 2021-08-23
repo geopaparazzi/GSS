@@ -99,7 +99,14 @@ class ServerFormHelper implements AFormhelper {
   @override
   Future<String> takePictureForForms(
       BuildContext context, bool fromGallery, List<String> _position) async {
-    // Adding pictures serverside is nor implemented yet.
+    // Adding pictures serverside is not implemented yet.
+    return null;
+  }
+
+  @override
+  Future<String> takeSketchForForms(
+      BuildContext context, List<String> imageSplit) {
+    // Adding sketches serverside is not implemented yet.
     return null;
   }
 }

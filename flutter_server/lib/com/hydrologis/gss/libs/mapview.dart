@@ -15,7 +15,7 @@ import 'package:flutter_server/com/hydrologis/gss/libs/webusers_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/main.dart';
-import 'package:latlong/latlong.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
