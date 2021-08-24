@@ -135,7 +135,7 @@
 				<configuration>
 					<!-- <source>1.8</source> <target>1.8</target> -->
 					<release>
-						14
+						11
 					</release>
 					<encoding>UTF-8</encoding>
 					<debug>true</debug>
