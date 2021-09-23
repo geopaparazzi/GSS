@@ -800,14 +800,6 @@ public class GssServerApiJavalin implements Vars {
             if (validUser != null) {
                 String imageDataId = ctx.pathParam(":dataid");
                 String sizeStr = ctx.pathParam(":size");
-                int size = 800;
-                if (sizeStr != null) {
-                    try {
-                        size = Integer.parseInt(sizeStr);
-                    } catch (Exception e) {
-                    }
-                }
-
                 KukuratusLogger.logAccess(ROUTES_GET_IMAGEDATA + "/" + imageDataId, getRequestLogString(ctx, null));
 
                 try {
@@ -815,9 +807,16 @@ public class GssServerApiJavalin implements Vars {
                     Dao<ImageData, ? > dao = DatabaseHandler.instance().getDao(ImageData.class);
                     ImageData imageData = dao.queryBuilder().where().eq(ImageData.ID_FIELD_NAME, imageDataIdLong).queryForFirst();
                     BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData.data));
-                    BufferedImage scaleImage = ImageUtilities.scaleImage(image, size);
+                    if (sizeStr != null) {
+                        int size = 800;
+                        try {
+                            size = Integer.parseInt(sizeStr);
+                        } catch (Exception e) {
+                        }
+                        image = ImageUtilities.scaleImage(image, size);
+                    }
                     ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                    ImageIO.write(scaleImage, "jpg", bo);
+                    ImageIO.write(image, "jpg", bo);
                     ctx.result(bo.toByteArray());
                 } catch (Exception e) {
                     sendServerError(ctx, ROUTES_GET_IMAGEDATA + "/" + imageDataId, e);
@@ -827,6 +826,7 @@ public class GssServerApiJavalin implements Vars {
             }
         });
     }
+    
     // // public static void addGetImagedataRoute() {
     // // get(ROUTES_GET_IMAGEDATA, (req, res) -> {
     // // // User validUser = hasPermission(req);
