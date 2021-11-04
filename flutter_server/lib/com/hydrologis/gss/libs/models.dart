@@ -201,110 +201,117 @@ class MapstateModel extends ChangeNotifier {
 
     // LOAD SIMPLE IMAGES
     List<dynamic> imagesList = json[IMAGES];
-    for (int i = 0; i < imagesList.length; i++) {
-      dynamic imageItem = imagesList[i];
-      var id = imageItem[ID];
-      var dataId = imageItem[DATAID];
-      var data = imageItem[DATA];
-      var name = imageItem[NAME];
-      var ts = imageItem[TS];
-      var x = imageItem[X];
-      var y = imageItem[Y];
-      var latLng = LatLongHelper.fromLatLon(y, x);
-      dataBounds.extend(latLng);
-      var imgData = Base64Decoder().convert(data);
-      var imageWidget = Image.memory(
-        imgData,
-        scale: 6.0,
-      );
-      markers
-          .add(buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
+    if (imagesList != null) {
+      for (int i = 0; i < imagesList.length; i++) {
+        dynamic imageItem = imagesList[i];
+        var id = imageItem[ID];
+        var dataId = imageItem[DATAID];
+        var data = imageItem[DATA];
+        var name = imageItem[NAME];
+        var ts = imageItem[TS];
+        var x = imageItem[X];
+        var y = imageItem[Y];
+        var latLng = LatLongHelper.fromLatLon(y, x);
+        dataBounds.extend(latLng);
+        var imgData = Base64Decoder().convert(data);
+        var imageWidget = Image.memory(
+          imgData,
+          scale: 6.0,
+        );
+        markers.add(
+            buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
 
-      var surveyor = imageItem[SURVEYOR];
-      var project = imageItem[PROJECT];
-      attributesList.add(Attributes()
-        ..id = id
-        ..marker = imageWidget
-        ..point = latLng
-        ..project = project
-        ..text = name
-        ..timeStamp = ts
-        ..user = surveyor);
+        var surveyor = imageItem[SURVEYOR];
+        var project = imageItem[PROJECT];
+        attributesList.add(Attributes()
+          ..id = id
+          ..marker = imageWidget
+          ..point = latLng
+          ..project = project
+          ..text = name
+          ..timeStamp = ts
+          ..user = surveyor);
+      }
     }
 
     // LOAD SIMPLE NOTES
     List<dynamic> simpleNotesList = json[NOTES];
-    for (int i = 0; i < simpleNotesList.length; i++) {
-      dynamic noteItem = simpleNotesList[i];
-      var id = noteItem[ID];
-      var name = noteItem[NAME];
-      var ts = noteItem[TS];
-      var x = noteItem[X];
-      var y = noteItem[Y];
-      var latLng = LatLongHelper.fromLatLon(y, x);
-      dataBounds.extend(latLng);
+    if (simpleNotesList != null) {
+      for (int i = 0; i < simpleNotesList.length; i++) {
+        dynamic noteItem = simpleNotesList[i];
+        var id = noteItem[ID];
+        var name = noteItem[NAME];
+        var ts = noteItem[TS];
+        var x = noteItem[X];
+        var y = noteItem[Y];
+        var latLng = LatLongHelper.fromLatLon(y, x);
+        dataBounds.extend(latLng);
 
-      var marker = noteItem[MARKER];
-      var size = noteItem[SIZE];
-      var color = noteItem[COLOR];
-      var iconData = getSmashIcon(marker);
-      var colorExt = ColorExt(color);
-      var icon = Icon(
-        iconData,
-        size: size,
-        color: colorExt,
-      );
-      markers.add(buildSimpleNote(this, x, y, name, id, icon, size, colorExt));
+        var marker = noteItem[MARKER];
+        var size = noteItem[SIZE];
+        var color = noteItem[COLOR];
+        var iconData = getSmashIcon(marker);
+        var colorExt = ColorExt(color);
+        var icon = Icon(
+          iconData,
+          size: size,
+          color: colorExt,
+        );
+        markers
+            .add(buildSimpleNote(this, x, y, name, id, icon, size, colorExt));
 
-      var surveyor = noteItem[SURVEYOR];
-      var project = noteItem[PROJECT];
-      attributesList.add(Attributes()
-        ..id = id
-        ..marker = icon
-        ..point = latLng
-        ..project = project
-        ..text = name
-        ..timeStamp = ts
-        ..user = surveyor);
+        var surveyor = noteItem[SURVEYOR];
+        var project = noteItem[PROJECT];
+        attributesList.add(Attributes()
+          ..id = id
+          ..marker = icon
+          ..point = latLng
+          ..project = project
+          ..text = name
+          ..timeStamp = ts
+          ..user = surveyor);
+      }
     }
 
     // LOAD FORM NOTES
     List<dynamic> formNotesList = json[FORMS];
-    for (int i = 0; i < formNotesList.length; i++) {
-      dynamic formItem = formNotesList[i];
-      var noteId = formItem[ID];
-      var name = formItem[NAME];
-      var form = formItem[FORM];
-      name = FormUtilities.getFormItemLabel(form, name);
-      var ts = formItem[TS];
-      var x = formItem[X];
-      var y = formItem[Y];
-      var latLng = LatLongHelper.fromLatLon(y, x);
-      dataBounds.extend(latLng);
+    if (formNotesList != null) {
+      for (int i = 0; i < formNotesList.length; i++) {
+        dynamic formItem = formNotesList[i];
+        var noteId = formItem[ID];
+        var name = formItem[NAME];
+        var form = formItem[FORM];
+        name = FormUtilities.getFormItemLabel(form, name);
+        var ts = formItem[TS];
+        var x = formItem[X];
+        var y = formItem[Y];
+        var latLng = LatLongHelper.fromLatLon(y, x);
+        dataBounds.extend(latLng);
 
-      var marker = formItem[MARKER];
-      var size = formItem[SIZE];
-      var color = formItem[COLOR];
-      var iconData = getSmashIcon(marker);
-      var colorExt = ColorExt(color);
-      var icon = Icon(
-        iconData,
-        size: size,
-        color: colorExt,
-      );
-      markers.add(
-          buildFormNote(this, x, y, name, noteId, iconData, size, colorExt));
+        var marker = formItem[MARKER];
+        var size = formItem[SIZE];
+        var color = formItem[COLOR];
+        var iconData = getSmashIcon(marker);
+        var colorExt = ColorExt(color);
+        var icon = Icon(
+          iconData,
+          size: size,
+          color: colorExt,
+        );
+        markers.add(
+            buildFormNote(this, x, y, name, noteId, iconData, size, colorExt));
 
-      var surveyor = formItem[SURVEYOR];
-      var project = formItem[PROJECT];
-      attributesList.add(Attributes()
-        ..id = noteId
-        ..marker = icon
-        ..point = latLng
-        ..project = project
-        ..text = name
-        ..timeStamp = ts
-        ..user = surveyor);
+        var surveyor = formItem[SURVEYOR];
+        var project = formItem[PROJECT];
+        attributesList.add(Attributes()
+          ..id = noteId
+          ..marker = icon
+          ..point = latLng
+          ..project = project
+          ..text = name
+          ..timeStamp = ts
+          ..user = surveyor);
+      }
     }
 
     mapMarkers = markers;

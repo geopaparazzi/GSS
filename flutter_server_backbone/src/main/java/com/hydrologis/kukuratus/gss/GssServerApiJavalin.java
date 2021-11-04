@@ -521,7 +521,7 @@ public class GssServerApiJavalin implements Vars {
                                 if (countOf == 0) {
                                 } else {
                                     String name = fileName.replaceFirst("tags.json", "");
-                                    if(!name.endsWith("_")) {
+                                    if (!name.endsWith("_")) {
                                         name = name + "_";
                                     }
                                     fileName = name
@@ -615,31 +615,34 @@ public class GssServerApiJavalin implements Vars {
                         users = userDao.queryBuilder().where().eq(GpapUsers.ACTIVE_FIELD_NAME, 1).query();
                     }
 
-                    Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
-                    List<GpapProject> projectsList = null;
-                    if (projects != null) {
-                        String[] projectsArray = projects.split(";");
-                        projectsList = projectDao.queryBuilder().where()
-                                .in(GpapProject.NAME_FIELD_NAME, Arrays.asList(projectsArray)).query();
+                    if (!users.isEmpty()) {
+                        Dao<GpapProject, ? > projectDao = DatabaseHandler.instance().getDao(GpapProject.class);
+                        List<GpapProject> projectsList = null;
+                        if (projects != null) {
+                            String[] projectsArray = projects.split(";");
+                            projectsList = projectDao.queryBuilder().where()
+                                    .in(GpapProject.NAME_FIELD_NAME, Arrays.asList(projectsArray)).query();
+                        }
+
+                        // TODO parameterize users, from and to
+                        Long from = null;
+                        Long to = null;
+
+                        Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
+                        GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
+
+                        Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
+
+                        // simple notes
+                        GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
+                                false);
+                        // form notes
+                        GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null, true);
+
+                        Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
+                        GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null, null);
+
                     }
-
-                    // TODO parameterize users, from and to
-                    Long from = null;
-                    Long to = null;
-
-                    Dao<GpsLogs, ? > logsDao = DatabaseHandler.instance().getDao(GpsLogs.class);
-                    GssDatabaseUtilities.getLogs(root, logsDao, users, projectsList, null, null);
-
-                    Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
-
-                    // simple notes
-                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null, false);
-                    // form notes
-                    GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null, true);
-
-                    Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
-                    GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null, null);
-
                     ctx.result(root.toString());
                 } else {
                     sendNoPermission(ctx);

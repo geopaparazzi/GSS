@@ -651,6 +651,31 @@ class _FilterWidgetState extends State<FilterWidget>
             padding: const EdgeInsets.all(8.0),
             child: SmashUI.titleText(title),
           ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: Icon(
+                  MdiIcons.checkboxMultipleMarkedOutline,
+                  color: SmashColors.mainDecorations,
+                ),
+                tooltip: "Select all",
+                onPressed: () {
+                  setSelectionTo(true);
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  MdiIcons.checkboxMultipleBlankOutline,
+                  color: SmashColors.mainDecorations,
+                ),
+                tooltip: "Unselect all",
+                onPressed: () {
+                  setSelectionTo(false);
+                },
+              )
+            ],
+          ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -674,13 +699,13 @@ class _FilterWidgetState extends State<FilterWidget>
           ButtonBar(
             alignment: MainAxisAlignment.spaceEvenly,
             children: [
-              FlatButton(
+              TextButton(
                 child: const Text('CANCEL'),
                 onPressed: () {
                   Navigator.pop(context);
                 },
               ),
-              FlatButton(
+              TextButton(
                 child: const Text('RESET'),
                 onPressed: () async {
                   _filterStateModel.reset();
@@ -692,7 +717,7 @@ class _FilterWidgetState extends State<FilterWidget>
                   Navigator.pop(context);
                 },
               ),
-              FlatButton(
+              TextButton(
                 child: Text(_doSurveyors ? 'PROJECTS' : 'SURVEYORS'),
                 onPressed: () {
                   setState(() {
@@ -700,7 +725,7 @@ class _FilterWidgetState extends State<FilterWidget>
                   });
                 },
               ),
-              FlatButton(
+              TextButton(
                 child: const Text('OK'),
                 onPressed: () async {
                   _projectsToActive.removeWhere((key, value) => !value);
@@ -727,6 +752,25 @@ class _FilterWidgetState extends State<FilterWidget>
         ],
       );
     }
+  }
+
+  void setSelectionTo(bool selection) {
+    if (_doSurveyors) {
+      _surveyorsToActive.keys.forEach((key) {
+        _surveyorsToActive[key] = selection;
+      });
+      // var activeSurveyors =
+      //     _surveyorsToActive.entries.map((e) => e.key).toList();
+      // _filterStateModel.setSurveyors(activeSurveyors);
+    } else {
+      _projectsToActive.keys.forEach((key) {
+        _projectsToActive[key] = selection;
+      });
+      // var activeProjects =
+      //     _projectsToActive.entries.map((entry) => entry.key).toList();
+      // _filterStateModel.setProjects(activeProjects);
+    }
+    setState(() {});
   }
 }
 
