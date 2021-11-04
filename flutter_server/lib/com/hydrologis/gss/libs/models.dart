@@ -6,6 +6,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +121,7 @@ class MapstateModel extends ChangeNotifier {
   }
 
   Future<void> getData(BuildContext context) async {
-    print("Data reload called");
+    // print("Data reload called");
 
     var filterStateModel =
         Provider.of<FilterStateModel>(context, listen: false);
@@ -165,7 +166,10 @@ class MapstateModel extends ChangeNotifier {
         List<LatLng> points = [];
         for (int j = 0; j < coords.length; j++) {
           var coord = coords[j];
-          var latLng = LatLng(coord[Y], coord[X]);
+          var lat = coord[Y];
+          var lon = coord[X];
+
+          var latLng = LatLongHelper.fromLatLon(lat, lon);
           dataBounds.extend(latLng);
           points.add(latLng);
         }
@@ -206,8 +210,7 @@ class MapstateModel extends ChangeNotifier {
       var ts = imageItem[TS];
       var x = imageItem[X];
       var y = imageItem[Y];
-      var latLng = LatLng(y, x);
-//      print("$latLng : $name");
+      var latLng = LatLongHelper.fromLatLon(y, x);
       dataBounds.extend(latLng);
       var imgData = Base64Decoder().convert(data);
       var imageWidget = Image.memory(
@@ -238,7 +241,7 @@ class MapstateModel extends ChangeNotifier {
       var ts = noteItem[TS];
       var x = noteItem[X];
       var y = noteItem[Y];
-      var latLng = LatLng(y, x);
+      var latLng = LatLongHelper.fromLatLon(y, x);
       dataBounds.extend(latLng);
 
       var marker = noteItem[MARKER];
@@ -276,7 +279,7 @@ class MapstateModel extends ChangeNotifier {
       var ts = formItem[TS];
       var x = formItem[X];
       var y = formItem[Y];
-      var latLng = LatLng(y, x);
+      var latLng = LatLongHelper.fromLatLon(y, x);
       dataBounds.extend(latLng);
 
       var marker = formItem[MARKER];
@@ -310,8 +313,11 @@ class MapstateModel extends ChangeNotifier {
     var delta = 0.01;
     if (mapMarkers.length > 0) {
       dataBounds = LatLngBounds(
-          LatLng(dataBounds.south - delta, dataBounds.west - delta),
-          LatLng(dataBounds.north + delta, dataBounds.east + delta));
+        LatLongHelper.fromLatLon(
+            dataBounds.south - delta, dataBounds.west - delta),
+        LatLongHelper.fromLatLon(
+            dataBounds.north + delta, dataBounds.east + delta),
+      );
     } else {
       dataBounds = LatLngBounds(LatLng(-45, -90), LatLng(45, 90));
     }

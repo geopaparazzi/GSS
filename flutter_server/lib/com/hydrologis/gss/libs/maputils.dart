@@ -178,6 +178,8 @@ openNoteDialog(BuildContext context, int noteId) async {
     var ts = noteItem[TS];
     var surveyor = noteItem[SURVEYOR];
     var project = noteItem[PROJECT];
+    var lat = noteItem[Y];
+    var lon = noteItem[X];
     var map = {
       "ID": id,
       "Text": name,
@@ -185,6 +187,8 @@ openNoteDialog(BuildContext context, int noteId) async {
           .format(DateTime.fromMillisecondsSinceEpoch(ts)),
       "Project": project,
       "Surveyor": surveyor,
+      "Latitude": lat.toStringAsFixed(6),
+      "Longitude": lon.toStringAsFixed(6),
     };
 
     widget = Column(

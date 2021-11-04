@@ -216,3 +216,15 @@ class _OnlineSourceCardState extends State<OnlineSourceCard> {
     );
   }
 }
+
+/// Helper class for latlong related issues.
+class LatLongHelper {
+  /// Create [LatLng] from lon and lat with check.
+  static LatLng fromLatLon(double lat, double lon) {
+    if (lon < -180) lon = -180;
+    if (lon > 180) lon = 180;
+    if (lat < -90) lat = -90;
+    if (lat > 90) lat = 90;
+    return LatLng(lat, lon);
+  }
+}
