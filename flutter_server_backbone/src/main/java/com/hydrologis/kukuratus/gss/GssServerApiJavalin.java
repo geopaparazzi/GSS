@@ -37,8 +37,10 @@ import org.hortonmachine.dbs.log.Logger;
 import org.hortonmachine.dbs.log.Message;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.hortonmachine.gears.utils.files.FileUtilities;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
 import org.hortonmachine.gears.utils.images.ImageUtilities;
+import org.hortonmachine.gears.utils.time.UtcTimeUtilities;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -499,6 +501,7 @@ public class GssServerApiJavalin implements Vars {
                                 byte[] byteArray = getByteArray(uploadedFile.getContent());
                                 File folder = ServletUtils.getBasemapsFolder().get();
                                 File file = new File(folder, fileName);
+                                file = checkIfExists(file);
                                 try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
                                     fos.write(byteArray);
                                 }
@@ -506,6 +509,7 @@ public class GssServerApiJavalin implements Vars {
                                 byte[] byteArray = getByteArray(uploadedFile.getContent());
                                 File folder = ServletUtils.getProjectsFolder().get();
                                 File file = new File(folder, fileName);
+                                file = checkIfExists(file);
                                 try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
                                     fos.write(byteArray);
                                 }
@@ -513,6 +517,17 @@ public class GssServerApiJavalin implements Vars {
                                 String form = getString(uploadedFile.getContent());
                                 Dao<Forms, ? > formsDao = dbHandler.getDao(Forms.class);
 
+                                long countOf = formsDao.queryBuilder().where().eq(Forms.NAME_FIELD_NAME, fileName).countOf();
+                                if (countOf == 0) {
+                                } else {
+                                    String name = fileName.replaceFirst("tags.json", "");
+                                    if(!name.endsWith("_")) {
+                                        name = name + "_";
+                                    }
+                                    fileName = name
+                                            + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact_string)
+                                            + "_tags.json";
+                                }
                                 Forms f = new Forms(fileName, form, validUser.uniqueName, FormStatus.VISIBLE.getStatusCode());
                                 int create = formsDao.create(f);
                                 if (create != 1) {
@@ -561,6 +576,18 @@ public class GssServerApiJavalin implements Vars {
             }
         });
 
+    }
+
+    private static File checkIfExists( File file ) {
+        if (file.exists()) {
+            // add timestamp to it
+            String name = FileUtilities.getNameWithoutExtention(file);
+            int lastDot = file.getName().lastIndexOf(".");
+            String ext = file.getName().substring(lastDot);
+            file = new File(file.getParentFile(),
+                    name + "_" + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSScompact_string) + ext);
+        }
+        return file;
     }
 
     public static void addGetDataRoute( Javalin app ) {
@@ -826,7 +853,7 @@ public class GssServerApiJavalin implements Vars {
             }
         });
     }
-    
+
     // // public static void addGetImagedataRoute() {
     // // get(ROUTES_GET_IMAGEDATA, (req, res) -> {
     // // // User validUser = hasPermission(req);

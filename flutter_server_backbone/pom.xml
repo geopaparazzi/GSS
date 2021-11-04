@@ -9,7 +9,7 @@
 
 
 	<properties>
-		<hortonmachine.version>0.10.3</hortonmachine.version>
+		<hortonmachine.version>0.10.4</hortonmachine.version>
 		<javalin.version>3.13.4</javalin.version>
 		<ormlite.version>5.3</ormlite.version>
 		<mapsforge.version>0.9.1</mapsforge.version>
