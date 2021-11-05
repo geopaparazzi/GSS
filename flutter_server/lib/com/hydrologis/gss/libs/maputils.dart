@@ -1002,6 +1002,31 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
                     }
                   },
                 ),
+                if (SmashSession.isAdmin())
+                  IconButton(
+                    icon: Icon(
+                      MdiIcons.trashCan,
+                      color: SmashColors.mainDanger,
+                    ),
+                    tooltip: "Delete note.",
+                    onPressed: () async {
+                      var doDelete = await SmashDialogs.showConfirmDialog(
+                          context,
+                          "DELETE",
+                          "Are you sure you want to delete the note? This can't be undone.");
+                      if (doDelete) {
+                        var up = SmashSession.getSessionUser();
+                        var response =
+                            await ServerApi.deleteNote(up[0], up[1], attr.id);
+                        await mapstateModel.getData(context);
+                        mapstateModel.reloadMap();
+                        attrState.refresh();
+                        if (response != null) {
+                          SmashDialogs.showErrorDialog(context, response);
+                        }
+                      }
+                    },
+                  ),
               ],
             ),
           ),

@@ -1195,6 +1195,31 @@ public class GssServerApiJavalin implements Vars {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
                         ctx.status(ks.getCode());
                         ctx.result(ks.toJson());
+                    } else if (type.equals(NOTES)) {
+                        String idStr = ctx.formParam(ID);
+                        if (idStr != null) {
+                            long id = Long.parseLong(idStr);
+                            
+                            Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
+                            
+                            Notes noteToRemove = notesDao.queryBuilder().where().eq(Notes.ID_FIELD_NAME, id)
+                                    .queryForFirst();
+                            int deleted = notesDao.delete(noteToRemove);
+                            boolean error = false;
+                            if (deleted != 1) {
+                                error = true;
+                            }
+                            if (error) {
+                                KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_500_INTERNAL_SERVER_ERROR,
+                                        "An error occurred while deleting the note.");
+                                ctx.status(ks.getCode());
+                                ctx.result(ks.toJson());
+                                return;
+                            }
+                        }
+                        KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_200_OK, "Ok");
+                        ctx.status(ks.getCode());
+                        ctx.result(ks.toJson());
                     } else {
                         KukuratusStatus ks = new KukuratusStatus(KukuratusStatus.CODE_404_NOTFOUND,
                                 "Type not recognised: " + type);
