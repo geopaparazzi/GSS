@@ -4,7 +4,10 @@
  * found in the LICENSE file.
  */
 
+import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:smashlibs/smashlibs.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -39,8 +42,25 @@ class AboutPage extends StatefulWidget {
   }
 }
 
-class AboutPageState extends State<AboutPage> {
-  String _version = "3.2.0";
+class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
+  String _version = "3.3.0";
+  List<Widget> dbInfoWidgets;
+
+  @override
+  Future<void> afterFirstLayout(BuildContext context) async {
+    var up = SmashSession.getSessionUser();
+    var dbInfo = await ServerApi.getDbinfo(up[0], up[1]);
+    var splitInfo = dbInfo.split("\n");
+    if (dbInfo.toLowerCase().contains("postgis")) {
+      dbInfoWidgets = splitInfo.map((s) => SmashUI.smallText(s)).toList();
+    } else if (splitInfo.length == 2) {
+      splitInfo[0] = "H2: " + splitInfo[0];
+      splitInfo[1] = "H2GIS: " + splitInfo[1];
+      dbInfoWidgets = splitInfo.map((s) => SmashUI.smallText(s)).toList();
+    }
+
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +126,15 @@ class AboutPageState extends State<AboutPage> {
               }
             },
           ),
+          if (dbInfoWidgets != null)
+            ListTile(
+              title: SmashUI.normalText("Database build info",
+                  bold: true, color: SmashColors.mainDecorations),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: dbInfoWidgets,
+              ),
+            ),
         ],
       ),
     );

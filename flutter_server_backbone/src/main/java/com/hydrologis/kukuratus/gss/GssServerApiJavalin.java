@@ -37,6 +37,7 @@ import org.hortonmachine.dbs.log.Logger;
 import org.hortonmachine.dbs.log.Message;
 import org.hortonmachine.gears.io.geopaparazzi.forms.Utilities;
 import org.hortonmachine.gears.libs.modules.HMConstants;
+import org.hortonmachine.gears.utils.StringUtilities;
 import org.hortonmachine.gears.utils.files.FileUtilities;
 import org.hortonmachine.gears.utils.geometry.GeometryUtilities;
 import org.hortonmachine.gears.utils.images.ImageUtilities;
@@ -79,6 +80,8 @@ import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
 
 public class GssServerApiJavalin implements Vars {
+
+    static final String ROUTES_GET_DBINFO = "/dbinfo";
 
     static final String ROUTES_LOG = "/log/:type/:limit";
 
@@ -206,6 +209,21 @@ public class GssServerApiJavalin implements Vars {
     public static void addCheckRoute( Javalin app ) {
         app.get("/check", ctx -> {
             ctx.result("It works. " + DateTime.now().toString(HMConstants.dateTimeFormatterYYYYMMDDHHMMSS));
+        });
+    }
+
+    public static void addDbinfoRoute( Javalin app ) {
+        app.get(ROUTES_GET_DBINFO, ctx -> {
+            User validUser = hasPermission(ctx);
+            KukuratusLogger.logAccess(ROUTES_GET_DBINFO, getRequestLogString(ctx, validUser));
+            if (validUser != null) {
+                DatabaseHandler dbHandler = DatabaseHandler.instance();
+                String[] dbInfo = dbHandler.getDb().getDbInfo();
+                String dbInfoStr = StringUtilities.joinStrings("\n", dbInfo);
+                ctx.result(dbInfoStr);
+            } else {
+                sendNoPermission(ctx);
+            }
         });
     }
 
@@ -1199,11 +1217,10 @@ public class GssServerApiJavalin implements Vars {
                         String idStr = ctx.formParam(ID);
                         if (idStr != null) {
                             long id = Long.parseLong(idStr);
-                            
+
                             Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
-                            
-                            Notes noteToRemove = notesDao.queryBuilder().where().eq(Notes.ID_FIELD_NAME, id)
-                                    .queryForFirst();
+
+                            Notes noteToRemove = notesDao.queryBuilder().where().eq(Notes.ID_FIELD_NAME, id).queryForFirst();
                             int deleted = notesDao.delete(noteToRemove);
                             boolean error = false;
                             if (deleted != 1) {

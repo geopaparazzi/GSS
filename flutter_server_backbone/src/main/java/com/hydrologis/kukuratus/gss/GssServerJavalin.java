@@ -90,6 +90,7 @@ public class GssServerJavalin implements Vars {
         // KukuratusLogger.logDebug(this, ctx.req.getPathInfo());
         // });
         GssServerApiJavalin.addCheckRoute(app);
+        GssServerApiJavalin.addDbinfoRoute(app);
         GssServerApiJavalin.addTilesRoute(app, mapsforgeTilesGenerator);
         GssServerApiJavalin.addClientUploadRoute(app);
         GssServerApiJavalin.addClientGetBaseDataRoute(app);
@@ -246,6 +247,7 @@ public class GssServerJavalin implements Vars {
             db = EDb.H2GIS.getSpatialDb();
             db.open(dbFile.getAbsolutePath());
         }
+        String[] dbInfo = db.getDbInfo();
         // set registry and logger on current db
         Logger.INSTANCE.init(db);
         KukuratusLogger.logger = Logger.INSTANCE;

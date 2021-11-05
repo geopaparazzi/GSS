@@ -13,6 +13,7 @@ const doLocal = String.fromEnvironment('DOLOCAL', defaultValue: 'false');
 const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8080" : "";
 
 const API_DATA = "$WEBAPP_URL/data";
+const API_DBINFO = "$WEBAPP_URL/dbinfo";
 const API_LOG = "$WEBAPP_URL/log";
 const API_LIST = "$WEBAPP_URL/list";
 const API_UPDATE = "$WEBAPP_URL/update";
@@ -46,6 +47,19 @@ class ServerApi {
     String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
     var requestHeaders = {"authorization": basicAuth};
     return requestHeaders;
+  }
+
+  static Future<String> getDbinfo(String user, String pwd) async {
+    String apiCall = "$API_DBINFO";
+
+    Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
+    HttpRequest request = await HttpRequest.request(apiCall,
+        method: 'GET', requestHeaders: requestHeaders);
+    if (request.status == 200) {
+      return request.response;
+    } else {
+      return null;
+    }
   }
 
   static Future<String> getLog(String user, String pwd,
