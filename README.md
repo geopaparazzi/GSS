@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/280122006.svg)](https://zenodo.org/badge/latestdoi/280122006)
+
 # GSS installation instructions
 
 * download the latest release from the releases page
