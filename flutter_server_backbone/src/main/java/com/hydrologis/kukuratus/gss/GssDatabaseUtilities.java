@@ -1,6 +1,8 @@
 package com.hydrologis.kukuratus.gss;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -54,15 +56,15 @@ public class GssDatabaseUtilities {
      * @return the root object that was used.
      * @throws SQLException
      */
-    public static JSONObject getLogs(JSONObject root, Dao<GpsLogs, ?> logsDao, List<GpapUsers> users,
-            List<GpapProject> projects, long[] fromTo, String textMatching) throws SQLException {
-        QueryBuilder<GpsLogs, ?> qb = logsDao.queryBuilder();
+    public static JSONObject getLogs( JSONObject root, Dao<GpsLogs, ? > logsDao, List<GpapUsers> users,
+            List<GpapProject> projects, long[] fromTo, String textMatching ) throws SQLException {
+        QueryBuilder<GpsLogs, ? > qb = logsDao.queryBuilder();
         List<GpsLogs> gpsLogs;
         boolean hasUsers = users != null && users.size() > 0;
         boolean hasProjects = projects != null;
         boolean hasTime = fromTo != null;
         if (hasUsers || hasProjects || hasTime || textMatching != null) {
-            Where<GpsLogs, ?> where = qb.where();
+            Where<GpsLogs, ? > where = qb.where();
             boolean needAnd = false;
             if (hasUsers) {
                 if (needAnd)
@@ -79,8 +81,7 @@ public class GssDatabaseUtilities {
             if (hasTime) {
                 if (needAnd)
                     where = where.and();
-                where = where.and().ge(GpsLogs.STARTTS_FIELD_NAME, fromTo[0]).and().le(GpsLogs.ENDTS_FIELD_NAME,
-                        fromTo[1]);
+                where = where.and().ge(GpsLogs.STARTTS_FIELD_NAME, fromTo[0]).and().le(GpsLogs.ENDTS_FIELD_NAME, fromTo[1]);
                 needAnd = true;
             }
             gpsLogs = where.query();
@@ -96,7 +97,7 @@ public class GssDatabaseUtilities {
         root.put(LOGS, jsonLogs);
 
         if (gpsLogs.size() > 0) {
-            for (GpsLogs log : gpsLogs) {
+            for( GpsLogs log : gpsLogs ) {
                 JSONObject logObject = new JSONObject();
                 jsonLogs.put(logObject);
                 logObject.put(ID, log.id);
@@ -108,7 +109,7 @@ public class GssDatabaseUtilities {
                 JSONArray jsonCoords = new JSONArray();
                 logObject.put(COORDS, jsonCoords);
                 Coordinate[] coords = log.the_geom.getCoordinates();
-                for (Coordinate c : coords) {
+                for( Coordinate c : coords ) {
                     JSONObject coordObject = new JSONObject();
                     coordObject.put(X, c.x);
                     coordObject.put(Y, c.y);
@@ -120,16 +121,83 @@ public class GssDatabaseUtilities {
         return root;
     }
 
-    public static JSONObject getNotes(JSONObject root, Dao<Notes, ?> notesDao, Dao<GpapProject, ?> projectDao,
-            Dao<GpapUsers, ?> userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo,
-            String textMatching, boolean typeForm) throws SQLException {
+    /**
+     * Get all notes with minimum possible info to keep net load low.
+     * 
+     * @param root
+     * @param notesDao
+     * @param projectDao
+     * @param userDao
+     * @param users
+     * @param projects
+     * @param fromTo
+     * @param textMatching
+     * @return
+     * @throws SQLException
+     */
+    public static JSONObject getNotesMin( JSONObject root, Dao<Notes, ? > notesDao, Dao<GpapProject, ? > projectDao,
+            Dao<GpapUsers, ? > userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo, String textMatching )
+            throws SQLException {
         if (root == null) {
             root = new JSONObject();
         }
 
-        QueryBuilder<Notes, ?> qb = notesDao.queryBuilder();
+        QueryBuilder<Notes, ? > qb = notesDao.queryBuilder();
         List<Notes> notesList;
-        Where<Notes, ?> where = qb.where();
+        Where<Notes, ? > where = qb.where();
+        boolean needAnd = false;
+        boolean hasUsers = users != null && users.size() > 0;
+        boolean hasProjects = projects != null;
+        boolean hasTime = fromTo != null;
+        JSONArray jsonNotes = new JSONArray();
+        root.put(NOTES, jsonNotes);
+        if (hasUsers) {
+            if (needAnd)
+                where.and();
+            where.in(Notes.GPAPUSER_FIELD_NAME, users);
+            needAnd = true;
+        }
+        if (hasProjects) {
+            if (needAnd)
+                where.and();
+
+            where.in(Notes.GPAPPROJECT_FIELD_NAME, projects);
+            needAnd = true;
+        }
+        if (hasTime) {
+            if (needAnd)
+                where.and();
+            where.between(Notes.TIMESTAMP_FIELD_NAME, fromTo[0], fromTo[1]);
+            needAnd = true;
+        }
+
+        // get only last of the versions
+        String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME + " group by ST_asText("
+                + Notes.GEOM_FIELD_NAME + ") )";
+        where.and().raw(versionsSql);
+        qb.orderBy(Notes.ID_FIELD_NAME, false);
+        notesList = where.query();
+
+        if (notesList != null) {
+            for( Notes note : notesList ) {
+                projectDao.refresh(note.gpapProject);
+                userDao.refresh(note.gpapUser);
+
+                jsonNotes.put(note.toJsonMin());
+            }
+        }
+        return root;
+    }
+    public static JSONObject getNotes( JSONObject root, Dao<Notes, ? > notesDao, Dao<GpapProject, ? > projectDao,
+            Dao<GpapUsers, ? > userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo, String textMatching,
+            boolean typeForm ) throws SQLException {
+        if (root == null) {
+            root = new JSONObject();
+        }
+
+        QueryBuilder<Notes, ? > qb = notesDao.queryBuilder();
+        List<Notes> notesList;
+        Where<Notes, ? > where = qb.where();
         boolean needAnd = false;
         boolean hasUsers = users != null && users.size() > 0;
         boolean hasProjects = projects != null;
@@ -173,14 +241,14 @@ public class GssDatabaseUtilities {
         }
 
         // get only last of the versions
-        String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME
-                + " group by ST_asText(" + Notes.GEOM_FIELD_NAME + ") )";
+        String versionsSql = "id in (select  max(" + Notes.ID_FIELD_NAME + ")  from " + Notes.TABLE_NAME + " group by ST_asText("
+                + Notes.GEOM_FIELD_NAME + ") )";
         where.and().raw(versionsSql);
         qb.orderBy(Notes.ID_FIELD_NAME, false);
         notesList = where.query();
 
         if (notesList != null) {
-            for (Notes note : notesList) {
+            for( Notes note : notesList ) {
                 projectDao.refresh(note.gpapProject);
                 userDao.refresh(note.gpapUser);
 
@@ -190,9 +258,9 @@ public class GssDatabaseUtilities {
         return root;
     }
 
-    public static JSONObject getNoteById(Dao<Notes, ?> notesDao, Dao<GpapProject, ?> projectDao,
-            Dao<GpapUsers, ?> userDao, long id) throws SQLException {
-        QueryBuilder<Notes, ?> qb = notesDao.queryBuilder();
+    public static JSONObject getNoteById( Dao<Notes, ? > notesDao, Dao<GpapProject, ? > projectDao, Dao<GpapUsers, ? > userDao,
+            long id ) throws SQLException {
+        QueryBuilder<Notes, ? > qb = notesDao.queryBuilder();
         Notes note = qb.where().eq(Notes.ID_FIELD_NAME, id).queryForFirst();
         if (note != null) {
             projectDao.refresh(note.gpapProject);
@@ -202,16 +270,16 @@ public class GssDatabaseUtilities {
         return new JSONObject();
     }
 
-    public static JSONObject getImages(JSONObject root, Dao<Images, ?> imagesDao, Dao<GpapProject, ?> projectDao,
-            Dao<GpapUsers, ?> userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo,
-            String textMatching) throws Exception {
+    public static JSONObject getImages( JSONObject root, Dao<Images, ? > imagesDao, Dao<GpapProject, ? > projectDao,
+            Dao<GpapUsers, ? > userDao, List<GpapUsers> users, List<GpapProject> projects, long[] fromTo, String textMatching )
+            throws Exception {
         if (root == null) {
             root = new JSONObject();
         }
 
-        QueryBuilder<Images, ?> qb = imagesDao.queryBuilder();
+        QueryBuilder<Images, ? > qb = imagesDao.queryBuilder();
         List<Images> imagesList;
-        Where<Images, ?> where = qb.where();
+        Where<Images, ? > where = qb.where();
         boolean needAnd = false;
         boolean hasUsers = users != null && users.size() > 0;
         boolean hasProjects = projects != null;
@@ -232,8 +300,7 @@ public class GssDatabaseUtilities {
             if (hasTime) {
                 if (needAnd)
                     where = where.and();
-                where = where.ge(Images.TIMESTAMP_FIELD_NAME, fromTo[0]).and().le(Images.TIMESTAMP_FIELD_NAME,
-                        fromTo[1]);
+                where = where.ge(Images.TIMESTAMP_FIELD_NAME, fromTo[0]).and().le(Images.TIMESTAMP_FIELD_NAME, fromTo[1]);
                 needAnd = true;
             }
         }
@@ -245,7 +312,7 @@ public class GssDatabaseUtilities {
         JSONArray jsonImages = new JSONArray();
         root.put(IMAGES, jsonImages);
         if (imagesList != null) {
-            for (Images image : imagesList) {
+            for( Images image : imagesList ) {
                 projectDao.refresh(image.gpapProject);
                 userDao.refresh(image.gpapUser);
                 jsonImages.put(image.toJson());
@@ -254,10 +321,10 @@ public class GssDatabaseUtilities {
         return root;
     }
 
-    public static JSONObject getImageById(Dao<Images, ?> imagesDao, Dao<GpapProject, ?> projectDao,
-            Dao<GpapUsers, ?> userDao, long id) throws Exception {
+    public static JSONObject getImageById( Dao<Images, ? > imagesDao, Dao<GpapProject, ? > projectDao, Dao<GpapUsers, ? > userDao,
+            long id ) throws Exception {
 
-        QueryBuilder<Images, ?> qb = imagesDao.queryBuilder();
+        QueryBuilder<Images, ? > qb = imagesDao.queryBuilder();
         Images image = qb.where().eq(Images.ID_FIELD_NAME, id).queryForFirst();
 
         if (image != null) {
@@ -276,13 +343,13 @@ public class GssDatabaseUtilities {
      * @return the updated form string.
      * @throws Exception if something goes wrong.
      */
-    public static String updateImagesIds(String formString, HashMap<String, String> oldIds2NewMap) throws Exception {
+    public static String updateImagesIds( String formString, HashMap<String, String> oldIds2NewMap ) throws Exception {
         JSONObject sectionObject = new JSONObject(formString);
         List<String> formsNames = Utilities.getFormNames4Section(sectionObject);
-        for (String formName : formsNames) {
+        for( String formName : formsNames ) {
             JSONObject form4Name = Utilities.getForm4Name(formName, sectionObject);
             JSONArray formItems = Utilities.getFormItems(form4Name);
-            for (int i = 0; i < formItems.length(); i++) {
+            for( int i = 0; i < formItems.length(); i++ ) {
                 JSONObject formItem = formItems.getJSONObject(i);
                 if (!formItem.has(Utilities.TAG_KEY)) {
                     continue;
@@ -300,7 +367,7 @@ public class GssDatabaseUtilities {
                     String[] imageSplit = value.split(";");
                     if (imageSplit.length > 0) {
                         StringBuilder sb = new StringBuilder();
-                        for (int j = 0; j < imageSplit.length; j++) {
+                        for( int j = 0; j < imageSplit.length; j++ ) {
                             String oldId = imageSplit[j].trim();
                             String newId = oldIds2NewMap.get(oldId);
                             if (newId == null) {
@@ -330,7 +397,7 @@ public class GssDatabaseUtilities {
                     String[] imageSplit = value.split(";");
                     if (imageSplit.length > 0) {
                         StringBuilder sb = new StringBuilder();
-                        for (int j = 0; j < imageSplit.length; j++) {
+                        for( int j = 0; j < imageSplit.length; j++ ) {
                             String oldId = imageSplit[j].trim();
                             String newId = oldIds2NewMap.get(oldId);
                             if (newId == null) {
@@ -348,6 +415,43 @@ public class GssDatabaseUtilities {
         }
         return sectionObject.toString();
 
+    }
+
+    /**
+     * Get the form item label out of a form string.
+     *
+     * @param formString the form.
+     * @return The form label or null.
+     * @throws Exception if something goes wrong.
+     */
+    public static String getFormLabel( String formString, String defaultValue ) throws Exception {
+        if (formString != null && formString.length() > 0) {
+            JSONObject sectionObject = new JSONObject(formString);
+            List<String> formsNames = Utilities.getFormNames4Section(sectionObject);
+            for( String formName : formsNames ) {
+                JSONObject form4Name = Utilities.getForm4Name(formName, sectionObject);
+                JSONArray formItems = Utilities.getFormItems(form4Name);
+                for( int i = 0; i < formItems.length(); i++ ) {
+                    JSONObject formItem = formItems.getJSONObject(i);
+                    if (!formItem.has(Utilities.TAG_KEY)) {
+                        continue;
+                    }
+
+                    String value = "";
+                    if (formItem.has(Utilities.TAG_VALUE))
+                        value = formItem.getString(Utilities.TAG_VALUE);
+                    if (formItem.has(Utilities.TAG_ISLABEL)) {
+                        String isLabelStr = formItem.getString(Utilities.TAG_ISLABEL);
+                        if (isLabelStr.toLowerCase().equals("true") || isLabelStr.toLowerCase().equals("yes")) {
+                            return value;
+                        }
+
+                    }
+
+                }
+            }
+        }
+        return defaultValue;
     }
 
 }

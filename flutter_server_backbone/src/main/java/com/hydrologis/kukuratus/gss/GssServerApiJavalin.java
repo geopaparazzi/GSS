@@ -651,11 +651,7 @@ public class GssServerApiJavalin implements Vars {
 
                         Dao<Notes, ? > notesDao = DatabaseHandler.instance().getDao(Notes.class);
 
-                        // simple notes
-                        GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null,
-                                false);
-                        // form notes
-                        GssDatabaseUtilities.getNotes(root, notesDao, projectDao, userDao, users, projectsList, null, null, true);
+                        GssDatabaseUtilities.getNotesMin(root, notesDao, projectDao, userDao, users, projectsList, null, projects);
 
                         Dao<Images, ? > imagesDao = DatabaseHandler.instance().getDao(Images.class);
                         GssDatabaseUtilities.getImages(root, imagesDao, projectDao, userDao, users, projectsList, null, null);

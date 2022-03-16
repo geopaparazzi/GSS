@@ -234,13 +234,15 @@ class MapstateModel extends ChangeNotifier {
       }
     }
 
-    // LOAD SIMPLE NOTES
+    // LOAD ALL NOTES WITH SIMPLE INFOS
+    // make sure that forms are loadd properly
     List<dynamic> simpleNotesList = json[NOTES];
     if (simpleNotesList != null) {
       for (int i = 0; i < simpleNotesList.length; i++) {
         dynamic noteItem = simpleNotesList[i];
         var id = noteItem[ID];
         var name = noteItem[NAME];
+        var hasForm = noteItem[FORM];
         var ts = noteItem[TS];
         var x = noteItem[X];
         var y = noteItem[Y];
@@ -257,8 +259,13 @@ class MapstateModel extends ChangeNotifier {
           size: size,
           color: colorExt,
         );
-        markers
-            .add(buildSimpleNote(this, x, y, name, id, icon, size, colorExt));
+        if (hasForm) {
+          markers.add(
+              buildFormNote(this, x, y, name, id, iconData, size, colorExt));
+        } else {
+          markers
+              .add(buildSimpleNote(this, x, y, name, id, icon, size, colorExt));
+        }
 
         var surveyor = noteItem[SURVEYOR];
         var project = noteItem[PROJECT];
@@ -274,45 +281,45 @@ class MapstateModel extends ChangeNotifier {
     }
 
     // LOAD FORM NOTES
-    List<dynamic> formNotesList = json[FORMS];
-    if (formNotesList != null) {
-      for (int i = 0; i < formNotesList.length; i++) {
-        dynamic formItem = formNotesList[i];
-        var noteId = formItem[ID];
-        var name = formItem[NAME];
-        var form = formItem[FORM];
-        name = FormUtilities.getFormItemLabel(form, name);
-        var ts = formItem[TS];
-        var x = formItem[X];
-        var y = formItem[Y];
-        var latLng = LatLongHelper.fromLatLon(y, x);
-        dataBounds.extend(latLng);
+    // List<dynamic> formNotesList = json[FORMS];
+    // if (formNotesList != null) {
+    //   for (int i = 0; i < formNotesList.length; i++) {
+    //     dynamic formItem = formNotesList[i];
+    //     var noteId = formItem[ID];
+    //     var name = formItem[NAME];
+    //     var form = formItem[FORM];
+    //     name = FormUtilities.getFormItemLabel(form, name);
+    //     var ts = formItem[TS];
+    //     var x = formItem[X];
+    //     var y = formItem[Y];
+    //     var latLng = LatLongHelper.fromLatLon(y, x);
+    //     dataBounds.extend(latLng);
 
-        var marker = formItem[MARKER];
-        var size = formItem[SIZE];
-        var color = formItem[COLOR];
-        var iconData = getSmashIcon(marker);
-        var colorExt = ColorExt(color);
-        var icon = Icon(
-          iconData,
-          size: size,
-          color: colorExt,
-        );
-        markers.add(
-            buildFormNote(this, x, y, name, noteId, iconData, size, colorExt));
+    //     var marker = formItem[MARKER];
+    //     var size = formItem[SIZE];
+    //     var color = formItem[COLOR];
+    //     var iconData = getSmashIcon(marker);
+    //     var colorExt = ColorExt(color);
+    //     var icon = Icon(
+    //       iconData,
+    //       size: size,
+    //       color: colorExt,
+    //     );
+    //     markers.add(
+    //         buildFormNote(this, x, y, name, noteId, iconData, size, colorExt));
 
-        var surveyor = formItem[SURVEYOR];
-        var project = formItem[PROJECT];
-        attributesList.add(Attributes()
-          ..id = noteId
-          ..marker = icon
-          ..point = latLng
-          ..project = project
-          ..text = name
-          ..timeStamp = ts
-          ..user = surveyor);
-      }
-    }
+    //     var surveyor = formItem[SURVEYOR];
+    //     var project = formItem[PROJECT];
+    //     attributesList.add(Attributes()
+    //       ..id = noteId
+    //       ..marker = icon
+    //       ..point = latLng
+    //       ..project = project
+    //       ..text = name
+    //       ..timeStamp = ts
+    //       ..user = surveyor);
+    //   }
+    // }
 
     mapMarkers = markers;
     attributes = attributesList;

@@ -19,7 +19,6 @@
 package com.hydrologis.kukuratus.gss.database;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -495,5 +494,31 @@ public class Notes implements ISpatialTable, KmlRepresenter {
         noteObject.put(GssDatabaseUtilities.SURVEYOR, gpapUser.getName());
         return noteObject;
     }
-
+    
+    public JSONObject toJsonMin() {
+        JSONObject noteObject = new JSONObject();
+        noteObject.put(ID_FIELD_NAME, id);
+        noteObject.put(TIMESTAMP_FIELD_NAME, timestamp);
+        noteObject.put(NOTESEXT_COLUMN_MARKER, marker);
+        noteObject.put(NOTESEXT_COLUMN_SIZE, size);
+        noteObject.put(NOTESEXT_COLUMN_COLOR, color);
+        if (form != null && form.length() > 0) {
+            try {
+                text = GssDatabaseUtilities.getFormLabel(form, text);
+            } catch (Exception e) {
+                KukuratusLogger.logError(this, e);
+            }
+            noteObject.put(GssDatabaseUtilities.NAME, text);
+            noteObject.put(GssDatabaseUtilities.FORM, true);
+        }else {            
+            noteObject.put(GssDatabaseUtilities.NAME, text);
+            noteObject.put(GssDatabaseUtilities.FORM, false);
+        }
+        Coordinate c = the_geom.getCoordinate();
+        noteObject.put(GssDatabaseUtilities.X, c.x);
+        noteObject.put(GssDatabaseUtilities.Y, c.y);
+        noteObject.put(GssDatabaseUtilities.PROJECT, gpapProject.getName());
+        noteObject.put(GssDatabaseUtilities.SURVEYOR, gpapUser.getName());
+        return noteObject;
+    }
 }
