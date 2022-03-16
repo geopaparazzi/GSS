@@ -17,10 +17,10 @@ dependencies:
   ###########################
 
   smashlibs:
-    #path: ../../../SMASH/smashlibs/
+    # path: ../../../SMASH/smashlibs/
     git:
       url: https://github.com/moovida/smashlibs.git
-      ref: 43add8a
+      ref: 879a910
 
   dart_hydrologis_utils: ^0.6.0
 
@@ -53,7 +53,7 @@ dependencies:
   flutter_tags: ^1.0.0-nullsafety.1
 
   # BSD
-  flutter_map: ^0.13.1
+  flutter_map: ^0.14.0
     # git:
     #   url: https://github.com/moovida/flutter_map.git
     #   ref: version4smash
@@ -65,14 +65,15 @@ dependencies:
     #   ref: version4smash
 
   # GPL3
-  flutter_map_tappable_polyline: ^3.0.0
+  flutter_map_tappable_polyline: ^3.1.0
 
   # MIT
   transparent_image: ^2.0.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
+  test: ^1.20.1
+
+  lints: ^1.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
