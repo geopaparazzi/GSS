@@ -1,11 +1,9 @@
 package com.hydrologis.kukuratus.gss;
 
-import java.io.Console;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -52,11 +50,11 @@ public class GssServerJavalin implements Vars {
 
     private ITilesGenerator mapsforgeTilesGenerator;
 
-    public void start( ASpatialDb db ) throws Exception {
-        start(db, null, null);
+    public void start( ASpatialDb db, int port, int sslPort ) throws Exception {
+        start(db, null, null, port, sslPort);
     }
 
-    public void start( ASpatialDb db, String keyStorePath, String keyStorePassword ) throws Exception {
+    public void start( ASpatialDb db, String keyStorePath, String keyStorePassword, int port, int sslPort ) throws Exception {
 
         Javalin app = Javalin.create(config -> {
             config.enableCorsForAllOrigins();
@@ -67,13 +65,13 @@ public class GssServerJavalin implements Vars {
                     sslContextFactory.setKeyStorePath(keyStorePath);
                     sslContextFactory.setKeyStorePassword(keyStorePassword);
                     ServerConnector sslConnector = new ServerConnector(server, sslContextFactory);
-                    sslConnector.setPort(443);
+                    sslConnector.setPort(sslPort);
                     ServerConnector connector = new ServerConnector(server);
-                    connector.setPort(WEBAPP_PORT);
+                    connector.setPort(port);
                     server.setConnectors(new Connector[]{sslConnector, connector});
                 } else {
                     ServerConnector connector = new ServerConnector(server);
-                    connector.setPort(WEBAPP_PORT);
+                    connector.setPort(port);
                     server.setConnectors(new Connector[]{connector});
                 }
                 return server;
@@ -82,7 +80,7 @@ public class GssServerJavalin implements Vars {
             if (keyStorePath != null && keyStorePassword != null) {
                 config.enforceSsl = true;
             }
-        }).start(WEBAPP_PORT);
+        }).start(port);
 
         activateMapsforge();
         // ROUTES START
@@ -151,6 +149,8 @@ public class GssServerJavalin implements Vars {
     public static void main( String[] args ) throws Exception {
         Options options = new Options();
         options.addOption("w", "workspace", true, "The path to the workspace.");
+        options.addOption("pt", "port", true, "The optional port to use (defaults to 8080).");
+        options.addOption("pts", "sslport", true, "The optional port to use for ssl (defaults to 443).");
         options.addOption("s", "ssl", true, "The optional path to the keystore file for ssl.");
         options.addOption("sp", "ssl_pwd", true,
                 "The optional password for the keystore file. Mandatory if the keystore file is defined.");
@@ -171,6 +171,9 @@ public class GssServerJavalin implements Vars {
         String postgresUser = null;
         String postgresPwd = null;
         String workspacePath = null;
+        int port = WEBAPP_PORT;
+        int sslPort = WEBAPP_SSL_PORT;
+
         if (!cmd.hasOption("w")) {
             System.err.println("The workspace folder needs to be supplied as argument.");
             help(options);
@@ -183,6 +186,25 @@ public class GssServerJavalin implements Vars {
                 System.exit(1);
             }
             KukuratusWorkspace.setWorkspaceFolderPath(workspacePath);
+        }
+
+        if (cmd.hasOption("pt")) {
+            String portStr = cmd.getOptionValue("pt");
+            try {
+                port = Integer.parseInt(portStr);
+            } catch (NumberFormatException e) {
+                System.err.println("The port needs to be an integer number.");
+                System.exit(1);
+            }
+        }
+        if (cmd.hasOption("pts")) {
+            String sslPortStr = cmd.getOptionValue("pts");
+            try {
+                sslPort = Integer.parseInt(sslPortStr);
+            } catch (NumberFormatException e) {
+                System.err.println("The ssl port needs to be an integer number.");
+                System.exit(1);
+            }
         }
 
         if (cmd.hasOption("mp")) {
@@ -205,7 +227,7 @@ public class GssServerJavalin implements Vars {
             } else {
                 keyStorePath = cmd.getOptionValue("s");
                 keyStorePwd = cmd.getOptionValue("sp");
-                if(!new File(keyStorePath).exists()) {
+                if (!new File(keyStorePath).exists()) {
                     System.err.println("Ignoring keystore file that does not exist.");
                     keyStorePath = null;
                 }
@@ -257,8 +279,11 @@ public class GssServerJavalin implements Vars {
         System.out.println("* Launching with parameters:");
         System.out.println("* \tLAUNCH FOLDER: " + new File(".").getAbsolutePath());
         System.out.println("* \tWORKSPACE FOLDER: " + workspacePath);
-        System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
+        System.out.println("* \tAPPLICATION PORT: " + port);
         System.out.println("* \tMOBILE PWD: " + (mobilePwd != null ? mobilePwd : " - nv - "));
+        System.out.println("*");
+        System.out.println("* \tSSL KEYSTORE FILE: " + (keyStorePath != null ? keyStorePath : " - nv - "));
+        System.out.println("* \tAPPLICATION SSL PORT : " + (keyStorePath != null ? sslPort : " - nv - "));
         if (postgresUrl != null) {
             System.out.println("* \tDATABASE: " + postgresUrl);
         } else {
@@ -274,7 +299,7 @@ public class GssServerJavalin implements Vars {
         }
 
         GssServerJavalin gssServer = new GssServerJavalin();
-        gssServer.start(db, keyStorePath, keyStorePwd);
+        gssServer.start(db, keyStorePath, keyStorePwd, port, sslPort);
     }
 
     private static void help( Options options ) {
