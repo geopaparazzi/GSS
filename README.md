@@ -45,3 +45,24 @@ java $MEM -jar gss-backbone-$VERSION.jar -w $WORKSPACE -mp testPwd -p $DBHOST:54
 ```
 
 
+## All options
+
+```
+usage: gss
+ -mp,--mobilepwd <arg>   The password used by mobile devices to connect
+                         (defaults to testPwd).
+ -p,--psql_url <arg>     The optional url to enable postgis database use
+                         (disables H2GIS).
+ -pp,--psql_pwd <arg>    The optional postgis password (defaults to test).
+                         Mandatory if the url is defined.
+ -pt,--port <arg>        The optional port to use (defaults to 8080).
+ -pts,--sslport <arg>    The optional port to use for ssl (defaults to
+                         443).
+ -pu,--psql_user <arg>   The optional postgis user (defaults to test).
+                         Mandatory if the url is defined.
+ -s,--ssl <arg>          The optional path to the keystore file for ssl.
+ -sp,--ssl_pwd <arg>     The optional password for the keystore file.
+                         Mandatory if the keystore file is defined.
+ -w,--workspace <arg>    The path to the workspace.
+ ```
+
