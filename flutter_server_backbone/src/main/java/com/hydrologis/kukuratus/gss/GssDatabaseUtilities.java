@@ -443,7 +443,10 @@ public class GssDatabaseUtilities {
                     if (formItem.has(Utilities.TAG_ISLABEL)) {
                         String isLabelStr = formItem.getString(Utilities.TAG_ISLABEL);
                         if (isLabelStr.toLowerCase().equals("true") || isLabelStr.toLowerCase().equals("yes")) {
-                            return value;
+                            if(value.trim().length() > 0 )
+                                return value;
+                            else 
+                                return defaultValue; 
                         }
 
                     }

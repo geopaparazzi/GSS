@@ -280,47 +280,6 @@ class MapstateModel extends ChangeNotifier {
       }
     }
 
-    // LOAD FORM NOTES
-    // List<dynamic> formNotesList = json[FORMS];
-    // if (formNotesList != null) {
-    //   for (int i = 0; i < formNotesList.length; i++) {
-    //     dynamic formItem = formNotesList[i];
-    //     var noteId = formItem[ID];
-    //     var name = formItem[NAME];
-    //     var form = formItem[FORM];
-    //     name = FormUtilities.getFormItemLabel(form, name);
-    //     var ts = formItem[TS];
-    //     var x = formItem[X];
-    //     var y = formItem[Y];
-    //     var latLng = LatLongHelper.fromLatLon(y, x);
-    //     dataBounds.extend(latLng);
-
-    //     var marker = formItem[MARKER];
-    //     var size = formItem[SIZE];
-    //     var color = formItem[COLOR];
-    //     var iconData = getSmashIcon(marker);
-    //     var colorExt = ColorExt(color);
-    //     var icon = Icon(
-    //       iconData,
-    //       size: size,
-    //       color: colorExt,
-    //     );
-    //     markers.add(
-    //         buildFormNote(this, x, y, name, noteId, iconData, size, colorExt));
-
-    //     var surveyor = formItem[SURVEYOR];
-    //     var project = formItem[PROJECT];
-    //     attributesList.add(Attributes()
-    //       ..id = noteId
-    //       ..marker = icon
-    //       ..point = latLng
-    //       ..project = project
-    //       ..text = name
-    //       ..timeStamp = ts
-    //       ..user = surveyor);
-    //   }
-    // }
-
     mapMarkers = markers;
     attributes = attributesList;
 
