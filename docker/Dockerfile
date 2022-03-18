@@ -1,4 +1,4 @@
-FROM fischerscode/flutter:2.0.6 AS flutter-builder
+FROM fischerscode/flutter:2.10.3 AS flutter-builder
 
 COPY --chown=flutter flutter_server flutter_server
 WORKDIR /home/flutter/flutter_server
