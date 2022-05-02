@@ -1,0 +1,19 @@
+[project]
+name = ""
+version = ""
+description = ""
+authors = [
+    {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"},
+]
+dependencies = [
+    "Django>=4.0.4",
+    "djangorestframework>=3.13.1",
+]
+requires-python = ">=3.8"
+license = {text = "GPLv3"}
+
+[tool.pdm]
+
+[build-system]
+requires = ["pdm-pep517>=0.12.0"]
+build-backend = "pdm.pep517.api"
