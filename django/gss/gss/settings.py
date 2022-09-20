@@ -11,15 +11,12 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
-import environ
 import os
-env = environ.Env()
-environ.Env.read_env()
 
-DEBUG = os.getenv("DEBUG", False) == "True"
-USE_LOCALDATA = os.getenv("USE_LOCALDATA", False) == "True"
+DEBUG = True #os.getenv("DEBUG", False) == "True"
+USE_LOCALDATA = os.getenv("USE_LOCALDATA", True) == True
 if USE_LOCALDATA:
-    POSTGRES_DBNAME = "test"
+    POSTGRES_DBNAME = "gsstest"
     POSTGRES_USER = "postgres"
     POSTGRES_PASS = "postgres"
     POSTGRES_HOST = "localhost"
@@ -43,7 +40,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-3l%jlj1iw@+1v(o-8v!ef^a)mrr$^&7b=0o-45e2%9_q^64d7+')
 
 ALLOWED_HOSTS = [
-    
+
 ]
 
 
@@ -56,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
     'rest_framework',
     'data',
 ]
