@@ -11,6 +11,26 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import environ
+import os
+env = environ.Env()
+environ.Env.read_env()
+
+DEBUG = os.getenv("DEBUG", False) == "True"
+USE_LOCALDATA = os.getenv("USE_LOCALDATA", False) == "True"
+if USE_LOCALDATA:
+    POSTGRES_DBNAME = "test"
+    POSTGRES_USER = "postgres"
+    POSTGRES_PASS = "postgres"
+    POSTGRES_HOST = "localhost"
+    POSTGRES_PORT = "5432"
+else:
+    POSTGRES_DBNAME = os.getenv('GSS_POSTGRES_DBNAME', "test")
+    POSTGRES_USER = os.getenv('GSS_POSTGRES_USER', "postgres")
+    POSTGRES_PASS = os.getenv('GSS_POSTGRES_PASS', "postgres")
+    POSTGRES_HOST = os.getenv('GSS_POSTGRES_HOST', "localhost")
+    POSTGRES_PORT = os.getenv('GSS_POSTGRES_PORT', "5432")
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +40,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3l%jlj1iw@+1v(o-8v!ef^a)mrr$^&7b=0o-45e2%9_q^64d7+'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-3l%jlj1iw@+1v(o-8v!ef^a)mrr$^&7b=0o-45e2%9_q^64d7+')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    
+]
 
 
 # Application definition
@@ -75,13 +94,22 @@ WSGI_APPLICATION = 'gss.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': POSTGRES_DBNAME,
+        'USER': POSTGRES_USER,
+        'PASSWORD': POSTGRES_PASS,
+        'HOST': POSTGRES_HOST,
+        'PORT': POSTGRES_PORT,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
