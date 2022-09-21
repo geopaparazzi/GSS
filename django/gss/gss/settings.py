@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 
 DEBUG = True #os.getenv("DEBUG", False) == "True"
-USE_LOCALDATA = os.getenv("USE_LOCALDATA", True) == True
+USE_LOCALDATA = os.getenv("USE_LOCALDATA", "True") == "True"
 if USE_LOCALDATA:
     POSTGRES_DBNAME = "gsstest"
     POSTGRES_USER = "postgres"
@@ -43,10 +43,20 @@ ALLOWED_HOSTS = [
 
 ]
 
+LEAFLET_CONFIG = {
+    'DEFAULT_CENTER': (46.0, 11),
+    'DEFAULT_ZOOM': 6,
+    'MAX_ZOOM': 20,
+    'MIN_ZOOM':3,
+    'SCALE': 'both'
+}
+
 
 # Application definition
 
 INSTALLED_APPS = [
+    'data',
+    'leaflet',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,7 +65,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'rest_framework',
-    'data',
 ]
 
 MIDDLEWARE = [

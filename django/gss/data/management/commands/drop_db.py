@@ -29,7 +29,7 @@ class Command(BaseCommand):
             )
             connection.autocommit = True
             cursor = connection.cursor()
-            cursor.execute(f"drop database if exists {settings.POSTGRES_DBNAME}")
+            cursor.execute(f"drop database if exists {settings.POSTGRES_DBNAME} WITH (FORCE)")
             cursor.execute(f"create database {settings.POSTGRES_DBNAME}")
             connection.close
             

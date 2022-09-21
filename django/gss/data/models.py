@@ -70,7 +70,7 @@ class Surveyor(models.Model):
     id = models.IntegerField(primary_key=True, name=DbNamings.SURVEYOR_ID)
     deviceId = models.CharField(name=DbNamings.SURVEYOR_DEVICE_ID, max_length=100, null=False, unique=True)
     name = models.CharField(name=DbNamings.SURVEYOR_NAME, max_length=100, null=False)
-    contact = models.CharField(name=DbNamings.SURVEYOR_CONTACT, max_length=100, null=True)
+    contact = models.CharField(name=DbNamings.SURVEYOR_CONTACT, max_length=100, null=True, blank=True)
     isActive = models.BooleanField(name=DbNamings.SURVEYOR_ACTIVE, null=False)
 
 class Project(models.Model):
@@ -90,13 +90,13 @@ class Note(models.Model):
     text = models.TextField(name=DbNamings.NOTE_TEXT, null=False, default="")
     marker = models.CharField(name=DbNamings.NOTE_MARKER, max_length=50, null=False, default="circle")
     size = models.FloatField(name=DbNamings.NOTE_SIZE, null=False,default=10)
-    rotation = models.FloatField(name=DbNamings.NOTE_ROTATION, null=True)
+    rotation = models.FloatField(name=DbNamings.NOTE_ROTATION, null=True, blank=True)
     color = models.CharField(max_length=9,name=DbNamings.NOTE_COLOR, null=False, default="#FF0000")
     accuracy = models.FloatField(name=DbNamings.NOTE_ACCURACY, null=False, default=0)
     heading = models.FloatField(name=DbNamings.NOTE_HEADING, null=False, default=0)
     speed = models.FloatField(name=DbNamings.NOTE_SPEED, null=False, default=0)
     speedaccuracy = models.FloatField(name=DbNamings.NOTE_SPEEDACCURACY, null=False, default=0)
-    form = models.JSONField(name=DbNamings.NOTE_FORM, null=True)
+    form = models.JSONField(name=DbNamings.NOTE_FORM, null=True, blank=True)
 
     surveyor = models.ForeignKey(Surveyor, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_SURVEYOR, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_PROJECT, default=-1)
@@ -167,7 +167,7 @@ class Image(models.Model):
     text = models.TextField(name=DbNamings.IMAGE_TEXT, null=False, default="")
     thumbnail = models.BinaryField(name=DbNamings.IMAGE_THUMB, null=False, default=bytearray([]))
 
-    note = models.ForeignKey(Note, on_delete=models.CASCADE, null=True, name=DbNamings.IMAGE_NOTE, default=-1)
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, null=True, blank=True, name=DbNamings.IMAGE_NOTE, default=-1)
     imageData = models.ForeignKey(ImageData, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_IMAGEDATA, default=-1)
     surveyor = models.ForeignKey(Surveyor, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_SURVEYOR, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_PROJECT, default=-1)
