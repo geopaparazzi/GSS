@@ -2,9 +2,16 @@ from datetime import datetime
 from django.db import models
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.geos import Point, LineString
-
+from django.contrib.auth.models import User, Group
 
 class DbNamings():
+    GROUP_COORDINATORS = "Coordinators"
+    GROUP_SURVEYORS = "Surveyors"
+    GROUP_WEBUSERS = "Webusers"
+    GROUP_DEFAULT = "Default"
+    PROJECT_DEFAULT = "Default"
+
+
     GEOM = "the_geom"
 
     NOTE_ID = "id"
@@ -23,24 +30,15 @@ class DbNamings():
     NOTE_SPEED = "speed"
     NOTE_SPEEDACCURACY = "speedaccuracy"
     NOTE_FORM = "form"
-    NOTE_SURVEYOR = "surveyorid"
+    NOTE_USER = "userid"
     NOTE_PROJECT = "projectid"
-
-    SURVEYOR_ID = "id"
-    SURVEYOR_NAME = "name"
-    SURVEYOR_DEVICE_ID = "deviceid"
-    SURVEYOR_CONTACT = "contact"
-    SURVEYOR_ACTIVE = "active"
-
-    PROJECT_ID = "id"
-    PROJECT_NAME = "name"
 
     GPSLOG_ID = "id" 
     GPSLOG_NAME = "name" 
     GPSLOG_STARTTS = "startts" 
     GPSLOG_ENDTS = "endts" 
     GPSLOG_UPLOADTIMESTAMP = "uploadts" 
-    GPSLOG_SURVEYOR = "surveyorid" 
+    GPSLOG_USER = "userid" 
     GPSLOG_PROJECT = "projectid" 
     GPSLOG_COLOR = "color" 
     GPSLOG_WIDTH = "width"
@@ -59,26 +57,50 @@ class DbNamings():
     IMAGE_THUMB = "thumbnail" 
     IMAGE_IMAGEDATA = "imagedataid" 
     IMAGE_NOTE = "notesid" 
-    IMAGE_SURVEYOR = "surveyorid" 
+    IMAGE_USER = "userid" 
     IMAGE_PROJECT = "projectid" 
 
     IMAGEDATA_ID = "id" 
     IMAGEDATA_DATA = "data" 
-    IMAGEDATA_SURVEYOR = "surveyorid"
+    IMAGEDATA_USER = "userid"
 
-class Surveyor(models.Model):
-    id = models.IntegerField(primary_key=True, name=DbNamings.SURVEYOR_ID)
-    deviceId = models.CharField(name=DbNamings.SURVEYOR_DEVICE_ID, max_length=100, null=False, unique=True)
-    name = models.CharField(name=DbNamings.SURVEYOR_NAME, max_length=100, null=False)
-    contact = models.CharField(name=DbNamings.SURVEYOR_CONTACT, max_length=100, null=True, blank=True)
-    isActive = models.BooleanField(name=DbNamings.SURVEYOR_ACTIVE, null=False)
+    DEVICE_ID = "id"
+    DEVICE_NAME = "name"
+    DEVICE_UNIQUE_ID = "uniqueid"
+    DEVICE_CONTACT = "contact"
+    DEVICE_ACTIVE = "active"
+
+    U_D_ASS_ID = "id"
+    U_D_ASS_USERID = "userid"
+    U_D_ASS_DEVICEID = "deviceid"
+    U_D_ASS_FROMDATE = "fromdate"
+    U_D_ASS_TODATE = "todate"
+
+    PROJECT_ID = "id"
+    PROJECT_NAME = "name"
+    PROJECT_DESCRIPTION = "description"
+    PROJECT_GROUPS = "groups"
+
+    USERINFO_ID = "id"
+    USERINFO_USERID = "userid"
+    USERINFO_EMAIL = "email"
+    USERINFO_FIRSTNAME = "firstname"
+    USERINFO_SECONDNAME = "secondname"
+
+class UserInfo(models.Model):
+    userId = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USERINFO_USERID, default=-1)
+    email = models.EmailField(name=DbNamings.USERINFO_EMAIL, null=True)
+    firstname = models.CharField(name=DbNamings.USERINFO_FIRSTNAME, max_length=30, null=True)
+    secondname = models.CharField(name=DbNamings.USERINFO_SECONDNAME, max_length=30, null=True)
 
 class Project(models.Model):
-    id = models.IntegerField(primary_key=True, name=DbNamings.PROJECT_ID)
     name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False)
+    description = models.TextField(name=DbNamings.PROJECT_DESCRIPTION,  null=True, default="")
+    groups = models.ManyToManyField(Group, name=DbNamings.PROJECT_GROUPS)
+    # TODO projectdata, configurations, webmaplayers
+    
 
 class Note(models.Model):
-    id = models.IntegerField(primary_key=True, name=DbNamings.NOTE_ID)
     previousId = models.IntegerField(
         name=DbNamings.NOTE_PREVID, null=True, blank=True)
     geometry = geomodels.PointField(
@@ -98,7 +120,7 @@ class Note(models.Model):
     speedaccuracy = models.FloatField(name=DbNamings.NOTE_SPEEDACCURACY, null=False, default=0)
     form = models.JSONField(name=DbNamings.NOTE_FORM, null=True, blank=True)
 
-    surveyor = models.ForeignKey(Surveyor, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_SURVEYOR, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_PROJECT, default=-1)
 
 
@@ -107,12 +129,11 @@ class Note(models.Model):
             models.Index(fields=[DbNamings.NOTE_PREVID]),
             models.Index(fields=[DbNamings.NOTE_TS]),
             models.Index(fields=[DbNamings.NOTE_UPLOADTS]),
-            models.Index(fields=[DbNamings.NOTE_SURVEYOR]),
+            models.Index(fields=[DbNamings.NOTE_USER]),
             models.Index(fields=[DbNamings.NOTE_PROJECT]),
         ]
 
 class GpsLog(models.Model):
-    id = models.IntegerField(primary_key=True, name=DbNamings.GPSLOG_ID)
     name = models.CharField(name=DbNamings.GPSLOG_NAME, max_length=200, null=False)
     startTimestamp = models.DateTimeField(name=DbNamings.GPSLOG_STARTTS, null=False, default=datetime.now)
     endTimestamp = models.DateTimeField(name=DbNamings.GPSLOG_ENDTS, null=False, default=datetime.now)
@@ -122,18 +143,17 @@ class GpsLog(models.Model):
     width = models.FloatField(name=DbNamings.GPSLOG_WIDTH, null=False,default=3)
     color = models.CharField(max_length=9,name=DbNamings.GPSLOG_COLOR, null=False, default="#FF0000")
 
-    surveyor = models.ForeignKey(Surveyor, on_delete=models.CASCADE, null=False, name=DbNamings.GPSLOG_SURVEYOR, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.GPSLOG_USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.GPSLOG_PROJECT, default=-1)
 
     class Meta:
         indexes = [
             models.Index(fields=[DbNamings.GPSLOG_UPLOADTIMESTAMP]),
-            models.Index(fields=[DbNamings.GPSLOG_SURVEYOR]),
+            models.Index(fields=[DbNamings.GPSLOG_USER]),
             models.Index(fields=[DbNamings.GPSLOG_PROJECT]),
         ]
 
 class GpsLogData(models.Model):
-    id = models.IntegerField(primary_key=True, name=DbNamings.GPSLOGDATA_ID)
     geometry = geomodels.PointField(
         name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Point(), dim=3)
     timestamp = models.DateTimeField(name=DbNamings.GPSLOGDATA_TIMESTAMP, null=False, default=datetime.now)
@@ -147,17 +167,15 @@ class GpsLogData(models.Model):
         ]
 
 class ImageData(models.Model):
-    id = models.IntegerField(primary_key=True, name=DbNamings.IMAGEDATA_ID)
     data = models.BinaryField(name=DbNamings.IMAGEDATA_DATA, null=False, default=bytearray([]))
-    surveyor = models.ForeignKey(Surveyor, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGEDATA_SURVEYOR, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGEDATA_USER, default=-1)
 
     class Meta:
         indexes = [
-            models.Index(fields=[DbNamings.IMAGEDATA_SURVEYOR]),
+            models.Index(fields=[DbNamings.IMAGEDATA_USER]),
         ]
 
 class Image(models.Model):
-    id = models.IntegerField(primary_key=True, name=DbNamings.IMAGE_ID)
     geometry = geomodels.PointField(
         name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Point())
     altimetry = models.FloatField(name=DbNamings.IMAGE_ALTIM, null=False, default=-1)
@@ -169,7 +187,7 @@ class Image(models.Model):
 
     note = models.ForeignKey(Note, on_delete=models.CASCADE, null=True, blank=True, name=DbNamings.IMAGE_NOTE, default=-1)
     imageData = models.ForeignKey(ImageData, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_IMAGEDATA, default=-1)
-    surveyor = models.ForeignKey(Surveyor, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_SURVEYOR, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_PROJECT, default=-1)
 
 
@@ -179,6 +197,24 @@ class Image(models.Model):
             models.Index(fields=[DbNamings.IMAGE_UPLOADTIMESTAMP]),
             models.Index(fields=[DbNamings.IMAGE_NOTE]),
             models.Index(fields=[DbNamings.IMAGE_IMAGEDATA]),
-            models.Index(fields=[DbNamings.IMAGE_SURVEYOR]),
+            models.Index(fields=[DbNamings.IMAGE_USER]),
             models.Index(fields=[DbNamings.IMAGE_PROJECT]),
         ]
+
+class Device(models.Model):
+    uniqueId = models.CharField(name=DbNamings.DEVICE_UNIQUE_ID, max_length=100, null=False, unique=True)
+    name = models.CharField(name=DbNamings.DEVICE_NAME, max_length=100, null=False)
+    isActive = models.BooleanField(name=DbNamings.DEVICE_ACTIVE, null=False)
+
+class UserDeviceAssociation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.U_D_ASS_USERID, default=-1)
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, null=False, name=DbNamings.U_D_ASS_DEVICEID, default=-1)
+    fromDate = models.DateTimeField(name=DbNamings.U_D_ASS_FROMDATE, null=False, default=datetime.now)
+    toDate = models.DateTimeField(name=DbNamings.U_D_ASS_TODATE, null=True, default=datetime.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=[DbNamings.U_D_ASS_USERID]),
+            models.Index(fields=[DbNamings.U_D_ASS_DEVICEID]),
+        ]
+
