@@ -4,9 +4,9 @@ from leaflet.admin import LeafletGeoAdmin
 
 admin.site.register(Note, LeafletGeoAdmin)
 admin.site.register(Project)
-admin.site.register(GpsLog)
-admin.site.register(GpsLogData)
-admin.site.register(Image)
+admin.site.register(GpsLog, LeafletGeoAdmin)
+admin.site.register(GpsLogData, LeafletGeoAdmin)
+admin.site.register(Image, LeafletGeoAdmin)
 admin.site.register(ImageData)
 admin.site.register(Device)
 admin.site.register(UserDeviceAssociation)

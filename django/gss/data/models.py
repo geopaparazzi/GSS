@@ -41,11 +41,12 @@ class DbNamings():
     GPSLOG_PROJECT = "projectid" 
     GPSLOG_COLOR = "color" 
     GPSLOG_WIDTH = "width"
+    GPSLOG_DATA = "data"
 
     GPSLOGDATA_ID = "id" 
     GPSLOGDATA_ALTIM = "altim" 
     GPSLOGDATA_TIMESTAMP = "ts" 
-    GPSLOGDATA_GPSLOGS = "gpslogsid" 
+    GPSLOGDATA_GPSLOGS = "gpslogid" 
 
     IMAGE_ID = "id" 
     IMAGE_ALTIM = "altim" 
@@ -84,6 +85,9 @@ class Project(models.Model):
     description = models.TextField(name=DbNamings.PROJECT_DESCRIPTION,  null=True, default="")
     groups = models.ManyToManyField(Group, name=DbNamings.PROJECT_GROUPS)
     # TODO projectdata, configurations, webmaplayers
+
+    def __str__(self):
+        return self.name
     
 
 class Note(models.Model):
@@ -109,6 +113,8 @@ class Note(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_PROJECT, default=-1)
 
+    def __str__(self):
+        return f"{self.text} - {str(self.ts)[:-6]} - {str(self.the_geom).split(';')[1]}"
 
     class Meta:
         indexes = [
@@ -118,6 +124,8 @@ class Note(models.Model):
             models.Index(fields=[DbNamings.NOTE_USER]),
             models.Index(fields=[DbNamings.NOTE_PROJECT]),
         ]
+
+
 
 class GpsLog(models.Model):
     name = models.CharField(name=DbNamings.GPSLOG_NAME, max_length=200, null=False)
@@ -131,6 +139,9 @@ class GpsLog(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.GPSLOG_USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.GPSLOG_PROJECT, default=-1)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         indexes = [
@@ -151,6 +162,7 @@ class GpsLogData(models.Model):
             models.Index(fields=[DbNamings.GPSLOGDATA_TIMESTAMP]),
             models.Index(fields=[DbNamings.GPSLOGDATA_GPSLOGS]),
         ]
+
 
 class ImageData(models.Model):
     data = models.BinaryField(name=DbNamings.IMAGEDATA_DATA, null=False, default=bytearray([]))
@@ -176,6 +188,8 @@ class Image(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_PROJECT, default=-1)
 
+    def __str__(self):
+        return self.text
 
     class Meta:
         indexes = [
@@ -192,11 +206,17 @@ class Device(models.Model):
     name = models.CharField(name=DbNamings.DEVICE_NAME, max_length=100, null=False)
     isActive = models.BooleanField(name=DbNamings.DEVICE_ACTIVE, null=False)
 
+    def __str__(self):
+        return f"{self.name} ({self.uniqueid})"
+
 class UserDeviceAssociation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.U_D_ASS_USERID, default=-1)
     device = models.ForeignKey(Device, on_delete=models.CASCADE, null=False, name=DbNamings.U_D_ASS_DEVICEID, default=-1)
     fromDate = models.DateTimeField(name=DbNamings.U_D_ASS_FROMDATE, null=False, default=datetime.now)
     toDate = models.DateTimeField(name=DbNamings.U_D_ASS_TODATE, null=True, default=datetime.now)
+
+    def __str__(self):
+        return f"User: {self.userid} <-> Device: {self.deviceid}"
 
     class Meta:
         indexes = [

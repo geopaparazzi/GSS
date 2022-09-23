@@ -3,7 +3,7 @@
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.0/topics/http/urls/
 Examples:
-Function views
+Function viewsself.the_geom
     1. Add an import:  from my_app import views
     2. Add a URL to urlpatterns:  path('', views.home, name='home')
 Class-based views
@@ -22,11 +22,11 @@ router = routers.DefaultRouter()
 router.register(r'users', data.views.UserViewSet)
 router.register(r'groups', data.views.GroupViewSet)
 router.register(r'projects', data.views.ProjectViewSet)
+router.register(r'notes', data.views.NoteViewSet)
+router.register(r'gpslogs', data.views.GpslogViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
-    # Compatibility redirects
-    # path('upload', data.views.NoteViewSet.as_view({'post': 'create'})),
 ]
