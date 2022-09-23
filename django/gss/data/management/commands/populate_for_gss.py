@@ -45,33 +45,42 @@ class Command(BaseCommand):
             defaultProject.save()
 
         # create test coordinator user
-        coordUser = User.objects.filter(username="Mary Coordinator").first()
+        coordUser = User.objects.filter(username="coordinator").first()
         if not coordUser:
-            coordUser = User(username = "Mary Coordinator", is_staff=True)
-            coordUser.set_password("mxCoord2022")
+            coordUser = User(username = "coordinator", first_name="Mary", last_name="Coordinator", 
+                        is_staff=True, is_active=True, email="mary@gss.com")
+            coordUser.set_password("coordinator")
             coordUser.save()
             coordsGroup.user_set.add(coordUser)
             webusersGroup.user_set.add(coordUser)
             defaultGroup.user_set.add(coordUser)
         
         # create test surveyor user
-        surveyorUser = User.objects.filter(username="Jack Surveyor").first()
+        surveyorUser = User.objects.filter(username="surveyor").first()
         if not surveyorUser:
-            surveyorUser = User(username = "Jack Surveyor", is_staff=True)
-            surveyorUser.set_password("jkSurvey2022")
+            surveyorUser = User(username = "surveyor", first_name="Jack", last_name="Surveyor", 
+                        is_staff=True, is_active=True, email="jack@gss.com")
+            surveyorUser.set_password("surveyor")
             surveyorUser.save()
             surveyorsGroup.user_set.add(surveyorUser)
             webusersGroup.user_set.add(surveyorUser)
             defaultGroup.user_set.add(surveyorUser)
         
         # create test webuser user
-        webuserUser = User.objects.filter(username="Lazy Webuser").first()
+        webuserUser = User.objects.filter(username="webuser").first()
         if not webuserUser:
-            webuserUser = User(username = "Lazy Webuser", is_staff=True)
-            webuserUser.set_password("lzWebuser2022")
+            webuserUser = User(username = "webuser", first_name="Lazy", last_name="Webuser", 
+                        is_staff=True, is_active=True, email="lazy@gss.com")
+            webuserUser.set_password("webuser")
             webuserUser.save()
             webusersGroup.user_set.add(webuserUser)
             defaultGroup.user_set.add(webuserUser)
+        
+        superUser = User.objects.filter(username="admin").first()
+        if not superUser:
+            superUser = User(username = "admin", is_staff=True, is_superuser=True)
+            superUser.set_password("admin")
+            superUser.save()
 
         permissions = Permission.objects.all()
         for permission in permissions:

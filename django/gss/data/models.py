@@ -11,7 +11,6 @@ class DbNamings():
     GROUP_DEFAULT = "Default"
     PROJECT_DEFAULT = "Default"
 
-
     GEOM = "the_geom"
 
     NOTE_ID = "id"
@@ -80,19 +79,6 @@ class DbNamings():
     PROJECT_NAME = "name"
     PROJECT_DESCRIPTION = "description"
     PROJECT_GROUPS = "groups"
-
-    USERINFO_ID = "id"
-    USERINFO_USERID = "userid"
-    USERINFO_EMAIL = "email"
-    USERINFO_FIRSTNAME = "firstname"
-    USERINFO_SECONDNAME = "secondname"
-
-class UserInfo(models.Model):
-    userId = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USERINFO_USERID, default=-1)
-    email = models.EmailField(name=DbNamings.USERINFO_EMAIL, null=True)
-    firstname = models.CharField(name=DbNamings.USERINFO_FIRSTNAME, max_length=30, null=True)
-    secondname = models.CharField(name=DbNamings.USERINFO_SECONDNAME, max_length=30, null=True)
-
 class Project(models.Model):
     name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False)
     description = models.TextField(name=DbNamings.PROJECT_DESCRIPTION,  null=True, default="")

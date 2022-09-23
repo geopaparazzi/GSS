@@ -19,12 +19,14 @@ from rest_framework import routers
 import data.views
 
 router = routers.DefaultRouter()
-router.register(r'notes', data.views.NoteViewSet)
+router.register(r'users', data.views.UserViewSet)
+router.register(r'groups', data.views.GroupViewSet)
+router.register(r'projects', data.views.ProjectViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
     # Compatibility redirects
-    path('upload', data.views.NoteViewSet.as_view({'post': 'create'})),
+    # path('upload', data.views.NoteViewSet.as_view({'post': 'create'})),
 ]
