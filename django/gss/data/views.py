@@ -8,6 +8,7 @@ from data.serializers import UserSerializer, GroupSerializer, ProjectSerializer,
 from data.models import Project, Note, GpsLog, GpsLogData
 from data.permission import IsWebuser, IsCoordinator, IsSurveyor, IsSuperUser
 
+from  requests import Response
 
 class UserViewSet(viewsets.ModelViewSet):
     """

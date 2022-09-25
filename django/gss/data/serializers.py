@@ -4,6 +4,7 @@ from .models import Note, DbNamings, Project, GpsLog, GpsLogData
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
+import json
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -29,38 +30,45 @@ class NoteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class GpslogSerializer(serializers.ModelSerializer):
+
+    def to_internal_value(self, data):
+        dataconv = json.loads(data)
+        internal_value = super(GpslogSerializer, self).to_internal_value(dataconv)
+
+        if 'gpslogdata' in dataconv:
+            gpslogData = dataconv.get("gpslogdata")
+            internal_value.update({
+                "gpslogdata": gpslogData
+            })
+        return internal_value
+
     def create(self, validated_data):
-        user = User.objects.filter(username = validated_data['username'])
-        project = Project.objects.filter(id = validated_data['projectid'])
+        user = User.objects.filter(username = validated_data['userid']).first()
+        project = Project.objects.filter(id = validated_data['projectid'].id).first()
         if user:
             with transaction.atomic():
                 gpsLog = GpsLog.objects.create(
                     name = validated_data['name'],
-                    startts = validated_data['startts'],
-                    endts = validated_data['endts'],
+                    startts = str(validated_data['startts']),
+                    endts = str(validated_data['endts']),
                     the_geom = LineString.from_ewkt(validated_data['the_geom']),
                     width = validated_data['width'],
                     color = validated_data['color'],
                     userid = user,
                     projectid = project,
                 )
-                data = validated_data['data'],
-                for record in data:
-                    GpsLogData.objects.create(
-                        the_geom=Point.from_ewkt(record['the_geom']),
-                        ts = record['ts'],
-                        gpslogid=gpsLog
-                    )
 
+                if 'gpslogdata' in validated_data:
+                    # if data were send, let's suppose it is gps log points
+                    data = validated_data['gpslogdata'],
+                    for record in data[0]:
+                        GpsLogData.objects.create(
+                            the_geom=Point.from_ewkt(record['the_geom']),
+                            ts = record['ts'],
+                            gpslogid=gpsLog
+                        )
+            return gpsLog
 
     class Meta:
         model = GpsLog
-        fields = [ DbNamings.GPSLOG_NAME,
-                DbNamings.GPSLOG_STARTTS,
-                DbNamings.GPSLOG_ENDTS,
-                DbNamings.GPSLOG_USER,
-                DbNamings.GPSLOG_PROJECT,
-                DbNamings.GPSLOG_COLOR,
-                DbNamings.GPSLOG_WIDTH,
-                DbNamings.GPSLOG_DATA,
-                ]
+        fields = '__all__'
