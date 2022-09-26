@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.geos import Point, LineString
 from django.contrib.auth.models import User, Group
+from django.utils.safestring import mark_safe
 
 class DbNamings():
     GROUP_COORDINATORS = "Coordinators"
@@ -167,6 +168,15 @@ class GpsLogData(models.Model):
 class ImageData(models.Model):
     data = models.BinaryField(name=DbNamings.IMAGEDATA_DATA, null=False, default=bytearray([]))
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGEDATA_USER, default=-1)
+
+    def data_tag(self):
+        from base64 import b64encode
+        return mark_safe('<img src = "data: image/png; base64, {}" width="200" height="100">'.format(
+            b64encode(self.data).decode('utf8')
+        ))
+
+    data_tag.short_description = 'Image'
+    data_tag.allow_tags = True
 
     class Meta:
         indexes = [
