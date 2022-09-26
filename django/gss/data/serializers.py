@@ -106,11 +106,16 @@ class GpslogSerializer(serializers.ModelSerializer):
                 if self.LOGDATALABEL in validated_data:
                     # gpslogs are usually sent with log data
                     data = validated_data[self.LOGDATALABEL],
-                    for record in data[0]:
-                        GpsLogData.objects.create(
-                            the_geom=Point.from_ewkt(record[DbNamings.GEOM]),
-                            ts = record[DbNamings.GPSLOGDATA_TIMESTAMP],
-                            gpslogid=gpsLog
+                    if len(data[0]) > 1:
+                        logdataList = []
+                        for record in data[0]:
+                            logdataList.append( GpsLogData(
+                                the_geom=Point.from_ewkt(record[DbNamings.GEOM]),
+                                ts = record[DbNamings.GPSLOGDATA_TIMESTAMP],
+                                gpslogid=gpsLog
+                            ))
+                        GpsLogData.objects.bulk_create(
+                            logdataList
                         )
             return gpsLog
 

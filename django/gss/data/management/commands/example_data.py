@@ -11,6 +11,8 @@ from requests.auth import HTTPBasicAuth
 from django.db import connection
 import json
 import sqlite3
+from django.contrib.gis.geos import Point, LineString
+
 class Command(BaseCommand):
     help = 'Populate the database with example data as a surveyor.'
 
@@ -90,6 +92,8 @@ class Command(BaseCommand):
                         # TODO make form notes with images
                         pass
 
+
+                # ! INSERT GPS LOGS
                 gpslogsUrl = f"{base}/gpslogs/"
                 cursor.execute("""
                         SELECT g._id,g.startts,g.endts,g.text,glp.color,glp.width 
@@ -109,16 +113,6 @@ class Command(BaseCommand):
                     dt = datetime.fromtimestamp(endts/1000, timezone.utc)
                     endtsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-                    newGpslog = {
-                        "name": text,
-                        "startts": starttsStr,
-                        "endts": endtsStr,
-                        "the_geom": "SRID=4326;LINESTRING (11.15 46.15, 11.220552 46.08421, 11.45 46.05)",
-                        "width": width,
-                        "color": color,
-                        "user": 2,
-                        "project": 1,
-                    }
 
                     cursor.execute("""
                             SELECT g._id,g.lon,g.lat,g.altim,g.ts
@@ -127,6 +121,7 @@ class Command(BaseCommand):
                     subResult = cursor.fetchall()
 
                     gpslogdata = []
+                    coords = []
                     for row in subResult:
                         subid = row[0]
                         lon = row[1]
@@ -139,12 +134,26 @@ class Command(BaseCommand):
                             "the_geom": f"SRID=4326;POINT ({lon} {lat} {altim})", 
                             "ts": ts2Str,
                         })
+                        coords.append((lon, lat))
+                    
+
+                    line = LineString(coords, srid=4326)
+                    newGpslog = {
+                        "name": text,
+                        "startts": starttsStr,
+                        "endts": endtsStr,
+                        "the_geom": line.ewkt,
+                        "width": width,
+                        "color": color,
+                        "user": 2,
+                        "project": 1,
+                    }
                     newGpslog["gpslogdata"] = gpslogdata
 
                     headers = {
-                            "Content-Type":"application/json",
-                            "Accept":"application/json",
-                        }
+                        "Content-Type":"application/json",
+                        "Accept":"application/json",
+                    }
                     self.stdout.write(f"Uploading Gpslog '{text}' with id: {id}")
                     r = requests.post(url = gpslogsUrl,headers=headers, json=json.dumps(newGpslog), auth = surveyorAuth)
                     if r.status_code != 201:
