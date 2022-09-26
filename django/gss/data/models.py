@@ -30,16 +30,16 @@ class DbNamings():
     NOTE_SPEED = "speed"
     NOTE_SPEEDACCURACY = "speedaccuracy"
     NOTE_FORM = "form"
-    NOTE_USER = "userid"
-    NOTE_PROJECT = "projectid"
+    NOTE_USER = "user"
+    NOTE_PROJECT = "project"
 
     GPSLOG_ID = "id" 
     GPSLOG_NAME = "name" 
     GPSLOG_STARTTS = "startts" 
     GPSLOG_ENDTS = "endts" 
     GPSLOG_UPLOADTIMESTAMP = "uploadts" 
-    GPSLOG_USER = "userid" 
-    GPSLOG_PROJECT = "projectid" 
+    GPSLOG_USER = "user" 
+    GPSLOG_PROJECT = "project" 
     GPSLOG_COLOR = "color" 
     GPSLOG_WIDTH = "width"
     GPSLOG_DATA = "data"
@@ -58,12 +58,12 @@ class DbNamings():
     IMAGE_THUMB = "thumbnail" 
     IMAGE_IMAGEDATA = "imagedataid" 
     IMAGE_NOTE = "notesid" 
-    IMAGE_USER = "userid" 
-    IMAGE_PROJECT = "projectid" 
+    IMAGE_USER = "user" 
+    IMAGE_PROJECT = "project" 
 
     IMAGEDATA_ID = "id" 
     IMAGEDATA_DATA = "data" 
-    IMAGEDATA_USER = "userid"
+    IMAGEDATA_USER = "user"
 
     DEVICE_ID = "id"
     DEVICE_NAME = "name"
@@ -72,8 +72,8 @@ class DbNamings():
     DEVICE_ACTIVE = "active"
 
     U_D_ASS_ID = "id"
-    U_D_ASS_USERID = "userid"
-    U_D_ASS_DEVICEID = "deviceid"
+    U_D_ASS_USERID = "user"
+    U_D_ASS_DEVICEID = "device"
     U_D_ASS_FROMDATE = "fromdate"
     U_D_ASS_TODATE = "todate"
 
@@ -226,7 +226,7 @@ class UserDeviceAssociation(models.Model):
     toDate = models.DateTimeField(name=DbNamings.U_D_ASS_TODATE, null=True, default=datetime.now)
 
     def __str__(self):
-        return f"User: {self.userid} <-> Device: {self.deviceid}"
+        return f"User: {self.user} <-> Device: {self.device}"
 
     class Meta:
         indexes = [

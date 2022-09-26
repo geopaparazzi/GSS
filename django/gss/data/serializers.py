@@ -28,22 +28,22 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class NoteSerializer(serializers.ModelSerializer):
-    def to_internal_value(self, data):
-        dataconv = json.loads(data)
-        internal_value = super(NoteSerializer, self).to_internal_value(dataconv)
+    # def to_internal_value(self, data):
+    #     dataconv = json.loads(data)
+    #     internal_value = super(NoteSerializer, self).to_internal_value(dataconv)
 
-        if 'images' in dataconv:
-            images = dataconv.get("images")
-            internal_value.update({
-                "images": images
-            })
-        return internal_value
+    #     if 'images' in dataconv:
+    #         images = dataconv.get("images")
+    #         internal_value.update({
+    #             "images": images
+    #         })
+    #     return internal_value
     
-    def create(self, validated_data):
-        user = User.objects.filter(username = validated_data[DbNamings.NOTE_USER]).first()
-        project = Project.objects.filter(id = validated_data[DbNamings.NOTE_PROJECT].id).first()
+    # def create(self, validated_data):
+    #     user = User.objects.filter(username = validated_data[DbNamings.NOTE_USER]).first()
+    #     project = Project.objects.filter(id = validated_data[DbNamings.NOTE_PROJECT].id).first()
 
-        # ! here we need to check if images are sent with the notes
+    #     # ! here we need to check if images are sent with the notes
 
         # if user:
         #     with transaction.atomic():
@@ -54,8 +54,8 @@ class NoteSerializer(serializers.ModelSerializer):
         #             the_geom = LineString.from_ewkt(validated_data['the_geom']),
         #             width = validated_data['width'],
         #             color = validated_data['color'],
-        #             userid = user,
-        #             projectid = project,
+        #             user = user,
+        #             project = project,
         #         )
 
         #         if 'gpslogdata' in validated_data:
@@ -99,8 +99,8 @@ class GpslogSerializer(serializers.ModelSerializer):
                     the_geom = LineString.from_ewkt(validated_data[DbNamings.GEOM]),
                     width = validated_data[DbNamings.GPSLOG_WIDTH],
                     color = validated_data[DbNamings.GPSLOG_COLOR],
-                    userid = user,
-                    projectid = project,
+                    user = user,
+                    project = project,
                 )
 
                 if self.LOGDATALABEL in validated_data:
@@ -158,8 +158,8 @@ class ImageSerializer(serializers.ModelSerializer):
                         text = validated_data[DbNamings.IMAGE_TEXT],
                         thumbnail = thumbByteArray,
                         imageData = imageData,
-                        userid = user,
-                        projectid = project,
+                        user = user,
+                        project = project,
                     )
                     return image
                 else:
