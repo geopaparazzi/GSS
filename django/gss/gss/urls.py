@@ -24,6 +24,7 @@ router.register(r'groups', data.views.GroupViewSet)
 router.register(r'projects', data.views.ProjectViewSet)
 router.register(r'notes', data.views.NoteViewSet)
 router.register(r'gpslogs', data.views.GpslogViewSet)
+router.register(r'images', data.views.ImageViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

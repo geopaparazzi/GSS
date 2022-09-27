@@ -4,6 +4,8 @@ from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.geos import Point, LineString
 from django.contrib.auth.models import User, Group
 from django.utils.safestring import mark_safe
+from base64 import b64encode
+from django.contrib import admin
 
 class DbNamings():
     GROUP_COORDINATORS = "Coordinators"
@@ -13,6 +15,8 @@ class DbNamings():
     PROJECT_DEFAULT = "Default"
 
     GEOM = "the_geom"
+    USER = "user" 
+    PROJECT = "project" 
 
     NOTE_ID = "id"
     NOTE_PREVID = "previd"
@@ -30,16 +34,12 @@ class DbNamings():
     NOTE_SPEED = "speed"
     NOTE_SPEEDACCURACY = "speedaccuracy"
     NOTE_FORM = "form"
-    NOTE_USER = "user"
-    NOTE_PROJECT = "project"
 
     GPSLOG_ID = "id" 
     GPSLOG_NAME = "name" 
     GPSLOG_STARTTS = "startts" 
     GPSLOG_ENDTS = "endts" 
     GPSLOG_UPLOADTIMESTAMP = "uploadts" 
-    GPSLOG_USER = "user" 
-    GPSLOG_PROJECT = "project" 
     GPSLOG_COLOR = "color" 
     GPSLOG_WIDTH = "width"
     GPSLOG_DATA = "data"
@@ -56,14 +56,11 @@ class DbNamings():
     IMAGE_AZIMUTH = "azimuth" 
     IMAGE_TEXT = "text" 
     IMAGE_THUMB = "thumbnail" 
-    IMAGE_IMAGEDATA = "imagedataid" 
-    IMAGE_NOTE = "notesid" 
-    IMAGE_USER = "user" 
-    IMAGE_PROJECT = "project" 
-
+    IMAGE_IMAGEDATA = "imagedata" 
+    IMAGE_NOTE = "notes" 
+    
     IMAGEDATA_ID = "id" 
     IMAGEDATA_DATA = "data" 
-    IMAGEDATA_USER = "user"
 
     DEVICE_ID = "id"
     DEVICE_NAME = "name"
@@ -72,7 +69,6 @@ class DbNamings():
     DEVICE_ACTIVE = "active"
 
     U_D_ASS_ID = "id"
-    U_D_ASS_USERID = "user"
     U_D_ASS_DEVICEID = "device"
     U_D_ASS_FROMDATE = "fromdate"
     U_D_ASS_TODATE = "todate"
@@ -111,8 +107,8 @@ class Note(models.Model):
     speedaccuracy = models.FloatField(name=DbNamings.NOTE_SPEEDACCURACY, null=False, default=0)
     form = models.JSONField(name=DbNamings.NOTE_FORM, null=True, blank=True)
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_USER, default=-1)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.NOTE_PROJECT, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
 
     def __str__(self):
         return f"{self.text} - {str(self.ts)[:-6]} - {str(self.the_geom).split(';')[1]}"
@@ -122,8 +118,8 @@ class Note(models.Model):
             models.Index(fields=[DbNamings.NOTE_PREVID]),
             models.Index(fields=[DbNamings.NOTE_TS]),
             models.Index(fields=[DbNamings.NOTE_UPLOADTS]),
-            models.Index(fields=[DbNamings.NOTE_USER]),
-            models.Index(fields=[DbNamings.NOTE_PROJECT]),
+            models.Index(fields=[DbNamings.USER]),
+            models.Index(fields=[DbNamings.PROJECT]),
         ]
 
 
@@ -138,8 +134,8 @@ class GpsLog(models.Model):
     width = models.FloatField(name=DbNamings.GPSLOG_WIDTH, null=False,default=3)
     color = models.CharField(max_length=9,name=DbNamings.GPSLOG_COLOR, null=False, default="#FF0000")
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.GPSLOG_USER, default=-1)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.GPSLOG_PROJECT, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
 
     def __str__(self):
         return self.name
@@ -147,8 +143,8 @@ class GpsLog(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=[DbNamings.GPSLOG_UPLOADTIMESTAMP]),
-            models.Index(fields=[DbNamings.GPSLOG_USER]),
-            models.Index(fields=[DbNamings.GPSLOG_PROJECT]),
+            models.Index(fields=[DbNamings.USER]),
+            models.Index(fields=[DbNamings.PROJECT]),
         ]
 
 class GpsLogData(models.Model):
@@ -164,24 +160,26 @@ class GpsLogData(models.Model):
             models.Index(fields=[DbNamings.GPSLOGDATA_GPSLOGS]),
         ]
 
+class ImageDataAdmin(admin.ModelAdmin):
+    list_display = ['data_thumb']
+    readonly_fields = ["data_image"]
 
 class ImageData(models.Model):
     data = models.BinaryField(name=DbNamings.IMAGEDATA_DATA, null=False, default=bytearray([]))
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGEDATA_USER, default=-1)
 
-    def data_tag(self):
-        from base64 import b64encode
-        return mark_safe('<img src = "data: image/png; base64, {}" width="200" height="100">'.format(
+    def data_thumb(self):
+        return mark_safe('<img src = "data: image/png; base64, {}" width="100">'.format(
             b64encode(self.data).decode('utf8')
         ))
-
-    data_tag.short_description = 'Image'
-    data_tag.allow_tags = True
-
-    class Meta:
-        indexes = [
-            models.Index(fields=[DbNamings.IMAGEDATA_USER]),
-        ]
+    data_thumb.short_description = 'Thumbnail'
+    data_thumb.allow_tags = True
+    
+    def data_image(self):
+        return mark_safe('<img src = "data: image/png; base64, {}" width="800">'.format(
+            b64encode(self.data).decode('utf8')
+        ))
+    data_image.short_description = 'Image'
+    data_image.allow_tags = True
 
 class Image(models.Model):
     geometry = geomodels.PointField(
@@ -195,8 +193,8 @@ class Image(models.Model):
 
     note = models.ForeignKey(Note, on_delete=models.CASCADE, null=True, blank=True, name=DbNamings.IMAGE_NOTE, default=-1)
     imageData = models.ForeignKey(ImageData, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_IMAGEDATA, default=-1)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_USER, default=-1)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_PROJECT, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
 
     def __str__(self):
         return self.text
@@ -207,8 +205,8 @@ class Image(models.Model):
             models.Index(fields=[DbNamings.IMAGE_UPLOADTIMESTAMP]),
             models.Index(fields=[DbNamings.IMAGE_NOTE]),
             models.Index(fields=[DbNamings.IMAGE_IMAGEDATA]),
-            models.Index(fields=[DbNamings.IMAGE_USER]),
-            models.Index(fields=[DbNamings.IMAGE_PROJECT]),
+            models.Index(fields=[DbNamings.USER]),
+            models.Index(fields=[DbNamings.PROJECT]),
         ]
 
 class Device(models.Model):
@@ -220,7 +218,7 @@ class Device(models.Model):
         return f"{self.name} ({self.uniqueid})"
 
 class UserDeviceAssociation(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.U_D_ASS_USERID, default=-1)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
     device = models.ForeignKey(Device, on_delete=models.CASCADE, null=False, name=DbNamings.U_D_ASS_DEVICEID, default=-1)
     fromDate = models.DateTimeField(name=DbNamings.U_D_ASS_FROMDATE, null=False, default=datetime.now)
     toDate = models.DateTimeField(name=DbNamings.U_D_ASS_TODATE, null=True, default=datetime.now)
@@ -230,7 +228,7 @@ class UserDeviceAssociation(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=[DbNamings.U_D_ASS_USERID]),
+            models.Index(fields=[DbNamings.USER]),
             models.Index(fields=[DbNamings.U_D_ASS_DEVICEID]),
         ]
 

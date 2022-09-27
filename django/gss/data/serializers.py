@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from rest_framework import serializers
 from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData
@@ -6,7 +6,8 @@ from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
 import json
-import PIL
+from PIL import Image as PilImage
+from PIL import ImageOps as PilOps
 import base64
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -40,8 +41,8 @@ class NoteSerializer(serializers.ModelSerializer):
     #     return internal_value
     
     # def create(self, validated_data):
-    #     user = User.objects.filter(username = validated_data[DbNamings.NOTE_USER]).first()
-    #     project = Project.objects.filter(id = validated_data[DbNamings.NOTE_PROJECT].id).first()
+    #     user = User.objects.filter(username = validated_data[DbNamings.USER]).first()
+    #     project = Project.objects.filter(id = validated_data[DbNamings.PROJECT].id).first()
 
     #     # ! here we need to check if images are sent with the notes
 
@@ -88,8 +89,8 @@ class GpslogSerializer(serializers.ModelSerializer):
         return internal_value
 
     def create(self, validated_data):
-        user = User.objects.filter(username = validated_data[DbNamings.NOTE_USER]).first()
-        project = Project.objects.filter(id = validated_data[DbNamings.NOTE_PROJECT].id).first()
+        user = User.objects.filter(username = validated_data[DbNamings.USER]).first()
+        project = Project.objects.filter(id = validated_data[DbNamings.PROJECT].id).first()
         if user:
             with transaction.atomic():
                 gpsLog = GpsLog.objects.create(
@@ -123,55 +124,66 @@ class GpslogSerializer(serializers.ModelSerializer):
         model = GpsLog
         fields = '__all__'
 
+
+class ImageDataSerializer(serializers.ModelSerializer):
+    def to_internal_value(self, data):
+        imageDataB64 = data[DbNamings.IMAGEDATA_DATA]
+        internal_value = super(ImageDataSerializer, self).to_internal_value(data)
+        internal_value[DbNamings.IMAGEDATA_DATA] = imageDataB64
+        return internal_value
+
+    class Meta:
+        model = ImageData
+        fields = '__all__'
+
 class ImageSerializer(serializers.ModelSerializer):
-    IMAGEDATALABEL = 'imagedata'
+    imagedata = ImageDataSerializer(required=False )
+
+    def to_internal_value(self, data):
+        mutableData = json.loads(data)
+        internal_value = super(ImageSerializer, self).to_internal_value(mutableData)
+        return internal_value
 
     def create(self, validated_data):
-        user = User.objects.filter(username = validated_data[DbNamings.NOTE_USER]).first()
-        project = Project.objects.filter(id = validated_data[DbNamings.NOTE_PROJECT].id).first()
+        user = User.objects.filter(username = validated_data[DbNamings.USER]).first()
+        project = Project.objects.filter(id = validated_data[DbNamings.PROJECT].id).first()
         if user:
             with transaction.atomic():
-                # first extract the image data. They will get a new id, and that is the one that goes into
-                # the image later
-                imageDataDict = validated_data[self.IMAGEDATALABEL]
+                imageDataBase64 = validated_data[DbNamings.IMAGE_IMAGEDATA][DbNamings.IMAGEDATA_DATA].encode('UTF-8')
+                imageDataByteArray = base64.b64decode(imageDataBase64)
 
-                if imageDataDict:
-                    imageDataBase64 = imageDataDict[DbNamings.IMAGEDATA_DATA]
-                    imageDataByteArray = base64.decode(imageDataBase64)
+                # create a thumbnail
+                pilImage = PilImage.open(BytesIO(imageDataByteArray))
+                w = pilImage.size[0]
+                h = pilImage.size[1]
+                thumbW = 150.0
+                thumbH = thumbW * h / w
+                thumbnail = PilOps.fit(pilImage, (round(thumbW), round(thumbH)), PilImage.ANTIALIAS)
+                thumbByteArray = BytesIO()
+                thumbnail.save(thumbByteArray, format='PNG')
+                thumbByteArray = thumbByteArray.getvalue()
 
-                    imageData = ImageData.objects.create(
-                        data = imageDataByteArray,
-                        user = user,
-                    )
+                dt = datetime.now(tz=timezone.utc)
+                tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-                    pilImage = PIL.Image.open(BytesIO(imageDataByteArray))
-                    w = pilImage.size[0]
-                    h = pilImage.size[1]
-                    thumbW = 150
-                    thumbH = thumbW * h / w
-                    thumbnail = PIL.ImageOps.fit(pilImage, (thumbW, thumbH), PIL.Image.ANTIALIAS)
-                    thumbByteArray = BytesIO()
-                    thumbnail.save(thumbByteArray, format='PNG')
-                    thumbByteArray = thumbByteArray.getvalue()
+                imageData = ImageData.objects.create(
+                    data = imageDataByteArray
+                )
 
-                    image = Image.objects.create(
-                        the_geom = Point.from_ewkt(validated_data[DbNamings.GEOM]),
-                        altim = validated_data[DbNamings.IMAGE_ALTIM],
-                        ts = validated_data[DbNamings.IMAGE_TIMESTAMP],
-                        uploadts = validated_data[DbNamings.IMAGE_UPLOADTIMESTAMP],
-                        azimuth = validated_data[DbNamings.IMAGE_AZIMUTH],
-                        text = validated_data[DbNamings.IMAGE_TEXT],
-                        thumbnail = thumbByteArray,
-                        imageData = imageData,
-                        user = user,
-                        project = project,
-                    )
-                    return image
-                else:
-                    # ! if no imagedata is available, the image can't be inserted
-                    # ! it is mandatory that images are inserted with their bytes
-                    # TODO check how to best propagate such an error
-                    return None
+                image = Image.objects.create(
+                    the_geom = Point.from_ewkt(validated_data[DbNamings.GEOM]),
+                    altim = validated_data[DbNamings.IMAGE_ALTIM],
+                    ts = validated_data[DbNamings.IMAGE_TIMESTAMP],
+                    uploadts = tsStr,
+                    azimuth = validated_data[DbNamings.IMAGE_AZIMUTH],
+                    text = validated_data[DbNamings.IMAGE_TEXT],
+                    thumbnail = thumbByteArray,
+                    imagedata = imageData,
+                    user = user,
+                    project = project,
+                    notes = None,
+                )
+                return image
 
     class Meta:
         model = Image
@@ -179,8 +191,5 @@ class ImageSerializer(serializers.ModelSerializer):
 
         
 
-class ImageDataSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ImageData
-        fields = '__all__'
+
 

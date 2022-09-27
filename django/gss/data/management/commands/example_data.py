@@ -12,6 +12,7 @@ from django.db import connection
 import json
 import sqlite3
 from django.contrib.gis.geos import Point, LineString
+from base64 import b64decode, b64encode
 
 class Command(BaseCommand):
     help = 'Populate the database with example data as a surveyor.'
@@ -65,23 +66,23 @@ class Command(BaseCommand):
                     if form == None:
                         # simple notes
                         newNote = {
-                            'the_geom': f'SRID=4326;POINT ({lon} {lat})', 
-                            'altim': altim, 
-                            'ts': tsStr, 
-                            'uploadts': uploadtsStr, 
-                            'description': description, 
-                            'text': text, 
-                            'marker': marker, 
-                            'size': size, 
-                            'rotation': rotation, 
-                            'color': color, 
-                            'accuracy': accuracy, 
-                            'heading': heading, 
-                            'speed': speed, 
-                            'speedaccuracy': speedaccuracy, 
-                            'form': None, 
-                            'user': 2, 
-                            'project': 1
+                            DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
+                            DbNamings.NOTE_ALTIM: altim, 
+                            DbNamings.NOTE_TS: tsStr, 
+                            DbNamings.NOTE_UPLOADTS: uploadtsStr, 
+                            DbNamings.NOTE_DESCRIPTION: description, 
+                            DbNamings.NOTE_TEXT: text, 
+                            DbNamings.NOTE_MARKER: marker, 
+                            DbNamings.NOTE_SIZE: size, 
+                            DbNamings.NOTE_ROTATION: rotation, 
+                            DbNamings.NOTE_COLOR: color, 
+                            DbNamings.NOTE_ACCURACY: accuracy, 
+                            DbNamings.NOTE_HEADING: heading, 
+                            DbNamings.NOTE_SPEED: speed, 
+                            DbNamings.NOTE_SPEEDACCURACY: speedaccuracy, 
+                            DbNamings.NOTE_FORM: None, 
+                            DbNamings.USER: 2, 
+                            DbNamings.PROJECT: 1
                         }
                         self.stdout.write(f"Uploading Note '{text}' with id: {id}")
                         r = requests.post(url = notesUrl, data = newNote, auth = surveyorAuth)
@@ -91,6 +92,49 @@ class Command(BaseCommand):
                     else:
                         # TODO make form notes with images
                         pass
+                
+                # ! INSERT IMAGES
+                imagesUrl = f"{base}/images/"
+                cursor.execute("""
+                    SELECT i._id, i.lon,i.lat,i.altim,i.azim,i.ts,i.text,id.data 
+                    FROM images i left join imagedata id on i.imagedata_id=id._id 
+                    where i.note_id is null
+                    """)
+                result = cursor.fetchall()
+
+                # TODO load images
+                for row in result:
+                    id = row[0]
+                    lon = row[1]
+                    lat = row[2]
+                    altim = row[3]
+                    azim = row[4]
+                    ts = row[5]
+                    text = row[6]
+                    data = row[7]
+
+                    dt = datetime.fromtimestamp(ts/1000, timezone.utc)
+                    tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
+
+                    newImage = {
+                        DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
+                        DbNamings.IMAGE_ALTIM: altim, 
+                        DbNamings.IMAGE_TIMESTAMP: tsStr, 
+                        DbNamings.IMAGE_AZIMUTH: azim,
+                        DbNamings.IMAGE_TEXT: text, 
+                        DbNamings.IMAGE_IMAGEDATA: {
+                            DbNamings.IMAGEDATA_DATA: b64encode(data).decode('UTF-8')
+                        },
+                        DbNamings.USER: 2, 
+                        DbNamings.PROJECT: 1
+                    }
+                    self.stdout.write(f"Uploading Image '{text}' with id: {id}")
+                    imageB64 = json.dumps(newImage)
+                    r = requests.post(url = imagesUrl, json=imageB64, auth = surveyorAuth)
+                    if r.status_code != 201:
+                        self.stderr.write("Image could not be uploaded:")
+                        self.stderr.write(r.json())
+                        return
 
 
                 # ! INSERT GPS LOGS
@@ -131,22 +175,22 @@ class Command(BaseCommand):
                         dt2 = datetime.fromtimestamp(ts2/1000, timezone.utc)
                         ts2Str = dt2.strftime("%Y-%m-%d %H:%M:%S")
                         gpslogdata.append({
-                            "the_geom": f"SRID=4326;POINT ({lon} {lat} {altim})", 
-                            "ts": ts2Str,
+                            DbNamings.GEOM: f"SRID=4326;POINT ({lon} {lat} {altim})", 
+                            DbNamings.GPSLOGDATA_TIMESTAMP: ts2Str,
                         })
                         coords.append((lon, lat))
                     
 
                     line = LineString(coords, srid=4326)
                     newGpslog = {
-                        "name": text,
-                        "startts": starttsStr,
-                        "endts": endtsStr,
-                        "the_geom": line.ewkt,
-                        "width": width,
-                        "color": color,
-                        "user": 2,
-                        "project": 1,
+                        DbNamings.GPSLOG_NAME: text,
+                        DbNamings.GPSLOG_STARTTS: starttsStr,
+                        DbNamings.GPSLOG_ENDTS: endtsStr,
+                        DbNamings.GEOM: line.ewkt,
+                        DbNamings.GPSLOG_WIDTH: width,
+                        DbNamings.GPSLOG_COLOR: color,
+                        DbNamings.USER: 2,
+                        DbNamings.PROJECT: 1,
                     }
                     newGpslog["gpslogdata"] = gpslogdata
 
