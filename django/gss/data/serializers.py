@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from io import BytesIO
 from rest_framework import serializers
-from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData
+from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
@@ -29,46 +29,95 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class NoteSerializer(serializers.ModelSerializer):
-    # def to_internal_value(self, data):
-    #     dataconv = json.loads(data)
-    #     internal_value = super(NoteSerializer, self).to_internal_value(dataconv)
-
-    #     if 'images' in dataconv:
-    #         images = dataconv.get("images")
-    #         internal_value.update({
-    #             "images": images
-    #         })
-    #     return internal_value
+    def to_internal_value(self, data):
+        dataconv = json.loads(data)
+        images = None
+        if DbNamings.NOTE_IMAGES in dataconv:
+            images = dataconv[DbNamings.NOTE_IMAGES]
+        internal_value = super(NoteSerializer, self).to_internal_value(dataconv)
+        if images:
+            internal_value[DbNamings.NOTE_IMAGES] = images
+        return internal_value
     
-    # def create(self, validated_data):
-    #     user = User.objects.filter(username = validated_data[DbNamings.USER]).first()
-    #     project = Project.objects.filter(id = validated_data[DbNamings.PROJECT].id).first()
+    def create(self, validated_data):
+        user = User.objects.filter(username = validated_data[DbNamings.USER]).first()
+        project = Project.objects.filter(id = validated_data[DbNamings.PROJECT].id).first()
 
-    #     # ! here we need to check if images are sent with the notes
+        if user:
+            with transaction.atomic():
+                # TODO check previous id here
+                dt = datetime.now(tz=timezone.utc)
+                tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-        # if user:
-        #     with transaction.atomic():
-        #         gpsLog = GpsLog.objects.create(
-        #             name = validated_data['name'],
-        #             startts = str(validated_data['startts']),
-        #             endts = str(validated_data['endts']),
-        #             the_geom = LineString.from_ewkt(validated_data['the_geom']),
-        #             width = validated_data['width'],
-        #             color = validated_data['color'],
-        #             user = user,
-        #             project = project,
-        #         )
+                form = validated_data[DbNamings.NOTE_FORM]
 
-        #         if 'gpslogdata' in validated_data:
-        #             # gpslogs are usually sent with log data
-        #             data = validated_data['gpslogdata'],
-        #             for record in data[0]:
-        #                 GpsLogData.objects.create(
-        #                     the_geom=Point.from_ewkt(record['the_geom']),
-        #                     ts = record['ts'],
-        #                     gpslogid=gpsLog
-        #                 )
-        #     return gpsLog
+                note = Note.objects.create(
+                    the_geom=Point.from_ewkt(validated_data[DbNamings.GEOM]),
+                    altim = validated_data[DbNamings.NOTE_ALTIM],
+                    ts = validated_data[DbNamings.NOTE_TS],
+                    uploadts = tsStr,
+                    description = validated_data[DbNamings.NOTE_DESCRIPTION],
+                    text = validated_data[DbNamings.NOTE_TEXT],
+                    marker = validated_data[DbNamings.NOTE_MARKER],
+                    size = validated_data[DbNamings.NOTE_SIZE],
+                    rotation = validated_data[DbNamings.NOTE_ROTATION],
+                    color = validated_data[DbNamings.NOTE_COLOR],
+                    accuracy = validated_data[DbNamings.NOTE_ACCURACY],
+                    heading = validated_data[DbNamings.NOTE_HEADING],
+                    speed = validated_data[DbNamings.NOTE_SPEED],
+                    speedaccuracy = validated_data[DbNamings.NOTE_SPEEDACCURACY],
+                    form = form,
+                    user = user,
+                    project = project
+                )
+
+                if form and DbNamings.NOTE_IMAGES in validated_data:
+                    # the note has internal images, which we need to set straight
+                    imagesList = validated_data[DbNamings.NOTE_IMAGES],
+                    old2NewIdsMap = {}
+                    for oldImageId, data in imagesList[0].items():
+                        imageDataBase64 = data[DbNamings.IMAGE_IMAGEDATA][DbNamings.IMAGEDATA_DATA].encode('UTF-8')
+                        imageDataByteArray = base64.b64decode(imageDataBase64)
+
+                        # create a thumbnail
+                        pilImage = PilImage.open(BytesIO(imageDataByteArray))
+                        w = pilImage.size[0]
+                        h = pilImage.size[1]
+                        thumbW = 150.0
+                        thumbH = thumbW * h / w
+                        thumbnail = PilOps.fit(pilImage, (round(thumbW), round(thumbH)), PilImage.ANTIALIAS)
+                        thumbByteArray = BytesIO()
+                        thumbnail.save(thumbByteArray, format='PNG')
+                        thumbByteArray = thumbByteArray.getvalue()
+
+                        imageData = ImageData.objects.create(
+                            data = imageDataByteArray
+                        )
+                        image = Image.objects.create(
+                            the_geom = Point.from_ewkt(data[DbNamings.GEOM]),
+                            altim = data[DbNamings.IMAGE_ALTIM],
+                            ts = data[DbNamings.IMAGE_TIMESTAMP],
+                            uploadts = tsStr,
+                            azimuth = data[DbNamings.IMAGE_AZIMUTH],
+                            text = data[DbNamings.IMAGE_TEXT],
+                            thumbnail = thumbByteArray,
+                            imagedata = imageData,
+                            user = user,
+                            project = project,
+                            notes = note,
+                        )
+                        newImageId = image.id
+                        old2NewIdsMap[int(oldImageId)] = newImageId
+                    
+                    # now update form with new ids
+                    formDict = json.loads(form)
+                    Utilities.updateImageIds(formDict, old2NewIdsMap)
+                    newForm = json.dumps(formDict)
+                    Note.objects.update(
+                        form = newForm,
+                    )
+                    
+        return note
 
     class Meta:
         model = Note

@@ -34,6 +34,7 @@ class DbNamings():
     NOTE_SPEED = "speed"
     NOTE_SPEEDACCURACY = "speedaccuracy"
     NOTE_FORM = "form"
+    NOTE_IMAGES = "images"
 
     GPSLOG_ID = "id" 
     GPSLOG_NAME = "name" 
@@ -77,6 +78,7 @@ class DbNamings():
     PROJECT_NAME = "name"
     PROJECT_DESCRIPTION = "description"
     PROJECT_GROUPS = "groups"
+
 class Project(models.Model):
     name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False)
     description = models.TextField(name=DbNamings.PROJECT_DESCRIPTION,  null=True, default="")
@@ -85,7 +87,6 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
-    
 
 class Note(models.Model):
     previousId = models.IntegerField(
@@ -111,7 +112,10 @@ class Note(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
 
     def __str__(self):
-        return f"{self.text} - {str(self.ts)[:-6]} - {str(self.the_geom).split(';')[1]}"
+        hasForm = ""
+        if self.form != None and len(self.form.strip()) > 0:
+            hasForm = " - has form"
+        return f"{self.text} - {str(self.ts)[:-6]} - {str(self.the_geom).split(';')[1]}{hasForm}"
 
     class Meta:
         indexes = [
@@ -197,7 +201,10 @@ class Image(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
 
     def __str__(self):
-        return self.text
+        ownedByForm = ""
+        if self.notes != None:
+            ownedByForm = f" - owned by note {self.notes.id}"
+        return f"{self.text}{ownedByForm}"
 
     class Meta:
         indexes = [
@@ -232,3 +239,45 @@ class UserDeviceAssociation(models.Model):
             models.Index(fields=[DbNamings.U_D_ASS_DEVICEID]),
         ]
 
+
+
+
+class Utilities():
+
+    @staticmethod
+    def collectImageIds(dataMap, idsList):
+        for key in dataMap.keys():
+            value = dataMap[key]
+            if isinstance(value, dict):
+                Utilities.collectImageIds(value, idsList)
+            elif isinstance(value, list):
+                for item in value:
+                    Utilities.collectImageIds(item, idsList)
+            else:
+                if value == 'pictures':
+                    id = dataMap["value"]
+                    if len(id.strip()) > 0:
+                        idsList.append(int(id))
+
+    @staticmethod
+    def updateImageIds(dataMap, old2NewIdsMap):
+        for key in dataMap.keys():
+            value = dataMap[key]
+            if isinstance(value, dict):
+                Utilities.updateImageIds(value, old2NewIdsMap)
+            elif isinstance(value, list):
+                for item in value:
+                    Utilities.updateImageIds(item, old2NewIdsMap)
+            else:
+                if value == 'pictures':
+                    id = dataMap["value"]
+                    if len(id.strip()) > 0:
+                        newId = old2NewIdsMap[int(id)]
+                        dataMap["value"] = str(newId)
+
+
+# def substitute_image_ids_keys(self, df, indent = '  '):
+#     for key in df.keys():
+#         print(indent+str(key))
+#         if isinstance(df[key], dict):
+#             self.substitute_image_ids_keys(df[key], indent+'   ')

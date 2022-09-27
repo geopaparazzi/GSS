@@ -146,7 +146,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -179,3 +179,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ]
 }
+
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1014 * 1024

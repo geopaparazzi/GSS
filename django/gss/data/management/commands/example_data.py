@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
 from django.core.management import call_command
-from data.models import DbNamings, Project, Note, GpsLogData, GpsLog
+from data.models import DbNamings, Project, Note, GpsLogData, GpsLog, Image, ImageData, Utilities
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point, LineString
 from datetime import datetime, timezone
@@ -19,8 +19,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('-p', '--gpap', type=str, help='The optional path to the gpap sqlite to import.')
+        parser.add_argument('-d', '--delete', action='store_true', help='Flag that enables clearing of the tables first.')
 
     def handle(self, *args, **options):
+        doDelete = options['delete']
+        if doDelete:
+            self.stdout.write("Clearing data from tables.")
+            GpsLogData.objects.all().delete()
+            GpsLog.objects.all().delete()
+            ImageData.objects.all().delete()
+            Image.objects.all().delete()
+            Note.objects.all().delete()
+
         gpapPath = options['gpap']
         if gpapPath:
             self.stdout.write("Importing an existing SMASH project database using the API.")
@@ -28,95 +38,111 @@ class Command(BaseCommand):
                 conn = sqlite3.connect(gpapPath)
                 cursor = conn.cursor()
                 
-
                 surveyorAuth = HTTPBasicAuth('surveyor', 'surveyor')
                 base = "http://localhost:8000/api"
 
-                # ! FIRST INSERT NOTES
-                notesUrl = f"{base}/notes/"
-                cursor.execute("""
-                    SELECT n._id,n.lon,n.lat,n.altim,n.ts,n.description,n.text,n.form,
-                    ne.marker,ne.size,ne.rotation,ne.color,ne.accuracy,ne.heading,ne.speed,ne.speedaccuracy
-                    FROM notes n left join notesext ne on n._id=ne.noteid
+                self.insertNotes(cursor, surveyorAuth, base)
+                self.insertSimpleImages(cursor, surveyorAuth, base)
+                self.insertGpslogs(cursor, surveyorAuth, base)
+            except sqlite3.Error as error:
+                self.stderr.write('Error occured - ', error)
+            finally:
+                if conn:
+                    conn.close()
+
+        else:
+            self.generateExampleData()
+
+    def insertGpslogs(self, cursor, surveyorAuth, base):
+        gpslogsUrl = f"{base}/gpslogs/"
+        cursor.execute("""
+                        SELECT g._id,g.startts,g.endts,g.text,glp.color,glp.width 
+                        FROM gpslogs g left join gpslogsproperties glp on g._id=glp.logid
                     """)
-                result = cursor.fetchall()
-                
-                for row in result:
-                    id = row[0]
-                    lon = row[1]
-                    lat = row[2]
-                    altim = row[3]
-                    ts = row[4]
-                    description = row[5]
-                    text = row[6]
-                    form = row[7]
-                    marker = row[8]
-                    size = row[9]
-                    rotation = row[10]
-                    color = row[11]
-                    accuracy = row[12]
-                    heading = row[13]
-                    speed = row[14]
-                    speedaccuracy = row[15]
+        result = cursor.fetchall()
+        for row in result:
+            id = row[0]
+            startts = row[1]
+            endts = row[2]
+            text = row[3]
+            color = row[4]
+            width = row[5]
 
-                    dt = datetime.fromtimestamp(ts/1000, timezone.utc)
-                    tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
-                    uploadtsStr = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            dt = datetime.fromtimestamp(startts/1000, timezone.utc)
+            starttsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
+            dt = datetime.fromtimestamp(endts/1000, timezone.utc)
+            endtsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-                    if form == None:
-                        # simple notes
-                        newNote = {
-                            DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
-                            DbNamings.NOTE_ALTIM: altim, 
-                            DbNamings.NOTE_TS: tsStr, 
-                            DbNamings.NOTE_UPLOADTS: uploadtsStr, 
-                            DbNamings.NOTE_DESCRIPTION: description, 
-                            DbNamings.NOTE_TEXT: text, 
-                            DbNamings.NOTE_MARKER: marker, 
-                            DbNamings.NOTE_SIZE: size, 
-                            DbNamings.NOTE_ROTATION: rotation, 
-                            DbNamings.NOTE_COLOR: color, 
-                            DbNamings.NOTE_ACCURACY: accuracy, 
-                            DbNamings.NOTE_HEADING: heading, 
-                            DbNamings.NOTE_SPEED: speed, 
-                            DbNamings.NOTE_SPEEDACCURACY: speedaccuracy, 
-                            DbNamings.NOTE_FORM: None, 
-                            DbNamings.USER: 2, 
-                            DbNamings.PROJECT: 1
-                        }
-                        self.stdout.write(f"Uploading Note '{text}' with id: {id}")
-                        r = requests.post(url = notesUrl, data = newNote, auth = surveyorAuth)
-                        if r.status_code != 201:
-                            self.stderr.write("Simple Note could not be uploaded:")
-                            self.stderr.write(r.json())
-                    else:
-                        # TODO make form notes with images
-                        pass
-                
-                # ! INSERT IMAGES
-                imagesUrl = f"{base}/images/"
-                cursor.execute("""
+
+            cursor.execute("""
+                            SELECT g._id,g.lon,g.lat,g.altim,g.ts
+                            FROM gpslogsdata g where g.logid=1
+                        """)
+            subResult = cursor.fetchall()
+
+            gpslogdata = []
+            coords = []
+            for row in subResult:
+                subid = row[0]
+                lon = row[1]
+                lat = row[2]
+                altim = row[3]
+                ts2 = row[4]
+                dt2 = datetime.fromtimestamp(ts2/1000, timezone.utc)
+                ts2Str = dt2.strftime("%Y-%m-%d %H:%M:%S")
+                gpslogdata.append({
+                            DbNamings.GEOM: f"SRID=4326;POINT ({lon} {lat} {altim})", 
+                            DbNamings.GPSLOGDATA_TIMESTAMP: ts2Str,
+                        })
+                coords.append((lon, lat))
+                    
+
+            line = LineString(coords, srid=4326)
+            newGpslog = {
+                        DbNamings.GPSLOG_NAME: text,
+                        DbNamings.GPSLOG_STARTTS: starttsStr,
+                        DbNamings.GPSLOG_ENDTS: endtsStr,
+                        DbNamings.GEOM: line.ewkt,
+                        DbNamings.GPSLOG_WIDTH: width,
+                        DbNamings.GPSLOG_COLOR: color,
+                        DbNamings.USER: 2,
+                        DbNamings.PROJECT: 1,
+                    }
+            newGpslog["gpslogdata"] = gpslogdata
+
+            headers = {
+                        "Content-Type":"application/json",
+                        "Accept":"application/json",
+                    }
+            self.stdout.write(f"Uploading Gpslog '{text}' with id: {id}")
+            r = requests.post(url = gpslogsUrl,headers=headers, json=json.dumps(newGpslog), auth = surveyorAuth)
+            if r.status_code != 201:
+                self.stderr.write("Gpslog could not be uploaded:")
+                self.stderr.write(r.json())
+
+    def insertSimpleImages(self, cursor, surveyorAuth, base):
+        imagesUrl = f"{base}/images/"
+        cursor.execute("""
                     SELECT i._id, i.lon,i.lat,i.altim,i.azim,i.ts,i.text,id.data 
                     FROM images i left join imagedata id on i.imagedata_id=id._id 
                     where i.note_id is null
                     """)
-                result = cursor.fetchall()
+        result = cursor.fetchall()
 
-                # TODO load images
-                for row in result:
-                    id = row[0]
-                    lon = row[1]
-                    lat = row[2]
-                    altim = row[3]
-                    azim = row[4]
-                    ts = row[5]
-                    text = row[6]
-                    data = row[7]
+        for row in result:
+            id = row[0]
+            lon = row[1]
+            lat = row[2]
+            altim = row[3]
+            azim = row[4]
+            ts = row[5]
+            text = row[6]
+            data = row[7]
 
-                    dt = datetime.fromtimestamp(ts/1000, timezone.utc)
-                    tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
+            dt = datetime.fromtimestamp(ts/1000, timezone.utc)
+            tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-                    newImage = {
+            newImage = {
                         DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
                         DbNamings.IMAGE_ALTIM: altim, 
                         DbNamings.IMAGE_TIMESTAMP: tsStr, 
@@ -128,90 +154,126 @@ class Command(BaseCommand):
                         DbNamings.USER: 2, 
                         DbNamings.PROJECT: 1
                     }
-                    self.stdout.write(f"Uploading Image '{text}' with id: {id}")
-                    imageB64 = json.dumps(newImage)
-                    r = requests.post(url = imagesUrl, json=imageB64, auth = surveyorAuth)
-                    if r.status_code != 201:
-                        self.stderr.write("Image could not be uploaded:")
-                        self.stderr.write(r.json())
-                        return
+            self.stdout.write(f"Uploading Image '{text}' with id: {id}")
+            imageB64 = json.dumps(newImage)
+            r = requests.post(url = imagesUrl, json=imageB64, auth = surveyorAuth)
+            if r.status_code != 201:
+                self.stderr.write("Image could not be uploaded:")
+                self.stderr.write(r.json())
+    
 
-
-                # ! INSERT GPS LOGS
-                gpslogsUrl = f"{base}/gpslogs/"
-                cursor.execute("""
-                        SELECT g._id,g.startts,g.endts,g.text,glp.color,glp.width 
-                        FROM gpslogs g left join gpslogsproperties glp on g._id=glp.logid
+    def insertNotes(self, cursor, surveyorAuth, base):
+        notesUrl = f"{base}/notes/"
+        cursor.execute("""
+                    SELECT n._id,n.lon,n.lat,n.altim,n.ts,n.description,n.text,n.form,
+                    ne.marker,ne.size,ne.rotation,ne.color,ne.accuracy,ne.heading,ne.speed,ne.speedaccuracy
+                    FROM notes n left join notesext ne on n._id=ne.noteid
                     """)
-                result = cursor.fetchall()
-                for row in result:
-                    id = row[0]
-                    startts = row[1]
-                    endts = row[2]
-                    text = row[3]
-                    color = row[4]
-                    width = row[5]
+        result = cursor.fetchall()
+                
+        for row in result:
+            id = row[0]
+            lon = row[1]
+            lat = row[2]
+            altim = row[3]
+            ts = row[4]
+            description = row[5]
+            text = row[6]
+            form = row[7]
+            marker = row[8]
+            size = row[9]
+            rotation = row[10]
+            color = row[11]
+            accuracy = row[12]
+            heading = row[13]
+            speed = row[14]
+            speedaccuracy = row[15]
 
-                    dt = datetime.fromtimestamp(startts/1000, timezone.utc)
-                    starttsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
-                    dt = datetime.fromtimestamp(endts/1000, timezone.utc)
-                    endtsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
+            if not accuracy:
+                accuracy = -1
+            if not heading:
+                heading = -1
+            if not speed:
+                speed = -1
+            if not speedaccuracy:
+                speedaccuracy = -1
 
+            dt = datetime.fromtimestamp(ts/1000, timezone.utc)
+            tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
+            uploadtsStr = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                    cursor.execute("""
-                            SELECT g._id,g.lon,g.lat,g.altim,g.ts
-                            FROM gpslogsdata g where g.logid=1
-                        """)
-                    subResult = cursor.fetchall()
+            newNote = {
+                DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
+                DbNamings.NOTE_ALTIM: altim, 
+                DbNamings.NOTE_TS: tsStr, 
+                DbNamings.NOTE_UPLOADTS: uploadtsStr, 
+                DbNamings.NOTE_DESCRIPTION: description, 
+                DbNamings.NOTE_TEXT: text, 
+                DbNamings.NOTE_MARKER: marker, 
+                DbNamings.NOTE_SIZE: size, 
+                DbNamings.NOTE_ROTATION: rotation, 
+                DbNamings.NOTE_COLOR: color, 
+                DbNamings.NOTE_ACCURACY: accuracy, 
+                DbNamings.NOTE_HEADING: heading, 
+                DbNamings.NOTE_SPEED: speed, 
+                DbNamings.NOTE_SPEEDACCURACY: speedaccuracy, 
+                DbNamings.NOTE_FORM: form, 
+                DbNamings.USER: 2, 
+                DbNamings.PROJECT: 1
+            }
+            if form != None:
+                # find images connected to notes
+                imageIds = []
+                formDict = json.loads(form)
+                Utilities.collectImageIds(formDict, imageIds)
+                if imageIds:
+                    wherePart = ",".join([str(i) for i in imageIds])
+                    cursor.execute(f"""
+                                SELECT i._id, i.lon,i.lat,i.altim,i.azim,i.ts,i.text,id.data 
+                                FROM images i left join imagedata id on i.imagedata_id=id._id 
+                                where i._id in ({wherePart})
+                                """)
+                    result = cursor.fetchall()
 
-                    gpslogdata = []
-                    coords = []
-                    for row in subResult:
-                        subid = row[0]
+                    imagesMap = {}
+                    for row in result:
+                        id = row[0]
                         lon = row[1]
                         lat = row[2]
                         altim = row[3]
-                        ts2 = row[4]
-                        dt2 = datetime.fromtimestamp(ts2/1000, timezone.utc)
-                        ts2Str = dt2.strftime("%Y-%m-%d %H:%M:%S")
-                        gpslogdata.append({
-                            DbNamings.GEOM: f"SRID=4326;POINT ({lon} {lat} {altim})", 
-                            DbNamings.GPSLOGDATA_TIMESTAMP: ts2Str,
-                        })
-                        coords.append((lon, lat))
+                        azim = row[4]
+                        ts = row[5]
+                        text = row[6]
+                        data = row[7]
+
+                        dt = datetime.fromtimestamp(ts/1000, timezone.utc)
+                        tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
+
+                        newImage = {
+                            DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
+                            DbNamings.IMAGE_ALTIM: altim, 
+                            DbNamings.IMAGE_TIMESTAMP: tsStr, 
+                            DbNamings.IMAGE_AZIMUTH: azim,
+                            DbNamings.IMAGE_TEXT: text, 
+                            DbNamings.IMAGE_IMAGEDATA: {
+                                DbNamings.IMAGEDATA_DATA: b64encode(data).decode('UTF-8')
+                            },
+                            DbNamings.USER: 2, 
+                            DbNamings.PROJECT: 1
+                        }
+                        imagesMap[id] = newImage
                     
+                    newNote[DbNamings.NOTE_IMAGES] = imagesMap
+            
+            self.stdout.write(f"Uploading Note '{text}' with id: {id}")
+            noteJson = json.dumps(newNote)
+            r = requests.post(url = notesUrl, json = noteJson, auth = surveyorAuth)
+            if r.status_code != 201:
+                self.stderr.write("Note could not be uploaded:")
+                self.stderr.write(r.json())
+                
 
-                    line = LineString(coords, srid=4326)
-                    newGpslog = {
-                        DbNamings.GPSLOG_NAME: text,
-                        DbNamings.GPSLOG_STARTTS: starttsStr,
-                        DbNamings.GPSLOG_ENDTS: endtsStr,
-                        DbNamings.GEOM: line.ewkt,
-                        DbNamings.GPSLOG_WIDTH: width,
-                        DbNamings.GPSLOG_COLOR: color,
-                        DbNamings.USER: 2,
-                        DbNamings.PROJECT: 1,
-                    }
-                    newGpslog["gpslogdata"] = gpslogdata
 
-                    headers = {
-                        "Content-Type":"application/json",
-                        "Accept":"application/json",
-                    }
-                    self.stdout.write(f"Uploading Gpslog '{text}' with id: {id}")
-                    r = requests.post(url = gpslogsUrl,headers=headers, json=json.dumps(newGpslog), auth = surveyorAuth)
-                    if r.status_code != 201:
-                        self.stderr.write("Gpslog could not be uploaded:")
-                        self.stderr.write(r.json())
-
-            except sqlite3.Error as error:
-                self.stderr.write('Error occured - ', error)
-            finally:
-                if conn:
-                    conn.close()
-
-        else:
-            self.generateExampleData()
 
     def generateExampleData(self):
         self.stdout.write("Generating some serverside example data using models and the API.")
