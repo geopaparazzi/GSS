@@ -6,6 +6,9 @@ from django.contrib.auth.models import User, Group
 from django.utils.safestring import mark_safe
 from base64 import b64encode
 from django.contrib import admin
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 class DbNamings():
     GROUP_COORDINATORS = "Coordinators"
@@ -78,12 +81,75 @@ class DbNamings():
     PROJECT_NAME = "name"
     PROJECT_DESCRIPTION = "description"
     PROJECT_GROUPS = "groups"
+    
+    PROJECTDATA_FILE = "file"
+    PROJECTDATA_LABEL = "label"
+    
+    WMSSOURCE_LABEL = "label"
+    WMSSOURCE_VERSION = "version"
+    WMSSOURCE_TRANSPARENT = "transparent"
+    WMSSOURCE_IMAGEFORMAT = "imageformat"
+    WMSSOURCE_GETCAPABILITIES = "getcapabilities"
+    WMSSOURCE_LAYERNAME = "layername"
+    WMSSOURCE_OPACITY = "opacity"
+    WMSSOURCE_ATTRIBUTION = "attribution"
+    
+    TMSSOURCE_LABEL = "label"
+    TMSSOURCE_URLTEMPLATE = "urltemplate"
+    TMSSOURCE_OPACITY = "opacity"
+    TMSSOURCE_SUBDOMAINS = "subdomains"
+    TMSSOURCE_MAXZOOM = "maxzoom"
+    TMSSOURCE_ATTRIBUTION = "attribution"
+
+class ProjectData(models.Model):
+    label = models.CharField(name=DbNamings.PROJECTDATA_LABEL, max_length=100, null=False, unique=True)
+    file = models.FileField(name = DbNamings.PROJECTDATA_FILE, null = False, upload_to ='projectdata/%Y/%m/%d/')
+    
+    def __str__(self):
+        return f"{self.label} -> {self.file}"
+
+class WmsSource(models.Model):
+    VERSION_CHOICES = (
+        ("1.1.1", "1.1.1"),
+        ("1.3.0", "1.3.0"),
+    )
+    FORMAT_CHOICES = (
+        ("image/png","image/png"),
+        ("image/jpg","image/jpg"),
+    )
+
+    label = models.CharField(name=DbNamings.WMSSOURCE_LABEL, max_length=100, null=False, unique=True)
+    version = models.CharField(name=DbNamings.WMSSOURCE_VERSION, max_length=10, null=False, choices=VERSION_CHOICES)
+    transparent = models.BooleanField(name=DbNamings.WMSSOURCE_TRANSPARENT, null=False, default=True)
+    imageFormat = models.CharField(name=DbNamings.WMSSOURCE_IMAGEFORMAT, max_length=10, null=False, choices=FORMAT_CHOICES)
+    getcapabilitiesUrl = models.URLField(name=DbNamings.WMSSOURCE_GETCAPABILITIES, max_length=500, null=False)
+    layerName = models.CharField(name=DbNamings.WMSSOURCE_LAYERNAME, max_length=100, null=False)
+    attribution = models.CharField(name=DbNamings.WMSSOURCE_ATTRIBUTION, max_length=100, null=False)
+    opacity = models.FloatField(name=DbNamings.WMSSOURCE_OPACITY, null=False, default=1.0, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+
+    def __str__(self):
+        return f"{self.label} -> Layer: {self.layername}"
+
+class TmsSource(models.Model):
+    label = models.CharField(name=DbNamings.TMSSOURCE_LABEL, max_length=100, null=False, unique=True)
+    urlTemplate = models.URLField(name=DbNamings.TMSSOURCE_URLTEMPLATE, max_length=500, null=False)
+    opacity = models.FloatField(name=DbNamings.TMSSOURCE_OPACITY, null=False, default=1.0, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    subdomains = models.CharField(name=DbNamings.TMSSOURCE_SUBDOMAINS, max_length=100, null=True)
+    maxzoom = models.IntegerField(name=DbNamings.TMSSOURCE_MAXZOOM, null=True, default=19.0, validators=[MinValueValidator(1), MaxValueValidator(21)])
+    attribution = models.CharField(name=DbNamings.TMSSOURCE_ATTRIBUTION, max_length=100, null=False)
+    
+    def __str__(self):
+        return self.label
 
 class Project(models.Model):
     name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False)
     description = models.TextField(name=DbNamings.PROJECT_DESCRIPTION,  null=True, default="")
     groups = models.ManyToManyField(Group, name=DbNamings.PROJECT_GROUPS)
-    # TODO projectdata, configurations, webmaplayers
+
+    projectdata = models.ManyToManyField(ProjectData, blank=True)
+    wmssources = models.ManyToManyField(WmsSource, blank=True)
+    tmssources = models.ManyToManyField(TmsSource, blank=True)
+    # TODO  configurations
 
     def __str__(self):
         return self.name
@@ -113,7 +179,7 @@ class Note(models.Model):
 
     def __str__(self):
         hasForm = ""
-        if self.form != None and len(self.form.strip()) > 0:
+        if self.form != None:
             hasForm = " - has form"
         return f"{self.text} - {str(self.ts)[:-6]} - {str(self.the_geom).split(';')[1]}{hasForm}"
 
@@ -275,9 +341,3 @@ class Utilities():
                         newId = old2NewIdsMap[int(id)]
                         dataMap["value"] = str(newId)
 
-
-# def substitute_image_ids_keys(self, df, indent = '  '):
-#     for key in df.keys():
-#         print(indent+str(key))
-#         if isinstance(df[key], dict):
-#             self.substitute_image_ids_keys(df[key], indent+'   ')

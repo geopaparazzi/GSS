@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
+    'django_cleanup.apps.CleanupConfig',
+    'django_json_widget',
     'rest_framework',
 ]
 
@@ -181,4 +183,10 @@ REST_FRAMEWORK = {
 }
 
 
+# absolute server path
+MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'media')
+# relative browser URL to access media
+MEDIA_URL = '/media/'
+
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1014 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2000 * 1024 * 1024

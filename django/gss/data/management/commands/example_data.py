@@ -1,8 +1,9 @@
+from email.mime import image
 from django.core.management.base import BaseCommand, CommandError
 
 from django.conf import settings
 from django.core.management import call_command
-from data.models import DbNamings, Project, Note, GpsLogData, GpsLog, Image, ImageData, Utilities
+from data.models import DbNamings, Project, Note, GpsLogData, GpsLog, Image, ImageData, Utilities, ProjectData, WmsSource, TmsSource
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point, LineString
 from datetime import datetime, timezone
@@ -30,6 +31,38 @@ class Command(BaseCommand):
             ImageData.objects.all().delete()
             Image.objects.all().delete()
             Note.objects.all().delete()
+            ProjectData.objects.all().delete()
+            WmsSource.objects.all().delete()
+            TmsSource.objects.all().delete()
+
+        WmsSource.objects.create(
+            label = "Bolzano Ortofoto",
+            version = "1.1.1",
+            transparent = True,
+            imageformat = "image/jpg",
+            getcapabilities = "http://sdi.provincia.bz.it/geoserver/wms",
+            layername = "inspire:OI.ORTHOIMAGECOVERAGE.2011",
+            opacity = 1.0,
+            attribution = "Copyright Province Bolzano"
+        )
+        WmsSource.objects.create(
+            label = "Trento CTP",
+            version = "1.1.1",
+            transparent = True,
+            imageformat = "image/png",
+            getcapabilities = "http://geoservices.provincia.tn.it/siat/services/OGC/CTP2013/ImageServer/WMSServer",
+            layername = "0",
+            opacity = 1.0,
+            attribution = "Copyright Province Trento"
+        )
+        TmsSource.objects.create(
+            label = "OSM Mapnik",
+            urltemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            opacity = 1.0,
+            subdomains = "a,b,c",
+            maxzoom = 19,
+            attribution = 'OpenStreetMap, ODbL'
+        )
 
         gpapPath = options['gpap']
         if gpapPath:
@@ -99,15 +132,15 @@ class Command(BaseCommand):
 
             line = LineString(coords, srid=4326)
             newGpslog = {
-                        DbNamings.GPSLOG_NAME: text,
-                        DbNamings.GPSLOG_STARTTS: starttsStr,
-                        DbNamings.GPSLOG_ENDTS: endtsStr,
-                        DbNamings.GEOM: line.ewkt,
-                        DbNamings.GPSLOG_WIDTH: width,
-                        DbNamings.GPSLOG_COLOR: color,
-                        DbNamings.USER: 2,
-                        DbNamings.PROJECT: 1,
-                    }
+                DbNamings.GPSLOG_NAME: text,
+                DbNamings.GPSLOG_STARTTS: starttsStr,
+                DbNamings.GPSLOG_ENDTS: endtsStr,
+                DbNamings.GEOM: line.ewkt,
+                DbNamings.GPSLOG_WIDTH: width,
+                DbNamings.GPSLOG_COLOR: color,
+                DbNamings.USER: 2,
+                DbNamings.PROJECT: 1,
+            }
             newGpslog["gpslogdata"] = gpslogdata
 
             headers = {
@@ -143,17 +176,17 @@ class Command(BaseCommand):
             tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
             newImage = {
-                        DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
-                        DbNamings.IMAGE_ALTIM: altim, 
-                        DbNamings.IMAGE_TIMESTAMP: tsStr, 
-                        DbNamings.IMAGE_AZIMUTH: azim,
-                        DbNamings.IMAGE_TEXT: text, 
-                        DbNamings.IMAGE_IMAGEDATA: {
-                            DbNamings.IMAGEDATA_DATA: b64encode(data).decode('UTF-8')
-                        },
-                        DbNamings.USER: 2, 
-                        DbNamings.PROJECT: 1
-                    }
+                DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
+                DbNamings.IMAGE_ALTIM: altim, 
+                DbNamings.IMAGE_TIMESTAMP: tsStr, 
+                DbNamings.IMAGE_AZIMUTH: azim,
+                DbNamings.IMAGE_TEXT: text, 
+                DbNamings.IMAGE_IMAGEDATA: {
+                    DbNamings.IMAGEDATA_DATA: b64encode(data).decode('UTF-8')
+                },
+                DbNamings.USER: 2, 
+                DbNamings.PROJECT: 1
+            }
             self.stdout.write(f"Uploading Image '{text}' with id: {id}")
             imageB64 = json.dumps(newImage)
             r = requests.post(url = imagesUrl, json=imageB64, auth = surveyorAuth)

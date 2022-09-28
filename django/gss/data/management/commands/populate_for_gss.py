@@ -38,7 +38,7 @@ class Command(BaseCommand):
         # create default project
         defaultProject = Project.objects.filter(name=DbNamings.PROJECT_DEFAULT).first()
         if not defaultProject:
-            defaultProject = Project(name=DbNamings.PROJECT_DEFAULT)
+            defaultProject = Project(name=DbNamings.PROJECT_DEFAULT, description=DbNamings.PROJECT_DEFAULT)
             defaultProject.save()
 
             defaultProject.groups.add(defaultGroup)

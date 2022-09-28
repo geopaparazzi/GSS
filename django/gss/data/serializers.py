@@ -50,6 +50,9 @@ class NoteSerializer(serializers.ModelSerializer):
                 tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
                 form = validated_data[DbNamings.NOTE_FORM]
+                formDict = None
+                if form:
+                    formDict = json.loads(form)
 
                 note = Note.objects.create(
                     the_geom=Point.from_ewkt(validated_data[DbNamings.GEOM]),
@@ -66,12 +69,12 @@ class NoteSerializer(serializers.ModelSerializer):
                     heading = validated_data[DbNamings.NOTE_HEADING],
                     speed = validated_data[DbNamings.NOTE_SPEED],
                     speedaccuracy = validated_data[DbNamings.NOTE_SPEEDACCURACY],
-                    form = form,
+                    form = formDict,
                     user = user,
                     project = project
                 )
 
-                if form and DbNamings.NOTE_IMAGES in validated_data:
+                if formDict and DbNamings.NOTE_IMAGES in validated_data:
                     # the note has internal images, which we need to set straight
                     imagesList = validated_data[DbNamings.NOTE_IMAGES],
                     old2NewIdsMap = {}
@@ -110,11 +113,10 @@ class NoteSerializer(serializers.ModelSerializer):
                         old2NewIdsMap[int(oldImageId)] = newImageId
                     
                     # now update form with new ids
-                    formDict = json.loads(form)
                     Utilities.updateImageIds(formDict, old2NewIdsMap)
-                    newForm = json.dumps(formDict)
+                    # newForm = json.dumps(formDict)
                     Note.objects.update(
-                        form = newForm,
+                        form = formDict,
                     )
                     
         return note
