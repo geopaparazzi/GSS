@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:html';
 import 'dart:typed_data';
 
@@ -46,24 +47,24 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
   }
 
   void downloadImage() async {
-    var userPwd = SmashSession.getSessionUser();
-    Map<String, String> requestHeaders =
-        ServerApi.getAuthRequestHeader(userPwd[0], userPwd[1]);
+    var tokenHeader = ServerApi.getTokenHeader();
+    var tokenEntry = tokenHeader.entries.first;
 
-    var imageUrlWithSize = _imageUrl + "/" + _height.toInt().toString();
+    var imageUrlWithSize = _imageUrl; // + "/" + _height.toInt().toString();
     var request = HttpRequest();
     request
       ..open('GET', imageUrlWithSize)
-      ..responseType = 'arraybuffer'
-      ..setRequestHeader("authorization", requestHeaders['authorization'])
+      // ..responseType = 'arraybuffer'
+      ..setRequestHeader(tokenEntry.key, tokenEntry.value)
       ..onLoadEnd.listen((e) => requestComplete(request))
       ..send();
   }
 
   requestComplete(HttpRequest request) {
     if (request.status == 200) {
-      ByteBuffer byteBuffer = request.response;
-      _bytes = byteBuffer.asUint8List();
+      Map<String, dynamic> imageMap = jsonDecode(request.response);
+      var dataString = imageMap['imagedata']['data'];
+      _bytes = Base64Decoder().convert(dataString);
       _imageReady = true;
     } else {
       error = "An error occurred while retrieving the image.";
@@ -83,8 +84,12 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
     } else {
       Image image = Image.memory(
         _bytes,
-        fit: BoxFit.none,
+        fit: BoxFit.contain,
       );
+
+      var height = ScreenUtilities.getHeight(context);
+      var width = ScreenUtilities.getWidth(context);
+      var delta = 200;
 
       return Container(
         child: Column(
@@ -101,7 +106,11 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
               padding: const EdgeInsets.all(18.0),
               child: RotatedBox(
                 quarterTurns: quarterTurns,
-                child: image,
+                child: SizedBox(
+                  height: height - delta,
+                  width: width - delta,
+                  child: image,
+                ),
               ),
             ),
             if (!widget.hideRotate)
@@ -198,7 +207,8 @@ class _OnlineSourceCardState extends State<OnlineSourceCard> {
             ),
             ButtonBar(
               children: <Widget>[
-                FlatButton(
+                TextButton(
+                  style: SmashUI.defaultFlatButtonStyle(),
                   child: const Text('SELECT'),
                   onPressed: () {
                     SmashSession.setBasemap(widget.name);

@@ -7,36 +7,40 @@ import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 class SmashSession {
   /// Checks credentials and returns an error message or null if login is ok.
   static Future<String> login(String user, String password) async {
-    var responsJson = await ServerApi.login(user, password);
-    if (!responsJson.startsWith(NETWORKERROR_PREFIX)) {
-      var jsonMap = JSON.jsonDecode(responsJson);
-      var hasPermission = jsonMap[KEY_HASPERMISSION];
-      if (hasPermission) {
-        setSessionUser(user, password);
-        var isAdmin = jsonMap[KEY_ISADMIN];
-        if (isAdmin != null) {
-          html.window.sessionStorage[KEY_ISADMIN] = "$isAdmin";
-        } else {
-          html.window.sessionStorage[KEY_ISADMIN] = "false";
-        }
+    var responseText = await ServerApi.login(user, password);
+    if (!responseText.startsWith(NETWORKERROR_PREFIX)) {
+      var token = responseText;
+      setSessionToken(token);
+      setSessionUser(user, password);
 
-        var lastBasemap = jsonMap[KEY_BASEMAP];
-        if (lastBasemap != null) {
-          html.window.sessionStorage[KEY_BASEMAP] = "$lastBasemap";
-        }
-        var lastMapcenter = jsonMap[KEY_MAPCENTER];
-        if (lastMapcenter != null) {
-          html.window.sessionStorage[KEY_MAPCENTER] = "$lastMapcenter";
-        }
-      }
+      // var jsonMap = JSON.jsonDecode(responsJson);
+      // var hasPermission = jsonMap[KEY_HASPERMISSION];
+      // if (hasPermission) {
+      //   setSessionUser(user, password);
+      //   var isAdmin = jsonMap[KEY_ISADMIN];
+      //   if (isAdmin != null) {
+      //     html.window.sessionStorage[KEY_ISADMIN] = "$isAdmin";
+      //   } else {
+      //     html.window.sessionStorage[KEY_ISADMIN] = "false";
+      //   }
+
+      //   var lastBasemap = jsonMap[KEY_BASEMAP];
+      //   if (lastBasemap != null) {
+      //     html.window.sessionStorage[KEY_BASEMAP] = "$lastBasemap";
+      //   }
+      //   var lastMapcenter = jsonMap[KEY_MAPCENTER];
+      //   if (lastMapcenter != null) {
+      //     html.window.sessionStorage[KEY_MAPCENTER] = "$lastMapcenter";
+      //   }
+      // }
       return null;
     } else {
-      return responsJson;
+      return responseText;
     }
   }
 
   static bool isLogged() {
-    return html.window.sessionStorage[KEY_USER] != null;
+    return html.window.sessionStorage[KEY_TOKEN] != null;
   }
 
   static bool isAdmin() {
@@ -47,6 +51,18 @@ class SmashSession {
   static void setSessionUser(String user, String pwd) {
     html.window.sessionStorage[KEY_USER] = user;
     html.window.sessionStorage[KEY_PWD] = pwd;
+  }
+
+  static void setSessionToken(String token) {
+    html.window.sessionStorage[KEY_TOKEN] = token;
+  }
+
+  static String getSessionToken() {
+    var token = html.window.sessionStorage[KEY_TOKEN];
+    if (token == null) {
+      html.window.location.reload();
+    }
+    return token;
   }
 
   static void setBasemap(String basemap) {
@@ -84,6 +100,7 @@ class SmashSession {
   static void logout({mapCenter}) async {
     String user = html.window.sessionStorage.remove(KEY_USER);
     String pwd = html.window.sessionStorage.remove(KEY_PWD);
+    String token = html.window.sessionStorage.remove(KEY_TOKEN);
     html.window.sessionStorage.remove(KEY_ISADMIN);
     String baseMap = html.window.sessionStorage.remove(KEY_BASEMAP);
     html.window.sessionStorage.remove(KEY_MAPCENTER);

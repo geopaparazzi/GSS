@@ -7,11 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/views/about_view.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/views/log_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/views/projectdata_view.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/views/surveyors_view.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/views/webusers_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/main.dart';
@@ -19,7 +15,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
-import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
+import 'dart:html' as html;
+// import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class MainMapView extends StatefulWidget {
   MainMapView({Key key}) : super(key: key);
@@ -161,7 +159,7 @@ class _MainMapViewState extends State<MainMapView>
                       maxZoom: maxZoom,
                       plugins: [
                         MarkerClusterPlugin(),
-                        TappablePolylineMapPlugin(),
+                        // TappablePolylineMapPlugin(),
                       ],
                     ),
                     layers: [AVAILABLE_MAPS[basemap]]..addAll(layers),
@@ -402,56 +400,6 @@ class _MainMapViewState extends State<MainMapView>
       new Container(
         child: new Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: new Icon(
-                  MdiIcons.accountHardHat,
-                  color: SmashColors.mainDecorations,
-                  size: iconSize,
-                ),
-                title: Text("Surveyors"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => SurveyorsView()));
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: new Icon(
-                  MdiIcons.accountGroup,
-                  color: SmashColors.mainDecorations,
-                  size: iconSize,
-                ),
-                title: Text("Web Users"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => WebUsersView()));
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListTile(
-                leading: new Icon(
-                  MdiIcons.database,
-                  color: SmashColors.mainDecorations,
-                  size: iconSize,
-                ),
-                title: Text("Project Data"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ProjectDataView()));
-                },
-              ),
-            ),
             // Padding(
             //   padding: const EdgeInsets.all(8.0),
             //   child: ListTile(
@@ -482,23 +430,20 @@ class _MainMapViewState extends State<MainMapView>
             //     },
             //   ),
             // ),
-            if (SmashSession.isAdmin())
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ListTile(
-                  leading: new Icon(
-                    MdiIcons.bug,
-                    color: SmashColors.mainDecorations,
-                    size: iconSize,
-                  ),
-                  title: Text("Log"),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => LogView()));
-                  },
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.tools,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
                 ),
+                title: Text("Configuration"),
+                onTap: () {
+                  html.window.open(API_CONFIGRATION_URL, 'admin');
+                },
               ),
+            ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: ListTile(

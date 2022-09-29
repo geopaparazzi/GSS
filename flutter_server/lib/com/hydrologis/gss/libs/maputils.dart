@@ -20,14 +20,15 @@ import 'package:latlong2/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
+import 'package:dart_jts/dart_jts.dart' as JTS;
 
-Marker buildSimpleNote(MapstateModel mapState, var x, var y, String name,
+Marker buildSimpleNote(MapstateModel mapState, LatLng latLng, String name,
     int noteId, Icon icon, double size, Color color) {
   List lengthHeight = guessTextDimensions(name, size);
   return Marker(
     width: lengthHeight[0],
     height: size + lengthHeight[1],
-    point: new LatLng(y, x),
+    point: latLng,
     builder: (ctx) => new Container(
       child: GestureDetector(
         child: Column(
@@ -160,10 +161,11 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
 }
 
 openNoteDialog(BuildContext context, int noteId) async {
-  var userPwd = SmashSession.getSessionUser();
-
-  var data = await ServerApi.getNoteById(userPwd[0], userPwd[1], noteId);
+  var data = await ServerApi.getNote(noteId);
   Map<String, dynamic> noteItem = jsonDecode(data);
+  var user = noteItem[USER];
+  var userName = await ServerApi.getUserName(user);
+  noteItem[USER] = userName;
   var form = noteItem[FORM];
   var widget;
   var h = 300.0;
@@ -174,21 +176,18 @@ openNoteDialog(BuildContext context, int noteId) async {
     widget = VersionedNoteWidget(noteItem);
   } else {
     var id = noteItem[ID];
-    var name = noteItem[NAME];
+    var name = noteItem[TEXT];
     var ts = noteItem[TS];
-    var surveyor = noteItem[SURVEYOR];
-    var project = noteItem[PROJECT];
-    var lat = noteItem[Y];
-    var lon = noteItem[X];
+
+    var geom = noteItem[THE_GEOM];
+    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
     var map = {
       "ID": id,
       "Text": name,
-      "Timestamp": TimeUtilities.ISO8601_TS_FORMATTER
-          .format(DateTime.fromMillisecondsSinceEpoch(ts)),
-      "Project": project,
-      "Surveyor": surveyor,
-      "Latitude": lat.toStringAsFixed(6),
-      "Longitude": lon.toStringAsFixed(6),
+      "Timestamp": ts,
+      "Surveyor": userName,
+      "Latitude": point.getY().toStringAsFixed(6),
+      "Longitude": point.getX().toStringAsFixed(6),
     };
 
     widget = Column(
@@ -303,7 +302,7 @@ openImageDialog(BuildContext context, String name, int imageId,
   Dialog mapSelectionDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: NetworkImageWidget(
-      "$WEBAPP_URL/imagedata/$imageId",
+      "$API_IMAGES/$imageId",
       name,
       h * 0.7,
       hideRotate: hideRotate,
@@ -372,28 +371,27 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
   }
 
   Future loadNote() async {
-    var userPwd = SmashSession.getSessionUser();
-    var data = await ServerApi.getNoteById(userPwd[0], userPwd[1], _current);
-    noteItem = jsonDecode(data);
-    _current = noteItem[ID];
-    _previous = noteItem[PREVIOUSID];
-    if (_previous == -1) {
-      _previous = null;
-    }
+    // TODO
+    // var userPwd = SmashSession.getSessionUser();
+    // var data = await ServerApi.getNoteById(userPwd[0], userPwd[1], _current);
+    // noteItem = jsonDecode(data);
+    // _current = noteItem[ID];
+    // _previous = noteItem[PREVIOUSID];
+    // if (_previous == -1) {
+    //   _previous = null;
+    // }
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    var name = noteItem[NAME];
+    var name = noteItem[TEXT];
     var ts = noteItem[TS];
-    var x = noteItem[X];
-    var y = noteItem[Y];
-    var p = LatLng(y, x);
-    var surveyor = noteItem[SURVEYOR];
-    var project = noteItem[PROJECT];
-    var form = noteItem[FORM];
-    var sectionMap = jsonDecode(form);
+    var geom = noteItem[THE_GEOM];
+    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+    var p = LatLng(point.getY(), point.getX());
+    var user = noteItem[USER];
+    var sectionMap = noteItem[FORM];
     var sectionName = sectionMap[ATTR_SECTIONNAME];
 
     var titleWidget = SmashUI.titleText(
@@ -431,7 +429,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: SmashUI.smallText(
-                      "Surveyor: $surveyor        Project: $project       Timestamp: ${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(ts))}",
+                      "Surveyor: $user      Timestamp: $ts",
                       textAlign: TextAlign.center,
                       color: Colors.grey),
                 ),
@@ -591,43 +589,43 @@ class _FilterWidgetState extends State<FilterWidget>
   Future<void> afterFirstLayout(BuildContext context) async {
     _filterStateModel = Provider.of<FilterStateModel>(context, listen: false);
     var sessionUser = SmashSession.getSessionUser();
-    String responsJson =
-        await ServerApi.getProjects(sessionUser[0], sessionUser[1]);
+    // String responsJson =
+    //     await ServerApi.getProjects(sessionUser[0], sessionUser[1]);
 
-    var jsonMap = jsonDecode(responsJson);
+    // var jsonMap = jsonDecode(responsJson);
 
-    List<dynamic> projects = jsonMap[KEY_PROJECTS];
-    List<String> filterProjects = _filterStateModel.projects;
+    // List<dynamic> projects = jsonMap[KEY_PROJECTS];
+    // List<String> filterProjects = _filterStateModel.projects;
 
-    Map<String, bool> tmp = {};
-    projects.forEach((name) {
-      tmp[name] = filterProjects != null ? filterProjects.contains(name) : true;
-    });
+    // Map<String, bool> tmp = {};
+    // projects.forEach((name) {
+    //   tmp[name] = filterProjects != null ? filterProjects.contains(name) : true;
+    // });
 
-    _projectsToActive = tmp;
-    _projectNames = _projectsToActive.keys.toList();
+    // _projectsToActive = tmp;
+    // _projectNames = _projectsToActive.keys.toList();
 
-    responsJson =
-        await ServerApi.getSurveyorsJson(sessionUser[0], sessionUser[1]);
+    // responsJson =
+    //     await ServerApi.getSurveyorsJson(sessionUser[0], sessionUser[1]);
 
-    jsonMap = jsonDecode(responsJson);
+    // jsonMap = jsonDecode(responsJson);
 
-    List<dynamic> surveyors = jsonMap[KEY_SURVEYORS];
-    List<String> filterSurveyors = _filterStateModel.surveyors;
+    // List<dynamic> surveyors = jsonMap[KEY_SURVEYORS];
+    // List<String> filterSurveyors = _filterStateModel.surveyors;
 
-    tmp = {};
-    surveyors.forEach((map) {
-      var active = map[SURVEYOR_ACTIVE_FIELD_NAME];
-      if (active == 1) {
-        var name = map[SURVEYOR_NAME_FIELD_NAME];
+    // tmp = {};
+    // surveyors.forEach((map) {
+    //   var active = map[SURVEYOR_ACTIVE_FIELD_NAME];
+    //   if (active == 1) {
+    //     var name = map[SURVEYOR_NAME_FIELD_NAME];
 
-        tmp[name] =
-            filterSurveyors != null ? filterSurveyors.contains(name) : true;
-      }
-    });
+    //     tmp[name] =
+    //         filterSurveyors != null ? filterSurveyors.contains(name) : true;
+    //   }
+    // });
 
-    _surveyorsToActive = tmp;
-    _surveyorNames = _surveyorsToActive.keys.toList();
+    // _surveyorsToActive = tmp;
+    // _surveyorNames = _surveyorsToActive.keys.toList();
 
     setState(() {
       _dataLoaded = true;
@@ -786,10 +784,12 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
 
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
-    var up = SmashSession.getSessionUser();
-    var bookmarksString =
-        await ServerApi.getUserSetting(up[0], up[1], KEY_BOOKMARKS);
-    bookmarks = bookmarksString.split("@");
+    // var up = SmashSession.getSessionUser();
+    // var bookmarksString =
+    //     await ServerApi.getUserSetting(up[0], up[1], KEY_BOOKMARKS);
+    // bookmarks = bookmarksString.split("@");
+
+    bookmarks = [];
     setState(() {
       _dataLoaded = true;
     });
@@ -856,9 +856,10 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                           return element.startsWith("$name:");
                         });
                         setState(() {});
-                        var up = SmashSession.getSessionUser();
-                        await ServerApi.setUserSetting(
-                            up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
+                        // TODO
+                        // var up = SmashSession.getSessionUser();
+                        // await ServerApi.setUserSetting(
+                        //     up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
                       },
                     ),
                   );
@@ -886,9 +887,10 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                         "$name:${b.west},${b.east},${b.south},${b.north}";
                     bookmarks.insert(0, bm);
                     setState(() {});
-                    var up = SmashSession.getSessionUser();
-                    await ServerApi.setUserSetting(
-                        up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
+                    // TODO
+                    // var up = SmashSession.getSessionUser();
+                    // await ServerApi.setUserSetting(
+                    //     up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
                   }
                 },
               ),
@@ -904,9 +906,6 @@ class Attributes {
   Widget marker;
   int id;
   String text;
-  int timeStamp;
-  String user;
-  String project;
   LatLng point;
 }
 
@@ -926,18 +925,12 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
     "Actions",
     "Id",
     "Text",
-    "Timestamp",
-    "User",
-    "Project",
   ];
   var colFactors = [
-    0.05,
     0.1,
-    0.05,
     0.2,
     0.2,
-    0.2,
-    0.2,
+    0.5,
   ];
   @override
   Widget build(BuildContext context) {
@@ -952,12 +945,6 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
       _dataRows = mapstateModel.attributes
           .where((arrt) => mapstateModel.currentMapBounds.contains(arrt.point))
           .map((attr) {
-        var id = attrState.selectedNoteId;
-        bool selected = false;
-        if (id != null && id == attr.id) {
-          selected = true;
-        }
-
         var textFun = (String str) {
           return Center(child: SmashUI.normalText(str));
         };
@@ -1032,10 +1019,10 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
           ),
           textFun("${attr.id}"),
           textFun(attr.text),
-          textFun(TimeUtilities.ISO8601_TS_FORMATTER
-              .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp))),
-          textFun(attr.user ?? "- nv -"),
-          textFun(attr.project ?? "- nv -"),
+          // textFun(TimeUtilities.ISO8601_TS_FORMATTER
+          //     .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp))),
+          // textFun(attr.user ?? "- nv -"),
+          // textFun(attr.project ?? "- nv -"),
         ];
       }).toList();
 
@@ -1091,7 +1078,7 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
   Widget _generateRightHandSideColumnRow(BuildContext context, int index) {
     List<Widget> row = _dataRows[index];
 
-    final List rowIndexes = [1, 2, 3, 4, 5, 6];
+    final List rowIndexes = [1, 2, 3];
     var newRow = rowIndexes
         .map((i) => Container(
               child: row[i],

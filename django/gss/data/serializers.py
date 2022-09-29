@@ -192,6 +192,11 @@ class ImageDataSerializer(serializers.ModelSerializer):
         model = ImageData
         fields = '__all__'
 
+class RenderImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ['id', 'text', 'the_geom', 'thumbnail']
+
 class ImageSerializer(serializers.ModelSerializer):
     imagedata = ImageDataSerializer(required=False )
 

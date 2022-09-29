@@ -49,15 +49,15 @@ class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
     var up = SmashSession.getSessionUser();
-    var dbInfo = await ServerApi.getDbinfo(up[0], up[1]);
-    var splitInfo = dbInfo.split("\n");
-    if (dbInfo.toLowerCase().contains("postgis")) {
-      dbInfoWidgets = splitInfo.map((s) => SmashUI.smallText(s)).toList();
-    } else if (splitInfo.length == 2) {
-      splitInfo[0] = "H2: " + splitInfo[0];
-      splitInfo[1] = "H2GIS: " + splitInfo[1];
-      dbInfoWidgets = splitInfo.map((s) => SmashUI.smallText(s)).toList();
-    }
+    // var dbInfo = await ServerApi.getDbinfo(up[0], up[1]);
+    // var splitInfo = dbInfo.split("\n");
+    // if (dbInfo.toLowerCase().contains("postgis")) {
+    //   dbInfoWidgets = splitInfo.map((s) => SmashUI.smallText(s)).toList();
+    // } else if (splitInfo.length == 2) {
+    //   splitInfo[0] = "H2: " + splitInfo[0];
+    //   splitInfo[1] = "H2GIS: " + splitInfo[1];
+    //   dbInfoWidgets = splitInfo.map((s) => SmashUI.smallText(s)).toList();
+    // }
 
     setState(() {});
   }

@@ -11,7 +11,8 @@ import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
-import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
+import 'package:dart_jts/dart_jts.dart' as JTS;
+// import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class FilterStateModel extends ChangeNotifier {
   List<String> _surveyors;
@@ -95,7 +96,8 @@ class AttributesTableStateModel extends ChangeNotifier {
 }
 
 class MapstateModel extends ChangeNotifier {
-  TappablePolylineLayerOptions logs;
+  PolylineLayerOptions logs;
+  // TappablePolylineLayerOptions logs;
   List<Marker> mapMarkers = [];
   List<Attributes> attributes = [];
   LatLngBounds dataBounds = LatLngBounds();
@@ -126,127 +128,133 @@ class MapstateModel extends ChangeNotifier {
     var filterStateModel =
         Provider.of<FilterStateModel>(context, listen: false);
 
-    var userPwd = SmashSession.getSessionUser();
-
     // GET DATA FROM SERVER
-    var data = await ServerApi.getData(
-      userPwd[0],
-      userPwd[1],
-      surveyors: filterStateModel.surveyors,
-      projects: filterStateModel.projects,
-      matchString: filterStateModel.matchingText,
-      fromTo: filterStateModel.fromToTimestamp,
-    );
-    Map<String, dynamic> json = jsonDecode(data);
+    var data = await ServerApi.getRenderNotes(
+
+        // surveyors: filterStateModel.surveyors,
+        // projects: filterStateModel.projects,
+        // matchString: filterStateModel.matchingText,
+        // fromTo: filterStateModel.fromToTimestamp,
+        );
+    var notesList = jsonDecode(data);
 
     dataBounds = LatLngBounds();
 
     // LOAD LOG DATA
     // TODO find a fix for logs
-    List<dynamic> logsList = json[LOGS];
-    if (logsList != null) {
-      List<TaggedPolyline> lines = [];
-      for (int i = 0; i < logsList.length; i++) {
-        dynamic logItem = logsList[i];
-        var id = logItem[ID];
-        var name = logItem[NAME];
-        var colorHex = logItem[COLOR];
+    // List<dynamic> logsList = json[LOGS];
+    // if (logsList != null) {
+    //   // List<TaggedPolyline> lines = [];
+    //   List<Polyline> lines = [];
+    //   for (int i = 0; i < logsList.length; i++) {
+    //     dynamic logItem = logsList[i];
+    //     var id = logItem[ID];
+    //     var name = logItem[NAME];
+    //     var colorHex = logItem[COLOR];
 
-        // TODO for now colortables are not supported
-        const ECOLORSEP = "@";
-        if (colorHex.contains(ECOLORSEP)) {
-          var split = colorHex.split(ECOLORSEP);
-          colorHex = split[0];
-        }
-        var width = logItem[WIDTH];
-        var coords = logItem[COORDS];
-        var startts = logItem[STARTTS];
-        var endts = logItem[ENDTS];
+    //     // TODO for now colortables are not supported
+    //     const ECOLORSEP = "@";
+    //     if (colorHex.contains(ECOLORSEP)) {
+    //       var split = colorHex.split(ECOLORSEP);
+    //       colorHex = split[0];
+    //     }
+    //     var width = logItem[WIDTH];
+    //     var coords = logItem[COORDS];
+    //     var startts = logItem[STARTTS];
+    //     var endts = logItem[ENDTS];
 
-        List<LatLng> points = [];
-        for (int j = 0; j < coords.length; j++) {
-          var coord = coords[j];
-          var lat = coord[Y];
-          var lon = coord[X];
+    //     List<LatLng> points = [];
+    //     for (int j = 0; j < coords.length; j++) {
+    //       var coord = coords[j];
+    //       var lat = coord[Y];
+    //       var lon = coord[X];
 
-          var latLng = LatLongHelper.fromLatLon(lat, lon);
-          dataBounds.extend(latLng);
-          points.add(latLng);
-        }
+    //       var latLng = LatLongHelper.fromLatLon(lat, lon);
+    //       dataBounds.extend(latLng);
+    //       points.add(latLng);
+    //     }
 
-        lines.add(
-          TaggedPolyline(
-            tag: "$id@$name@$startts@$endts",
-            points: points,
-            strokeWidth: width,
-            color: ColorExt(colorHex),
-          ),
-        );
-      }
-      logs = TappablePolylineLayerOptions(
-        polylines: lines,
-        polylineCulling: true,
-        onTap: (List<TaggedPolyline> polylines, TapUpDetails details) {
-          if (polylines.isEmpty) {
-            return null;
-          }
-          return openLogDialog(context, polylines[0].tag);
-        },
-        // onMiss: () => print("No polyline tapped"),
-      );
-    }
+    //     lines.add(
+    //       Polyline(
+    //         points: points,
+    //         strokeWidth: width,
+    //         color: ColorExt(colorHex),
+    //       ),
+    //     );
+    //     // lines.add(
+    //     //   TaggedPolyline(
+    //     //     tag: "$id@$name@$startts@$endts",
+    //     //     points: points,
+    //     //     strokeWidth: width,
+    //     //     color: ColorExt(colorHex),
+    //     //   ),
+    //     // );
+    //   }
+    //   logs = PolylineLayerOptions(
+    //     polylines: lines,
+    //     polylineCulling: true,
+    //   );
+    //   // logs = TappablePolylineLayerOptions(
+    //   //   polylines: lines,
+    //   //   polylineCulling: true,
+    //   //   onTap: (List<TaggedPolyline> polylines, TapUpDetails details) {
+    //   //     if (polylines.isEmpty) {
+    //   //       return null;
+    //   //     }
+    //   //     return openLogDialog(context, polylines[0].tag);
+    //   //   },
+    //   //   // onMiss: () => print("No polyline tapped"),
+    //   // );
+    // }
 
     List<Marker> markers = <Marker>[];
     List<Attributes> attributesList = [];
 
     // LOAD SIMPLE IMAGES
-    List<dynamic> imagesList = json[IMAGES];
-    if (imagesList != null) {
-      for (int i = 0; i < imagesList.length; i++) {
-        dynamic imageItem = imagesList[i];
-        var id = imageItem[ID];
-        var dataId = imageItem[DATAID];
-        var data = imageItem[DATA];
-        var name = imageItem[NAME];
-        var ts = imageItem[TS];
-        var x = imageItem[X];
-        var y = imageItem[Y];
-        var latLng = LatLongHelper.fromLatLon(y, x);
-        dataBounds.extend(latLng);
-        var imgData = Base64Decoder().convert(data);
-        var imageWidget = Image.memory(
-          imgData,
-          scale: 6.0,
-        );
-        markers.add(
-            buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
+    // List<dynamic> imagesList = json[IMAGES];
+    // if (imagesList != null) {
+    //   for (int i = 0; i < imagesList.length; i++) {
+    //     dynamic imageItem = imagesList[i];
+    //     var id = imageItem[ID];
+    //     var dataId = imageItem[DATAID];
+    //     var data = imageItem[DATA];
+    //     var name = imageItem[NAME];
+    //     var ts = imageItem[TS];
+    //     var x = imageItem[X];
+    //     var y = imageItem[Y];
+    //     var latLng = LatLongHelper.fromLatLon(y, x);
+    //     dataBounds.extend(latLng);
+    //     var imgData = Base64Decoder().convert(data);
+    //     var imageWidget = Image.memory(
+    //       imgData,
+    //       scale: 6.0,
+    //     );
+    //     markers.add(
+    //         buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
 
-        var surveyor = imageItem[SURVEYOR];
-        var project = imageItem[PROJECT];
-        attributesList.add(Attributes()
-          ..id = id
-          ..marker = imageWidget
-          ..point = latLng
-          ..project = project
-          ..text = name
-          ..timeStamp = ts
-          ..user = surveyor);
-      }
-    }
+    //     var surveyor = imageItem[SURVEYOR];
+    //     var project = imageItem[PROJECT];
+    //     attributesList.add(Attributes()
+    //       ..id = id
+    //       ..marker = imageWidget
+    //       ..point = latLng
+    //       ..project = project
+    //       ..text = name
+    //       ..timeStamp = ts
+    //       ..user = surveyor);
+    //   }
+    // }
 
     // LOAD ALL NOTES WITH SIMPLE INFOS
-    // make sure that forms are loadd properly
-    List<dynamic> simpleNotesList = json[NOTES];
-    if (simpleNotesList != null) {
-      for (int i = 0; i < simpleNotesList.length; i++) {
-        dynamic noteItem = simpleNotesList[i];
+    // make sure that forms are loaded properly
+    if (notesList != null && notesList.isNotEmpty) {
+      for (int i = 0; i < notesList.length; i++) {
+        Map<String, dynamic> noteItem = notesList[i];
         var id = noteItem[ID];
-        var name = noteItem[NAME];
-        var hasForm = noteItem[FORM];
-        var ts = noteItem[TS];
-        var x = noteItem[X];
-        var y = noteItem[Y];
-        var latLng = LatLongHelper.fromLatLon(y, x);
+        var name = noteItem[TEXT];
+        var geom = noteItem[THE_GEOM];
+        JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+        var latLng = LatLongHelper.fromLatLon(point.getY(), point.getX());
         dataBounds.extend(latLng);
 
         var marker = noteItem[MARKER];
@@ -259,24 +267,14 @@ class MapstateModel extends ChangeNotifier {
           size: size,
           color: colorExt,
         );
-        if (hasForm) {
-          markers.add(
-              buildFormNote(this, x, y, name, id, iconData, size, colorExt));
-        } else {
-          markers
-              .add(buildSimpleNote(this, x, y, name, id, icon, size, colorExt));
-        }
+        markers
+            .add(buildSimpleNote(this, latLng, name, id, icon, size, colorExt));
 
-        var surveyor = noteItem[SURVEYOR];
-        var project = noteItem[PROJECT];
         attributesList.add(Attributes()
           ..id = id
           ..marker = icon
           ..point = latLng
-          ..project = project
-          ..text = name
-          ..timeStamp = ts
-          ..user = surveyor);
+          ..text = name);
       }
     }
 

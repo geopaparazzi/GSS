@@ -24,6 +24,7 @@ class GssApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AttributesTableStateModel()),
       ],
       child: MaterialApp(
+        routes: {'/': (context) => MainPage()},
         title: TITLE,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
@@ -66,7 +67,6 @@ class GssApp extends StatelessWidget {
 //              color: Color.fromARGB(255, 128, 128, 128),
 //            ),
             )),
-        home: MainPage(), //LoginScreen(), //
       ),
     );
   }

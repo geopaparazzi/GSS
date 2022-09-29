@@ -70,12 +70,9 @@ class ServerFormHelper implements AFormhelper {
       return Future.value(thumbList);
     }
 
-    var userPwd = SmashSession.getSessionUser();
-
     for (int i = 0; i < imageSplit.length; i++) {
       var id = int.parse(imageSplit[i]);
-      var bytes =
-          await ServerApi.getImageThumbnailById(userPwd[0], userPwd[1], id);
+      var bytes = await ServerApi.getImageThumbnail(id);
       Image img = Image.memory(bytes);
       Widget withBorder = Container(
         padding: SmashUI.defaultPadding(),

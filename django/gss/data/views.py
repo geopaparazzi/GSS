@@ -15,7 +15,7 @@ from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
                               ImageSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,
-                              UserSerializer)
+                              UserSerializer, RenderImageSerializer)
 
 
 @csrf_exempt
@@ -110,12 +110,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
 class RenderNoteViewSet(ListRetrieveOnlyViewSet):
+    
     """
     API endpoint to get notes with minimal info for rendering.
     """
     queryset = Note.objects.all()
     serializer_class = RenderNoteSerializer
-
+    
     def get_permissions(self):
         """
         Instantiates and returns the list of permissions that this view requires.
@@ -157,10 +158,29 @@ class NoteViewSet(viewsets.ModelViewSet):
 
 class ImageViewSet(viewsets.ModelViewSet):
     """
-    API endpoint that allows projects to be viewed or edited.
+    API endpoint that allows images to be viewed or edited.
     """
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+class RenderImageViewSet(ListRetrieveOnlyViewSet):
+    """
+    API endpoint to get images with minimal info for rendering.
+    """
+    queryset = Image.objects.all()
+    serializer_class = RenderImageSerializer
 
     def get_permissions(self):
         """
