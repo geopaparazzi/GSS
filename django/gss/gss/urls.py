@@ -23,6 +23,7 @@ router.register(r'users', data.views.UserViewSet)
 router.register(r'groups', data.views.GroupViewSet)
 router.register(r'projects', data.views.ProjectViewSet)
 router.register(r'notes', data.views.NoteViewSet)
+router.register(r'rendernotes', data.views.RenderNoteViewSet)
 router.register(r'gpslogs', data.views.GpslogViewSet)
 router.register(r'images', data.views.ImageViewSet)
 
@@ -30,4 +31,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
+    path('api/login', data.views.login)
 ]

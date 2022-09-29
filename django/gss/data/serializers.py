@@ -28,6 +28,11 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = (DbNamings.PROJECT_NAME, DbNamings.PROJECT_DESCRIPTION, DbNamings.PROJECT_GROUPS)
 
 
+class RenderNoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Note
+        fields = ['id', 'text', 'the_geom', 'marker', 'size', 'color']
+
 class NoteSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         dataconv = json.loads(data)

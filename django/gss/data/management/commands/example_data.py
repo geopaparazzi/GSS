@@ -71,12 +71,27 @@ class Command(BaseCommand):
                 conn = sqlite3.connect(gpapPath)
                 cursor = conn.cursor()
                 
-                surveyorAuth = HTTPBasicAuth('surveyor', 'surveyor')
+                # surveyorAuth = HTTPBasicAuth('surveyor', 'surveyor')
+                tokenAuthHeader = {}
                 base = "http://localhost:8000/api"
 
-                self.insertNotes(cursor, surveyorAuth, base)
-                self.insertSimpleImages(cursor, surveyorAuth, base)
-                self.insertGpslogs(cursor, surveyorAuth, base)
+                loginUrl = f"{base}/login"
+                r = requests.post(url = loginUrl, data = {
+                    "username": "surveyor",
+                    "password": "surveyor"
+                })
+                if r.status_code != 200:
+                    self.stderr.write("Gpslog could not be uploaded:")
+                    self.stderr.write(r.json())
+                    return
+                else:
+                    token = json.loads(r.text)['token']
+                    tokenAuthHeader['Authorization'] = f"Token {token}"
+                    
+                if len(tokenAuthHeader) > 0:
+                    self.insertNotes(cursor, tokenAuthHeader, base)
+                    self.insertSimpleImages(cursor, tokenAuthHeader, base)
+                    self.insertGpslogs(cursor, tokenAuthHeader, base)
             except sqlite3.Error as error:
                 self.stderr.write('Error occured - ', error)
             finally:
@@ -86,7 +101,7 @@ class Command(BaseCommand):
         else:
             self.generateExampleData()
 
-    def insertGpslogs(self, cursor, surveyorAuth, base):
+    def insertGpslogs(self, cursor, tokenAuthHeader, base):
         gpslogsUrl = f"{base}/gpslogs/"
         cursor.execute("""
                         SELECT g._id,g.startts,g.endts,g.text,glp.color,glp.width 
@@ -143,17 +158,17 @@ class Command(BaseCommand):
             }
             newGpslog["gpslogdata"] = gpslogdata
 
-            headers = {
-                        "Content-Type":"application/json",
-                        "Accept":"application/json",
-                    }
+            # headers = {
+            #             "Content-Type":"application/json",
+            #             "Accept":"application/json",
+            #         }
             self.stdout.write(f"Uploading Gpslog '{text}' with id: {id}")
-            r = requests.post(url = gpslogsUrl,headers=headers, json=json.dumps(newGpslog), auth = surveyorAuth)
+            r = requests.post(url = gpslogsUrl,headers=tokenAuthHeader, json=json.dumps(newGpslog))
             if r.status_code != 201:
                 self.stderr.write("Gpslog could not be uploaded:")
                 self.stderr.write(r.json())
 
-    def insertSimpleImages(self, cursor, surveyorAuth, base):
+    def insertSimpleImages(self, cursor, tokenAuthHeader, base):
         imagesUrl = f"{base}/images/"
         cursor.execute("""
                     SELECT i._id, i.lon,i.lat,i.altim,i.azim,i.ts,i.text,id.data 
@@ -189,13 +204,13 @@ class Command(BaseCommand):
             }
             self.stdout.write(f"Uploading Image '{text}' with id: {id}")
             imageB64 = json.dumps(newImage)
-            r = requests.post(url = imagesUrl, json=imageB64, auth = surveyorAuth)
+            r = requests.post(url = imagesUrl, json=imageB64, headers=tokenAuthHeader)
             if r.status_code != 201:
                 self.stderr.write("Image could not be uploaded:")
                 self.stderr.write(r.json())
     
 
-    def insertNotes(self, cursor, surveyorAuth, base):
+    def insertNotes(self, cursor, tokenAuthHeader, base):
         notesUrl = f"{base}/notes/"
         cursor.execute("""
                     SELECT n._id,n.lon,n.lat,n.altim,n.ts,n.description,n.text,n.form,
@@ -300,7 +315,7 @@ class Command(BaseCommand):
             
             self.stdout.write(f"Uploading Note '{text}' with id: {id}")
             noteJson = json.dumps(newNote)
-            r = requests.post(url = notesUrl, json = noteJson, auth = surveyorAuth)
+            r = requests.post(url = notesUrl, json = noteJson, headers=tokenAuthHeader)
             if r.status_code != 201:
                 self.stderr.write("Note could not be uploaded:")
                 self.stderr.write(r.json())
