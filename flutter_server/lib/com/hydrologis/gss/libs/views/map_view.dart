@@ -379,20 +379,12 @@ class _MainMapViewState extends State<MainMapView>
       new Container(
         margin: EdgeInsets.only(bottom: 20),
         child: new DrawerHeader(
-          child: Stack(
-            children: <Widget>[
-              Align(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.asset("assets/smash_logo.png"),
-                ),
-                alignment: Alignment.center,
-              ),
-              Text(
-                "User: ${SmashSession.getSessionUser()[0]}",
-                style: TextStyle(color: Colors.blueGrey),
-              )
-            ],
+          child: Align(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Image.asset("assets/smash_logo.png"),
+            ),
+            alignment: Alignment.center,
           ),
         ),
         color: SmashColors.mainDecorations.withAlpha(70),
@@ -430,6 +422,32 @@ class _MainMapViewState extends State<MainMapView>
             //     },
             //   ),
             // ),
+            ListTile(
+              leading: new Icon(
+                MdiIcons.account,
+                color: SmashColors.mainDecorations,
+                size: iconSize,
+              ),
+              title: Text("User"),
+              subtitle: SmashUI.normalText(SmashSession.getSessionUser()[0],
+                  bold: true),
+            ),
+            ListTile(
+              leading: new Icon(
+                MdiIcons.folderOutline,
+                color: SmashColors.mainDecorations,
+                size: iconSize,
+              ),
+              title: Text("Project"),
+              subtitle: SmashUI.normalText(SmashSession.getSessionProject(),
+                  bold: true),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Divider(
+                color: SmashColors.mainDecorations,
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: ListTile(
@@ -457,6 +475,12 @@ class _MainMapViewState extends State<MainMapView>
                   Navigator.of(context).pop();
                   openAboutDialog(context);
                 },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Divider(
+                color: SmashColors.mainDecorations,
               ),
             ),
             Padding(
