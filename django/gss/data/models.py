@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import unique
 from django.db import models
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.geos import Point, LineString
@@ -101,6 +102,8 @@ class DbNamings():
     TMSSOURCE_MAXZOOM = "maxzoom"
     TMSSOURCE_ATTRIBUTION = "attribution"
 
+    API_PARAM_PROJECT = "project"
+
 class ProjectData(models.Model):
     label = models.CharField(name=DbNamings.PROJECTDATA_LABEL, max_length=100, null=False, unique=True)
     file = models.FileField(name = DbNamings.PROJECTDATA_FILE, null = False, upload_to ='projectdata/%Y/%m/%d/')
@@ -142,7 +145,7 @@ class TmsSource(models.Model):
         return self.label
 
 class Project(models.Model):
-    name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False)
+    name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False, unique=True)
     description = models.TextField(name=DbNamings.PROJECT_DESCRIPTION,  null=True, default="")
     groups = models.ManyToManyField(Group, name=DbNamings.PROJECT_GROUPS)
 
@@ -150,6 +153,15 @@ class Project(models.Model):
     wmssources = models.ManyToManyField(WmsSource, blank=True)
     tmssources = models.ManyToManyField(TmsSource, blank=True)
     # TODO  configurations
+
+    def hasUser(self, user):
+        project = Project.objects.filter(name=self.name, groups__user__username=user.username).first()
+        
+        if project != None:
+          return True
+        return False
+        
+        
 
     def __str__(self):
         return self.name

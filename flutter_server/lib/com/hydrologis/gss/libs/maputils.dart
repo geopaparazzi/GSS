@@ -393,6 +393,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
     var user = noteItem[USER];
     var sectionMap = noteItem[FORM];
     var sectionName = sectionMap[ATTR_SECTIONNAME];
+    print(sectionMap);
 
     var titleWidget = SmashUI.titleText(
       sectionName,

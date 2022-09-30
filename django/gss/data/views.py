@@ -8,13 +8,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
-                                   HTTP_404_NOT_FOUND)
+                                    HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND)
 
-from data.models import GpsLog, GpsLogData, Image, ImageData, Note, Project
+from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
                               ImageSerializer, NoteSerializer,
-                              ProjectSerializer, RenderNoteSerializer,
+                              ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,
                               UserSerializer, RenderImageSerializer)
 
 
@@ -24,16 +24,25 @@ from data.serializers import (GpslogSerializer, GroupSerializer,
 def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
-    if username is None or password is None:
-        return Response({'error': 'Please provide both username and password'},
+    projectName = request.data.get("project")
+    if username is None or password is None or projectName is None:
+        return Response({'error': 'Please provide username, password and project of choice.'},
                         status=HTTP_400_BAD_REQUEST)
     user = authenticate(username=username, password=password)
     if not user:
         return Response({'error': 'Invalid Credentials'},
                         status=HTTP_404_NOT_FOUND)
-    token, _ = Token.objects.get_or_create(user=user)
-    return Response({'token': token.key},
-                    status=HTTP_200_OK)
+    # now check if the user is in the project
+    project = Project.objects.filter(name=projectName).first()
+    if not project:
+        return Response({'error': 'Invalid Project Name'},status=HTTP_404_NOT_FOUND)
+    if project.hasUser(user):
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key},
+                        status=HTTP_200_OK)
+    else:
+        return Response({'error': f'User is not part of project "{project}"'},status=HTTP_403_FORBIDDEN)
+
 
 
 class ListRetrieveOnlyViewSet(viewsets.ModelViewSet):
@@ -109,14 +118,30 @@ class ProjectViewSet(viewsets.ModelViewSet):
             permission_classes = [IsSuperUser, permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
+class ProjectNameViewSet(ListRetrieveOnlyViewSet):
+    """
+    API endpoint that allows projects to be viewed or edited.
+    """
+    queryset = Project.objects.all()
+    serializer_class = ProjectNameSerializer
+    permission_classes = [AllowAny]
+
 class RenderNoteViewSet(ListRetrieveOnlyViewSet):
     
     """
     API endpoint to get notes with minimal info for rendering.
     """
-    queryset = Note.objects.all()
     serializer_class = RenderNoteSerializer
-    
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return Note.objects.none()
+        else:
+            queryset = Note.objects.filter(project__name=project)
+            return queryset
+        
     def get_permissions(self):
         """
         Instantiates and returns the list of permissions that this view requires.
@@ -133,16 +158,16 @@ class NoteViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows projects to be viewed or edited.
     """
-    queryset = Note.objects.all()
     serializer_class = NoteSerializer
 
-    # def get_queryset(self):
-    #     mode = self.request.query_params.get('mode')
-    #     if mode is not None and mode == 'mini':
-    #         queryset = queryset.filter(purchaser__username=username)
-    #     queryset = self.queryset
-    #     query_set = queryset.filter(user=self.request.user)
-    #     return query_set
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return Note.objects.none()
+        else:
+            queryset = Note.objects.filter(project__name=project)
+            return queryset
 
     def get_permissions(self):
         """
@@ -160,8 +185,16 @@ class ImageViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows images to be viewed or edited.
     """
-    queryset = Image.objects.all()
     serializer_class = ImageSerializer
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return Image.objects.none()
+        else:
+            queryset = Image.objects.filter(project__name=project)
+            return queryset
 
     def get_permissions(self):
         """
@@ -179,8 +212,16 @@ class RenderImageViewSet(ListRetrieveOnlyViewSet):
     """
     API endpoint to get images with minimal info for rendering.
     """
-    queryset = Image.objects.all()
     serializer_class = RenderImageSerializer
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return Image.objects.none()
+        else:
+            queryset = Image.objects.filter(project__name=project)
+            return queryset
 
     def get_permissions(self):
         """
@@ -198,8 +239,16 @@ class GpslogViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows gpslogs to be viewed or edited.
     """
-    queryset = GpsLog.objects.all()
     serializer_class = GpslogSerializer
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return GpsLog.objects.none()
+        else:
+            queryset = GpsLog.objects.filter(project__name=project)
+            return queryset
 
     def get_permissions(self):
         """

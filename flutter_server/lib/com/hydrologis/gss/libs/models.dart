@@ -125,87 +125,85 @@ class MapstateModel extends ChangeNotifier {
   Future<void> getData(BuildContext context) async {
     // print("Data reload called");
 
-    var filterStateModel =
-        Provider.of<FilterStateModel>(context, listen: false);
+    // var filterStateModel =
+    //     Provider.of<FilterStateModel>(context, listen: false);
 
     // GET DATA FROM SERVER
-    var data = await ServerApi.getRenderNotes(
-
+    var notesList = await ServerApi.getRenderNotes(
         // surveyors: filterStateModel.surveyors,
         // projects: filterStateModel.projects,
         // matchString: filterStateModel.matchingText,
         // fromTo: filterStateModel.fromToTimestamp,
         );
-    var notesList = jsonDecode(data);
 
     dataBounds = LatLngBounds();
 
+    var logsList = await ServerApi.getGpslogs();
+
     // LOAD LOG DATA
-    // TODO find a fix for logs
-    // List<dynamic> logsList = json[LOGS];
-    // if (logsList != null) {
-    //   // List<TaggedPolyline> lines = [];
-    //   List<Polyline> lines = [];
-    //   for (int i = 0; i < logsList.length; i++) {
-    //     dynamic logItem = logsList[i];
-    //     var id = logItem[ID];
-    //     var name = logItem[NAME];
-    //     var colorHex = logItem[COLOR];
+    if (logsList != null) {
+      // List<TaggedPolyline> lines = [];
+      List<Polyline> lines = [];
+      for (int i = 0; i < logsList.length; i++) {
+        dynamic logItem = logsList[i];
+        var id = logItem[ID];
+        var name = logItem[NAME];
+        var colorHex = logItem[COLOR];
 
-    //     // TODO for now colortables are not supported
-    //     const ECOLORSEP = "@";
-    //     if (colorHex.contains(ECOLORSEP)) {
-    //       var split = colorHex.split(ECOLORSEP);
-    //       colorHex = split[0];
-    //     }
-    //     var width = logItem[WIDTH];
-    //     var coords = logItem[COORDS];
-    //     var startts = logItem[STARTTS];
-    //     var endts = logItem[ENDTS];
+        // TODO for now colortables are not supported
+        const ECOLORSEP = "@";
+        if (colorHex.contains(ECOLORSEP)) {
+          var split = colorHex.split(ECOLORSEP);
+          colorHex = split[0];
+        }
+        var width = logItem[WIDTH];
+        var startts = logItem[STARTTS];
+        var endts = logItem[ENDTS];
 
-    //     List<LatLng> points = [];
-    //     for (int j = 0; j < coords.length; j++) {
-    //       var coord = coords[j];
-    //       var lat = coord[Y];
-    //       var lon = coord[X];
+        var geom = logItem[THE_GEOM];
+        JTS.LineString line = JTS.WKTReader().read(geom.split(";")[1]);
+        var coordinates = line.getCoordinates();
+        List<LatLng> points =
+            coordinates.map((c) => LatLongHelper.fromLatLon(c.y, c.x)).toList();
 
-    //       var latLng = LatLongHelper.fromLatLon(lat, lon);
-    //       dataBounds.extend(latLng);
-    //       points.add(latLng);
-    //     }
+        var env = line.getEnvelopeInternal();
+        dataBounds
+            .extend(LatLongHelper.fromLatLon(env.getMinY(), env.getMinX()));
+        dataBounds
+            .extend(LatLongHelper.fromLatLon(env.getMaxY(), env.getMaxX()));
 
-    //     lines.add(
-    //       Polyline(
-    //         points: points,
-    //         strokeWidth: width,
-    //         color: ColorExt(colorHex),
-    //       ),
-    //     );
-    //     // lines.add(
-    //     //   TaggedPolyline(
-    //     //     tag: "$id@$name@$startts@$endts",
-    //     //     points: points,
-    //     //     strokeWidth: width,
-    //     //     color: ColorExt(colorHex),
-    //     //   ),
-    //     // );
-    //   }
-    //   logs = PolylineLayerOptions(
-    //     polylines: lines,
-    //     polylineCulling: true,
-    //   );
-    //   // logs = TappablePolylineLayerOptions(
-    //   //   polylines: lines,
-    //   //   polylineCulling: true,
-    //   //   onTap: (List<TaggedPolyline> polylines, TapUpDetails details) {
-    //   //     if (polylines.isEmpty) {
-    //   //       return null;
-    //   //     }
-    //   //     return openLogDialog(context, polylines[0].tag);
-    //   //   },
-    //   //   // onMiss: () => print("No polyline tapped"),
-    //   // );
-    // }
+        lines.add(
+          Polyline(
+            points: points,
+            strokeWidth: width,
+            color: ColorExt(colorHex),
+          ),
+        );
+        // lines.add(
+        //   TaggedPolyline(
+        //     tag: "$id@$name@$startts@$endts",
+        //     points: points,
+        //     strokeWidth: width,
+        //     color: ColorExt(colorHex),
+        //   ),
+        // );
+      }
+      logs = PolylineLayerOptions(
+        polylines: lines,
+        polylineCulling: true,
+      );
+      // logs = TappablePolylineLayerOptions(
+      //   polylines: lines,
+      //   polylineCulling: true,
+      //   onTap: (List<TaggedPolyline> polylines, TapUpDetails details) {
+      //     if (polylines.isEmpty) {
+      //       return null;
+      //     }
+      //     return openLogDialog(context, polylines[0].tag);
+      //   },
+      //   // onMiss: () => print("No polyline tapped"),
+      // );
+    }
 
     List<Marker> markers = <Marker>[];
     List<Attributes> attributesList = [];

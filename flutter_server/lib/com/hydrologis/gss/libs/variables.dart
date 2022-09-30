@@ -10,6 +10,7 @@ const WEBAPP = 'http://localhost:8080';
 const KEY_HASPERMISSION = "hasPermission";
 const KEY_ISADMIN = "isAdmin";
 const KEY_USER = "user";
+const KEY_PROJECT = "project";
 const KEY_PWD = "pwd";
 const KEY_TOKEN = "token";
 const KEY_BASEMAP = "basemap";

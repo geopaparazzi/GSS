@@ -23,6 +23,10 @@ class Command(BaseCommand):
         parser.add_argument('-d', '--delete', action='store_true', help='Flag that enables clearing of the tables first.')
 
     def handle(self, *args, **options):
+        if settings.DEBUG == False:
+            self.stderr.write("This command is available only when in debug mode. Exiting.")
+            return
+
         doDelete = options['delete']
         if doDelete:
             self.stdout.write("Clearing data from tables.")

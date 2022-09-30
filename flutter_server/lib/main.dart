@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/views/map_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
@@ -81,17 +82,52 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   String _errortext = "";
+  String selectedProject = null;
+
   @override
   Widget build(BuildContext context) {
     var _isLogged = SmashSession.isLogged();
     if (_isLogged) {
       return MainMapView();
     } else {
-      return loadLoginView(context);
+      return FutureBuilder(
+        builder: (context, projectSnap) {
+          if (projectSnap.hasError) {
+            return SmashUI.errorWidget(projectSnap.error.toString());
+          } else if (projectSnap.connectionState == ConnectionState.none ||
+              projectSnap.data == null) {
+            return SmashCircularProgress(label: "gathering projects...");
+          }
+
+          Widget widget = projectSnap.data as Widget;
+          return widget;
+        },
+        future: getLoginWidget(context),
+      );
     }
   }
 
-  Scaffold loadLoginView(BuildContext context) {
+  Future<Scaffold> getLoginWidget(BuildContext context) async {
+    List<String> projectNames = await ServerApi.getProjectNames();
+    if (selectedProject == null) {
+      selectedProject = projectNames[0];
+    }
+
+    var projectsCombo = DropdownButton<String>(
+      isExpanded: true,
+      items: projectNames.map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      value: selectedProject,
+      onChanged: (newProject) {
+        selectedProject = newProject;
+        setState(() {});
+      },
+    );
+
     TextStyle loginTextStyle = TextStyle(fontFamily: 'Arial', fontSize: 20.0);
 
     TextEditingController userNameController = new TextEditingController();
@@ -128,7 +164,8 @@ class _MainPageState extends State<MainPage> {
         onPressed: () async {
           String user = userNameController.text;
           String password = passwordController.text;
-          var loginOk = await SmashSession.login(user, password);
+          var loginOk =
+              await SmashSession.login(user, password, selectedProject);
           if (loginOk != null) {
             _errortext = loginOk;
           }
@@ -161,16 +198,24 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ),
                 SizedBox(height: 45.0),
+                Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(5)),
+                      border: Border.all(
+                          color: SmashColors.mainDecorations, width: 1)),
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        left: 8.0, right: 8.0, top: 3, bottom: 3),
+                    child: projectsCombo,
+                  ),
+                ),
+                SizedBox(height: 25.0),
                 userNameField,
                 SizedBox(height: 25.0),
                 passwordField,
-                SizedBox(
-                  height: 35.0,
-                ),
+                SizedBox(height: 35.0),
                 loginButton,
-                SizedBox(
-                  height: 15.0,
-                ),
+                SizedBox(height: 15.0),
                 SmashUI.normalText(_errortext,
                     color: SmashColors.mainSelectionBorder)
               ],

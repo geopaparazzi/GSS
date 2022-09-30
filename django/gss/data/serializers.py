@@ -27,6 +27,11 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = (DbNamings.PROJECT_NAME, DbNamings.PROJECT_DESCRIPTION, DbNamings.PROJECT_GROUPS)
 
+class ProjectNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [DbNamings.PROJECT_NAME]
+
 
 class RenderNoteSerializer(serializers.ModelSerializer):
     class Meta:

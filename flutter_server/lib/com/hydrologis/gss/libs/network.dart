@@ -17,11 +17,14 @@ const API_CONFIGRATION_URL = "$WEBAPP_URL/admin";
 const API_LOGIN = "$WEBAPP_URL/api/login";
 const API_USERS = "$WEBAPP_URL/api/users";
 
+const API_PROJECTNAMES = "$WEBAPP_URL/api/projectnames";
 const API_RENDERNOTES = "$WEBAPP_URL/api/rendernotes";
 const API_NOTES = "$WEBAPP_URL/api/notes";
 const API_GPSLOGS = "$WEBAPP_URL/api/gpslogs";
 const API_RENDERIMAGES = "$WEBAPP_URL/api/renderimages";
 const API_IMAGES = "$WEBAPP_URL/api/images";
+
+const API_PROJECT_PARAM = "project=";
 
 const LOG = "log";
 const LOGTS = "ts";
@@ -32,10 +35,14 @@ class ServerApi {
   /// Login to get a token using credentials.
   ///
   /// Returns a string starting with ERROR if problems arised.
-  static Future<String> login(String user, String pwd) async {
+  static Future<String> login(String user, String pwd, String project) async {
     String apiCall = "$API_LOGIN";
 
-    Map<String, String> formData = {"username": user, "password": pwd};
+    Map<String, String> formData = {
+      "username": user,
+      "password": pwd,
+      "project": project
+    };
     HttpRequest request;
     try {
       request = await HttpRequest.request(apiCall,
@@ -73,11 +80,11 @@ class ServerApi {
     // }
   }
 
-  static Map<String, String> getAuthRequestHeader(String user, String pwd) {
-    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
-    var requestHeaders = {"authorization": basicAuth};
-    return requestHeaders;
-  }
+  // static Map<String, String> getAuthRequestHeader(String user, String pwd) {
+  //   String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
+  //   var requestHeaders = {"authorization": basicAuth};
+  //   return requestHeaders;
+  // }
 
   static Map<String, String> getTokenHeader() {
     var sessionToken = SmashSession.getSessionToken();
@@ -137,9 +144,12 @@ class ServerApi {
   // }
 
   static Future<Uint8List> getImageThumbnail(int id) async {
-    String apiCall = "$API_RENDERIMAGES/$id";
+    var projectName = SmashSession.getSessionProject();
+    String apiCall =
+        "$API_RENDERIMAGES/$id" + "?" + API_PROJECT_PARAM + projectName;
+    ;
 
-    Map<String, String> requestHeaders = getTokenHeader();
+    var requestHeaders = getTokenHeader();
     HttpRequest request = await HttpRequest.request(apiCall,
         method: 'GET', requestHeaders: requestHeaders);
     if (request.status == 200) {
@@ -242,12 +252,29 @@ class ServerApi {
     // }
   }
 
-  static Future<String> getRenderNotes() async {
+  static Future<dynamic> getRenderNotes() async {
     var tokenHeader = getTokenHeader();
-    HttpRequest request = await HttpRequest.request(API_RENDERNOTES,
+    var projectName = SmashSession.getSessionProject();
+    var url = API_RENDERNOTES + "?" + API_PROJECT_PARAM + projectName;
+    HttpRequest request = await HttpRequest.request(url,
         method: 'GET', requestHeaders: tokenHeader);
     if (request.status == 200) {
-      return request.responseText;
+      var notesList = jsonDecode(request.responseText);
+      return notesList;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<dynamic> getGpslogs() async {
+    var tokenHeader = getTokenHeader();
+    var projectName = SmashSession.getSessionProject();
+    var url = API_GPSLOGS + "?" + API_PROJECT_PARAM + projectName;
+    HttpRequest request = await HttpRequest.request(url,
+        method: 'GET', requestHeaders: tokenHeader);
+    if (request.status == 200) {
+      var notesList = jsonDecode(request.responseText);
+      return notesList;
     } else {
       return null;
     }
@@ -255,7 +282,8 @@ class ServerApi {
 
   static Future<String> getNote(int noteId) async {
     var tokenHeader = getTokenHeader();
-    var url = API_NOTES + "/$noteId";
+    var projectName = SmashSession.getSessionProject();
+    var url = API_NOTES + "/$noteId" + "?" + API_PROJECT_PARAM + projectName;
     HttpRequest request = await HttpRequest.request(url,
         method: 'GET', requestHeaders: tokenHeader);
     if (request.status == 200) {
@@ -273,6 +301,19 @@ class ServerApi {
     if (request.status == 200) {
       var userMap = jsonDecode(request.responseText);
       return userMap['username'];
+    } else {
+      return null;
+    }
+  }
+
+  static Future<List<String>> getProjectNames() async {
+    HttpRequest request =
+        await HttpRequest.request(API_PROJECTNAMES, method: 'GET');
+    if (request.status == 200) {
+      var list = jsonDecode(request.responseText);
+      List<String> namesList =
+          List<String>.from(list.map((projectMap) => projectMap['name']));
+      return namesList;
     } else {
       return null;
     }
