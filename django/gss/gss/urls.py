@@ -28,6 +28,8 @@ router.register(r'notes', data.views.NoteViewSet, 'notes')
 router.register(r'gpslogs', data.views.GpslogViewSet, 'gpslogs')
 router.register(r'images', data.views.ImageViewSet, 'images')
 router.register(r'renderimages', data.views.RenderImageViewSet, 'renderimages')
+router.register(r'wmssources', data.views.WmsSourceViewSet, 'wmssources')
+router.register(r'tmssources', data.views.TmsSourceViewSet, 'tmssources')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'dart:html';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
+import 'package:smashlibs/com/hydrologis/flutterlibs/utils/logging.dart';
 
 const NETWORKERROR_PREFIX = "ERROR:";
 
@@ -23,6 +26,8 @@ const API_NOTES = "$WEBAPP_URL/api/notes";
 const API_GPSLOGS = "$WEBAPP_URL/api/gpslogs";
 const API_RENDERIMAGES = "$WEBAPP_URL/api/renderimages";
 const API_IMAGES = "$WEBAPP_URL/api/images";
+const API_WMSSOURCES = "$WEBAPP_URL/api/wmssources";
+const API_TMSSOURCES = "$WEBAPP_URL/api/tmssources";
 
 const API_PROJECT_PARAM = "project=";
 
@@ -317,5 +322,90 @@ class ServerApi {
     } else {
       return null;
     }
+  }
+
+  static Future<List<TileLayerOptions>> getBackGroundLayers() async {
+    List<TileLayerOptions> layers = [];
+
+    try {
+      var tokenHeader = getTokenHeader();
+      var projectName = SmashSession.getSessionProject();
+      var url = API_WMSSOURCES + "?" + API_PROJECT_PARAM + projectName;
+      HttpRequest request = await HttpRequest.request(url,
+          method: 'GET', requestHeaders: tokenHeader);
+      if (request.status == 200) {
+        var list = jsonDecode(request.responseText);
+        for (var item in list) {
+          layers.add(TileLayerOptions(
+            additionalOptions: {
+              "name": item['name'],
+              "Attribution": item['attribution'],
+            },
+            opacity: item['opacity'],
+            backgroundColor: Colors.transparent,
+            wmsOptions: WMSTileLayerOptions(
+              crs: Epsg3857(),
+              version: item['version'],
+              transparent: item['transparent'],
+              format: item['imageformat'],
+              baseUrl: item['getcapabilities'] + "?",
+              layers: [item['layername']],
+            ),
+            overrideTilesWhenUrlChanges: true,
+            errorTileCallback: (tile, exception) {
+              // ignore tiles that can't load to avoid
+              SMLogger().e("Unable to load WMS tile: ${tile.coordsKey}",
+                  exception, null);
+            },
+          ));
+        }
+      }
+      projectName = SmashSession.getSessionProject();
+      url = API_TMSSOURCES + "?" + API_PROJECT_PARAM + projectName;
+      request = await HttpRequest.request(url,
+          method: 'GET', requestHeaders: tokenHeader);
+      if (request.status == 200) {
+        var list = jsonDecode(request.responseText);
+        for (var item in list) {
+          layers.add(TileLayerOptions(
+            tms: false,
+            additionalOptions: {
+              "name": item['label'],
+              "Attribution": item['attribution'],
+            },
+            subdomains: item['subdomains'] != null
+                ? item['subdomains'].split(',')
+                : null,
+            maxZoom: item['maxzoom'],
+            opacity: item['opacity'],
+            urlTemplate: item['urltemplate'],
+            backgroundColor: Colors.transparent,
+            overrideTilesWhenUrlChanges: true,
+            errorTileCallback: (tile, exception) {
+              // ignore tiles that can't load to avoid
+              SMLogger().e("Unable to load TMS tile: ${tile.coordsKey}",
+                  exception, null);
+            },
+          ));
+        }
+      }
+    } catch (e) {
+      SMLogger().e("ERROR", e, null);
+      // fallback on OSM and Wikimedia
+      layers.add(TileLayerOptions(
+        tms: false,
+        subdomains: const ['a', 'b', 'c'],
+        maxZoom: 19,
+        urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        tileProvider: NetworkNoRetryTileProvider(),
+      ));
+      layers.add(TileLayerOptions(
+        tms: false,
+        maxZoom: 19,
+        urlTemplate: "https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png",
+        tileProvider: NetworkNoRetryTileProvider(),
+      ));
+    }
+    return layers;
   }
 }

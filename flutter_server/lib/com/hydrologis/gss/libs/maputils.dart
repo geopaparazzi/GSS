@@ -9,7 +9,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/formutils.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
@@ -480,10 +479,10 @@ class _BackgroundMapSelectionWidgetState
 
   @override
   void initState() {
-    AVAILABLE_MAPS.forEach((name, tilelayer) {
-      _names.add(name);
-      _widgets.add(tilelayer);
-    });
+    // AVAILABLE_MAPS.forEach((name, tilelayer) {
+    //   _names.add(name);
+    //   _widgets.add(tilelayer);
+    // });
     super.initState();
   }
 

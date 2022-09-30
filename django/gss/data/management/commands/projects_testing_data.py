@@ -62,11 +62,11 @@ class Command(BaseCommand):
 
         wms1 = WmsSource.objects.create(
             label = "Bolzano Ortofoto",
-            version = "1.1.1",
+            version = "1.3.0",
             transparent = True,
-            imageformat = "image/jpg",
-            getcapabilities = "http://sdi.provincia.bz.it/geoserver/wms",
-            layername = "inspire:OI.ORTHOIMAGECOVERAGE.2011",
+            imageformat = "image/png",
+            getcapabilities = "http://geoservices.buergernetz.bz.it/mapproxy/ows",
+            layername = "p_bz-Orthoimagery:Aerial-2020-RGB",
             opacity = 1.0,
             attribution = "Copyright Province Bolzano"
         )
@@ -105,29 +105,29 @@ class Command(BaseCommand):
         User.objects.filter(username__startswith="Test User").delete()
 
         # then insert new
-        userA1 = User(username = "Test User A1", first_name="Test", last_name="User A1", 
+        userA1 = User(username = "a1", first_name="Test User A1", last_name="User A1", 
             is_staff=True, is_active=True, email="A1@gss.com")
-        userA1.set_password("testuser")
+        userA1.set_password("a1")
         userA1.save()
-        userA2 = User(username = "Test User A2", first_name="Test", last_name="User A2", 
+        userA2 = User(username = "a2", first_name="Test User A2", last_name="User A2", 
             is_staff=True, is_active=True, email="A2@gss.com")
-        userA2.set_password("testuser")
+        userA2.set_password("a2")
         userA2.save()
-        userA3 = User(username = "Test User A3", first_name="Test", last_name="User A3", 
+        userA3 = User(username = "a3", first_name="Test User A3", last_name="User A3", 
             is_staff=True, is_active=True, email="A3@gss.com")
-        userA3.set_password("testuser")
+        userA3.set_password("a3")
         userA3.save()
-        userB = User(username = "Test User B", first_name="Test", last_name="User B", 
+        userB = User(username = "b", first_name="Test User B", last_name="User B", 
             is_staff=True, is_active=True, email="B@gss.com")
-        userB.set_password("testuser")
+        userB.set_password("b")
         userB.save()
-        userC = User(username = "Test User C", first_name="Test", last_name="User C", 
+        userC = User(username = "c", first_name="Test User C", last_name="User C", 
             is_staff=True, is_active=True, email="C@gss.com")
-        userC.set_password("testuser")
+        userC.set_password("c")
         userC.save()
-        userD = User(username = "Test User D", first_name="Test", last_name="User D", 
+        userD = User(username = "d", first_name="Test User D", last_name="User D", 
             is_staff=True, is_active=True, email="D@gss.com")
-        userD.set_password("testuser")
+        userD.set_password("d")
         userD.save()
 
         """

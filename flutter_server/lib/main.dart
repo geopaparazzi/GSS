@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_map/src/layer/tile_layer/tile_layer.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/views/map_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
@@ -88,7 +89,20 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     var _isLogged = SmashSession.isLogged();
     if (_isLogged) {
-      return MainMapView();
+      return FutureBuilder(
+        builder: (context, projectSnap) {
+          if (projectSnap.hasError) {
+            return SmashUI.errorWidget(projectSnap.error.toString());
+          } else if (projectSnap.connectionState == ConnectionState.none ||
+              projectSnap.data == null) {
+            return SmashCircularProgress(label: "processing...");
+          }
+
+          Widget widget = projectSnap.data as Widget;
+          return widget;
+        },
+        future: getMainWidget(context),
+      );
     } else {
       return FutureBuilder(
         builder: (context, projectSnap) {
@@ -105,6 +119,11 @@ class _MainPageState extends State<MainPage> {
         future: getLoginWidget(context),
       );
     }
+  }
+
+  Future<Widget> getMainWidget(BuildContext context) async {
+    List<TileLayerOptions> layers = await ServerApi.getBackGroundLayers();
+    return MainMapView(layers);
   }
 
   Future<Scaffold> getLoginWidget(BuildContext context) async {

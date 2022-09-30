@@ -10,12 +10,13 @@ from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
                                     HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND)
 
-from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project
+from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project, WmsSource, TmsSource
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
                               ImageSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,
-                              UserSerializer, RenderImageSerializer)
+                              UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
+                              TmsSourceSerializer)
 
 
 @csrf_exempt
@@ -249,6 +250,67 @@ class GpslogViewSet(viewsets.ModelViewSet):
         else:
             queryset = GpsLog.objects.filter(project__name=project)
             return queryset
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+class WmsSourceViewSet(ListRetrieveOnlyViewSet):
+    """
+    API endpoint to get WmsSource info.
+    """
+    serializer_class = WmsSourceSerializer
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return WmsSource.objects.none()
+        else:
+            projectModel = Project.objects.filter(name=project).first()
+            if projectModel:
+                return projectModel.wmssources
+            else:
+                return TmsSource.objects.none()
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+class TmsSourceViewSet(ListRetrieveOnlyViewSet):
+    """
+    API endpoint to get TmsSource info.
+    """
+    serializer_class = TmsSourceSerializer
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return TmsSource.objects.none()
+        else:
+            projectModel = Project.objects.filter(name=project).first()
+            if projectModel:
+                return projectModel.tmssources
+            else:
+                return TmsSource.objects.none()
+            
 
     def get_permissions(self):
         """

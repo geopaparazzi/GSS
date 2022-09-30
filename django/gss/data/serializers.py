@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from io import BytesIO
 from rest_framework import serializers
-from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities
+from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities, WmsSource, TmsSource
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
@@ -256,6 +256,14 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
         
+class WmsSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WmsSource
+        fields = '__all__'
 
+class TmsSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TmsSource
+        fields = '__all__'
 
 

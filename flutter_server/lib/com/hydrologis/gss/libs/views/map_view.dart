@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/views/about_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
@@ -20,7 +19,8 @@ import 'dart:html' as html;
 // import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class MainMapView extends StatefulWidget {
-  MainMapView({Key key}) : super(key: key);
+  List<TileLayerOptions> backgroundLayers;
+  MainMapView(this.backgroundLayers, {Key key}) : super(key: key);
 
   @override
   _MainMapViewState createState() => _MainMapViewState();
@@ -162,7 +162,9 @@ class _MainMapViewState extends State<MainMapView>
                         // TappablePolylineMapPlugin(),
                       ],
                     ),
-                    layers: [AVAILABLE_MAPS[basemap]]..addAll(layers),
+                    layers: []
+                      ..addAll(widget.backgroundLayers)
+                      ..addAll(layers),
                     mapController: _mapController,
                   ),
                 ),
