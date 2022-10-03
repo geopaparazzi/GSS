@@ -104,6 +104,13 @@ class DbNamings():
     TMSSOURCE_MAXZOOM = "maxzoom"
     TMSSOURCE_ATTRIBUTION = "attribution"
 
+    USERCONFIG_KEY = "key"
+    USERCONFIG_VALUE = "value"
+
+    USERCONFIG_KEY_BASEMAP = "basemap";    
+    USERCONFIG_KEY_MAPCENTER = "mapcenter_xyz";
+    USERCONFIG_KEY_BOOKMARKS = "bookmarks";
+
     API_PARAM_PROJECT = "project"
 
 class ProjectData(models.Model):
@@ -167,11 +174,18 @@ class Project(models.Model):
         if project != None:
           return True
         return False
-        
-        
 
     def __str__(self):
         return self.name
+
+class UserConfiguration(models.Model):
+    key = models.CharField(name=DbNamings.USERCONFIG_KEY, max_length=200, null=False, unique=True)
+    value = models.TextField(name=DbNamings.USERCONFIG_VALUE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
+
+    def __str__(self):
+        return f"{self.key}={self.value[:20]} ...       (user: {self.user.username}, project: {self.project.name})"
 
 class Note(models.Model):
     previousId = models.IntegerField(

@@ -1,4 +1,3 @@
-import 'package:flutter_server/com/hydrologis/gss/libs/layers.dart';
 import 'package:intl/intl.dart';
 
 const TITLE = 'Geopaparazzi Survey Server';
@@ -16,7 +15,6 @@ const KEY_TOKEN = "token";
 const KEY_BASEMAP = "basemap";
 const KEY_MAPCENTER = "mapcenter_xyz";
 const KEY_BOOKMARKS = "bookmarks";
-const KEY_AUTOMATIC_REGISTRATION = "GSS_KEY_AUTOMATIC_REGISTRATION";
 
 const KEY_SURVEYORS = "surveyors";
 const KEY_WEBUSERS = "webusers";
@@ -85,7 +83,5 @@ const ADMINGROUP = "administrators"; //$NON-NLS-1$
 const USERGROUP = "users"; //$NON-NLS-1$
 
 // API VARS END
-
-final DEFAULT_TILELAYER = AVAILABLE_MAPS[DEFAULTMAP];
 
 const NOTE_ZOOM_BUFFER = 0.01;

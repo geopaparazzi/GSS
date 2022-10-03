@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'dart:html';
+import 'package:http/http.dart';
 import 'dart:typed_data';
+import 'dart:html';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -28,6 +29,7 @@ const API_RENDERIMAGES = "$WEBAPP_URL/api/renderimages";
 const API_IMAGES = "$WEBAPP_URL/api/images";
 const API_WMSSOURCES = "$WEBAPP_URL/api/wmssources";
 const API_TMSSOURCES = "$WEBAPP_URL/api/tmssources";
+const API_USERCONFIGS = "$WEBAPP_URL/api/userconfigurations";
 
 const API_PROJECT_PARAM = "project=";
 
@@ -41,55 +43,29 @@ class ServerApi {
   ///
   /// Returns a string starting with ERROR if problems arised.
   static Future<String> login(String user, String pwd, String project) async {
-    String apiCall = "$API_LOGIN";
-
     Map<String, String> formData = {
       "username": user,
       "password": pwd,
       "project": project
     };
-    HttpRequest request;
+
+    final uri = Uri.parse("$API_LOGIN");
+    Response response;
     try {
-      request = await HttpRequest.request(apiCall,
-          method: 'POST',
-          sendData: json.encode(formData),
-          requestHeaders: {'Content-Type': 'application/json; charset=UTF-8'});
+      response = await post(
+        uri,
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: json.encode(formData),
+      );
     } catch (e) {
       return NETWORKERROR_PREFIX + "Permission denied.";
     }
-    if (request != null && request.status == 200) {
-      return json.decode(request.response)['token'];
+    if (response != null && response.statusCode == 200) {
+      return json.decode(response.body)['token'];
     } else {
-      return NETWORKERROR_PREFIX + request.responseText;
+      return NETWORKERROR_PREFIX + response.body;
     }
   }
-
-  static Future<String> logout(String user, String pwd,
-      {basemap = "Openstreetmap", mapCenter = "0;0;6"}) async {
-    // String apiCall = "$API_USERSETTINGS";
-
-    // Map<String, String> formData = {};
-    // if (basemap != null) {
-    //   formData[KEY_BASEMAP] = basemap;
-    // }
-    // if (mapCenter != null) {
-    //   formData[KEY_MAPCENTER] = mapCenter;
-    // }
-    // Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-    // HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
-    //     requestHeaders: requestHeaders);
-    // if (request.status == 200) {
-    //   return request.response;
-    // } else {
-    //   return null;
-    // }
-  }
-
-  // static Map<String, String> getAuthRequestHeader(String user, String pwd) {
-  //   String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pwd'));
-  //   var requestHeaders = {"authorization": basicAuth};
-  //   return requestHeaders;
-  // }
 
   static Map<String, String> getTokenHeader() {
     var sessionToken = SmashSession.getSessionToken();
@@ -319,6 +295,50 @@ class ServerApi {
       List<String> namesList =
           List<String>.from(list.map((projectMap) => projectMap['name']));
       return namesList;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<Map<String, String>> getUserConfigurations() async {
+    Map<String, String> config = {};
+    var tokenHeader = getTokenHeader();
+    var projectName = SmashSession.getSessionProject();
+    var url = API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName;
+    HttpRequest request = await HttpRequest.request(url,
+        method: 'GET', requestHeaders: tokenHeader);
+    if (request.status == 200) {
+      var dataList = jsonDecode(request.responseText);
+      for (var item in dataList) {
+        var key = item['key'];
+        var value = item['value'];
+        config[key] = value;
+      }
+      return config;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<String> saveUserConfigurations(tokenHeader, projectName,
+      {basemap, mapCenter, bookmarks}) async {
+    var url = API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName;
+
+    List<Map<String, String>> formData = [];
+    if (basemap != null) {
+      formData.add({'key': KEY_BASEMAP, 'value': basemap});
+    }
+    if (mapCenter != null) {
+      formData.add({'key': KEY_MAPCENTER, 'value': mapCenter});
+    }
+    if (bookmarks != null) {
+      formData.add({'key': KEY_BOOKMARKS, 'value': bookmarks});
+    }
+    var dataJson = jsonEncode(formData);
+    HttpRequest request = await HttpRequest.request(url,
+        method: "PUT", sendData: dataJson, requestHeaders: tokenHeader);
+    if (request.status == 200) {
+      return request.response;
     } else {
       return null;
     }

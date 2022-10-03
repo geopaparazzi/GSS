@@ -14,26 +14,19 @@ class SmashSession {
       setSessionToken(token);
       setSessionUser(user, password, project);
 
-      // var jsonMap = JSON.jsonDecode(responsJson);
-      // var hasPermission = jsonMap[KEY_HASPERMISSION];
-      // if (hasPermission) {
-      //   setSessionUser(user, password);
-      //   var isAdmin = jsonMap[KEY_ISADMIN];
-      //   if (isAdmin != null) {
-      //     html.window.sessionStorage[KEY_ISADMIN] = "$isAdmin";
-      //   } else {
-      //     html.window.sessionStorage[KEY_ISADMIN] = "false";
-      //   }
-
-      //   var lastBasemap = jsonMap[KEY_BASEMAP];
-      //   if (lastBasemap != null) {
-      //     html.window.sessionStorage[KEY_BASEMAP] = "$lastBasemap";
-      //   }
-      //   var lastMapcenter = jsonMap[KEY_MAPCENTER];
-      //   if (lastMapcenter != null) {
-      //     html.window.sessionStorage[KEY_MAPCENTER] = "$lastMapcenter";
-      //   }
-      // }
+      var configMap = await ServerApi.getUserConfigurations();
+      var lastBasemap = configMap[KEY_BASEMAP];
+      if (lastBasemap != null) {
+        html.window.sessionStorage[KEY_BASEMAP] = lastBasemap;
+      }
+      var lastMapcenter = configMap[KEY_MAPCENTER];
+      if (lastMapcenter != null) {
+        html.window.sessionStorage[KEY_MAPCENTER] = lastMapcenter;
+      }
+      var bookmarks = configMap[KEY_BOOKMARKS];
+      if (bookmarks != null) {
+        html.window.sessionStorage[KEY_BOOKMARKS] = bookmarks;
+      }
       return null;
     } else {
       return responseText;
@@ -44,9 +37,11 @@ class SmashSession {
     return html.window.sessionStorage[KEY_TOKEN] != null;
   }
 
-  static bool isAdmin() {
-    String isAdminStr = html.window.sessionStorage[KEY_ISADMIN];
-    return isAdminStr != null && isAdminStr.toLowerCase() == 'true';
+  static List<String> getSessionUser() {
+    return [
+      html.window.sessionStorage[KEY_USER],
+      html.window.sessionStorage[KEY_PWD]
+    ];
   }
 
   static void setSessionUser(String user, String pwd, String project) {
@@ -84,6 +79,14 @@ class SmashSession {
     return html.window.sessionStorage[KEY_BASEMAP] ??= "Openstreetmap";
   }
 
+  static void setBookmarks(String bookmarksString) {
+    html.window.sessionStorage[KEY_BOOKMARKS] = bookmarksString;
+  }
+
+  static String getBookmarks() {
+    return html.window.sessionStorage[KEY_BOOKMARKS] ??= "";
+  }
+
   static void setMapcenter(double lon, double lat, double zoom) {
     html.window.sessionStorage[KEY_MAPCENTER] = "$lon;$lat;$zoom";
   }
@@ -101,21 +104,18 @@ class SmashSession {
     ];
   }
 
-  static List<String> getSessionUser() {
-    return [
-      html.window.sessionStorage[KEY_USER],
-      html.window.sessionStorage[KEY_PWD]
-    ];
-  }
-
   static void logout({mapCenter}) async {
-    String user = html.window.sessionStorage.remove(KEY_USER);
-    String pwd = html.window.sessionStorage.remove(KEY_PWD);
-    String token = html.window.sessionStorage.remove(KEY_TOKEN);
-    html.window.sessionStorage.remove(KEY_ISADMIN);
+    var tokenheader = ServerApi.getTokenHeader();
+    var projectName = getSessionProject();
+
+    html.window.sessionStorage.remove(KEY_USER);
+    html.window.sessionStorage.remove(KEY_PWD);
+    html.window.sessionStorage.remove(KEY_TOKEN);
     String baseMap = html.window.sessionStorage.remove(KEY_BASEMAP);
     html.window.sessionStorage.remove(KEY_MAPCENTER);
+    String bookmarks = html.window.sessionStorage.remove(KEY_BOOKMARKS);
 
-    await ServerApi.logout(user, pwd, basemap: baseMap, mapCenter: mapCenter);
+    await ServerApi.saveUserConfigurations(tokenheader, projectName,
+        basemap: baseMap, mapCenter: mapCenter, bookmarks: bookmarks);
   }
 }

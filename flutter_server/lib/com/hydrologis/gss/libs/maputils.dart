@@ -258,28 +258,28 @@ openLogDialog(BuildContext context, String logInfo) async {
           child: Center(child: TableUtilities.fromMap(map)),
         ),
       ),
-      if (SmashSession.isAdmin())
-        Align(
-          alignment: Alignment.bottomRight,
-          child: IconButton(
-              tooltip: "Delete this log from the database.",
-              icon: Icon(SmashIcons.deleteIcon),
-              color: SmashColors.mainDanger,
-              onPressed: () async {
-                Navigator.pop(context);
-                var userPwd = SmashSession.getSessionUser();
-                String response =
-                    await ServerApi.deleteGpsLog(userPwd[0], userPwd[1], id);
-                if (response != null) {
-                  SmashDialogs.showErrorDialog(context, response);
-                } else {
-                  MapstateModel mapstateModel =
-                      Provider.of<MapstateModel>(context, listen: false);
-                  await mapstateModel.getData(context);
-                  mapstateModel.reloadMap();
-                }
-              }),
-        ),
+      // if (SmashSession.isAdmin())
+      //   Align(
+      //     alignment: Alignment.bottomRight,
+      //     child: IconButton(
+      //         tooltip: "Delete this log from the database.",
+      //         icon: Icon(SmashIcons.deleteIcon),
+      //         color: SmashColors.mainDanger,
+      //         onPressed: () async {
+      //           Navigator.pop(context);
+      //           var userPwd = SmashSession.getSessionUser();
+      //           String response =
+      //               await ServerApi.deleteGpsLog(userPwd[0], userPwd[1], id);
+      //           if (response != null) {
+      //             SmashDialogs.showErrorDialog(context, response);
+      //           } else {
+      //             MapstateModel mapstateModel =
+      //                 Provider.of<MapstateModel>(context, listen: false);
+      //             await mapstateModel.getData(context);
+      //             mapstateModel.reloadMap();
+      //           }
+      //         }),
+      //   ),
     ],
   );
 
@@ -989,31 +989,31 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
                     }
                   },
                 ),
-                if (SmashSession.isAdmin())
-                  IconButton(
-                    icon: Icon(
-                      MdiIcons.trashCan,
-                      color: SmashColors.mainDanger,
-                    ),
-                    tooltip: "Delete note.",
-                    onPressed: () async {
-                      var doDelete = await SmashDialogs.showConfirmDialog(
-                          context,
-                          "DELETE",
-                          "Are you sure you want to delete the note? This can't be undone.");
-                      if (doDelete) {
-                        var up = SmashSession.getSessionUser();
-                        var response =
-                            await ServerApi.deleteNote(up[0], up[1], attr.id);
-                        await mapstateModel.getData(context);
-                        mapstateModel.reloadMap();
-                        attrState.refresh();
-                        if (response != null) {
-                          SmashDialogs.showErrorDialog(context, response);
-                        }
-                      }
-                    },
-                  ),
+                // if (SmashSession.isAdmin())
+                //   IconButton(
+                //     icon: Icon(
+                //       MdiIcons.trashCan,
+                //       color: SmashColors.mainDanger,
+                //     ),
+                //     tooltip: "Delete note.",
+                //     onPressed: () async {
+                //       var doDelete = await SmashDialogs.showConfirmDialog(
+                //           context,
+                //           "DELETE",
+                //           "Are you sure you want to delete the note? This can't be undone.");
+                //       if (doDelete) {
+                //         var up = SmashSession.getSessionUser();
+                //         var response =
+                //             await ServerApi.deleteNote(up[0], up[1], attr.id);
+                //         await mapstateModel.getData(context);
+                //         mapstateModel.reloadMap();
+                //         attrState.refresh();
+                //         if (response != null) {
+                //           SmashDialogs.showErrorDialog(context, response);
+                //         }
+                //       }
+                //     },
+                //   ),
               ],
             ),
           ),

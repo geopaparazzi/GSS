@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Note,Project, GpsLog, GpsLogData, Image, ImageData, Device, UserDeviceAssociation, ImageDataAdmin, WmsSource, ProjectData, TmsSource
+from .models import (Note,Project, GpsLog, GpsLogData, Image, ImageData, Device, 
+                        UserDeviceAssociation, ImageDataAdmin, WmsSource, ProjectData, 
+                        TmsSource, UserConfiguration)
 from leaflet.admin import LeafletGeoAdmin
 from django_json_widget.widgets import JSONEditorWidget
 from django.db import models
@@ -15,6 +17,7 @@ admin.site.register(UserDeviceAssociation)
 admin.site.register(WmsSource)
 admin.site.register(TmsSource)
 admin.site.register(ProjectData)
+admin.site.register(UserConfiguration)
 
 @admin.register(Note)
 class NoteAdmin(LeafletGeoAdmin):

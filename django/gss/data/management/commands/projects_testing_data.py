@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from django.conf import settings
-from data.models import Project, Note, GpsLogData, GpsLog, Image, ImageData, ProjectData, WmsSource, TmsSource, DbNamings
+from data.models import Project, Note, GpsLogData, GpsLog, Image, ImageData, ProjectData, UserConfiguration, WmsSource, TmsSource, DbNamings
 from django.contrib.gis.geos import Point, LineString
 from django.contrib.auth.models import User, Group
 
@@ -83,7 +83,7 @@ class Command(BaseCommand):
             epsg = 4326
         )
         tms1 = TmsSource.objects.create(
-            label = "OSM Mapnik",
+            label = "Openstreetmap",
             urltemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
             opacity = 1.0,
             subdomains = "a,b,c",
@@ -253,6 +253,26 @@ class Command(BaseCommand):
             user = userC, project = projectC,
         )
 
-
+        """
+        Create user config for user a3
+        """
+        UserConfiguration.objects.create(
+            key = DbNamings.USERCONFIG_KEY_BASEMAP,
+            value = "Openstreetmap",
+            project = projectA,
+            user = userA3
+        )
+        UserConfiguration.objects.create(
+            key = DbNamings.USERCONFIG_KEY_BOOKMARKS,
+            value = "testarea:46.0,46.1,11.0,11.1@italy:47.108,35.514,19.841,5.790",
+            project = projectA,
+            user = userA3
+        )
+        UserConfiguration.objects.create(
+            key = DbNamings.USERCONFIG_KEY_MAPCENTER,
+            value = "11.2936;46.3510;11",
+            project = projectA,
+            user = userA3
+        )
 
     

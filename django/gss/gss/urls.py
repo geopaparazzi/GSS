@@ -30,6 +30,7 @@ router.register(r'images', data.views.ImageViewSet, 'images')
 router.register(r'renderimages', data.views.RenderImageViewSet, 'renderimages')
 router.register(r'wmssources', data.views.WmsSourceViewSet, 'wmssources')
 router.register(r'tmssources', data.views.TmsSourceViewSet, 'tmssources')
+router.register(r'userconfigurations', data.views.UserConfigurationViewSet, 'userconfigurations')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
