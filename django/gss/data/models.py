@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import unique
+from random import choices
 from django.db import models
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.geos import Point, LineString
@@ -93,6 +94,7 @@ class DbNamings():
     WMSSOURCE_GETCAPABILITIES = "getcapabilities"
     WMSSOURCE_LAYERNAME = "layername"
     WMSSOURCE_OPACITY = "opacity"
+    WMSSOURCE_EPSG = "epsg"
     WMSSOURCE_ATTRIBUTION = "attribution"
     
     TMSSOURCE_LABEL = "label"
@@ -120,6 +122,10 @@ class WmsSource(models.Model):
         ("image/png","image/png"),
         ("image/jpg","image/jpg"),
     )
+    EPSG_CHOICES = (
+        (3857, "EPSG:3857"),
+        (4326, "EPSG:4326"),
+    )
 
     label = models.CharField(name=DbNamings.WMSSOURCE_LABEL, max_length=100, null=False, unique=True)
     version = models.CharField(name=DbNamings.WMSSOURCE_VERSION, max_length=10, null=False, choices=VERSION_CHOICES)
@@ -129,6 +135,7 @@ class WmsSource(models.Model):
     layerName = models.CharField(name=DbNamings.WMSSOURCE_LAYERNAME, max_length=100, null=False)
     attribution = models.CharField(name=DbNamings.WMSSOURCE_ATTRIBUTION, max_length=100, null=False)
     opacity = models.FloatField(name=DbNamings.WMSSOURCE_OPACITY, null=False, default=1.0, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    epsg = models.IntegerField(name=DbNamings.WMSSOURCE_EPSG, null=False, default=3857, choices=EPSG_CHOICES)
 
     def __str__(self):
         return f"{self.label} -> Layer: {self.layername}"

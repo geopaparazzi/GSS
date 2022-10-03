@@ -68,17 +68,19 @@ class Command(BaseCommand):
             getcapabilities = "http://geoservices.buergernetz.bz.it/mapproxy/ows",
             layername = "p_bz-Orthoimagery:Aerial-2020-RGB",
             opacity = 1.0,
-            attribution = "Copyright Province Bolzano"
+            attribution = "Copyright Province Bolzano",
+            epsg = 3857
         )
         wms2 = WmsSource.objects.create(
             label = "Trento CTP",
-            version = "1.1.1",
+            version = "1.3.0",
             transparent = True,
             imageformat = "image/png",
-            getcapabilities = "http://geoservices.provincia.tn.it/siat/services/OGC/CTP2013/ImageServer/WMSServer",
-            layername = "0",
+            getcapabilities = "https://siat.provincia.tn.it/geoserver/stem/ctp2020_bn_00/wms",
+            layername = "ctp2020_bn_00",
             opacity = 1.0,
-            attribution = "Copyright Province Trento"
+            attribution = "Copyright Province Trento",
+            epsg = 4326
         )
         tms1 = TmsSource.objects.create(
             label = "OSM Mapnik",
