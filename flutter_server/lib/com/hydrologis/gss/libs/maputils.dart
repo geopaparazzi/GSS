@@ -784,12 +784,9 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
 
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
-    // var up = SmashSession.getSessionUser();
-    // var bookmarksString =
-    //     await ServerApi.getUserSetting(up[0], up[1], KEY_BOOKMARKS);
-    // bookmarks = bookmarksString.split("@");
+    var bookmarksString = SmashSession.getBookmarks();
+    bookmarks = bookmarksString.split("@");
 
-    bookmarks = [];
     setState(() {
       _dataLoaded = true;
     });
@@ -856,10 +853,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                           return element.startsWith("$name:");
                         });
                         setState(() {});
-                        // TODO
-                        // var up = SmashSession.getSessionUser();
-                        // await ServerApi.setUserSetting(
-                        //     up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
+                        SmashSession.setBookmarks(bookmarks.join("@"));
                       },
                     ),
                   );
@@ -887,10 +881,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                         "$name:${b.west},${b.east},${b.south},${b.north}";
                     bookmarks.insert(0, bm);
                     setState(() {});
-                    // TODO
-                    // var up = SmashSession.getSessionUser();
-                    // await ServerApi.setUserSetting(
-                    //     up[0], up[1], KEY_BOOKMARKS, bookmarks.join("@"));
+                    SmashSession.setBookmarks(bookmarks.join("@"));
                   }
                 },
               ),
@@ -942,9 +933,11 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
     return Consumer<AttributesTableStateModel>(
         builder: (context, attrState, child) {
       var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
-      _dataRows = mapstateModel.attributes
-          .where((arrt) => mapstateModel.currentMapBounds.contains(arrt.point))
-          .map((attr) {
+      _dataRows = mapstateModel.attributes.where((arrt) {
+        var bounds = mapstateModel.currentMapBounds ??=
+            mapstateModel.mapController.bounds;
+        return bounds.contains(arrt.point);
+      }).map((attr) {
         var textFun = (String str) {
           return Center(child: SmashUI.normalText(str));
         };

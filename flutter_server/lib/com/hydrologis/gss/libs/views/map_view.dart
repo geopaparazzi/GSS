@@ -45,7 +45,7 @@ class _MainMapViewState extends State<MainMapView>
     var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
     mapstateModel.getData(context).then((value) {
       mapstateModel.reloadMap();
-      mapstateModel.fitbounds();
+      // mapstateModel.fitbounds();
 
       Provider.of<AttributesTableStateModel>(context, listen: false).refresh();
     });

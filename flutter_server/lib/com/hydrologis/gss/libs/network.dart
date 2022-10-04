@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart';
 import 'dart:typed_data';
-import 'dart:html';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -29,7 +28,7 @@ const API_RENDERIMAGES = "$WEBAPP_URL/api/renderimages";
 const API_IMAGES = "$WEBAPP_URL/api/images";
 const API_WMSSOURCES = "$WEBAPP_URL/api/wmssources";
 const API_TMSSOURCES = "$WEBAPP_URL/api/tmssources";
-const API_USERCONFIGS = "$WEBAPP_URL/api/userconfigurations";
+const API_USERCONFIGS = "$WEBAPP_URL/api/userconfigurations/";
 
 const API_PROJECT_PARAM = "project=";
 
@@ -73,68 +72,20 @@ class ServerApi {
     return requestHeaders;
   }
 
-  // static Future<String> getDbinfo(String user, String pwd) async {
-  //   String apiCall = "$API_DBINFO";
-
-  //   Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-  //   HttpRequest request = await HttpRequest.request(apiCall,
-  //       method: 'GET', requestHeaders: requestHeaders);
-  //   if (request.status == 200) {
-  //     return request.response;
-  //   } else {
-  //     return null;
-  //   }
-  // }
-
-  // static Future<String> getData(String user, String pwd,
-  //     {List<String> surveyors,
-  //     List<String> projects,
-  //     fromTo,
-  //     matchString}) async {
-  //   String apiCall = "$API_DATA";
-
-  //   Map<String, String> formData = {};
-  //   if (surveyors != null) {
-  //     formData[KEY_SURVEYORS] = surveyors.join(";");
-  //   }
-  //   if (projects != null) {
-  //     formData[KEY_PROJECTS] = projects.join(";");
-  //   }
-
-  //   Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-  //   HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
-  //       requestHeaders: requestHeaders);
-  //   if (request.status == 200) {
-  //     return request.response;
-  //   } else {
-  //     return null;
-  //   }
-  // }
-
-  // static Future<String> getNoteById(String user, String pwd, int id) async {
-  //   String apiCall = "$API_NOTE/$id";
-
-  //   Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-  //   HttpRequest request = await HttpRequest.request(apiCall,
-  //       method: 'GET', requestHeaders: requestHeaders);
-  //   if (request.status == 200) {
-  //     return request.response;
-  //   } else {
-  //     return null;
-  //   }
-  // }
-
   static Future<Uint8List> getImageThumbnail(int id) async {
     var projectName = SmashSession.getSessionProject();
-    String apiCall =
-        "$API_RENDERIMAGES/$id" + "?" + API_PROJECT_PARAM + projectName;
-    ;
-
+    var uri = Uri.parse(
+        "$API_RENDERIMAGES/$id" + "?" + API_PROJECT_PARAM + projectName);
     var requestHeaders = getTokenHeader();
-    HttpRequest request = await HttpRequest.request(apiCall,
-        method: 'GET', requestHeaders: requestHeaders);
-    if (request.status == 200) {
-      Map<String, dynamic> imageMap = jsonDecode(request.response);
+    // final url = Uri.parse('$urlPrefix/posts');
+    // Response response = await get(url);
+    // print('Status code: ${response.statusCode}');
+    // print('Headers: ${response.headers}');
+    // print('Body: ${response.body}');
+
+    var response = await get(uri, headers: requestHeaders);
+    if (response.statusCode == 200) {
+      Map<String, dynamic> imageMap = jsonDecode(response.body);
       var dataString = imageMap[THUMBNAIL];
       var imgData = Base64Decoder().convert(dataString);
       return imgData;
@@ -143,104 +94,14 @@ class ServerApi {
     }
   }
 
-  // /// Send a user setting to the server.
-  // ///
-  // /// The setting is identified by the [key].
-  // static Future<String> setUserSetting(
-  //     String user, String pwd, String key, String value) async {
-  //   String apiCall = "$API_USERSETTINGS";
-
-  //   Map<String, String> formData = {};
-  //   formData[key] = value;
-  //   Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-  //   HttpRequest request = await HttpRequest.postFormData(apiCall, formData,
-  //       requestHeaders: requestHeaders);
-  //   if (request.status == 200) {
-  //     return request.response;
-  //   } else {
-  //     return null;
-  //   }
-  // }
-
-  // // Get a single string user setting from the server by its [key].
-  // static Future<String> getUserSetting(
-  //     String user, String pwd, String key) async {
-  //   String apiCall = "$API_USERSETTINGS/$key";
-
-  //   Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-  //   HttpRequest request = await HttpRequest.request(apiCall,
-  //       method: 'GET', requestHeaders: requestHeaders);
-  //   if (request.status == 200) {
-  //     return request.response;
-  //   } else {
-  //     return null;
-  //   }
-  // }
-
-  // static Future<String> getImageBytesById(
-  //     String user, String pwd, int id) async {
-  //   String apiCall = "$API_IMAGE/$id";
-  //   Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-  //   HttpRequest request = await HttpRequest.request(apiCall,
-  //       method: 'GET', requestHeaders: requestHeaders);
-  //   if (request.status == 200) {
-  //     print(request.response.runtimeType);
-  //     return request.response;
-  //   } else {
-  //     return null;
-  //   }
-  // }
-
-  static Future<String> getSurveyorsJson(String user, String pwd) async {
-    // String apiCall = "$API_LIST_SURVEYORS";
-
-    // Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-    // HttpRequest request = await HttpRequest.request(apiCall,
-    //     method: 'GET', requestHeaders: requestHeaders);
-    // if (request.status == 200) {
-    //   return request.response;
-    // } else {
-    //   return null;
-    // }
-  }
-
-  static Future<String> deleteGpsLog(
-      String user, String pwd, int gpsLogId) async {
-    // Map<String, String> formData = {ID: gpsLogId.toString()};
-
-    // Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-    // HttpRequest request = await HttpRequest.postFormData(
-    //     API_DELETE_GPSLOG, formData,
-    //     requestHeaders: requestHeaders);
-    // if (request.status == 200) {
-    //   return null;
-    // } else {
-    //   return request.response;
-    // }
-  }
-
-  static Future<String> deleteNote(String user, String pwd, int noteId) async {
-    // Map<String, String> formData = {ID: noteId.toString()};
-
-    // Map<String, String> requestHeaders = getAuthRequestHeader(user, pwd);
-    // HttpRequest request = await HttpRequest.postFormData(
-    //     API_DELETE_NOTES, formData,
-    //     requestHeaders: requestHeaders);
-    // if (request.status == 200) {
-    //   return null;
-    // } else {
-    //   return request.response;
-    // }
-  }
-
   static Future<dynamic> getRenderNotes() async {
     var tokenHeader = getTokenHeader();
     var projectName = SmashSession.getSessionProject();
-    var url = API_RENDERNOTES + "?" + API_PROJECT_PARAM + projectName;
-    HttpRequest request = await HttpRequest.request(url,
-        method: 'GET', requestHeaders: tokenHeader);
-    if (request.status == 200) {
-      var notesList = jsonDecode(request.responseText);
+    var uri =
+        Uri.parse(API_RENDERNOTES + "?" + API_PROJECT_PARAM + projectName);
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      var notesList = jsonDecode(response.body);
       return notesList;
     } else {
       return null;
@@ -250,11 +111,10 @@ class ServerApi {
   static Future<dynamic> getGpslogs() async {
     var tokenHeader = getTokenHeader();
     var projectName = SmashSession.getSessionProject();
-    var url = API_GPSLOGS + "?" + API_PROJECT_PARAM + projectName;
-    HttpRequest request = await HttpRequest.request(url,
-        method: 'GET', requestHeaders: tokenHeader);
-    if (request.status == 200) {
-      var notesList = jsonDecode(request.responseText);
+    var uri = Uri.parse(API_GPSLOGS + "?" + API_PROJECT_PARAM + projectName);
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      var notesList = jsonDecode(response.body);
       return notesList;
     } else {
       return null;
@@ -264,11 +124,11 @@ class ServerApi {
   static Future<String> getNote(int noteId) async {
     var tokenHeader = getTokenHeader();
     var projectName = SmashSession.getSessionProject();
-    var url = API_NOTES + "/$noteId" + "?" + API_PROJECT_PARAM + projectName;
-    HttpRequest request = await HttpRequest.request(url,
-        method: 'GET', requestHeaders: tokenHeader);
-    if (request.status == 200) {
-      return request.responseText;
+    var uri = Uri.parse(
+        API_NOTES + "/$noteId" + "?" + API_PROJECT_PARAM + projectName);
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      return response.body;
     } else {
       return null;
     }
@@ -276,11 +136,10 @@ class ServerApi {
 
   static Future<String> getUserName(int userId) async {
     var tokenHeader = getTokenHeader();
-    var url = API_USERS + "/$userId";
-    HttpRequest request = await HttpRequest.request(url,
-        method: 'GET', requestHeaders: tokenHeader);
-    if (request.status == 200) {
-      var userMap = jsonDecode(request.responseText);
+    var uri = Uri.parse(API_USERS + "/$userId");
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      var userMap = jsonDecode(response.body);
       return userMap['username'];
     } else {
       return null;
@@ -288,10 +147,9 @@ class ServerApi {
   }
 
   static Future<List<String>> getProjectNames() async {
-    HttpRequest request =
-        await HttpRequest.request(API_PROJECTNAMES, method: 'GET');
-    if (request.status == 200) {
-      var list = jsonDecode(request.responseText);
+    var response = await get(Uri.parse(API_PROJECTNAMES));
+    if (response.statusCode == 200) {
+      var list = jsonDecode(response.body);
       List<String> namesList =
           List<String>.from(list.map((projectMap) => projectMap['name']));
       return namesList;
@@ -304,11 +162,11 @@ class ServerApi {
     Map<String, String> config = {};
     var tokenHeader = getTokenHeader();
     var projectName = SmashSession.getSessionProject();
-    var url = API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName;
-    HttpRequest request = await HttpRequest.request(url,
-        method: 'GET', requestHeaders: tokenHeader);
-    if (request.status == 200) {
-      var dataList = jsonDecode(request.responseText);
+    var uri =
+        Uri.parse(API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName);
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      var dataList = jsonDecode(response.body);
       for (var item in dataList) {
         var key = item['key'];
         var value = item['value'];
@@ -322,7 +180,8 @@ class ServerApi {
 
   static Future<String> saveUserConfigurations(tokenHeader, projectName,
       {basemap, mapCenter, bookmarks}) async {
-    var url = API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName;
+    var uri =
+        Uri.parse(API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName);
 
     List<Map<String, String>> formData = [];
     if (basemap != null) {
@@ -334,11 +193,17 @@ class ServerApi {
     if (bookmarks != null) {
       formData.add({'key': KEY_BOOKMARKS, 'value': bookmarks});
     }
-    var dataJson = jsonEncode(formData);
-    HttpRequest request = await HttpRequest.request(url,
-        method: "PUT", sendData: dataJson, requestHeaders: tokenHeader);
-    if (request.status == 200) {
-      return request.response;
+    var formDataMap = {'configurations': formData};
+    var dataJson = jsonEncode(formDataMap);
+    Response response;
+    try {
+      tokenHeader["Content-type"] = "application/json";
+      response = await put(uri, body: dataJson, headers: tokenHeader);
+    } catch (e) {
+      print(e);
+    }
+    if (response.statusCode == 200) {
+      return response.body;
     } else {
       return null;
     }
@@ -350,11 +215,11 @@ class ServerApi {
     try {
       var tokenHeader = getTokenHeader();
       var projectName = SmashSession.getSessionProject();
-      var url = API_WMSSOURCES + "?" + API_PROJECT_PARAM + projectName;
-      HttpRequest request = await HttpRequest.request(url,
-          method: 'GET', requestHeaders: tokenHeader);
-      if (request.status == 200) {
-        var list = jsonDecode(request.responseText);
+      var uri =
+          Uri.parse(API_WMSSOURCES + "?" + API_PROJECT_PARAM + projectName);
+      var response = await get(uri, headers: tokenHeader);
+      if (response.statusCode == 200) {
+        var list = jsonDecode(response.body);
         for (var item in list) {
           layers.add(TileLayerOptions(
             additionalOptions: {
@@ -381,11 +246,10 @@ class ServerApi {
         }
       }
       projectName = SmashSession.getSessionProject();
-      url = API_TMSSOURCES + "?" + API_PROJECT_PARAM + projectName;
-      request = await HttpRequest.request(url,
-          method: 'GET', requestHeaders: tokenHeader);
-      if (request.status == 200) {
-        var list = jsonDecode(request.responseText);
+      uri = Uri.parse(API_TMSSOURCES + "?" + API_PROJECT_PARAM + projectName);
+      response = await get(uri, headers: tokenHeader);
+      if (response.statusCode == 200) {
+        var list = jsonDecode(response.body);
         for (var item in list) {
           layers.add(TileLayerOptions(
             tms: false,
