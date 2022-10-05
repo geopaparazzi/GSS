@@ -39,35 +39,6 @@ class Command(BaseCommand):
             WmsSource.objects.all().delete()
             TmsSource.objects.all().delete()
 
-        WmsSource.objects.create(
-            label = "Bolzano Ortofoto",
-            version = "1.1.1",
-            transparent = True,
-            imageformat = "image/jpg",
-            getcapabilities = "http://sdi.provincia.bz.it/geoserver/wms",
-            layername = "inspire:OI.ORTHOIMAGECOVERAGE.2011",
-            opacity = 1.0,
-            attribution = "Copyright Province Bolzano"
-        )
-        WmsSource.objects.create(
-            label = "Trento CTP",
-            version = "1.1.1",
-            transparent = True,
-            imageformat = "image/png",
-            getcapabilities = "http://geoservices.provincia.tn.it/siat/services/OGC/CTP2013/ImageServer/WMSServer",
-            layername = "0",
-            opacity = 1.0,
-            attribution = "Copyright Province Trento"
-        )
-        TmsSource.objects.create(
-            label = "OSM Mapnik",
-            urltemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            opacity = 1.0,
-            subdomains = "a,b,c",
-            maxzoom = 19,
-            attribution = 'OpenStreetMap, ODbL'
-        )
-
         gpapPath = options['gpap']
         if gpapPath:
             self.stdout.write("Importing an existing SMASH project database using the API.")
@@ -82,11 +53,12 @@ class Command(BaseCommand):
                 loginUrl = f"{base}/login"
                 r = requests.post(url = loginUrl, data = {
                     "username": "surveyor",
-                    "password": "surveyor"
+                    "password": "surveyor",
+                    "project": "Default",
                 })
                 if r.status_code != 200:
-                    self.stderr.write("Gpslog could not be uploaded:")
-                    self.stderr.write(r.json())
+                    self.stderr.write(r.text)
+                    # self.stderr.write(r.json())
                     return
                 else:
                     token = json.loads(r.text)['token']
@@ -222,7 +194,8 @@ class Command(BaseCommand):
                     FROM notes n left join notesext ne on n._id=ne.noteid
                     """)
         result = cursor.fetchall()
-                
+        
+        firstFormDone = False
         for row in result:
             id = row[0]
             lon = row[1]
@@ -256,6 +229,7 @@ class Command(BaseCommand):
 
             newNote = {
                 DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
+                DbNamings.NOTE_ID: id, 
                 DbNamings.NOTE_ALTIM: altim, 
                 DbNamings.NOTE_TS: tsStr, 
                 DbNamings.NOTE_UPLOADTS: uploadtsStr, 
@@ -289,7 +263,7 @@ class Command(BaseCommand):
 
                     imagesMap = {}
                     for row in result:
-                        id = row[0]
+                        imageId = row[0]
                         lon = row[1]
                         lat = row[2]
                         altim = row[3]
@@ -313,7 +287,7 @@ class Command(BaseCommand):
                             DbNamings.USER: 2, 
                             DbNamings.PROJECT: 1
                         }
-                        imagesMap[id] = newImage
+                        imagesMap[imageId] = newImage
                     
                     newNote[DbNamings.NOTE_IMAGES] = imagesMap
             
@@ -323,6 +297,20 @@ class Command(BaseCommand):
             if r.status_code != 201:
                 self.stderr.write("Note could not be uploaded:")
                 self.stderr.write(r.json())
+            
+            if not firstFormDone:
+                # add a duplicated note
+                firstFormDone = True
+                now = datetime.now()
+                newNote[DbNamings.NOTE_TS] = now.strftime("%Y-%m-%d %H:%M:%S")
+                newNote[DbNamings.NOTE_UPLOADTS] = now.strftime("%Y-%m-%d %H:%M:%S")
+                
+                noteJson = json.dumps(newNote)
+                r = requests.post(url = notesUrl, json = noteJson, headers=tokenAuthHeader)
+                if r.status_code != 201:
+                    self.stderr.write("Note could not be uploaded:")
+                    self.stderr.write(r.json())
+
                 
 
 

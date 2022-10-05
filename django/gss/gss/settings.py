@@ -28,6 +28,7 @@ else:
     POSTGRES_HOST = os.getenv('GSS_POSTGRES_HOST', "localhost")
     POSTGRES_PORT = os.getenv('GSS_POSTGRES_PORT', "5432")
 
+GSS_VERSION = "4.0.0alpha"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

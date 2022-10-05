@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
                                     HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND)
-
+from django.db.models import Max
 from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project, UserConfiguration, WmsSource, TmsSource
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
@@ -143,7 +143,8 @@ class RenderNoteViewSet(ListRetrieveOnlyViewSet):
             user = self.request.user
             projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
             if projectModel:
-                queryset = Note.objects.filter(project__name=project)
+                aggregation = Note.objects.filter(project__name=project).values(DbNamings.GEOM).annotate(id=Max(DbNamings.NOTE_ID)).values_list(DbNamings.NOTE_ID),
+                queryset = Note.objects.filter(id__in=aggregation)
                 return queryset
             else:
                 return Note.objects.none()
@@ -176,6 +177,8 @@ class NoteViewSet(viewsets.ModelViewSet):
             user = self.request.user
             projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
             if projectModel:
+                # aggregation = Note.objects.filter(project__name=project).values(DbNamings.GEOM).annotate(id=Max(DbNamings.NOTE_ID)).values_list(DbNamings.NOTE_ID),
+                # queryset = Note.objects.filter(id__in=aggregation)
                 queryset = Note.objects.filter(project__name=project)
                 return queryset
             else:

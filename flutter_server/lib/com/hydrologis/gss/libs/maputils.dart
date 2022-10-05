@@ -356,15 +356,15 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
   }
 
   Future loadNote() async {
-    // TODO
-    // var userPwd = SmashSession.getSessionUser();
-    // var data = await ServerApi.getNoteById(userPwd[0], userPwd[1], _current);
-    // noteItem = jsonDecode(data);
-    // _current = noteItem[ID];
-    // _previous = noteItem[PREVIOUSID];
-    // if (_previous == -1) {
-    //   _previous = null;
-    // }
+    var data = await ServerApi.getNote(_current);
+    noteItem = jsonDecode(data);
+    var userName = await ServerApi.getUserName(noteItem[USER]);
+    noteItem[USER] = userName;
+    _current = noteItem[ID];
+    _previous = noteItem[PREVIOUSID];
+    if (_previous == -1) {
+      _previous = null;
+    }
     setState(() {});
   }
 
@@ -378,8 +378,6 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
     var user = noteItem[USER];
     var sectionMap = noteItem[FORM];
     var sectionName = sectionMap[ATTR_SECTIONNAME];
-    print(sectionMap);
-
     var titleWidget = SmashUI.titleText(
       sectionName,
       color: SmashColors.mainBackground,

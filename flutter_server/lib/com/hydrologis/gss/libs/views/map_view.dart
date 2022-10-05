@@ -106,13 +106,16 @@ class _MainMapViewState extends State<MainMapView>
 
     var xyz = SmashSession.getMapcenter();
     if (xyz == null &&
-        mapstateModel != null &&
-        mapstateModel.dataBounds != null) {
+        mapstateModel.dataBounds != null &&
+        mapstateModel.dataBounds.isValid) {
       xyz = [
         mapstateModel.dataBounds.center.longitude,
         mapstateModel.dataBounds.center.latitude,
         15
       ];
+    }
+    if (xyz == null) {
+      xyz = [0, 0, 15];
     }
     var lastUsedBasemapName = SmashSession.getBasemap();
     var backgroundLayers = mapstateModel.getBackgroundLayers();

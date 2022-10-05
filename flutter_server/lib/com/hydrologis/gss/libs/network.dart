@@ -77,11 +77,6 @@ class ServerApi {
     var uri = Uri.parse(
         "$API_RENDERIMAGES/$id" + "?" + API_PROJECT_PARAM + projectName);
     var requestHeaders = getTokenHeader();
-    // final url = Uri.parse('$urlPrefix/posts');
-    // Response response = await get(url);
-    // print('Status code: ${response.statusCode}');
-    // print('Headers: ${response.headers}');
-    // print('Body: ${response.body}');
 
     var response = await get(uri, headers: requestHeaders);
     if (response.statusCode == 200) {

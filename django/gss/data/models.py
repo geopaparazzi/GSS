@@ -1,3 +1,4 @@
+from curses import panel
 from datetime import datetime
 from enum import unique
 from random import choices
@@ -24,7 +25,7 @@ class DbNamings():
     PROJECT = "project" 
 
     NOTE_ID = "id"
-    NOTE_PREVID = "previd"
+    NOTE_PREV = "previous"
     NOTE_ALTIM = "altim"
     NOTE_TS = "ts"
     NOTE_UPLOADTS = "uploadts"
@@ -216,8 +217,6 @@ class UserConfiguration(models.Model):
         ]
 
 class Note(models.Model):
-    previousId = models.IntegerField(
-        name=DbNamings.NOTE_PREVID, null=True, blank=True)
     geometry = geomodels.PointField(
         name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Point())
     altim = models.FloatField(name=DbNamings.NOTE_ALTIM, null=False, default=-1)
@@ -237,16 +236,25 @@ class Note(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
+    previous = models.ForeignKey('self', on_delete=models.DO_NOTHING, name=DbNamings.NOTE_PREV, null=True, blank=True)
 
     def __str__(self):
         hasForm = ""
+        parentNote = ""
+        name = self.text
         if self.form != None:
             hasForm = " - has form"
-        return f"{self.text} - {str(self.ts)[:-6]} - {str(self.the_geom).split(';')[1]}{hasForm}"
+            labelString = []
+            Utilities.collectIsLabelValue(self.form, labelString)
+            if labelString:
+                name = labelString[0]
+        if self.previous != None:
+            parentNote = f" (parent = {self.previous.id})"
+        return f"{name} - {str(self.ts)[:-6]}{parentNote}{hasForm}"
 
     class Meta:
         indexes = [
-            models.Index(fields=[DbNamings.NOTE_PREVID]),
+            models.Index(fields=[DbNamings.NOTE_PREV]),
             models.Index(fields=[DbNamings.NOTE_TS]),
             models.Index(fields=[DbNamings.NOTE_UPLOADTS]),
             models.Index(fields=[DbNamings.USER]),
@@ -391,6 +399,35 @@ class Utilities():
                     id = dataMap["value"]
                     if len(id.strip()) > 0:
                         idsList.append(int(id))
+    
+    @staticmethod
+    def collectIsLabelValue(dataMap, labelList):
+        if len(labelList) > 0:
+            return
+        for key in dataMap.keys():
+            value = dataMap[key]
+            if isinstance(value, dict):
+                Utilities.collectIsLabelValue(value, labelList)
+            elif isinstance(value, list):
+                if key == 'formitems':
+                    formitemsList = value
+                    for item in formitemsList:
+                        if 'islabel' in item:
+                            isLabel = item['islabel']
+                            if isLabel == "true":
+                                label = item['value']
+                                labelList.append(label)
+                for item in value:
+                    Utilities.collectIsLabelValue(item, labelList)
+            else:
+                if key == 'formitems':
+                    formitemsList = value
+                    for item in formitemsList:
+                        if 'islabel' in item:
+                            isLabel = item['islabel']
+                            if isLabel == "true":
+                                label = item['value']
+                                labelList.append(label)
 
     @staticmethod
     def updateImageIds(dataMap, old2NewIdsMap):

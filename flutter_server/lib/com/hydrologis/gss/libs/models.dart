@@ -259,7 +259,7 @@ class MapstateModel extends ChangeNotifier {
       for (int i = 0; i < notesList.length; i++) {
         Map<String, dynamic> noteItem = notesList[i];
         var id = noteItem[ID];
-        var name = noteItem[TEXT];
+        var name = noteItem['label'];
         var geom = noteItem[THE_GEOM];
         JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
         var latLng = LatLongHelper.fromLatLon(point.getY(), point.getX());

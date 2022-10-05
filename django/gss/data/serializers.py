@@ -5,6 +5,7 @@ from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageDa
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
+from django.contrib.gis.measure import D
 import json
 from PIL import Image as PilImage
 from PIL import ImageOps as PilOps
@@ -34,9 +35,25 @@ class ProjectNameSerializer(serializers.ModelSerializer):
 
 
 class RenderNoteSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField( )
+
+    def get_label( self, obj ):
+        form = obj.form
+        if form:
+            labelString = []
+            Utilities.collectIsLabelValue(form, labelString)
+            if labelString:
+                return labelString[0]
+            else:
+                return obj.text
+        else:
+            return obj.text    
+
     class Meta:
         model = Note
-        fields = ['id', 'text', 'the_geom', 'marker', 'size', 'color']
+        fields = ['id', 'label', 'the_geom', 'marker', 'size', 'color']
+    
+
 
 class NoteSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
@@ -55,7 +72,15 @@ class NoteSerializer(serializers.ModelSerializer):
 
         if user:
             with transaction.atomic():
-                # TODO check previous id here
+                point = Point.from_ewkt(validated_data[DbNamings.GEOM])
+                
+                # check if a previous note exists in place
+                parentNote = Note.objects.filter(the_geom__dwithin=(point, 0.000001)).first()
+                previous = None
+                if parentNote:
+                    previous = parentNote
+
+
                 dt = datetime.now(tz=timezone.utc)
                 tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -65,7 +90,8 @@ class NoteSerializer(serializers.ModelSerializer):
                     formDict = json.loads(form)
 
                 note = Note.objects.create(
-                    the_geom=Point.from_ewkt(validated_data[DbNamings.GEOM]),
+                    the_geom=point,
+                    previous = previous,
                     altim = validated_data[DbNamings.NOTE_ALTIM],
                     ts = validated_data[DbNamings.NOTE_TS],
                     uploadts = tsStr,
@@ -125,9 +151,8 @@ class NoteSerializer(serializers.ModelSerializer):
                     # now update form with new ids
                     Utilities.updateImageIds(formDict, old2NewIdsMap)
                     # newForm = json.dumps(formDict)
-                    Note.objects.update(
-                        form = formDict,
-                    )
+                    note.form = formDict
+                    note.save()
                     
         return note
 
