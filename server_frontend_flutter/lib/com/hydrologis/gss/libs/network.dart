@@ -14,21 +14,21 @@ const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
 const VALUE_KEY = "v";
 const doLocal = String.fromEnvironment('DOLOCAL', defaultValue: 'false');
-const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8000" : "";
+const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8000/" : "";
 
-const API_CONFIGRATION_URL = "$WEBAPP_URL/admin";
-const API_LOGIN = "$WEBAPP_URL/api/login";
-const API_USERS = "$WEBAPP_URL/api/users";
+const API_CONFIGRATION_URL = "${WEBAPP_URL}admin/";
+const API_LOGIN = "${WEBAPP_URL}api/login/";
+const API_USERS = "${WEBAPP_URL}api/users/";
 
-const API_PROJECTNAMES = "$WEBAPP_URL/api/projectnames";
-const API_RENDERNOTES = "$WEBAPP_URL/api/rendernotes";
-const API_NOTES = "$WEBAPP_URL/api/notes";
-const API_GPSLOGS = "$WEBAPP_URL/api/gpslogs";
-const API_RENDERIMAGES = "$WEBAPP_URL/api/renderimages";
-const API_IMAGES = "$WEBAPP_URL/api/images";
-const API_WMSSOURCES = "$WEBAPP_URL/api/wmssources";
-const API_TMSSOURCES = "$WEBAPP_URL/api/tmssources";
-const API_USERCONFIGS = "$WEBAPP_URL/api/userconfigurations/";
+const API_PROJECTNAMES = "${WEBAPP_URL}api/projectnames/";
+const API_RENDERNOTES = "${WEBAPP_URL}api/rendernotes/";
+const API_NOTES = "${WEBAPP_URL}api/notes/";
+const API_GPSLOGS = "${WEBAPP_URL}api/gpslogs/";
+const API_RENDERIMAGES = "${WEBAPP_URL}api/renderimages/";
+const API_IMAGES = "${WEBAPP_URL}api/images/";
+const API_WMSSOURCES = "${WEBAPP_URL}api/wmssources/";
+const API_TMSSOURCES = "${WEBAPP_URL}api/tmssources/";
+const API_USERCONFIGS = "${WEBAPP_URL}api/userconfigurations/";
 
 const API_PROJECT_PARAM = "project=";
 
@@ -75,7 +75,7 @@ class ServerApi {
   static Future<Uint8List> getImageThumbnail(int id) async {
     var projectName = SmashSession.getSessionProject();
     var uri = Uri.parse(
-        "$API_RENDERIMAGES/$id" + "?" + API_PROJECT_PARAM + projectName);
+        "$API_RENDERIMAGES$id/" + "?" + API_PROJECT_PARAM + projectName);
     var requestHeaders = getTokenHeader();
 
     var response = await get(uri, headers: requestHeaders);
@@ -120,7 +120,7 @@ class ServerApi {
     var tokenHeader = getTokenHeader();
     var projectName = SmashSession.getSessionProject();
     var uri = Uri.parse(
-        API_NOTES + "/$noteId" + "?" + API_PROJECT_PARAM + projectName);
+        API_NOTES + "$noteId/" + "?" + API_PROJECT_PARAM + projectName);
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       return response.body;
@@ -131,7 +131,7 @@ class ServerApi {
 
   static Future<String> getUserName(int userId) async {
     var tokenHeader = getTokenHeader();
-    var uri = Uri.parse(API_USERS + "/$userId");
+    var uri = Uri.parse(API_USERS + "$userId/");
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       var userMap = jsonDecode(response.body);

@@ -301,7 +301,7 @@ openImageDialog(BuildContext context, String name, int imageId,
   Dialog mapSelectionDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: NetworkImageWidget(
-      "$API_IMAGES/$imageId",
+      "$API_IMAGES$imageId/",
       name,
       h * 0.7,
       hideRotate: hideRotate,

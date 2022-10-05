@@ -156,12 +156,6 @@ USE_I18N = True
 
 USE_TZ = False
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.0/howto/static-files/
-
-STATIC_URL = 'static/'
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
@@ -197,6 +191,12 @@ REST_FRAMEWORK = {
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'media')
 # relative browser URL to access media
 MEDIA_URL = '/media/'
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.0/howto/static-files/
+
+STATIC_ROOT = os.path.join(BASE_DIR.parent, 'static')
+STATIC_URL = '/static/'
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1014 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2000 * 1024 * 1024
