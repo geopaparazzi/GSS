@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:html';
+import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
+import 'package:http/http.dart';
 import 'dart:typed_data';
 
 import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
@@ -48,29 +49,41 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
 
   void downloadImage() async {
     var tokenHeader = ServerApi.getTokenHeader();
-    var tokenEntry = tokenHeader.entries.first;
+    var projectName = SmashSession.getSessionProject();
+    var uri = Uri.parse(_imageUrl + "?" + API_PROJECT_PARAM + projectName);
 
-    var imageUrlWithSize = _imageUrl; // + "/" + _height.toInt().toString();
-    var request = HttpRequest();
-    request
-      ..open('GET', imageUrlWithSize)
-      // ..responseType = 'arraybuffer'
-      ..setRequestHeader(tokenEntry.key, tokenEntry.value)
-      ..onLoadEnd.listen((e) => requestComplete(request))
-      ..send();
-  }
-
-  requestComplete(HttpRequest request) {
-    if (request.status == 200) {
-      Map<String, dynamic> imageMap = jsonDecode(request.response);
-      var dataString = imageMap['imagedata']['data'];
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      Map<String, dynamic> imageMap = jsonDecode(response.body);
+      var dataString = imageMap[IMAGEDATA][DATA];
       _bytes = Base64Decoder().convert(dataString);
       _imageReady = true;
     } else {
       error = "An error occurred while retrieving the image.";
     }
     setState(() {});
+
+    // var imageUrlWithSize = _imageUrl; // + "/" + _height.toInt().toString();
+    // var request = HttpRequest();
+    // request
+    //   ..open('GET', imageUrlWithSize)
+    //   // ..responseType = 'arraybuffer'
+    //   ..setRequestHeader(tokenEntry.key, tokenEntry.value)
+    //   ..onLoadEnd.listen((e) => requestComplete(request))
+    //   ..send();
   }
+
+  // requestComplete(HttpRequest request) {
+  //   if (request.status == 200) {
+  //     Map<String, dynamic> imageMap = jsonDecode(request.response);
+  //     var dataString = imageMap['imagedata']['data'];
+  //     _bytes = Base64Decoder().convert(dataString);
+  //     _imageReady = true;
+  //   } else {
+  //     error = "An error occurred while retrieving the image.";
+  //   }
+  //   setState(() {});
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -370,6 +370,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
 
   @override
   Widget build(BuildContext context) {
+    var id = noteItem[ID];
     var name = noteItem[TEXT];
     var ts = noteItem[TS];
     var geom = noteItem[THE_GEOM];
@@ -413,7 +414,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: SmashUI.smallText(
-                      "Surveyor: $user      Timestamp: $ts",
+                      "Note: $id Surveyor: $user      Timestamp: $ts",
                       textAlign: TextAlign.center,
                       color: Colors.grey),
                 ),

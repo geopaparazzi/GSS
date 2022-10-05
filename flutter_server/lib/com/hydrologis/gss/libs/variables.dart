@@ -52,6 +52,7 @@ const ID = "id";
 const PREVIOUSID = "previous";
 const DATAID = "dataid";
 const DATA = "data";
+const IMAGEDATA = "imagedata";
 const THUMBNAIL = "thumbnail";
 const LOGS = "logs";
 const NOTES = "notes";
