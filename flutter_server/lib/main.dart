@@ -2,11 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/src/layer/tile_layer/tile_layer.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/views/map_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/views/map_view.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 
@@ -83,7 +83,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   String _errortext = "";
-  String selectedProject = null;
+  String selectedProject;
 
   @override
   Widget build(BuildContext context) {
@@ -122,8 +122,11 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<Widget> getMainWidget(BuildContext context) async {
-    List<TileLayerOptions> layers = await ServerApi.getBackGroundLayers();
-    return MainMapView(layers);
+    Map<String, TileLayerOptions> layersMap =
+        await ServerApi.getBackGroundLayers();
+    MapstateModel mapState = Provider.of<MapstateModel>(context, listen: false);
+    mapState.setBackgroundLayers(layersMap);
+    return MainMapView();
   }
 
   Future<Scaffold> getLoginWidget(BuildContext context) async {

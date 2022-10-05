@@ -389,8 +389,16 @@ class UserConfigurationViewSet(viewsets.ModelViewSet):
             instances = []
             for config in configList:
                 configObj = UserConfiguration.objects.filter(key=config['key'], user=user, project=projectModel).first()
-                configObj.value = config['value']
-                configObj.save()
+                if configObj:
+                    configObj.value = config['value']
+                    configObj.save()
+                else:
+                    configObj = UserConfiguration.objects.create(
+                        key=config['key'], 
+                        value = config['value'],
+                        user=user, 
+                        project=projectModel
+                    )
                 instances.append(configObj)
             serializer = UserConfigurationSerializer(instances, many=True)
             return Response(serializer.data)

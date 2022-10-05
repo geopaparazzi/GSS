@@ -105,11 +105,13 @@ class MapstateModel extends ChangeNotifier {
 
   double screenHeight = 600;
 
-  bool showAttributes = true;
+  bool showAttributes = false;
 
   MapController mapController;
 
   LatLngBounds currentMapBounds;
+
+  Map<String, TileLayerOptions> layersMap = {};
 
   void reloadMap() {
     notifyListeners();
@@ -120,6 +122,14 @@ class MapstateModel extends ChangeNotifier {
       mapController.fitBounds(newBounds ?? dataBounds);
       currentMapBounds = mapController.bounds;
     }
+  }
+
+  void setBackgroundLayers(Map<String, TileLayerOptions> layers) {
+    layersMap = layers;
+  }
+
+  Map<String, TileLayerOptions> getBackgroundLayers() {
+    return layersMap;
   }
 
   Future<void> getData(BuildContext context) async {

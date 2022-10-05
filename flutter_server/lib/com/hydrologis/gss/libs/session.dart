@@ -94,7 +94,7 @@ class SmashSession {
   static List<double> getMapcenter() {
     String xyz = html.window.sessionStorage[KEY_MAPCENTER];
     if (xyz == null) {
-      return [0, 0, 1];
+      return null;
     }
     var split = xyz.split(";");
     return [

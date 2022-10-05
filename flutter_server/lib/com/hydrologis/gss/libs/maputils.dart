@@ -311,20 +311,6 @@ openImageDialog(BuildContext context, String name, int imageId,
       context: context, builder: (BuildContext context) => mapSelectionDialog);
 }
 
-openMapSelectionDialog(BuildContext context) {
-  var size = 400.0;
-  Dialog mapSelectionDialog = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-    child: Container(
-      height: size,
-      width: size,
-      child: BackgroundMapSelectionWidget(),
-    ),
-  );
-  showDialog(
-      context: context, builder: (BuildContext context) => mapSelectionDialog);
-}
-
 Future openBookmarksDialog(BuildContext context) async {
   var size = 500.0;
   Dialog bookmarksDialog = Dialog(
@@ -459,97 +445,6 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
             ],
           ),
         ),
-      ],
-    );
-  }
-}
-
-class BackgroundMapSelectionWidget extends StatefulWidget {
-  BackgroundMapSelectionWidget();
-  _BackgroundMapSelectionWidgetState createState() =>
-      _BackgroundMapSelectionWidgetState();
-}
-
-class _BackgroundMapSelectionWidgetState
-    extends State<BackgroundMapSelectionWidget> {
-  int _index = 0;
-  List<TileLayerOptions> _widgets = [];
-  List<String> _names = [];
-  MapController _mapController = new MapController();
-
-  @override
-  void initState() {
-    // AVAILABLE_MAPS.forEach((name, tilelayer) {
-    //   _names.add(name);
-    //   _widgets.add(tilelayer);
-    // });
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SmashUI.titleText(_names[_index]),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Listener(
-              // listen to mouse scroll
-              onPointerSignal: (e) {
-                if (e is PointerScrollEvent) {
-                  var delta = e.scrollDelta.direction;
-                  _mapController.move(_mapController.center,
-                      _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
-                }
-              },
-              child: FlutterMap(
-                options: new MapOptions(
-                  center: new LatLng(46.47781, 11.33140),
-                  zoom: 8,
-                ),
-                layers: [_widgets[_index]],
-                mapController: _mapController,
-              ),
-            ),
-          ),
-        ),
-        ButtonBar(
-          alignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            TextButton(
-              child: const Text('CANCEL'),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            TextButton(
-              child: const Text('NEXT'),
-              onPressed: () {
-                setState(() {
-                  _index = _index + 1;
-                  if (_index >= _widgets.length) {
-                    _index = 0;
-                  }
-                });
-              },
-            ),
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                SmashSession.setBasemap(_names[_index]);
-                var mapstateModel =
-                    Provider.of<MapstateModel>(context, listen: false);
-                mapstateModel.reloadMap();
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        )
       ],
     );
   }
@@ -779,14 +674,15 @@ class BookmarksWidget extends StatefulWidget {
 
 class _BookmarksWidgetState extends State<BookmarksWidget>
     with AfterLayoutMixin<BookmarksWidget> {
-  List<String> bookmarks;
+  List<String> bookmarks = [];
   bool _dataLoaded = false;
 
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
     var bookmarksString = SmashSession.getBookmarks();
-    bookmarks = bookmarksString.split("@");
-
+    if (bookmarksString.trim().length > 0) {
+      bookmarks = bookmarksString.split("@");
+    }
     setState(() {
       _dataLoaded = true;
     });

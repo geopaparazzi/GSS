@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/views/about_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
@@ -19,8 +20,7 @@ import 'dart:html' as html;
 // import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class MainMapView extends StatefulWidget {
-  List<TileLayerOptions> backgroundLayers;
-  MainMapView(this.backgroundLayers, {Key key}) : super(key: key);
+  MainMapView({Key key}) : super(key: key);
 
   @override
   _MainMapViewState createState() => _MainMapViewState();
@@ -105,7 +105,30 @@ class _MainMapViewState extends State<MainMapView>
     }
 
     var xyz = SmashSession.getMapcenter();
-    var basemap = SmashSession.getBasemap();
+    if (xyz == null &&
+        mapstateModel != null &&
+        mapstateModel.dataBounds != null) {
+      xyz = [
+        mapstateModel.dataBounds.center.longitude,
+        mapstateModel.dataBounds.center.latitude,
+        15
+      ];
+    }
+    var lastUsedBasemapName = SmashSession.getBasemap();
+    var backgroundLayers = mapstateModel.getBackgroundLayers();
+    var backgroundLayer = backgroundLayers[lastUsedBasemapName];
+    if (backgroundLayer == null) {
+      if (backgroundLayers.isNotEmpty) {
+        // fallback on first
+        var fallBackLayerName = backgroundLayers.keys.first;
+        backgroundLayer = backgroundLayers[fallBackLayerName];
+        SmashSession.setBasemap(fallBackLayerName);
+      } else {
+        // no layer, fallback on default
+        backgroundLayer = ServerApi.getDefaultLayer();
+        SmashSession.setBasemap(DEFAULTLAYERNAME);
+      }
+    }
     var mapPointers = 0;
 
     attributesTableWidget =
@@ -153,6 +176,9 @@ class _MainMapViewState extends State<MainMapView>
                   behavior: HitTestBehavior.deferToChild,
                   child: FlutterMap(
                     options: new MapOptions(
+                      crs: backgroundLayer.wmsOptions != null
+                          ? backgroundLayer.wmsOptions.crs
+                          : Epsg3857(),
                       center: new LatLng(xyz[1], xyz[0]),
                       zoom: xyz[2],
                       minZoom: minZoom,
@@ -163,7 +189,7 @@ class _MainMapViewState extends State<MainMapView>
                       ],
                     ),
                     layers: []
-                      ..addAll(widget.backgroundLayers)
+                      ..add(backgroundLayer)
                       ..addAll(layers),
                     mapController: _mapController,
                   ),
@@ -190,22 +216,36 @@ class _MainMapViewState extends State<MainMapView>
                         MdiIcons.map,
                       ),
                       backgroundColor: SmashColors.mainDecorations,
-                      onPressed: () {
-                        openMapSelectionDialog(context);
+                      onPressed: () async {
+                        MapstateModel mapState =
+                            Provider.of<MapstateModel>(context, listen: false);
+                        var backgroundLayers = mapState.getBackgroundLayers();
+                        var names = backgroundLayers.keys.toList();
+
+                        var selectedMapName =
+                            await SmashDialogs.showComboDialog(
+                                context, "Select background map", names);
+                        if (selectedMapName != null) {
+                          SmashSession.setBasemap(selectedMapName);
+                          var mapstateModel = Provider.of<MapstateModel>(
+                              context,
+                              listen: false);
+                          mapstateModel.reloadMap();
+                        }
                       }),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: FloatingActionButton(
-                        tooltip: "Open data filter dialog.",
-                        heroTag: "filter_dialog_button",
-                        child: Icon(
-                          MdiIcons.filterMenuOutline,
-                        ),
-                        backgroundColor: SmashColors.mainDecorations,
-                        onPressed: () {
-                          openFilterDialog(context);
-                        }),
-                  ),
+                  // Padding(
+                  //   padding: const EdgeInsets.only(top: 8.0),
+                  //   child: FloatingActionButton(
+                  //       tooltip: "Open data filter dialog.",
+                  //       heroTag: "filter_dialog_button",
+                  //       child: Icon(
+                  //         MdiIcons.filterMenuOutline,
+                  //       ),
+                  //       backgroundColor: SmashColors.mainDecorations,
+                  //       onPressed: () {
+                  //         openFilterDialog(context);
+                  //       }),
+                  // ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: FloatingActionButton(

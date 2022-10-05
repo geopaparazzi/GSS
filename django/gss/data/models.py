@@ -119,6 +119,11 @@ class ProjectData(models.Model):
     
     def __str__(self):
         return f"{self.label} -> {self.file}"
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=[DbNamings.PROJECTDATA_LABEL]),
+        ]
 
 class WmsSource(models.Model):
     VERSION_CHOICES = (
@@ -147,6 +152,11 @@ class WmsSource(models.Model):
     def __str__(self):
         return f"{self.label} -> Layer: {self.layername}"
 
+    class Meta:
+        indexes = [
+            models.Index(fields=[DbNamings.WMSSOURCE_LABEL]),
+        ]
+
 class TmsSource(models.Model):
     label = models.CharField(name=DbNamings.TMSSOURCE_LABEL, max_length=100, null=False, unique=True)
     urlTemplate = models.URLField(name=DbNamings.TMSSOURCE_URLTEMPLATE, max_length=500, null=False)
@@ -157,6 +167,11 @@ class TmsSource(models.Model):
     
     def __str__(self):
         return self.label
+
+    class Meta:
+        indexes = [
+            models.Index(fields=[DbNamings.TMSSOURCE_LABEL]),
+        ]
 
 class Project(models.Model):
     name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False, unique=True)
@@ -178,14 +193,27 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        indexes = [
+            models.Index(fields=[DbNamings.PROJECT_NAME]),
+        ]
+
 class UserConfiguration(models.Model):
-    key = models.CharField(name=DbNamings.USERCONFIG_KEY, max_length=200, null=False, unique=True)
+    key = models.CharField(name=DbNamings.USERCONFIG_KEY, max_length=200, null=False)
     value = models.TextField(name=DbNamings.USERCONFIG_VALUE, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
 
     def __str__(self):
         return f"{self.key}={self.value[:20]} ...       (user: {self.user.username}, project: {self.project.name})"
+
+    class Meta:
+        unique_together = (DbNamings.USERCONFIG_KEY, DbNamings.USER, DbNamings.PROJECT)
+        indexes = [
+            models.Index(fields=[DbNamings.USERCONFIG_KEY]),
+            models.Index(fields=[DbNamings.USER]),
+            models.Index(fields=[DbNamings.PROJECT]),
+        ]
 
 class Note(models.Model):
     previousId = models.IntegerField(
@@ -322,6 +350,12 @@ class Device(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.uniqueid})"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=[DbNamings.DEVICE_NAME]),
+            models.Index(fields=[DbNamings.DEVICE_UNIQUE_ID]),
+        ]
 
 class UserDeviceAssociation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)

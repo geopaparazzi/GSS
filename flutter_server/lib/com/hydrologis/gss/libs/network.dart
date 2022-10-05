@@ -209,9 +209,10 @@ class ServerApi {
     }
   }
 
-  static Future<List<TileLayerOptions>> getBackGroundLayers() async {
-    List<TileLayerOptions> layers = [];
+  static Future<Map<String, TileLayerOptions>> getBackGroundLayers() async {
+    Map<String, TileLayerOptions> layers = {};
 
+    bool error = false;
     try {
       var tokenHeader = getTokenHeader();
       var projectName = SmashSession.getSessionProject();
@@ -221,15 +222,17 @@ class ServerApi {
       if (response.statusCode == 200) {
         var list = jsonDecode(response.body);
         for (var item in list) {
-          layers.add(TileLayerOptions(
+          var epsg = item['epsg'];
+          var crs = epsg == 4326 ? Epsg4326() : Epsg3857();
+          layers[item['label']] = TileLayerOptions(
             additionalOptions: {
-              "name": item['name'],
+              "name": item['label'],
               "Attribution": item['attribution'],
             },
             opacity: item['opacity'],
             backgroundColor: Colors.transparent,
             wmsOptions: WMSTileLayerOptions(
-              crs: Epsg3857(),
+              crs: crs,
               version: item['version'],
               transparent: item['transparent'],
               format: item['imageformat'],
@@ -242,7 +245,7 @@ class ServerApi {
               SMLogger().e("Unable to load WMS tile: ${tile.coordsKey}",
                   exception, null);
             },
-          ));
+          );
         }
       }
       projectName = SmashSession.getSessionProject();
@@ -251,7 +254,7 @@ class ServerApi {
       if (response.statusCode == 200) {
         var list = jsonDecode(response.body);
         for (var item in list) {
-          layers.add(TileLayerOptions(
+          layers[item['label']] = TileLayerOptions(
             tms: false,
             additionalOptions: {
               "name": item['label'],
@@ -270,26 +273,27 @@ class ServerApi {
               SMLogger().e("Unable to load TMS tile: ${tile.coordsKey}",
                   exception, null);
             },
-          ));
+          );
         }
       }
     } catch (e) {
+      error = true;
       SMLogger().e("ERROR", e, null);
-      // fallback on OSM and Wikimedia
-      layers.add(TileLayerOptions(
-        tms: false,
-        subdomains: const ['a', 'b', 'c'],
-        maxZoom: 19,
-        urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        tileProvider: NetworkNoRetryTileProvider(),
-      ));
-      layers.add(TileLayerOptions(
-        tms: false,
-        maxZoom: 19,
-        urlTemplate: "https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png",
-        tileProvider: NetworkNoRetryTileProvider(),
-      ));
+    }
+    if (error || layers.isEmpty) {
+      // fallback on OSM
+      layers[DEFAULTLAYERNAME] = getDefaultLayer();
     }
     return layers;
+  }
+
+  static TileLayerOptions getDefaultLayer() {
+    return TileLayerOptions(
+      tms: false,
+      subdomains: const ['a', 'b', 'c'],
+      maxZoom: 19,
+      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      tileProvider: NetworkNoRetryTileProvider(),
+    );
   }
 }

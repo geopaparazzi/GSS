@@ -85,3 +85,5 @@ const USERGROUP = "users"; //$NON-NLS-1$
 // API VARS END
 
 const NOTE_ZOOM_BUFFER = 0.01;
+
+const DEFAULTLAYERNAME = "Openstreetmap";
