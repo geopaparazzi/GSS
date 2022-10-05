@@ -1,15 +1,12 @@
 import 'dart:convert';
-import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
-import 'package:http/http.dart';
-import 'dart:typed_data';
 
-import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
+import 'package:http/http.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
@@ -62,28 +59,7 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
       error = "An error occurred while retrieving the image.";
     }
     setState(() {});
-
-    // var imageUrlWithSize = _imageUrl; // + "/" + _height.toInt().toString();
-    // var request = HttpRequest();
-    // request
-    //   ..open('GET', imageUrlWithSize)
-    //   // ..responseType = 'arraybuffer'
-    //   ..setRequestHeader(tokenEntry.key, tokenEntry.value)
-    //   ..onLoadEnd.listen((e) => requestComplete(request))
-    //   ..send();
   }
-
-  // requestComplete(HttpRequest request) {
-  //   if (request.status == 200) {
-  //     Map<String, dynamic> imageMap = jsonDecode(request.response);
-  //     var dataString = imageMap['imagedata']['data'];
-  //     _bytes = Base64Decoder().convert(dataString);
-  //     _imageReady = true;
-  //   } else {
-  //     error = "An error occurred while retrieving the image.";
-  //   }
-  //   setState(() {});
-  // }
 
   @override
   Widget build(BuildContext context) {

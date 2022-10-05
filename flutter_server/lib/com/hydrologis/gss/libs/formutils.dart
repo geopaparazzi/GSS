@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
-import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:smashlibs/smashlibs.dart';
 
 const IMAGE_ID_SEPARATOR = ";";

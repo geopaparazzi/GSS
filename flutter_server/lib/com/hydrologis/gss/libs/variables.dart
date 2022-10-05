@@ -4,8 +4,6 @@ const TITLE = 'Geopaparazzi Survey Server';
 const NOVALUE = " - ";
 const ABOUTPAGE_INDEX = 1000;
 
-const WEBAPP = 'http://localhost:8080';
-
 const KEY_HASPERMISSION = "hasPermission";
 const KEY_ISADMIN = "isAdmin";
 const KEY_USER = "user";
