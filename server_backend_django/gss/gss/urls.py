@@ -41,8 +41,8 @@ urlpatterns = [
     path('api/login/', data.views.login)
 ]
 
-if settings.DEBUG:
-    urlpatterns += re_path(
-        r'^$', serve, dict(document_root=settings.STATIC_ROOT, path="index.html")),
-    urlpatterns += re_path(
-        r'^(?P<path>.*)$', serve, dict(document_root=settings.STATIC_ROOT)),
+# if settings.DEBUG:
+#     urlpatterns += re_path(
+#         r'^$', serve, dict(document_root=settings.STATIC_ROOT, path="index.html")),
+#     urlpatterns += re_path(
+#         r'^(?P<path>.*)$', serve, dict(document_root=settings.STATIC_ROOT)),

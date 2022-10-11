@@ -1,25 +1,27 @@
-from email.mime import image
-from django.core.management.base import BaseCommand, CommandError
-
-from django.conf import settings
-from django.core.management import call_command
-from data.models import DbNamings, Project, Note, GpsLogData, GpsLog, Image, ImageData, Utilities, ProjectData, WmsSource, TmsSource
-from django.contrib.auth.models import User
-from django.contrib.gis.geos import Point, LineString
-from datetime import datetime, timezone
-import requests
-from requests.auth import HTTPBasicAuth
-from django.db import connection
 import json
+import os
 import sqlite3
-from django.contrib.gis.geos import Point, LineString
 from base64 import b64decode, b64encode
+from datetime import datetime, timezone
+from email.mime import image
+
+import requests
+from data.models import (DbNamings, GpsLog, GpsLogData, Image, ImageData, Note,
+                         Project, ProjectData, TmsSource, Utilities, WmsSource)
+from django.conf import settings
+from django.contrib.auth.models import Group, Permission, User
+from django.contrib.gis.geos import LineString, Point
+from django.core.management import call_command
+from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
+from requests.auth import HTTPBasicAuth
+
 
 class Command(BaseCommand):
     help = 'Populate the database with example data as a surveyor.'
 
     def add_arguments(self, parser):
-        parser.add_argument('-p', '--gpap', type=str, help='The optional path to the gpap sqlite to import.')
+        parser.add_argument('-f', '--folder', type=str, help='The optional path to a folder containing smash/geopaparazzi projects to import.')
         parser.add_argument('-d', '--delete', action='store_true', help='Flag that enables clearing of the tables first.')
 
     def handle(self, *args, **options):
@@ -39,45 +41,75 @@ class Command(BaseCommand):
             WmsSource.objects.all().delete()
             TmsSource.objects.all().delete()
 
-        gpapPath = options['gpap']
-        if gpapPath:
-            self.stdout.write("Importing an existing SMASH project database using the API.")
-            try:
-                conn = sqlite3.connect(gpapPath)
-                cursor = conn.cursor()
-                
-                # surveyorAuth = HTTPBasicAuth('surveyor', 'surveyor')
-                tokenAuthHeader = {}
-                base = "http://localhost:8000/api"
+        inputFolder = options['folder']
+        if inputFolder:
+            self.stdout.write("Importing existing SMASH projects found in provided folder, using the API.")
 
-                loginUrl = f"{base}/login"
-                r = requests.post(url = loginUrl, data = {
-                    "username": "surveyor",
-                    "password": "surveyor",
-                    "project": "Default",
-                })
-                if r.status_code != 200:
-                    self.stderr.write(r.text)
-                    # self.stderr.write(r.json())
-                    return
-                else:
-                    token = json.loads(r.text)['token']
-                    tokenAuthHeader['Authorization'] = f"Token {token}"
-                    
-                if len(tokenAuthHeader) > 0:
-                    self.insertNotes(cursor, tokenAuthHeader, base)
-                    self.insertSimpleImages(cursor, tokenAuthHeader, base)
-                    self.insertGpslogs(cursor, tokenAuthHeader, base)
-            except sqlite3.Error as error:
-                self.stderr.write('Error occured - ', error)
-            finally:
-                if conn:
-                    conn.close()
+            # create surveyors group
+            surveyorsGroup = Group.objects.filter(name=DbNamings.GROUP_SURVEYORS).first()
+            if not surveyorsGroup:
+                self.stderr.write(f"Surveyor group does not exist.")
+
+            surveyorUser = User.objects.filter(username="surveyor").first()
+            if not surveyorUser:
+                self.stderr.write(f"Surveyor user does not exist.")
+
+            filesNamesList = os.listdir(inputFolder)
+            for fileName in filesNamesList:
+                if fileName.endswith(".gpap") and not fileName.endswith('example_project.gpap'):
+                    self.stdout.write(f"Importing: {fileName}")
+                    try:
+                        # get/create the project
+                        pName = os.path.splitext(fileName)[0]
+
+                        # remove underscores and capitalize
+                        pName = pName.replace("_", " ")
+                        pName = pName.capitalize()
+
+
+                        newProject = Project.objects.filter(name=pName).first()
+                        if not newProject:
+                            newProject = Project(name=pName, description=pName)
+                            newProject.save()
+
+                            newProject.groups.add(surveyorsGroup)
+                            newProject.save()
+
+
+                        filePath = os.path.join(inputFolder, fileName)
+                        conn = sqlite3.connect(filePath)
+                        cursor = conn.cursor()
+                        
+                        tokenAuthHeader = {}
+                        base = "http://localhost:8000/api"
+
+                        loginUrl = f"{base}/login/"
+                        r = requests.post(url = loginUrl, data = {
+                            "username": "surveyor",
+                            "password": "surveyor",
+                            "project": pName,
+                        })
+                        if r.status_code != 200:
+                            self.stderr.write(r.text)
+                            return
+                        else:
+                            token = json.loads(r.text)['token']
+                            tokenAuthHeader['Authorization'] = f"Token {token}"
+                            
+                        if len(tokenAuthHeader) > 0:
+                            self.insertNotes(cursor, tokenAuthHeader, base, surveyorUser, newProject)
+                            self.insertSimpleImages(cursor, tokenAuthHeader, base, surveyorUser, newProject)
+                            self.insertGpslogs(cursor, tokenAuthHeader, base, surveyorUser, newProject)
+                    except sqlite3.Error as error:
+                        self.stderr.write('Error occured - ', error)
+                    finally:
+                        if conn:
+                            conn.close()
 
         else:
             self.generateExampleData()
 
-    def insertGpslogs(self, cursor, tokenAuthHeader, base):
+    def insertGpslogs(self, cursor, tokenAuthHeader, base, surveyorUser, newProject):
         gpslogsUrl = f"{base}/gpslogs/"
         cursor.execute("""
                         SELECT g._id,g.startts,g.endts,g.text,glp.color,glp.width 
@@ -129,8 +161,8 @@ class Command(BaseCommand):
                 DbNamings.GEOM: line.ewkt,
                 DbNamings.GPSLOG_WIDTH: width,
                 DbNamings.GPSLOG_COLOR: color,
-                DbNamings.USER: 2,
-                DbNamings.PROJECT: 1,
+                DbNamings.USER: surveyorUser.id, 
+                DbNamings.PROJECT: newProject.id
             }
             newGpslog["gpslogdata"] = gpslogdata
 
@@ -144,7 +176,7 @@ class Command(BaseCommand):
                 self.stderr.write("Gpslog could not be uploaded:")
                 self.stderr.write(r.json())
 
-    def insertSimpleImages(self, cursor, tokenAuthHeader, base):
+    def insertSimpleImages(self, cursor, tokenAuthHeader, base, surveyorUser, newProject):
         imagesUrl = f"{base}/images/"
         cursor.execute("""
                     SELECT i._id, i.lon,i.lat,i.altim,i.azim,i.ts,i.text,id.data 
@@ -175,8 +207,8 @@ class Command(BaseCommand):
                 DbNamings.IMAGE_IMAGEDATA: {
                     DbNamings.IMAGEDATA_DATA: b64encode(data).decode('UTF-8')
                 },
-                DbNamings.USER: 2, 
-                DbNamings.PROJECT: 1
+                DbNamings.USER: surveyorUser.id, 
+                DbNamings.PROJECT: newProject.id
             }
             self.stdout.write(f"Uploading Image '{text}' with id: {id}")
             imageB64 = json.dumps(newImage)
@@ -186,7 +218,7 @@ class Command(BaseCommand):
                 self.stderr.write(r.json())
     
 
-    def insertNotes(self, cursor, tokenAuthHeader, base):
+    def insertNotes(self, cursor, tokenAuthHeader, base, surveyorUser, newProject):
         notesUrl = f"{base}/notes/"
         cursor.execute("""
                     SELECT n._id,n.lon,n.lat,n.altim,n.ts,n.description,n.text,n.form,
@@ -226,6 +258,8 @@ class Command(BaseCommand):
             dt = datetime.fromtimestamp(ts/1000, timezone.utc)
             tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
             uploadtsStr = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            if not description:
+                description = " - nv - "
 
             newNote = {
                 DbNamings.GEOM: f'SRID=4326;POINT ({lon} {lat})', 
@@ -244,10 +278,10 @@ class Command(BaseCommand):
                 DbNamings.NOTE_SPEED: speed, 
                 DbNamings.NOTE_SPEEDACCURACY: speedaccuracy, 
                 DbNamings.NOTE_FORM: form, 
-                DbNamings.USER: 2, 
-                DbNamings.PROJECT: 1
+                DbNamings.USER: surveyorUser.id, 
+                DbNamings.PROJECT: newProject.id
             }
-            if form != None:
+            if form != None and len(form.strip()) != 0:
                 # find images connected to notes
                 imageIds = []
                 formDict = json.loads(form)
@@ -284,8 +318,8 @@ class Command(BaseCommand):
                             DbNamings.IMAGE_IMAGEDATA: {
                                 DbNamings.IMAGEDATA_DATA: b64encode(data).decode('UTF-8')
                             },
-                            DbNamings.USER: 2, 
-                            DbNamings.PROJECT: 1
+                            DbNamings.USER: surveyorUser.id, 
+                            DbNamings.PROJECT: newProject.id
                         }
                         imagesMap[imageId] = newImage
                     

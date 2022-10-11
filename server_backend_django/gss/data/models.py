@@ -398,7 +398,31 @@ class Utilities():
                 if value == 'pictures':
                     id = dataMap["value"]
                     if len(id.strip()) > 0:
-                        idsList.append(int(id))
+                        tmpIds = str(id).split(";")
+                        for tmpId in tmpIds:
+                            idsList.append(int(tmpId))
+
+    @staticmethod
+    def updateImageIds(dataMap, old2NewIdsMap):
+        for key in dataMap.keys():
+            value = dataMap[key]
+            if isinstance(value, dict):
+                Utilities.updateImageIds(value, old2NewIdsMap)
+            elif isinstance(value, list):
+                for item in value:
+                    Utilities.updateImageIds(item, old2NewIdsMap)
+            else:
+                if value == 'pictures':
+                    id = dataMap["value"]
+                    if len(id.strip()) > 0:
+                        previousIds = str(id).split(";")
+                        newIds = []
+                        for previousId in previousIds:
+                            newId = old2NewIdsMap[int(previousId)]
+                            newIds.append(str(newId))
+                        
+                        dataMap["value"] = ";".join(newIds)
+
     
     @staticmethod
     def collectIsLabelValue(dataMap, labelList):
@@ -428,20 +452,3 @@ class Utilities():
                             if isLabel == "true":
                                 label = item['value']
                                 labelList.append(label)
-
-    @staticmethod
-    def updateImageIds(dataMap, old2NewIdsMap):
-        for key in dataMap.keys():
-            value = dataMap[key]
-            if isinstance(value, dict):
-                Utilities.updateImageIds(value, old2NewIdsMap)
-            elif isinstance(value, list):
-                for item in value:
-                    Utilities.updateImageIds(item, old2NewIdsMap)
-            else:
-                if value == 'pictures':
-                    id = dataMap["value"]
-                    if len(id.strip()) > 0:
-                        newId = old2NewIdsMap[int(id)]
-                        dataMap["value"] = str(newId)
-
