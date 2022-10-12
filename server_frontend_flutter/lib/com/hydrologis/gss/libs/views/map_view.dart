@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:after_layout/after_layout.dart';
+import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'dart:html' as html;
+import 'package:dart_jts/dart_jts.dart' as JTS;
 // import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class MainMapView extends StatefulWidget {
@@ -33,6 +37,8 @@ class _MainMapViewState extends State<MainMapView>
   AttributesTableWidget attributesTableWidget;
   final maxZoom = 25.0;
   final minZoom = 1.0;
+  bool _showLastUserPositions = false;
+  var userPositionsLayer;
 
   int _heroCount;
 
@@ -102,6 +108,9 @@ class _MainMapViewState extends State<MainMapView>
         },
       );
       layers.add(markerCluster);
+    }
+    if (userPositionsLayer != null) {
+      layers.add(userPositionsLayer);
     }
 
     var xyz = SmashSession.getMapcenter();
@@ -275,6 +284,21 @@ class _MainMapViewState extends State<MainMapView>
                           });
                           // mapstateModel.reloadMap();
                         }),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: FloatingActionButton(
+                      tooltip: "Refresh data",
+                      heroTag: "refresh_data_button",
+                      child: Icon(MdiIcons.refresh),
+                      backgroundColor: SmashColors.mainDecorations,
+                      onPressed: () async {
+                        var mapstateModel =
+                            Provider.of<MapstateModel>(context, listen: false);
+                        await mapstateModel.getData(context);
+                        mapstateModel.reloadMap();
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -509,6 +533,57 @@ class _MainMapViewState extends State<MainMapView>
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
+              child: CheckboxListTile(
+                value: _showLastUserPositions,
+                title: Text("Show Active User Positions" +
+                    (userPositionsLayer != null
+                        ? " (${userPositionsLayer.markers.length})"
+                        : "")),
+                onChanged: (selection) async {
+                  if (selection) {
+                    Timer.periodic(const Duration(seconds: 15),
+                        (Timer timer) async {
+                      if (!_showLastUserPositions) {
+                        // print("Cancel timer");
+                        timer.cancel();
+                      } else {
+                        // print("Get user positions.");
+                        var lastUserPositions =
+                            await ServerApi.getLastUserPositions();
+                        if (lastUserPositions.isNotEmpty) {
+                          userPositionsLayer = await buildLastUserPositionLayer(
+                              lastUserPositions,
+                              TimeUtilities.ISO8601_TS_FORMATTER
+                                  .format(DateTime.now()));
+                          setState(() {});
+                        }
+                      }
+                    });
+                    var lastUserPositions =
+                        await ServerApi.getLastUserPositions();
+                    if (lastUserPositions.isNotEmpty) {
+                      userPositionsLayer = await buildLastUserPositionLayer(
+                          lastUserPositions,
+                          TimeUtilities.ISO8601_TS_FORMATTER
+                              .format(DateTime.now()));
+                    }
+                  } else {
+                    userPositionsLayer = null;
+                  }
+                  setState(() {
+                    _showLastUserPositions = !_showLastUserPositions;
+                  });
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Divider(
+                color: SmashColors.mainDecorations,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: ListTile(
                 leading: new Icon(
                   MdiIcons.informationOutline,
@@ -538,6 +613,7 @@ class _MainMapViewState extends State<MainMapView>
                 ),
                 title: Text("Logout"),
                 onTap: () {
+                  _showLastUserPositions = false;
                   SmashSession.logout(
                     mapCenter:
                         "${_mapController.center.longitude};${_mapController.center.latitude};${_mapController.zoom}",

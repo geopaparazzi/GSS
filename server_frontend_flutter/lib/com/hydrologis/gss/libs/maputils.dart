@@ -159,6 +159,55 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
   );
 }
 
+Future<MarkerLayerOptions> buildLastUserPositionLayer(
+    List<dynamic> lastUserPositions, var lastRefreshTimestamp) async {
+  var list = <Marker>[];
+  for (var e in lastUserPositions) {
+    var geom = e['the_geom'];
+    var userId = e['user'];
+    var ts = e['ts'].replaceAll("T", " ");
+    var uploadts = e['uploadts'].replaceAll("T", " ");
+    var userName = await ServerApi.getUserName(userId);
+
+    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+    var lat = point.getY();
+    var lon = point.getX();
+    var size = 60.0;
+    list.add(Marker(
+      width: size + 25,
+      height: size + 25,
+      point: LatLng(lat, lon),
+      builder: (ctx) => new Container(
+        child: GestureDetector(
+          child: MarkerIcon(
+            MdiIcons.accountHardHat,
+            Colors.black,
+            size,
+            userName,
+            Colors.white,
+            Colors.black.withAlpha(80),
+          ),
+          onTap: () async {
+            SmashDialogs.showInfoDialog(ctx, "", widgets: [
+              SmashUI.normalText("Last position of user: " + userName),
+              SmashUI.normalText("at device time: " + ts),
+              SmashUI.normalText("uploaded at: " + uploadts),
+              SmashUI.normalText(
+                  "last server refresh: " + lastRefreshTimestamp),
+            ]);
+          },
+        ),
+      ),
+    ));
+  }
+
+  var userPositionsLayer = MarkerLayerOptions(
+    markers: list,
+    usePxCache: false,
+  );
+  return userPositionsLayer;
+}
+
 openNoteDialog(BuildContext context, int noteId) async {
   var data = await ServerApi.getNote(noteId);
   Map<String, dynamic> noteItem = jsonDecode(data);

@@ -22,6 +22,7 @@ const API_USERS = "${WEBAPP_URL}api/users/";
 
 const API_PROJECTNAMES = "${WEBAPP_URL}api/projectnames/";
 const API_RENDERNOTES = "${WEBAPP_URL}api/rendernotes/";
+const API_LASTUSERPOSITIONS = "${WEBAPP_URL}api/lastuserpositions/";
 const API_NOTES = "${WEBAPP_URL}api/notes/";
 const API_GPSLOGS = "${WEBAPP_URL}api/gpslogs/";
 const API_RENDERIMAGES = "${WEBAPP_URL}api/renderimages/";
@@ -98,6 +99,20 @@ class ServerApi {
     if (response.statusCode == 200) {
       var notesList = jsonDecode(response.body);
       return notesList;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<List<dynamic>> getLastUserPositions() async {
+    var tokenHeader = getTokenHeader();
+    var projectName = SmashSession.getSessionProject();
+    var uri = Uri.parse(
+        API_LASTUSERPOSITIONS + "?" + API_PROJECT_PARAM + projectName);
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      var positionsList = jsonDecode(response.body);
+      return positionsList;
     } else {
       return null;
     }

@@ -178,7 +178,9 @@ class Command(BaseCommand):
         projectC = Project.objects.create(name="Test Project C", description="Test Project C Description")
 
         projectA.wmssources.add(wms1)
+        projectA.tmssources.add(tms1)
         projectB.wmssources.add(wms2)
+        projectB.tmssources.add(tms1)
         projectC.tmssources.add(tms1)
         projectA.groups.add(groupA)
         projectA.groups.add(groupD)
