@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from io import BytesIO
 from rest_framework import serializers
-from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities, WmsSource, TmsSource, UserConfiguration
+from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities, WmsSource, TmsSource, UserConfiguration, LastUserPosition
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
@@ -298,3 +298,7 @@ class UserConfigurationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class LastUserPositionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LastUserPosition
+        fields = '__all__'

@@ -1,7 +1,8 @@
+from datetime import datetime, timedelta, timezone
 from django.core.management.base import BaseCommand
 
 from django.conf import settings
-from data.models import Project, Note, GpsLogData, GpsLog, Image, ImageData, ProjectData, UserConfiguration, WmsSource, TmsSource, DbNamings
+from data.models import LastUserPosition, Project, Note, GpsLogData, GpsLog, Image, ImageData, ProjectData, UserConfiguration, WmsSource, TmsSource, DbNamings
 from django.contrib.gis.geos import Point, LineString
 from django.contrib.auth.models import User, Group
 
@@ -275,4 +276,40 @@ class Command(BaseCommand):
             user = userA3
         )
 
+        """
+        Create some last positions for a few users.
+        """
+        pattern = "%Y-%m-%d %H:%M:%S"
+        dt1 = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+        tsStr = dt1.strftime(pattern)
+        uploadts1 = dt1 + timedelta(minutes=30)
+        uploadtsStr = uploadts1.strftime(pattern)
+        LastUserPosition.objects.create(
+            the_geom=Point(11.0, 46.0),
+            ts = tsStr,
+            uploadts = uploadtsStr,
+            user = userA1,
+            project = projectA
+        )
+        dt2 = dt1 - timedelta(minutes=30)
+        tsStr = dt2.strftime(pattern)
+        uploadts2 = dt2 + timedelta(minutes=15)
+        uploadtsStr = uploadts2.strftime(pattern)
+        LastUserPosition.objects.create(
+            the_geom=Point(11.1, 46.1),
+            ts = tsStr,
+            uploadts = uploadtsStr,
+            user = userA2,
+            project = projectA
+        )
+        dt3 = dt1 - timedelta(minutes=90)
+        uploadts3 = dt3 - timedelta(minutes=60)
+        uploadtsStr = uploadts3.strftime(pattern)
+        LastUserPosition.objects.create(
+            the_geom=Point(11.2, 46.2),
+            ts = tsStr,
+            uploadts = uploadtsStr,
+            user = userB,
+            project = projectB
+        )
     

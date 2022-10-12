@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group, User
 from django.views.decorators.csrf import csrf_exempt
@@ -13,10 +14,10 @@ from django.db.models import Max
 from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project, UserConfiguration, WmsSource, TmsSource
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
-                              ImageSerializer, NoteSerializer,
+                              ImageSerializer, LastUserPositionSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,
                               UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
-                              TmsSourceSerializer, UserConfigurationSerializer)
+                              TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
 
 
 @csrf_exempt
@@ -404,6 +405,73 @@ class UserConfigurationViewSet(viewsets.ModelViewSet):
                     )
                 instances.append(configObj)
             serializer = UserConfigurationSerializer(instances, many=True)
+            return Response(serializer.data)
+        else: 
+            response = {'message': 'The current user does not have access to the project.'}
+            return Response(response, status=status.HTTP_401_UNAUTHORIZED)
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+class LastUserPositionViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint to get and send LastUserPosition.
+    """
+    serializer_class = LastUserPositionSerializer
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        user = self.request.user
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return LastUserPosition.objects.none()
+        else:
+            user = self.request.user
+            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            if projectModel:
+                return LastUserPosition.objects.filter(project=projectModel);
+            else:
+                return LastUserPosition.objects.none()
+    
+    def put(self, request, *args, **kwargs):
+        user = self.request.user
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            response = {'message': 'The project parameter is mandatory to update configurations.'}
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+        if projectModel:
+            ts = request.data['ts']
+            geometry = request.data['the_geom']
+            
+            dt = datetime.now(tz=timezone.utc)
+            tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")
+            lastUserPosition = LastUserPosition.objects.filter(user=user, project=projectModel).first()
+            if lastUserPosition:
+                lastUserPosition.ts = ts
+                lastUserPosition.uploadTimestamp = tsStr
+                lastUserPosition.geometry = geometry
+                lastUserPosition.save()
+            else:
+                lastUserPosition = LastUserPosition.objects.create(
+                    the_geom = geometry,
+                    ts=ts,
+                    uploadts = tsStr,
+                    user=user, 
+                    project=projectModel
+                )
+            
+            serializer = LastUserPositionSerializer(lastUserPosition)
             return Response(serializer.data)
         else: 
             response = {'message': 'The current user does not have access to the project.'}

@@ -105,6 +105,9 @@ class DbNamings():
     TMSSOURCE_MAXZOOM = "maxzoom"
     TMSSOURCE_ATTRIBUTION = "attribution"
 
+    LASTUSER_TIMESTAMP = "ts" 
+    LASTUSER_UPLOADTIMESTAMP = "uploadts" 
+
     USERCONFIG_KEY = "key"
     USERCONFIG_VALUE = "value"
 
@@ -380,7 +383,22 @@ class UserDeviceAssociation(models.Model):
             models.Index(fields=[DbNamings.U_D_ASS_DEVICEID]),
         ]
 
+class LastUserPosition(models.Model):
+    geometry = geomodels.PointField(
+        name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Point())
+    timestamp = models.DateTimeField(name=DbNamings.LASTUSER_TIMESTAMP, null=False, default=datetime.now)
+    uploadTimestamp = models.DateTimeField(name=DbNamings.LASTUSER_UPLOADTIMESTAMP, null=False, default=datetime.now)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=False, name=DbNamings.PROJECT, default=-1)
 
+    class Meta:
+        unique_together = (DbNamings.USER, DbNamings.PROJECT)
+        indexes = [
+            models.Index(fields=[DbNamings.LASTUSER_TIMESTAMP]),
+            models.Index(fields=[DbNamings.LASTUSER_UPLOADTIMESTAMP]),
+            models.Index(fields=[DbNamings.USER]),
+            models.Index(fields=[DbNamings.PROJECT]),
+        ]
 
 
 class Utilities():
