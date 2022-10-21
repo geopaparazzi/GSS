@@ -44,7 +44,7 @@ def login(request):
         return Response({'error': 'Invalid Project Name'},status=HTTP_404_NOT_FOUND)
     if project.hasUser(user):
         token, _ = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key},
+        return Response({'token': token.key, 'id': user.id},
                         status=HTTP_200_OK)
     else:
         return Response({'error': f'User is not part of project "{project}"'},status=HTTP_403_FORBIDDEN)

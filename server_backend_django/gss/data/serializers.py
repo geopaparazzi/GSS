@@ -169,6 +169,9 @@ class GpslogSerializer(serializers.ModelSerializer):
     LOGDATALABEL = 'gpslogdata'
 
     def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         dataconv = json.loads(data)
         internal_value = super(GpslogSerializer, self).to_internal_value(dataconv)
 

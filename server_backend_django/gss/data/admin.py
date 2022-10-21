@@ -9,7 +9,7 @@ from django.db import models
 # admin.site.register(Note, LeafletGeoAdmin)
 admin.site.register(Project)
 admin.site.register(GpsLog, LeafletGeoAdmin)
-admin.site.register(GpsLogData, LeafletGeoAdmin)
+# admin.site.register(GpsLogData, LeafletGeoAdmin)
 admin.site.register(Image, LeafletGeoAdmin)
 admin.site.register(ImageData, ImageDataAdmin)
 admin.site.register(Device)
