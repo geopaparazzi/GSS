@@ -6,30 +6,50 @@ x-common-gss:
     POSTGRES_USER: test
     POSTGRES_PASSWORD: test
 services:
-  gss:
+  nginx:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     environment:
-      << : *default-common-env-gss
-      POSTGRES_URL: "postgres:5432/test"
-      MOBILE_PASSWORD: testPwd
-#      KEYSTORE: keystore_file.db
-#      KEYSTORE_PASSWORD: keystore_password
-    deploy:
-      resources:
-        limits:
-          memory: 1G
+      DJANGO_URL: http://django:8000
+    depends_on:
+      django:
+        condition: service_healthy
     ports:
-      - 8080:8080
-#    volumes:
-#      - /path/workspace:/workspace
+      - 8080:80
+  django:
+    build:
+      context: ../server_backend_django
+      dockerfile: ../docker/Dockerfile.django
+    environment:
+      DEBUG: true
+      USE_LOCALDATA: false
+      GSS_POSTGRES_DBNAME: test
+      GSS_POSTGRES_USER: test
+      GSS_POSTGRES_PASS: test
+      GSS_POSTGRES_HOST: postgres
+      GSS_POSTGRES_PORT: 5432
+    healthcheck:
+      test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
   postgres:
     image: postgis/postgis:13-3.1
     environment:
       << : *default-common-env-gss
       POSTGRES_PORT: 5432
       POSTGRES_DB: test
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 #    ports:
 #      - 5432:5432
 #    volumes:
