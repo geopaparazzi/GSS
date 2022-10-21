@@ -30,6 +30,13 @@ else:
 
 GSS_VERSION = "4.0.0alpha"
 
+if DEBUG:
+    CORS_ORIGIN_ALLOW_ALL = True  
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = []
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,10 +46,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-3l%jlj1iw@+1v(o-8v!ef^a)mrr$^&7b=0o-45e2%9_q^64d7+')
-
-ALLOWED_HOSTS = [
-
-]
 
 LEAFLET_CONFIG = {
     'DEFAULT_CENTER': (46.0, 11),
@@ -82,8 +85,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-CORS_ORIGIN_ALLOW_ALL = True  
 
 ROOT_URLCONF = 'gss.urls'
 

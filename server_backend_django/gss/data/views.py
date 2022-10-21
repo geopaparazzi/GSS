@@ -11,11 +11,15 @@ from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
                                     HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND)
 from django.db.models import Max
-from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project, UserConfiguration, WmsSource, TmsSource
+import os
+from django.http import FileResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project, ProjectData, UserConfiguration, WmsSource, TmsSource
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
                               ImageSerializer, LastUserPositionSerializer, NoteSerializer,
-                              ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,
+                              ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,ProjectDataSerializer,
                               UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
                               TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
 
@@ -44,6 +48,7 @@ def login(request):
                         status=HTTP_200_OK)
     else:
         return Response({'error': f'User is not part of project "{project}"'},status=HTTP_403_FORBIDDEN)
+
 
 
 
@@ -127,6 +132,38 @@ class ProjectNameViewSet(ListRetrieveOnlyViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectNameSerializer
     permission_classes = [AllowAny]
+
+class ProjectDataViewSet(ListRetrieveOnlyViewSet):
+    """
+    API endpoint that allows projectsdata to be downloaded.
+    """
+    # queryset = ProjectData.objects.all()
+    serializer_class = ProjectDataSerializer
+
+    def get_queryset(self):
+        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if project is None:
+            # the project parameter is mandatory to get the data
+            return ProjectData.objects.none()
+        else:
+            user = self.request.user
+            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            if projectModel:
+                return projectModel.projectdata
+            else:
+                return Note.objects.none()
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
 class RenderNoteViewSet(ListRetrieveOnlyViewSet):
     
