@@ -7,8 +7,8 @@ import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 class SmashSession {
   /// Checks credentials and returns an error message or null if login is ok.
   static Future<String> login(
-      String user, String password, String project) async {
-    var responseText = await ServerApi.login(user, password, project);
+      String user, String password, Project project) async {
+    var responseText = await ServerApi.login(user, password, project.id);
     if (!responseText.startsWith(NETWORKERROR_PREFIX)) {
       var token = responseText;
       setSessionToken(token);
@@ -44,10 +44,10 @@ class SmashSession {
     ];
   }
 
-  static void setSessionUser(String user, String pwd, String project) {
+  static void setSessionUser(String user, String pwd, Project project) {
     html.window.sessionStorage[KEY_USER] = user;
     html.window.sessionStorage[KEY_PWD] = pwd;
-    html.window.sessionStorage[KEY_PROJECT] = project;
+    html.window.sessionStorage[KEY_PROJECT] = project.toJsonString();
   }
 
   static void setSessionToken(String token) {
@@ -62,13 +62,13 @@ class SmashSession {
     return token;
   }
 
-  static String getSessionProject() {
-    var project = html.window.sessionStorage[KEY_PROJECT];
-    if (project == null) {
+  static Project getSessionProject() {
+    var projectJson = html.window.sessionStorage[KEY_PROJECT];
+    if (projectJson == null) {
       html.window.sessionStorage.remove(KEY_TOKEN);
       html.window.location.reload();
     }
-    return project;
+    return Project.fromJson(projectJson);
   }
 
   static void setBasemap(String basemap) {

@@ -83,7 +83,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   String _errortext = "";
-  String selectedProject;
+  Project selectedProject;
 
   @override
   Widget build(BuildContext context) {
@@ -130,17 +130,17 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<Scaffold> getLoginWidget(BuildContext context) async {
-    List<String> projectNames = await ServerApi.getProjectNames();
+    List<Project> projectsList = await ServerApi.getProjects();
     if (selectedProject == null) {
-      selectedProject = projectNames[0];
+      selectedProject = projectsList[0];
     }
 
-    var projectsCombo = DropdownButton<String>(
+    var projectsCombo = DropdownButton<Project>(
       isExpanded: true,
-      items: projectNames.map((String value) {
-        return DropdownMenuItem<String>(
+      items: projectsList.map((Project value) {
+        return DropdownMenuItem<Project>(
           value: value,
-          child: Text(value),
+          child: Text(value.name),
         );
       }).toList(),
       value: selectedProject,

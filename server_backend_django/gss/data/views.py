@@ -30,8 +30,8 @@ from data.serializers import (GpslogSerializer, GroupSerializer,
 def login(request):
     username = request.data.get("username")
     password = request.data.get("password")
-    projectName = request.data.get("project")
-    if username is None or password is None or projectName is None:
+    projectId = request.data.get("project")
+    if username is None or password is None or projectId is None:
         return Response({'error': 'Please provide username, password and project of choice.'},
                         status=HTTP_400_BAD_REQUEST)
     user = authenticate(username=username, password=password)
@@ -39,7 +39,7 @@ def login(request):
         return Response({'error': 'Invalid Credentials'},
                         status=HTTP_404_NOT_FOUND)
     # now check if the user is in the project
-    project = Project.objects.filter(name=projectName).first()
+    project = Project.objects.filter(id=projectId).first()
     if not project:
         return Response({'error': 'Invalid Project Name'},status=HTTP_404_NOT_FOUND)
     if project.hasUser(user):
@@ -141,13 +141,13 @@ class ProjectDataViewSet(ListRetrieveOnlyViewSet):
     serializer_class = ProjectDataSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return ProjectData.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 return projectModel.projectdata
             else:
@@ -173,15 +173,15 @@ class RenderNoteViewSet(ListRetrieveOnlyViewSet):
     serializer_class = RenderNoteSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return Note.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                aggregation = Note.objects.filter(project__name=project).values(DbNamings.GEOM).annotate(id=Max(DbNamings.NOTE_ID)).values_list(DbNamings.NOTE_ID),
+                aggregation = Note.objects.filter(project__id=projectId).values(DbNamings.GEOM).annotate(id=Max(DbNamings.NOTE_ID)).values_list(DbNamings.NOTE_ID),
                 queryset = Note.objects.filter(id__in=aggregation)
                 return queryset
             else:
@@ -207,17 +207,17 @@ class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return Note.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 # aggregation = Note.objects.filter(project__name=project).values(DbNamings.GEOM).annotate(id=Max(DbNamings.NOTE_ID)).values_list(DbNamings.NOTE_ID),
                 # queryset = Note.objects.filter(id__in=aggregation)
-                queryset = Note.objects.filter(project__name=project)
+                queryset = Note.objects.filter(project__id=projectId)
                 return queryset
             else:
                 return Note.objects.none()
@@ -241,15 +241,15 @@ class ImageViewSet(viewsets.ModelViewSet):
     serializer_class = ImageSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return Image.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                queryset = Image.objects.filter(project__name=project)
+                queryset = Image.objects.filter(project__id=projectId)
                 return queryset
             else:
                 return Image.objects.none()
@@ -274,15 +274,15 @@ class RenderImageViewSet(ListRetrieveOnlyViewSet):
     serializer_class = RenderImageSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return Image.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                queryset = Image.objects.filter(project__name=project)
+                queryset = Image.objects.filter(project__id=projectId)
                 return queryset
             else:
                 return Image.objects.none()
@@ -307,15 +307,15 @@ class GpslogViewSet(viewsets.ModelViewSet):
     serializer_class = GpslogSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return GpsLog.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                queryset = GpsLog.objects.filter(project__name=project)
+                queryset = GpsLog.objects.filter(project__id=projectId)
                 return queryset
             else:
                 return GpsLog.objects.none()
@@ -340,13 +340,13 @@ class WmsSourceViewSet(ListRetrieveOnlyViewSet):
     serializer_class = WmsSourceSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return WmsSource.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 return projectModel.wmssources
             else:
@@ -371,13 +371,13 @@ class TmsSourceViewSet(ListRetrieveOnlyViewSet):
     serializer_class = TmsSourceSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return TmsSource.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 return projectModel.tmssources
             else:
@@ -403,14 +403,14 @@ class UserConfigurationViewSet(viewsets.ModelViewSet):
     serializer_class = UserConfigurationSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
         user = self.request.user
-        if project is None:
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return UserConfiguration.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 return UserConfiguration.objects.filter(project=projectModel, user=user);
             else:
@@ -419,13 +419,13 @@ class UserConfigurationViewSet(viewsets.ModelViewSet):
     def put(self, request, *args, **kwargs):
         configList = request.data['configurations']
         user = self.request.user
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             response = {'message': 'The project parameter is mandatory to update configurations.'}
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
         user = self.request.user
-        projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+        projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
         if projectModel:
             instances = []
             for config in configList:
@@ -466,14 +466,14 @@ class LastUserPositionViewSet(viewsets.ModelViewSet):
     serializer_class = LastUserPositionSerializer
 
     def get_queryset(self):
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
         user = self.request.user
-        if project is None:
+        if projectId is None:
             # the project parameter is mandatory to get the data
             return LastUserPosition.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 return LastUserPosition.objects.filter(project=projectModel);
             else:
@@ -481,12 +481,12 @@ class LastUserPositionViewSet(viewsets.ModelViewSet):
     
     def put(self, request, *args, **kwargs):
         user = self.request.user
-        project = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        if project is None:
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
             response = {'message': 'The project parameter is mandatory to update configurations.'}
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-        projectModel = Project.objects.filter(name=project, groups__user__username=user.username).first()
+        projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
         if projectModel:
             ts = request.data['ts']
             geometry = request.data['the_geom']

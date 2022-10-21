@@ -508,7 +508,8 @@ class _MainMapViewState extends State<MainMapView>
                 size: iconSize,
               ),
               title: Text("Project"),
-              subtitle: SmashUI.normalText(SmashSession.getSessionProject(),
+              subtitle: SmashUI.normalText(
+                  SmashSession.getSessionProject().name,
                   bold: true),
             ),
             Padding(
