@@ -26,6 +26,7 @@ const API_LASTUSERPOSITIONS = "${WEBAPP_URL}api/lastuserpositions/";
 const API_NOTES = "${WEBAPP_URL}api/notes/";
 const API_GPSLOGS = "${WEBAPP_URL}api/gpslogs/";
 const API_RENDERIMAGES = "${WEBAPP_URL}api/renderimages/";
+const API_RENDERSIMPLEIMAGES = "${WEBAPP_URL}api/rendersimpleimages/";
 const API_IMAGES = "${WEBAPP_URL}api/images/";
 const API_WMSSOURCES = "${WEBAPP_URL}api/wmssources/";
 const API_TMSSOURCES = "${WEBAPP_URL}api/tmssources/";
@@ -85,6 +86,21 @@ class ServerApi {
       var dataString = imageMap[THUMBNAIL];
       var imgData = Base64Decoder().convert(dataString);
       return imgData;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<List<dynamic>> getRenderImages() async {
+    var project = SmashSession.getSessionProject();
+    var uri =
+        Uri.parse("$API_RENDERSIMPLEIMAGES?$API_PROJECT_PARAM${project.id}");
+    var requestHeaders = getTokenHeader();
+
+    var response = await get(uri, headers: requestHeaders);
+    if (response.statusCode == 200) {
+      List<dynamic> imagesList = jsonDecode(response.body);
+      return imagesList;
     } else {
       return null;
     }

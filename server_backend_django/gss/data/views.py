@@ -300,6 +300,39 @@ class RenderImageViewSet(ListRetrieveOnlyViewSet):
             permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
+class RenderSimpleImageViewSet(ListRetrieveOnlyViewSet):
+    """
+    API endpoint to get simple images with minimal info for rendering.
+    """
+    serializer_class = RenderImageSerializer
+
+    def get_queryset(self):
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
+            # the project parameter is mandatory to get the data
+            return Image.objects.none()
+        else:
+            user = self.request.user
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if projectModel:
+                queryset = Image.objects.filter(project__id=projectId, notes__isnull=True)
+                return queryset
+            else:
+                return Image.objects.none()
+
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
 class GpslogViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows gpslogs to be viewed or edited.

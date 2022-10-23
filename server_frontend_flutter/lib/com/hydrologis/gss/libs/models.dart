@@ -218,40 +218,37 @@ class MapstateModel extends ChangeNotifier {
     List<Marker> markers = <Marker>[];
     List<Attributes> attributesList = [];
 
+    var renderImages = await ServerApi.getRenderImages();
     // LOAD SIMPLE IMAGES
-    // List<dynamic> imagesList = json[IMAGES];
-    // if (imagesList != null) {
-    //   for (int i = 0; i < imagesList.length; i++) {
-    //     dynamic imageItem = imagesList[i];
-    //     var id = imageItem[ID];
-    //     var dataId = imageItem[DATAID];
-    //     var data = imageItem[DATA];
-    //     var name = imageItem[NAME];
-    //     var ts = imageItem[TS];
-    //     var x = imageItem[X];
-    //     var y = imageItem[Y];
-    //     var latLng = LatLongHelper.fromLatLon(y, x);
-    //     dataBounds.extend(latLng);
-    //     var imgData = Base64Decoder().convert(data);
-    //     var imageWidget = Image.memory(
-    //       imgData,
-    //       scale: 6.0,
-    //     );
-    //     markers.add(
-    //         buildImage(this, screenHeight, x, y, name, dataId, imageWidget));
+    if (renderImages != null) {
+      for (int i = 0; i < renderImages.length; i++) {
+        dynamic imageItem = renderImages[i];
+        var id = imageItem[ID];
+        // var dataId = imageItem[DATAID];
+        // var data = imageItem[DATA];
+        var name = imageItem[TEXT];
+        var geom = imageItem[THE_GEOM];
+        JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+        // var x = imageItem[X];
+        // var y = imageItem[Y];
+        var latLng = LatLongHelper.fromLatLon(point.getY(), point.getX());
+        dataBounds.extend(latLng);
+        var thumb = imageItem[THUMBNAIL];
+        var imgData = Base64Decoder().convert(thumb);
+        var imageWidget = Image.memory(
+          imgData,
+          scale: 3.0,
+        );
+        markers.add(buildImage(this, screenHeight, point.getX(), point.getY(),
+            name, id, imageWidget));
 
-    //     var surveyor = imageItem[SURVEYOR];
-    //     var project = imageItem[PROJECT];
-    //     attributesList.add(Attributes()
-    //       ..id = id
-    //       ..marker = imageWidget
-    //       ..point = latLng
-    //       ..project = project
-    //       ..text = name
-    //       ..timeStamp = ts
-    //       ..user = surveyor);
-    //   }
-    // }
+        attributesList.add(Attributes()
+          ..id = id
+          ..marker = imageWidget
+          ..point = latLng
+          ..text = name);
+      }
+    }
 
     // LOAD ALL NOTES WITH SIMPLE INFOS
     // make sure that forms are loaded properly

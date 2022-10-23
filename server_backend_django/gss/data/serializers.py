@@ -242,6 +242,9 @@ class ImageSerializer(serializers.ModelSerializer):
     imagedata = ImageDataSerializer(required=False )
 
     def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         mutableData = json.loads(data)
         internal_value = super(ImageSerializer, self).to_internal_value(mutableData)
         return internal_value
