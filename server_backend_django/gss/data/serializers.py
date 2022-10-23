@@ -62,6 +62,9 @@ class RenderNoteSerializer(serializers.ModelSerializer):
 
 class NoteSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         dataconv = json.loads(data)
         images = None
         if DbNamings.NOTE_IMAGES in dataconv:
