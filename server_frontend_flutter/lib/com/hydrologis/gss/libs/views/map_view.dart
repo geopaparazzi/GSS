@@ -542,7 +542,7 @@ class _MainMapViewState extends State<MainMapView>
                         : "")),
                 onChanged: (selection) async {
                   if (selection) {
-                    Timer.periodic(const Duration(seconds: 15),
+                    Timer.periodic(const Duration(seconds: 60),
                         (Timer timer) async {
                       if (!_showLastUserPositions) {
                         // print("Cancel timer");
