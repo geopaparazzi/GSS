@@ -22,7 +22,7 @@ from data.serializers import (GpslogSerializer, GroupSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,ProjectDataSerializer,
                               UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
                               TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
-
+from owslib.wmts import WebMapTileService
 
 @csrf_exempt
 @api_view(["POST"])
@@ -412,7 +412,45 @@ class TmsSourceViewSet(ListRetrieveOnlyViewSet):
             user = self.request.user
             projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                return projectModel.tmssources
+                # check for wmts data collections
+                tmsSources = projectModel.tmssources.all()
+                sources = []
+                extraSourcesId = 10000001
+                for tmsSource in tmsSources:
+                    urlTemplate = tmsSource.urltemplate
+                    if "getcapabilities" in urlTemplate.lower() and "service=wmts" in urlTemplate.lower():
+                        slashIndex = urlTemplate.index("?")
+                        host = urlTemplate[:slashIndex]
+                        if host.endswith("/"):
+                            host = host[:-1]
+                        wmts = WebMapTileService(urlTemplate)
+                        for key, layer in wmts.contents.items():
+                            version = wmts.identification.version
+                            layerName = key
+                            style = list(layer.styles)[0]
+                            imgFormat = layer.formats[0]
+                            
+                            tileMatrix = "{z}"
+                            tileRow = "{y}"
+                            tileCol = "{x}"
+                            
+                            url = f"{host}/?SERVICE=WMTS&REQUEST=GetTile&VERSION={version}&LAYER={layerName}&STYLE={style}&FORMAT={imgFormat}&TILEMATRIXSET=EPSG:3857&TILEMATRIX={tileMatrix}&TILEROW={tileRow}&TILECOL={tileCol}"
+                            
+                            source = TmsSource(
+                                id = extraSourcesId,
+                                label = layerName,
+                                urltemplate = url,
+                                opacity = 1.0,
+                                maxzoom = 21,
+                                attribution = tmsSource.attribution,
+                            )
+                            sources.append(source)
+                            extraSourcesId+=1
+                    else:
+                        sources.append(source)
+                
+                return sources
+                # return projectModel.tmssources
             else:
                 return TmsSource.objects.none()
             

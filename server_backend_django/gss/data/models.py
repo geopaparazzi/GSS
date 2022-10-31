@@ -165,7 +165,7 @@ class TmsSource(models.Model):
     label = models.CharField(name=DbNamings.TMSSOURCE_LABEL, max_length=100, null=False, unique=True)
     urlTemplate = models.URLField(name=DbNamings.TMSSOURCE_URLTEMPLATE, max_length=500, null=False)
     opacity = models.FloatField(name=DbNamings.TMSSOURCE_OPACITY, null=False, default=1.0, validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
-    subdomains = models.CharField(name=DbNamings.TMSSOURCE_SUBDOMAINS, max_length=100, null=True)
+    subdomains = models.CharField(name=DbNamings.TMSSOURCE_SUBDOMAINS, max_length=100, null=True, blank=True)
     maxzoom = models.IntegerField(name=DbNamings.TMSSOURCE_MAXZOOM, null=True, default=19.0, validators=[MinValueValidator(1), MaxValueValidator(21)])
     attribution = models.CharField(name=DbNamings.TMSSOURCE_ATTRIBUTION, max_length=100, null=False)
     

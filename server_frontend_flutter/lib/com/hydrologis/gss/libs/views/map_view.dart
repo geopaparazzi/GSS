@@ -126,18 +126,26 @@ class _MainMapViewState extends State<MainMapView>
     if (xyz == null) {
       xyz = [0, 0, 15];
     }
-    var lastUsedBasemapName = SmashSession.getBasemap();
+    var lastUsedBasemapNamesStr = SmashSession.getBasemap();
+    var lastUsedBasemapNames = lastUsedBasemapNamesStr.split(",");
     var backgroundLayers = mapstateModel.getBackgroundLayers();
-    var backgroundLayer = backgroundLayers[lastUsedBasemapName];
-    if (backgroundLayer == null) {
+    var backgroundLayersToLoad =
+        <TileLayerOptions>[]; // backgroundLayers[lastUsedBasemapNames];
+    for (var basemapName in lastUsedBasemapNames) {
+      var layer = backgroundLayers[basemapName];
+      if (layer != null) {
+        backgroundLayersToLoad.add(layer);
+      }
+    }
+    if (backgroundLayersToLoad.isEmpty) {
       if (backgroundLayers.isNotEmpty) {
         // fallback on first
         var fallBackLayerName = backgroundLayers.keys.first;
-        backgroundLayer = backgroundLayers[fallBackLayerName];
+        backgroundLayersToLoad.add(backgroundLayers[fallBackLayerName]);
         SmashSession.setBasemap(fallBackLayerName);
       } else {
         // no layer, fallback on default
-        backgroundLayer = ServerApi.getDefaultLayer();
+        backgroundLayersToLoad.add(ServerApi.getDefaultLayer());
         SmashSession.setBasemap(DEFAULTLAYERNAME);
       }
     }
@@ -188,8 +196,8 @@ class _MainMapViewState extends State<MainMapView>
                   behavior: HitTestBehavior.deferToChild,
                   child: FlutterMap(
                     options: new MapOptions(
-                      crs: backgroundLayer.wmsOptions != null
-                          ? backgroundLayer.wmsOptions.crs
+                      crs: backgroundLayersToLoad[0].wmsOptions != null
+                          ? backgroundLayersToLoad[0].wmsOptions.crs
                           : Epsg3857(),
                       center: new LatLng(xyz[1], xyz[0]),
                       zoom: xyz[2],
@@ -201,7 +209,7 @@ class _MainMapViewState extends State<MainMapView>
                       ],
                     ),
                     layers: []
-                      ..add(backgroundLayer)
+                      ..addAll(backgroundLayersToLoad)
                       ..addAll(layers),
                     mapController: _mapController,
                   ),
@@ -234,11 +242,12 @@ class _MainMapViewState extends State<MainMapView>
                         var backgroundLayers = mapState.getBackgroundLayers();
                         var names = backgroundLayers.keys.toList();
 
-                        var selectedMapName =
-                            await SmashDialogs.showComboDialog(
+                        var selectedMapNames =
+                            await SmashDialogs.showMultiSelectionComboDialog(
                                 context, "Select background map", names);
-                        if (selectedMapName != null) {
-                          SmashSession.setBasemap(selectedMapName);
+                        if (selectedMapNames != null &&
+                            selectedMapNames.isNotEmpty) {
+                          SmashSession.setBasemap(selectedMapNames.join(","));
                           var mapstateModel = Provider.of<MapstateModel>(
                               context,
                               listen: false);

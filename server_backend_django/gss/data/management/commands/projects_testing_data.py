@@ -61,35 +61,35 @@ class Command(BaseCommand):
         WmsSource.objects.all().delete()
         TmsSource.objects.all().delete()
 
-        wms1 = WmsSource.objects.create(
-            label = "Bolzano Ortofoto",
-            version = "1.3.0",
-            transparent = True,
-            imageformat = "image/png",
-            getcapabilities = "http://geoservices.buergernetz.bz.it/mapproxy/ows",
-            layername = "p_bz-Orthoimagery:Aerial-2020-RGB",
-            opacity = 1.0,
-            attribution = "Copyright Province Bolzano",
-            epsg = 3857
-        )
-        wms2 = WmsSource.objects.create(
-            label = "Trento CTP",
-            version = "1.3.0",
-            transparent = True,
-            imageformat = "image/png",
-            getcapabilities = "https://siat.provincia.tn.it/geoserver/stem/ctp2020_bn_00/wms",
-            layername = "ctp2020_bn_00",
-            opacity = 1.0,
-            attribution = "Copyright Province Trento",
-            epsg = 4326
-        )
+        # wms1 = WmsSource.objects.create(
+        #     label = "Bolzano Ortofoto",
+        #     version = "1.3.0",
+        #     transparent = True,
+        #     imageformat = "image/png",
+        #     getcapabilities = "http://geoservices.buergernetz.bz.it/mapproxy/ows",
+        #     layername = "p_bz-Orthoimagery:Aerial-2020-RGB",
+        #     opacity = 1.0,
+        #     attribution = "Copyright Province Bolzano",
+        #     epsg = 3857
+        # )
+        # wms2 = WmsSource.objects.create(
+        #     label = "Trento CTP",
+        #     version = "1.3.0",
+        #     transparent = True,
+        #     imageformat = "image/png",
+        #     getcapabilities = "https://siat.provincia.tn.it/geoserver/stem/ctp2020_bn_00/wms",
+        #     layername = "ctp2020_bn_00",
+        #     opacity = 1.0,
+        #     attribution = "Copyright Province Trento",
+        #     epsg = 4326
+        # )
         tms1 = TmsSource.objects.create(
-            label = "Openstreetmap",
-            urltemplate = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            label = "WMTS Data Collection",
+            urltemplate = "http://localhost:8080/?SERVICE=WMTS&REQUEST=GetCapabilities",
             opacity = 1.0,
-            subdomains = "a,b,c",
-            maxzoom = 19,
-            attribution = 'OpenStreetMap, ODbL'
+            # subdomains = "a,b,c",
+            maxzoom = 21,
+            attribution = 'No attribution'
         )
 
         surveyorsGroup = Group.objects.filter(name=DbNamings.GROUP_SURVEYORS).first()
@@ -177,9 +177,9 @@ class Command(BaseCommand):
         projectB = Project.objects.create(name="Test Project B", description="Test Project B Description")
         projectC = Project.objects.create(name="Test Project C", description="Test Project C Description")
 
-        projectA.wmssources.add(wms1)
+        # projectA.wmssources.add(wms1)
         projectA.tmssources.add(tms1)
-        projectB.wmssources.add(wms2)
+        # projectB.wmssources.add(wms2)
         projectB.tmssources.add(tms1)
         projectC.tmssources.add(tms1)
         projectA.groups.add(groupA)

@@ -281,9 +281,8 @@ class ServerApi {
               "name": item['label'],
               "Attribution": item['attribution'],
             },
-            subdomains: item['subdomains'] != null
-                ? item['subdomains'].split(',')
-                : null,
+            subdomains:
+                item['subdomains'] != null ? item['subdomains'].split(',') : [],
             maxZoom: item['maxzoom'],
             opacity: item['opacity'],
             urlTemplate: item['urltemplate'],
