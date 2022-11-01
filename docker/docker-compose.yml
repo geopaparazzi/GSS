@@ -38,6 +38,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      qgisserver:
+        condition: service_healthy
   postgres:
     image: postgis/postgis:13-3.1
     environment:
@@ -54,3 +56,29 @@ services:
 #      - 5432:5432
 #    volumes:
 #      - /path/data:/var/lib/postgresql/data
+  qgisserver:
+    image: camptocamp/qgis-server:3.26
+    environment:
+      << : *default-common-env-gss
+      QGIS_PROJECT_FILE: /etc/qgisserver/projects/project.qgs
+      QGIS_SERVER_PARALLEL_RENDERING: true
+      QGIS_SERVER_MAX_THREADS: 4
+      QGIS_SERVER_IGNORE_BAD_LAYERS: true
+      QGIS_SERVER_CACHE_DIRECTORY: /etc/qgisserver/cache/
+      QGIS_SERVER_CACHE_SIZE: 200
+      QGIS_SERVER_LOG_LEVEL: 2
+      QGIS_SERVER_LOG_FILE: /etc/qgisserver/error.log
+
+    ports:
+      - 8081:80
+    healthcheck:
+      test: ["CMD", "curl", "-sI", "http://localhost:8081/?SERVICE=WMS&REQUEST=GetCapabilities"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    volumes:
+      # the following folder is supposed to contain:
+      # - a projects folder with project.qgs and optional local data 
+      # - a cache folder
+      - /path/to/qgisserver:/etc/qgisserver/
