@@ -13,8 +13,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 import os
 
-DEBUG = True #os.getenv("DEBUG", False) == "True"
-USE_LOCALDATA = os.getenv("USE_LOCALDATA", "True") == "True"
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+USE_LOCALDATA = os.getenv("USE_LOCALDATA", "true").lower() == "true"
 if USE_LOCALDATA:
     POSTGRES_DBNAME = "gsstest"
     POSTGRES_USER = "postgres"
@@ -46,6 +46,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-3l%jlj1iw@+1v(o-8v!ef^a)mrr$^&7b=0o-45e2%9_q^64d7+')
+
+ALLOWED_HOSTS = ['*']
 
 LEAFLET_CONFIG = {
     'DEFAULT_CENTER': (46.0, 11),
