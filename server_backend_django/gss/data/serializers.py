@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from io import BytesIO
 from rest_framework import serializers
-from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities, WmsSource, TmsSource, UserConfiguration, LastUserPosition
+from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities, WmsSource, TmsSource, UserConfiguration, LastUserPosition, ProjectData
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
@@ -26,12 +26,17 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = (DbNamings.PROJECT_NAME, DbNamings.PROJECT_DESCRIPTION, DbNamings.PROJECT_GROUPS)
+        fields = '__all__'
+
+class ProjectDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectData
+        fields = '__all__'
 
 class ProjectNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = [DbNamings.PROJECT_NAME]
+        fields = [DbNamings.PROJECT_ID, DbNamings.PROJECT_NAME]
 
 
 class RenderNoteSerializer(serializers.ModelSerializer):
@@ -57,6 +62,9 @@ class RenderNoteSerializer(serializers.ModelSerializer):
 
 class NoteSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         dataconv = json.loads(data)
         images = None
         if DbNamings.NOTE_IMAGES in dataconv:
@@ -164,6 +172,9 @@ class GpslogSerializer(serializers.ModelSerializer):
     LOGDATALABEL = 'gpslogdata'
 
     def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         dataconv = json.loads(data)
         internal_value = super(GpslogSerializer, self).to_internal_value(dataconv)
 
@@ -231,6 +242,9 @@ class ImageSerializer(serializers.ModelSerializer):
     imagedata = ImageDataSerializer(required=False )
 
     def to_internal_value(self, data):
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         mutableData = json.loads(data)
         internal_value = super(ImageSerializer, self).to_internal_value(mutableData)
         return internal_value

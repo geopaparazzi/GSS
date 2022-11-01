@@ -30,6 +30,13 @@ else:
 
 GSS_VERSION = "4.0.0alpha"
 
+if DEBUG:
+    CORS_ORIGIN_ALLOW_ALL = True  
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = []
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -80,8 +87,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-CORS_ORIGIN_ALLOW_ALL = True  
 
 ROOT_URLCONF = 'gss.urls'
 

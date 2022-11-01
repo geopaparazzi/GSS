@@ -26,6 +26,7 @@ const API_LASTUSERPOSITIONS = "${WEBAPP_URL}api/lastuserpositions/";
 const API_NOTES = "${WEBAPP_URL}api/notes/";
 const API_GPSLOGS = "${WEBAPP_URL}api/gpslogs/";
 const API_RENDERIMAGES = "${WEBAPP_URL}api/renderimages/";
+const API_RENDERSIMPLEIMAGES = "${WEBAPP_URL}api/rendersimpleimages/";
 const API_IMAGES = "${WEBAPP_URL}api/images/";
 const API_WMSSOURCES = "${WEBAPP_URL}api/wmssources/";
 const API_TMSSOURCES = "${WEBAPP_URL}api/tmssources/";
@@ -42,11 +43,11 @@ class ServerApi {
   /// Login to get a token using credentials.
   ///
   /// Returns a string starting with ERROR if problems arised.
-  static Future<String> login(String user, String pwd, String project) async {
-    Map<String, String> formData = {
+  static Future<String> login(String user, String pwd, int projectId) async {
+    Map<String, dynamic> formData = {
       "username": user,
       "password": pwd,
-      "project": project
+      "project": projectId
     };
 
     final uri = Uri.parse("$API_LOGIN");
@@ -74,9 +75,9 @@ class ServerApi {
   }
 
   static Future<Uint8List> getImageThumbnail(int id) async {
-    var projectName = SmashSession.getSessionProject();
-    var uri = Uri.parse(
-        "$API_RENDERIMAGES$id/" + "?" + API_PROJECT_PARAM + projectName);
+    var project = SmashSession.getSessionProject();
+    var uri =
+        Uri.parse("$API_RENDERIMAGES$id/" + "?$API_PROJECT_PARAM${project.id}");
     var requestHeaders = getTokenHeader();
 
     var response = await get(uri, headers: requestHeaders);
@@ -90,11 +91,25 @@ class ServerApi {
     }
   }
 
+  static Future<List<dynamic>> getRenderImages() async {
+    var project = SmashSession.getSessionProject();
+    var uri =
+        Uri.parse("$API_RENDERSIMPLEIMAGES?$API_PROJECT_PARAM${project.id}");
+    var requestHeaders = getTokenHeader();
+
+    var response = await get(uri, headers: requestHeaders);
+    if (response.statusCode == 200) {
+      List<dynamic> imagesList = jsonDecode(response.body);
+      return imagesList;
+    } else {
+      return null;
+    }
+  }
+
   static Future<dynamic> getRenderNotes() async {
     var tokenHeader = getTokenHeader();
-    var projectName = SmashSession.getSessionProject();
-    var uri =
-        Uri.parse(API_RENDERNOTES + "?" + API_PROJECT_PARAM + projectName);
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(API_RENDERNOTES + "?$API_PROJECT_PARAM${project.id}");
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       var notesList = jsonDecode(response.body);
@@ -106,9 +121,9 @@ class ServerApi {
 
   static Future<List<dynamic>> getLastUserPositions() async {
     var tokenHeader = getTokenHeader();
-    var projectName = SmashSession.getSessionProject();
-    var uri = Uri.parse(
-        API_LASTUSERPOSITIONS + "?" + API_PROJECT_PARAM + projectName);
+    var project = SmashSession.getSessionProject();
+    var uri =
+        Uri.parse(API_LASTUSERPOSITIONS + "?$API_PROJECT_PARAM${project.id}");
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       var positionsList = jsonDecode(response.body);
@@ -120,8 +135,8 @@ class ServerApi {
 
   static Future<dynamic> getGpslogs() async {
     var tokenHeader = getTokenHeader();
-    var projectName = SmashSession.getSessionProject();
-    var uri = Uri.parse(API_GPSLOGS + "?" + API_PROJECT_PARAM + projectName);
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(API_GPSLOGS + "?$API_PROJECT_PARAM${project.id}");
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       var notesList = jsonDecode(response.body);
@@ -133,9 +148,8 @@ class ServerApi {
 
   static Future<String> getNote(int noteId) async {
     var tokenHeader = getTokenHeader();
-    var projectName = SmashSession.getSessionProject();
-    var uri = Uri.parse(
-        API_NOTES + "$noteId/" + "?" + API_PROJECT_PARAM + projectName);
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(API_NOTES + "$noteId/?$API_PROJECT_PARAM${project.id}");
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       return response.body;
@@ -156,24 +170,23 @@ class ServerApi {
     }
   }
 
-  static Future<List<String>> getProjectNames() async {
+  static Future<List<Project>> getProjects() async {
     var response = await get(Uri.parse(API_PROJECTNAMES));
     if (response.statusCode == 200) {
       var list = jsonDecode(response.body);
-      List<String> namesList =
-          List<String>.from(list.map((projectMap) => projectMap['name']));
-      return namesList;
+      List<Project> projectsList = List<Project>.from(
+          list.map((projectMap) => Project.fromMap(projectMap)));
+      return projectsList;
     } else {
-      return null;
+      throw new StateError(response.body);
     }
   }
 
   static Future<Map<String, String>> getUserConfigurations() async {
     Map<String, String> config = {};
     var tokenHeader = getTokenHeader();
-    var projectName = SmashSession.getSessionProject();
-    var uri =
-        Uri.parse(API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName);
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(API_USERCONFIGS + "?$API_PROJECT_PARAM${project.id}");
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       var dataList = jsonDecode(response.body);
@@ -188,10 +201,9 @@ class ServerApi {
     }
   }
 
-  static Future<String> saveUserConfigurations(tokenHeader, projectName,
+  static Future<String> saveUserConfigurations(tokenHeader, Project project,
       {basemap, mapCenter, bookmarks}) async {
-    var uri =
-        Uri.parse(API_USERCONFIGS + "?" + API_PROJECT_PARAM + projectName);
+    var uri = Uri.parse(API_USERCONFIGS + "?$API_PROJECT_PARAM${project.id}");
 
     List<Map<String, String>> formData = [];
     if (basemap != null) {
@@ -225,9 +237,8 @@ class ServerApi {
     bool error = false;
     try {
       var tokenHeader = getTokenHeader();
-      var projectName = SmashSession.getSessionProject();
-      var uri =
-          Uri.parse(API_WMSSOURCES + "?" + API_PROJECT_PARAM + projectName);
+      var project = SmashSession.getSessionProject();
+      var uri = Uri.parse(API_WMSSOURCES + "?$API_PROJECT_PARAM${project.id}");
       var response = await get(uri, headers: tokenHeader);
       if (response.statusCode == 200) {
         var list = jsonDecode(response.body);
@@ -258,8 +269,8 @@ class ServerApi {
           );
         }
       }
-      projectName = SmashSession.getSessionProject();
-      uri = Uri.parse(API_TMSSOURCES + "?" + API_PROJECT_PARAM + projectName);
+      project = SmashSession.getSessionProject();
+      uri = Uri.parse(API_TMSSOURCES + "?$API_PROJECT_PARAM${project.id}");
       response = await get(uri, headers: tokenHeader);
       if (response.statusCode == 200) {
         var list = jsonDecode(response.body);
@@ -270,9 +281,8 @@ class ServerApi {
               "name": item['label'],
               "Attribution": item['attribution'],
             },
-            subdomains: item['subdomains'] != null
-                ? item['subdomains'].split(',')
-                : null,
+            subdomains:
+                item['subdomains'] != null ? item['subdomains'].split(',') : [],
             maxZoom: item['maxzoom'],
             opacity: item['opacity'],
             urlTemplate: item['urltemplate'],
@@ -306,4 +316,38 @@ class ServerApi {
       tileProvider: NetworkNoRetryTileProvider(),
     );
   }
+}
+
+class Project {
+  int id;
+  String name;
+
+  String toJsonString() {
+    return jsonEncode(toMap());
+  }
+
+  Map toMap() {
+    return {
+      'name': name,
+      'id': id,
+    };
+  }
+
+  static Project fromJson(String projectJson) {
+    var projectMap = jsonDecode(projectJson);
+    return fromMap(projectMap);
+  }
+
+  static Project fromMap(Map<String, dynamic> projectMap) {
+    return Project()
+      ..id = projectMap['id']
+      ..name = projectMap['name'];
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Project && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

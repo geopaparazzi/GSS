@@ -46,8 +46,8 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
 
   void downloadImage() async {
     var tokenHeader = ServerApi.getTokenHeader();
-    var projectName = SmashSession.getSessionProject();
-    var uri = Uri.parse(_imageUrl + "?" + API_PROJECT_PARAM + projectName);
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(_imageUrl + "?$API_PROJECT_PARAM${project.id}");
 
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {

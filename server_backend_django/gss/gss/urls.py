@@ -19,6 +19,11 @@ from rest_framework import routers
 import data.views
 from django.conf import settings
 from django.views.static import serve
+from django.conf.urls.static import static
+
+from django.conf.urls import  include
+from django.contrib.auth.decorators import login_required
+from django.views.static import serve
 
 router = routers.DefaultRouter()
 router.register(r'users', data.views.UserViewSet)
@@ -30,18 +35,35 @@ router.register(r'notes', data.views.NoteViewSet, 'notes')
 router.register(r'gpslogs', data.views.GpslogViewSet, 'gpslogs')
 router.register(r'images', data.views.ImageViewSet, 'images')
 router.register(r'renderimages', data.views.RenderImageViewSet, 'renderimages')
+router.register(r'rendersimpleimages', data.views.RenderSimpleImageViewSet, 'rendersimpleimages')
 router.register(r'wmssources', data.views.WmsSourceViewSet, 'wmssources')
 router.register(r'tmssources', data.views.TmsSourceViewSet, 'tmssources')
 router.register(r'userconfigurations', data.views.UserConfigurationViewSet, 'userconfigurations')
 router.register(r'lastuserpositions', data.views.LastUserPositionViewSet, 'lastuserpositions')
+router.register(r'projectdatas', data.views.ProjectDataViewSet, 'projectdatas')
+
+# @login_required
+# def protected_serve(request, path, document_root=None, show_indexes=False):
+#     return serve(request, path, document_root, show_indexes)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/login/', data.views.login)
+    path('api/login/', data.views.login),
+
+    # TODO how to handle media auth?
+    # path('accounts/login/', data.views.login),
+    # re_path(r'^%s(?P<path>.*)$' % settings.MEDIA_URL[1:], protected_serve, {'document_root': settings.MEDIA_ROOT}),
 ]
 
+
+
+
+if settings.DEBUG:
+    # by default, Django doesn't serve media files during development
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
 # if settings.DEBUG:
 #     urlpatterns += re_path(
 #         r'^$', serve, dict(document_root=settings.STATIC_ROOT, path="index.html")),
