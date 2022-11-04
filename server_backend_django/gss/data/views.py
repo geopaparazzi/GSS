@@ -23,6 +23,8 @@ from data.serializers import (GpslogSerializer, GroupSerializer,
                               UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
                               TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
 from owslib.wmts import WebMapTileService
+from owslib.wms import WebMapService
+from django.contrib.gis.geos import LineString, Point
 
 @csrf_exempt
 @api_view(["POST"])
@@ -381,9 +383,47 @@ class WmsSourceViewSet(ListRetrieveOnlyViewSet):
             user = self.request.user
             projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                return projectModel.wmssources
+                # check for wmts data collections
+                wmsSources = projectModel.wmssources.all()
+                sources = []
+                extraSourcesId = 20000001
+                for wmsSource in wmsSources:
+                    urlTemplate = wmsSource.getcapabilities
+                    if "getcapabilities" in urlTemplate.lower() and "service=wms" in urlTemplate.lower():
+                        # slashIndex = urlTemplate.index("?")
+                        # host = urlTemplate[:slashIndex]
+                        # if host.endswith("/"):
+                        #     host = host[:-1]
+
+                        wms = WebMapService(urlTemplate)
+                        getMethod = wms.getOperationByName('GetMap').methods
+                        url = getMethod[0]['url']
+                        imageFormats = wms.getOperationByName('GetMap').formatOptions
+                        for key, layer in wms.contents.items():
+                            version = wms.identification.version
+                            layerName = key
+                            imgFormat = imageFormats[0]
+
+                            source = WmsSource(
+                                label = layerName,
+                                version = version,
+                                transparent = True,
+                                imageformat = imgFormat,
+                                getcapabilities = url,
+                                layername = key,
+                                opacity = 1.0,
+                                attribution = wmsSource.attribution,
+                                epsg = 3857
+                            )
+                            sources.append(source)
+                            extraSourcesId+=1
+                    else:
+                        sources.append(wmsSource)
+                
+                return sources
+                # return projectModel.wmssources
             else:
-                return TmsSource.objects.none()
+                return WmsSource.objects.none()
 
     def get_permissions(self):
         """
@@ -447,7 +487,7 @@ class TmsSourceViewSet(ListRetrieveOnlyViewSet):
                             sources.append(source)
                             extraSourcesId+=1
                     else:
-                        sources.append(source)
+                        sources.append(tmsSource)
                 
                 return sources
                 # return projectModel.tmssources
@@ -560,7 +600,7 @@ class LastUserPositionViewSet(viewsets.ModelViewSet):
         projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
         if projectModel:
             ts = request.data['ts']
-            geometry = request.data['the_geom']
+            geometry = Point.from_ewkt(request.data['the_geom'])
             
             dt = datetime.now(tz=timezone.utc)
             tsStr = dt.strftime("%Y-%m-%d %H:%M:%S")

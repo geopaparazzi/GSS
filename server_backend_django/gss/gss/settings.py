@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 import os
 
-DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 USE_LOCALDATA = os.getenv("USE_LOCALDATA", "true").lower() == "true"
 if USE_LOCALDATA:
     POSTGRES_DBNAME = "gsstest"

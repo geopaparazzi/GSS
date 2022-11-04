@@ -190,6 +190,8 @@ Future<MarkerLayerOptions> buildLastUserPositionLayer(
           onTap: () async {
             SmashDialogs.showInfoDialog(ctx, "", widgets: [
               SmashUI.normalText("Last position of user: " + userName),
+              SmashUI.normalText("longitude = $lon"),
+              SmashUI.normalText("latitude = $lat"),
               SmashUI.normalText("at device time: " + ts),
               SmashUI.normalText("uploaded at: " + uploadts),
               SmashUI.normalText(

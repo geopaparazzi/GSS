@@ -250,6 +250,8 @@ class ServerApi {
               "name": item['label'],
               "Attribution": item['attribution'],
             },
+            maxZoom: 21,
+            maxNativeZoom: 21,
             opacity: item['opacity'],
             backgroundColor: Colors.transparent,
             wmsOptions: WMSTileLayerOptions(

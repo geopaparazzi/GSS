@@ -1,5 +1,6 @@
 import 'dart:convert' as JSON;
 import 'dart:html' as html;
+import 'dart:convert';
 
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
@@ -29,7 +30,10 @@ class SmashSession {
       }
       return null;
     } else {
-      return responseText;
+      var errorMap =
+          jsonDecode(responseText.replaceFirst(NETWORKERROR_PREFIX, ""));
+      var errorText = errorMap['error'] ?? responseText;
+      return errorText;
     }
   }
 
