@@ -14,6 +14,14 @@ x-common-env-postgres:
   POSTGRES_PORT: 5432
   POSTGRES_DB: test
 
+x-common-postgres:
+  image: postgis/postgis:13-3.1
+  environment:
+    << : *common-env-postgres
+  healthcheck:
+    << : *common-healthcheck
+    test: ["CMD", "pg_isready", "-U", "test"]
+
 x-common-django:
   &common-django
   build:
@@ -25,9 +33,6 @@ x-common-django:
   depends_on:
     postgres:
       condition: service_healthy
-  volumes:
-    - ../volumes/static:/var/www/static
-    - ../volumes/media:/var/www/media
 
 x-common-nginx:
   &common-nginx
@@ -38,9 +43,6 @@ x-common-nginx:
     DJANGO_URL: http://django:8000
   ports:
     - 8080:80
-  volumes:
-    - ../volumes/static:/app/static
-    - ../volumes/media:/app/media
 
 services:
   nginx:
@@ -50,6 +52,9 @@ services:
     depends_on:
       django:
         condition: service_healthy
+    volumes:
+      - ../volumes/prod/static:/var/www/static:ro
+      - ../volumes/prod/media:/var/www/media:ro
   nginx-dev:
     hostname: nginx
     << : *common-nginx
@@ -58,6 +63,9 @@ services:
     depends_on:
       django-dev:
         condition: service_healthy
+    volumes:
+      - ../volumes/dev/static:/var/www/static:ro
+      - ../volumes/dev/media:/var/www/media:ro
   django:
     << : *common-django
     profiles:
@@ -68,6 +76,9 @@ services:
       SECRET_KEY: changeme
       DEBUG: false
       ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django" # add your.own.domain here
+    volumes:
+      - ../volumes/prod/static:/app/static
+      - ../volumes/prod/media:/app/media
   django-dev:
     << : *common-django
     profiles:
@@ -80,15 +91,21 @@ services:
       DEBUG: true
       ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django"
     volumes:
+      - ../volumes/dev/static:/app/static
+      - ../volumes/dev/media:/app/media
       - ../server_backend_django:/app
   postgres:
-    image: postgis/postgis:13-3.1
-    environment:
-      << : *common-env-postgres
-    healthcheck:
-      << : *common-healthcheck
-      test: ["CMD", "pg_isready", "-U", "test"]
+    << : *common-postgres
+    profiles:
+      - prod
     volumes:
-     - ../volumes/data:/var/lib/postgresql/data
-#    ports:
-#      - 5432:5432
+     - ../volumes/prod/data:/var/lib/postgresql/data
+  postgres-dev:
+    << : *common-postgres
+    profiles:
+      - dev
+    hostname: postgres
+    ports:
+      - 5432:5432
+    volumes:
+     - ../volumes/dev/data:/var/lib/postgresql/data
