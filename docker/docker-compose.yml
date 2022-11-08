@@ -25,6 +25,9 @@ x-common-django:
   depends_on:
     postgres:
       condition: service_healthy
+  volumes:
+    - ../volumes/static:/var/www/static
+    - ../volumes/media:/var/www/media
 
 x-common-nginx:
   &common-nginx
@@ -35,6 +38,9 @@ x-common-nginx:
     DJANGO_URL: http://django:8000
   ports:
     - 8080:80
+  volumes:
+    - ../volumes/static:/app/static
+    - ../volumes/media:/app/media
 
 services:
   nginx:
@@ -82,7 +88,7 @@ services:
     healthcheck:
       << : *common-healthcheck
       test: ["CMD", "pg_isready", "-U", "test"]
+    volumes:
+     - ../volumes/data:/var/lib/postgresql/data
 #    ports:
 #      - 5432:5432
-#    volumes:
-#      - /path/data:/var/lib/postgresql/data
