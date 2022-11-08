@@ -51,6 +51,7 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
     path('api/login/', data.views.login),
+    # re_path(r'media/.*', ),
 
     # TODO how to handle media auth?
     # path('accounts/login/', data.views.login),
@@ -60,10 +61,10 @@ urlpatterns = [
 
 
 
-if settings.DEBUG:
-    # by default, Django doesn't serve media files during development
-    urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)
+# if settings.DEBUG:
+#     # by default, Django doesn't serve media files during development
+#     urlpatterns += static(settings.MEDIA_URL,
+#                           document_root=settings.MEDIA_ROOT)
 # if settings.DEBUG:
 #     urlpatterns += re_path(
 #         r'^$', serve, dict(document_root=settings.STATIC_ROOT, path="index.html")),

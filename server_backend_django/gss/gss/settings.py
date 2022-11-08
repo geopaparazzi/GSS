@@ -192,7 +192,7 @@ REST_FRAMEWORK = {
 
 # absolute server path
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'media')
-# relative browser URL to access media
+# relative browser URL sends to api in order to allow for athenticated download
 MEDIA_URL = '/media/'
 
 # Static files (CSS, JavaScript, Images)
