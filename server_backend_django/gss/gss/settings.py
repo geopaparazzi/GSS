@@ -18,9 +18,7 @@ GSS_VERSION = "4.0.0alpha"
 
 if DEBUG:
     CORS_ORIGIN_ALLOW_ALL = True  
-    ALLOWED_HOSTS = ['*']
-else:
-    ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS').split(' ')
+ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS').split(' ')
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

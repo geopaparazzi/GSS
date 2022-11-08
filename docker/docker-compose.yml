@@ -1,53 +1,87 @@
 version: "3"
-x-common-gss:
-  &default-common-gss
+
+x-common-healthcheck:
+  &common-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 30s
+
+x-common-env-postgres:
+  &common-env-postgres
+  POSTGRES_USER: test
+  POSTGRES_PASSWORD: test
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: test
+
+x-common-django:
+  &common-django
+  build:
+    context: ../server_backend_django
+    dockerfile: ../docker/Dockerfile.django
+  healthcheck:
+    << : *common-healthcheck
+    test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-common-nginx:
+  &common-nginx
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
   environment:
-    &default-common-env-gss
-    POSTGRES_USER: test
-    POSTGRES_PASSWORD: test
-    POSTGRES_PORT: 5432
-    POSTGRES_DB: test
+    DJANGO_URL: http://django:8000
+  ports:
+    - 8080:80
+
 services:
   nginx:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    environment:
-      DJANGO_URL: http://django:8000
+    << : *common-nginx
+    profiles:
+      - prod
     depends_on:
       django:
         condition: service_healthy
-    ports:
-      - 8080:80
+  nginx-dev:
+    hostname: nginx
+    << : *common-nginx
+    profiles:
+      - dev
+    depends_on:
+      django-dev:
+        condition: service_healthy
   django:
-    build:
-      context: ../server_backend_django
-      dockerfile: ../docker/Dockerfile.django
+    << : *common-django
+    profiles:
+      - prod
     environment:
-      << : *default-common-env-gss
+      << : *common-env-postgres
+      POSTGRES_HOST: postgres
+      SECRET_KEY: changeme
+      DEBUG: false
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django" # add your.own.domain here
+  django-dev:
+    << : *common-django
+    profiles:
+      - dev
+    hostname: django
+    environment:
+      << : *common-env-postgres
       POSTGRES_HOST: postgres
       SECRET_KEY: changeme
       DEBUG: true
-      ALLOWED_HOSTS: "localhost" # add your.own.domain here
-    healthcheck:
-      test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    depends_on:
-      postgres:
-        condition: service_healthy
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django"
+    volumes:
+      - ../server_backend_django:/app
   postgres:
     image: postgis/postgis:13-3.1
     environment:
-      << : *default-common-env-gss
+      << : *common-env-postgres
     healthcheck:
+      << : *common-healthcheck
       test: ["CMD", "pg_isready", "-U", "test"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
 #    ports:
 #      - 5432:5432
 #    volumes:
