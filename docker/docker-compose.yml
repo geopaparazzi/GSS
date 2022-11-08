@@ -5,6 +5,8 @@ x-common-gss:
     &default-common-env-gss
     POSTGRES_USER: test
     POSTGRES_PASSWORD: test
+    POSTGRES_PORT: 5432
+    POSTGRES_DB: test
 services:
   nginx:
     build:
@@ -22,13 +24,11 @@ services:
       context: ../server_backend_django
       dockerfile: ../docker/Dockerfile.django
     environment:
+      << : *default-common-env-gss
+      POSTGRES_HOST: postgres
+      SECRET_KEY: changeme
       DEBUG: true
-      USE_LOCALDATA: false
-      GSS_POSTGRES_DBNAME: test
-      GSS_POSTGRES_USER: test
-      GSS_POSTGRES_PASS: test
-      GSS_POSTGRES_HOST: postgres
-      GSS_POSTGRES_PORT: 5432
+      ALLOWED_HOSTS: "localhost" # add your.own.domain here
     healthcheck:
       test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
       interval: 30s
@@ -42,8 +42,6 @@ services:
     image: postgis/postgis:13-3.1
     environment:
       << : *default-common-env-gss
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: test
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "test"]
       interval: 30s
