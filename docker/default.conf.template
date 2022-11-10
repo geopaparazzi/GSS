@@ -24,13 +24,5 @@ server {
     location /admin/ {
         proxy_pass   ${DJANGO_URL};
     }
-    
-    # static files should be served by NGINX directly
-    location /static/ {
-        proxy_pass   ${DJANGO_URL};
-    }
-    location /media/ {
-        proxy_pass   ${DJANGO_URL};
-    }
 }
 

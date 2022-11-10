@@ -1,56 +1,111 @@
 version: "3"
-x-common-gss:
-  &default-common-gss
+
+x-common-healthcheck:
+  &common-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 30s
+
+x-common-env-postgres:
+  &common-env-postgres
+  POSTGRES_USER: test
+  POSTGRES_PASSWORD: test
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: test
+
+x-common-postgres:
+  image: postgis/postgis:13-3.1
   environment:
-    &default-common-env-gss
-    POSTGRES_USER: test
-    POSTGRES_PASSWORD: test
+    << : *common-env-postgres
+  healthcheck:
+    << : *common-healthcheck
+    test: ["CMD", "pg_isready", "-U", "test"]
+
+x-common-django:
+  &common-django
+  build:
+    context: ../server_backend_django
+    dockerfile: ../docker/Dockerfile.django
+  healthcheck:
+    << : *common-healthcheck
+    test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-common-nginx:
+  &common-nginx
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  environment:
+    DJANGO_URL: http://django:8000
+  ports:
+    - 8080:80
+
 services:
   nginx:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
-    environment:
-      DJANGO_URL: http://django:8000
+    << : *common-nginx
+    profiles:
+      - prod
     depends_on:
       django:
         condition: service_healthy
-    ports:
-      - 8080:80
-  django:
-    build:
-      context: ../server_backend_django
-      dockerfile: ../docker/Dockerfile.django
-    environment:
-      DEBUG: true
-      USE_LOCALDATA: false
-      GSS_POSTGRES_DBNAME: test
-      GSS_POSTGRES_USER: test
-      GSS_POSTGRES_PASS: test
-      GSS_POSTGRES_HOST: postgres
-      GSS_POSTGRES_PORT: 5432
-    healthcheck:
-      test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+    volumes:
+      - ../volumes/prod/static:/var/www/static:ro
+      - ../volumes/prod/media:/var/www/media:ro
+  nginx-dev:
+    hostname: nginx
+    << : *common-nginx
+    profiles:
+      - dev
     depends_on:
-      postgres:
+      django-dev:
         condition: service_healthy
-  postgres:
-    image: postgis/postgis:13-3.1
+    volumes:
+      - ../volumes/dev/static:/var/www/static:ro
+      - ../volumes/dev/media:/var/www/media:ro
+  django:
+    << : *common-django
+    profiles:
+      - prod
     environment:
-      << : *default-common-env-gss
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: test
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "test"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-#    ports:
-#      - 5432:5432
-#    volumes:
-#      - /path/data:/var/lib/postgresql/data
+      << : *common-env-postgres
+      POSTGRES_HOST: postgres
+      SECRET_KEY: changeme
+      DEBUG: false
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django" # add your.own.domain here
+    volumes:
+      - ../volumes/prod/static:/app/static
+      - ../volumes/prod/media:/app/media
+  django-dev:
+    << : *common-django
+    profiles:
+      - dev
+    hostname: django
+    environment:
+      << : *common-env-postgres
+      POSTGRES_HOST: postgres
+      SECRET_KEY: changeme
+      DEBUG: true
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django"
+    volumes:
+      - ../volumes/dev/static:/app/static
+      - ../volumes/dev/media:/app/media
+      - ../server_backend_django:/app
+  postgres:
+    << : *common-postgres
+    profiles:
+      - prod
+    volumes:
+     - ../volumes/prod/data:/var/lib/postgresql/data
+  postgres-dev:
+    << : *common-postgres
+    profiles:
+      - dev
+    hostname: postgres
+    ports:
+      - 5432:5432
+    volumes:
+     - ../volumes/dev/data:/var/lib/postgresql/data
