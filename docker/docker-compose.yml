@@ -15,6 +15,7 @@ x-common-env-postgres:
   POSTGRES_DB: test
 
 x-common-postgres:
+  &common-postgres
   image: postgis/postgis:13-3.1
   environment:
     << : *common-env-postgres
