@@ -31,9 +31,6 @@ x-common-django:
   healthcheck:
     << : *common-healthcheck
     test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
-  depends_on:
-    postgres:
-      condition: service_healthy
 
 x-common-nginx:
   &common-nginx
@@ -77,6 +74,9 @@ services:
       SECRET_KEY: changeme
       DEBUG: false
       ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django" # add your.own.domain here
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - ../volumes/prod/static:/app/static
       - ../volumes/prod/media:/app/media
@@ -91,6 +91,9 @@ services:
       SECRET_KEY: changeme
       DEBUG: true
       ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django"
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
     volumes:
       - ../volumes/dev/static:/app/static
       - ../volumes/dev/media:/app/media
