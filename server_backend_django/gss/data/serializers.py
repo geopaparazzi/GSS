@@ -29,6 +29,8 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ProjectDataSerializer(serializers.ModelSerializer):
+    file = serializers.StringRelatedField()
+    
     class Meta:
         model = ProjectData
         fields = '__all__'

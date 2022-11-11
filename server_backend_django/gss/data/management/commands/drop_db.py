@@ -18,19 +18,19 @@ class Command(BaseCommand):
             self.stderr.write("Database deletion is available only when in debug mode. Exiting.")
             return
         else:    
-            self.stdout.write(f"Dropping database {settings.POSTGRES_DBNAME}")
+            self.stdout.write(f"Dropping database {settings.POSTGRES_DB}")
 
 
             connection = psycopg2.connect(
                 host=settings.POSTGRES_HOST,
                 user=settings.POSTGRES_USER,
-                password=settings.POSTGRES_PASS,
+                password=settings.POSTGRES_PASSWORD,
                 port=settings.POSTGRES_PORT,
             )
             connection.autocommit = True
             cursor = connection.cursor()
-            cursor.execute(f"drop database if exists {settings.POSTGRES_DBNAME} WITH (FORCE)")
-            cursor.execute(f"create database {settings.POSTGRES_DBNAME}")
+            cursor.execute(f"drop database if exists {settings.POSTGRES_DB} WITH (FORCE)")
+            cursor.execute(f"create database {settings.POSTGRES_DB}")
             connection.close
             
             self.stdout.write("Database dropped.")

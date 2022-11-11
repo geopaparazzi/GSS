@@ -94,16 +94,22 @@ WSGI_APPLICATION = 'gss.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
+
+# make settings available also to commands
+POSTGRES_DB = get_env_variable('POSTGRES_DB')
+POSTGRES_USER = get_env_variable('POSTGRES_USER')
+POSTGRES_PASSWORD = get_env_variable('POSTGRES_PASSWORD')
+POSTGRES_HOST = get_env_variable('POSTGRES_HOST')
+POSTGRES_PORT = get_env_variable('POSTGRES_PORT')
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': get_env_variable('POSTGRES_DB'),
-        'USER': get_env_variable('POSTGRES_USER'),
-        'PASSWORD': get_env_variable('POSTGRES_PASSWORD'),
-        'HOST': get_env_variable('POSTGRES_HOST'),
-        'PORT': get_env_variable('POSTGRES_PORT'),
+        'NAME': POSTGRES_DB,
+        'USER': POSTGRES_USER,
+        'PASSWORD': POSTGRES_PASSWORD,
+        'HOST': POSTGRES_HOST,
+        'PORT': POSTGRES_PORT,
     }
 }
 
@@ -170,7 +176,7 @@ REST_FRAMEWORK = {
 
 # absolute server path
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'media')
-# relative browser URL to access media
+# relative browser URL sends to api in order to allow for athenticated download
 MEDIA_URL = '/media/'
 
 # Static files (CSS, JavaScript, Images)

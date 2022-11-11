@@ -17,13 +17,24 @@ from django.shortcuts import get_object_or_404
 from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project, ProjectData, UserConfiguration, WmsSource, TmsSource
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
-                              ImageSerializer, LastUserPositionSerializer, NoteSerializer,
+                              ImageSerializer,ImageDataSerializer, LastUserPositionSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,ProjectDataSerializer,
                               UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
                               TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
 from owslib.wmts import WebMapTileService
 from owslib.wms import WebMapService
 from django.contrib.gis.geos import LineString, Point
+from django.http import HttpRequest
+from django.http import HttpResponse
+from rest_framework import status
+from rest_framework.exceptions import NotFound, NotAcceptable
+from rest_framework.response import Response
+from rest_framework.generics import get_object_or_404
+from typing import Optional
+import io
+import mimetypes
+
+
 
 @csrf_exempt
 @api_view(["POST"])
@@ -51,9 +62,22 @@ def login(request):
         return Response({'error': f'User is not part of project "{project}"'},status=HTTP_403_FORBIDDEN)
 
 
+class StandardPermissionsViewSet(viewsets.ModelViewSet):
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
 
-class ListRetrieveOnlyViewSet(viewsets.ModelViewSet):
+class ListRetrieveOnlyViewSet(StandardPermissionsViewSet):
 
     def create(self, request):
         response = {'message': 'Create function is not offered in this path.'}
@@ -67,66 +91,28 @@ class ListRetrieveOnlyViewSet(viewsets.ModelViewSet):
         response = {'message': 'Delete function is not offered in this path.'}
         return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(StandardPermissionsViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
 
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
-
-class GroupViewSet(viewsets.ModelViewSet):
+class GroupViewSet(StandardPermissionsViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
     """
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
 
-
-class ProjectViewSet(viewsets.ModelViewSet):
+class ProjectViewSet(StandardPermissionsViewSet):
     """
     API endpoint that allows projects to be viewed or edited.
     """
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
 
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
-class ProjectNameViewSet(ListRetrieveOnlyViewSet):
+class ProjectNameViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows projects to be viewed or edited.
     """
@@ -134,11 +120,22 @@ class ProjectNameViewSet(ListRetrieveOnlyViewSet):
     serializer_class = ProjectNameSerializer
     permission_classes = [AllowAny]
 
+    def create(self, request):
+        response = {'message': 'Create function is not offered in this path.'}
+        return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, pk=None):
+        response = {'message': 'Update function is not offered in this path.'}
+        return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def destroy(self, request, pk=None):
+        response = {'message': 'Delete function is not offered in this path.'}
+        return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 class ProjectDataViewSet(ListRetrieveOnlyViewSet):
     """
     API endpoint that allows projectsdata to be downloaded.
     """
-    # queryset = ProjectData.objects.all()
     serializer_class = ProjectDataSerializer
 
     def get_queryset(self):
@@ -148,26 +145,72 @@ class ProjectDataViewSet(ListRetrieveOnlyViewSet):
             return ProjectData.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
-            if projectModel:
-                return projectModel.projectdata
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
             else:
-                return Note.objects.none()
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if projectModel:
+                newProjectData = []
+                for pd in projectModel.projectdata.all():
+                    url = f"/api/projectdatas/{pd.id}"
+                    newPd = ProjectData(
+                        id = pd.id,
+                        label =  pd.label,
+                        file = url
+                    )
+                    newProjectData.append(newPd)
 
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator, permissions.IsAuthenticated]
+                return newProjectData
+            else:
+                return ProjectData.objects.none()
+    
+    def retrieve(
+        self,
+        request: HttpRequest,
+        pk: Optional[int] = None,
+    ):
+        # projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        # if projectId is None:
+        #     raise NotAcceptable("The project parameter is mandatory to retrieve images.")
+        # user = self.request.user
+        # if user.is_superuser:
+        #     projectModel = Project.objects.filter(id=projectId).first()
+        # else:
+        #     projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+        # if projectModel:
+        projectData = ProjectData.objects.get(id=pk)
+        if projectData:
+            file = projectData.file
+            localPath = file.path
+            file_mime = mimetypes.guess_type(localPath)
+            name = os.path.basename(localPath)
+
+            response = HttpResponse(io.open(localPath, mode="rb").read(), content_type=file_mime[0])
+            response['Content-Disposition'] = f'attachment; filename="{name}"'
+            return response
         else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
+            response = {'message': 'No data for given id available.'}
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        # data = FieldImage.objects.filter(field=field).get(id=pk)
+        # path = data.image.path
+        # # resize image to 800 to send less bytes
+        # im = Image.open(path)
+        # im.convert("RGB")
+        # # to rescale images longer side to 800
+        # coef = 800 / max(im.size)
+        # newsize = (int(im.size[0] * coef), int(im.size[1] * coef))
+        # thumb_io = BytesIO()
+        # out = im.resize(newsize)  # Resize to size
+        # out.save(thumb_io, "JPEG", quality=100)
+        # mimetype = "image/{}".format("jpg")
+        # return HttpResponse(thumb_io.getvalue(), content_type=mimetype)
+        # ## old method to return image in binary64
+        # # seri = FieldImageBase64Serializer(data)
+        # # return Response(seri.data)
 
 class RenderNoteViewSet(ListRetrieveOnlyViewSet):
-    
     """
     API endpoint to get notes with minimal info for rendering.
     """
@@ -180,7 +223,10 @@ class RenderNoteViewSet(ListRetrieveOnlyViewSet):
             return Note.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 aggregation = Note.objects.filter(project__id=projectId).values(DbNamings.GEOM).annotate(id=Max(DbNamings.NOTE_ID)).values_list(DbNamings.NOTE_ID),
                 queryset = Note.objects.filter(id__in=aggregation)
@@ -188,20 +234,7 @@ class RenderNoteViewSet(ListRetrieveOnlyViewSet):
             else:
                 return Note.objects.none()
 
-        
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
-class NoteViewSet(viewsets.ModelViewSet):
+class NoteViewSet(StandardPermissionsViewSet):
     """
     API endpoint that allows projects to be viewed or edited.
     """
@@ -214,7 +247,10 @@ class NoteViewSet(viewsets.ModelViewSet):
             return Note.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 # aggregation = Note.objects.filter(project__name=project).values(DbNamings.GEOM).annotate(id=Max(DbNamings.NOTE_ID)).values_list(DbNamings.NOTE_ID),
                 # queryset = Note.objects.filter(id__in=aggregation)
@@ -223,19 +259,7 @@ class NoteViewSet(viewsets.ModelViewSet):
             else:
                 return Note.objects.none()
 
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
-class ImageViewSet(viewsets.ModelViewSet):
+class ImageViewSet(StandardPermissionsViewSet):
     """
     API endpoint that allows images to be viewed or edited.
     """
@@ -248,25 +272,15 @@ class ImageViewSet(viewsets.ModelViewSet):
             return Image.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 queryset = Image.objects.filter(project__id=projectId)
                 return queryset
             else:
                 return Image.objects.none()
-
-
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
 
 class RenderImageViewSet(ListRetrieveOnlyViewSet):
     """
@@ -281,29 +295,19 @@ class RenderImageViewSet(ListRetrieveOnlyViewSet):
             return Image.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 queryset = Image.objects.filter(project__id=projectId)
                 return queryset
             else:
                 return Image.objects.none()
 
-
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
 class RenderSimpleImageViewSet(ListRetrieveOnlyViewSet):
     """
-    API endpoint to get simple images with minimal info for rendering.
+    API endpoint to get simple images (i.e. only non form) with minimal info for rendering.
     """
     serializer_class = RenderImageSerializer
 
@@ -314,27 +318,17 @@ class RenderSimpleImageViewSet(ListRetrieveOnlyViewSet):
             return Image.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 queryset = Image.objects.filter(project__id=projectId, notes__isnull=True)
                 return queryset
             else:
                 return Image.objects.none()
 
-
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
-class GpslogViewSet(viewsets.ModelViewSet):
+class GpslogViewSet(StandardPermissionsViewSet):
     """
     API endpoint that allows gpslogs to be viewed or edited.
     """
@@ -347,25 +341,15 @@ class GpslogViewSet(viewsets.ModelViewSet):
             return GpsLog.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 queryset = GpsLog.objects.filter(project__id=projectId)
                 return queryset
             else:
                 return GpsLog.objects.none()
-
-
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
 
 class WmsSourceViewSet(ListRetrieveOnlyViewSet):
     """
@@ -380,7 +364,10 @@ class WmsSourceViewSet(ListRetrieveOnlyViewSet):
             return WmsSource.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 # check for wmts data collections
                 wmsSources = projectModel.wmssources.all()
@@ -424,18 +411,6 @@ class WmsSourceViewSet(ListRetrieveOnlyViewSet):
             else:
                 return WmsSource.objects.none()
 
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
 class TmsSourceViewSet(ListRetrieveOnlyViewSet):
     """
     API endpoint to get TmsSource info.
@@ -449,7 +424,10 @@ class TmsSourceViewSet(ListRetrieveOnlyViewSet):
             return TmsSource.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 # check for wmts data collections
                 tmsSources = projectModel.tmssources.all()
@@ -492,21 +470,8 @@ class TmsSourceViewSet(ListRetrieveOnlyViewSet):
                 # return projectModel.tmssources
             else:
                 return TmsSource.objects.none()
-            
 
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
-class UserConfigurationViewSet(viewsets.ModelViewSet):
+class UserConfigurationViewSet(StandardPermissionsViewSet):
     """
     API endpoint to get and edit UserConfigurations.
     """
@@ -520,7 +485,10 @@ class UserConfigurationViewSet(viewsets.ModelViewSet):
             return UserConfiguration.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 return UserConfiguration.objects.filter(project=projectModel, user=user);
             else:
@@ -535,7 +503,10 @@ class UserConfigurationViewSet(viewsets.ModelViewSet):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
         user = self.request.user
-        projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+        if user.is_superuser:
+            projectModel = Project.objects.filter(id=projectId).first()
+        else:
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
         if projectModel:
             instances = []
             for config in configList:
@@ -557,19 +528,7 @@ class UserConfigurationViewSet(viewsets.ModelViewSet):
             response = {'message': 'The current user does not have access to the project.'}
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
-
-class LastUserPositionViewSet(viewsets.ModelViewSet):
+class LastUserPositionViewSet(StandardPermissionsViewSet):
     """
     API endpoint to get and send LastUserPosition.
     """
@@ -583,7 +542,10 @@ class LastUserPositionViewSet(viewsets.ModelViewSet):
             return LastUserPosition.objects.none()
         else:
             user = self.request.user
-            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
                 return LastUserPosition.objects.filter(project=projectModel);
             else:
@@ -596,7 +558,10 @@ class LastUserPositionViewSet(viewsets.ModelViewSet):
             response = {'message': 'The project parameter is mandatory to update configurations.'}
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-        projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+        if user.is_superuser:
+            projectModel = Project.objects.filter(id=projectId).first()
+        else:
+            projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
         if projectModel:
             ts = request.data['ts']
             geometry = Point.from_ewkt(request.data['the_geom'])
@@ -623,16 +588,4 @@ class LastUserPositionViewSet(viewsets.ModelViewSet):
         else: 
             response = {'message': 'The current user does not have access to the project.'}
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
-
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        else:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
 

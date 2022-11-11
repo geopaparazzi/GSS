@@ -131,6 +131,31 @@ class _MainPageState extends State<MainPage> {
 
   Future<Scaffold> getLoginWidget(BuildContext context) async {
     List<Project> projectsList = await ServerApi.getProjects();
+
+    if (projectsList.length == 0) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 200.0,
+                child: Image.asset(
+                  "assets/smash_logo.png",
+                  fit: BoxFit.contain,
+                ),
+              ),
+              SizedBox(height: 45.0),
+              SmashUI.errorWidget(
+                  "No project could be retrieved from the server. Check the server configuration or contact your administrator."),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (selectedProject == null) {
       selectedProject = projectsList[0];
     }
