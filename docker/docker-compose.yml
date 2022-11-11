@@ -98,7 +98,7 @@ services:
     volumes:
       - ../volumes/dev/static:/app/static
       - ../volumes/dev/media:/app/media
-      - ../server_backend_django:/app
+      - ../server_backend_django/gss:/app/gss
   postgres:
     << : *common-postgres
     profiles:
