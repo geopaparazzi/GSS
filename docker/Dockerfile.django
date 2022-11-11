@@ -20,5 +20,5 @@ WORKDIR gss
 COPY gss .
 
 ENTRYPOINT ["/bin/bash", "entrypoint.sh"]
-CMD ["pdm", "run", "gunicorn", "gss.wsgi", "-w", "4", "--bind", "0.0.0.0:8000"]
+CMD ["pdm", "run", "gunicorn", "gss.wsgi", "--bind", "0.0.0.0:8000"]
 EXPOSE 8000/tcp

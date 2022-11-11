@@ -7,8 +7,8 @@ x-common-healthcheck:
   retries: 3
   start_period: 30s
 
-x-common-env-postgres:
-  &common-env-postgres
+x-common-postgres-env:
+  &common-postgres-env
   POSTGRES_USER: test
   POSTGRES_PASSWORD: test
   POSTGRES_PORT: 5432
@@ -17,23 +17,30 @@ x-common-env-postgres:
 x-common-postgres:
   &common-postgres
   image: postgis/postgis:13-3.1
+  hostname: postgres
   environment:
-    << : *common-env-postgres
+    << : *common-postgres-env
   healthcheck:
     << : *common-healthcheck
     test: ["CMD", "pg_isready", "-U", "test"]
 
 x-common-django:
   &common-django
+  hostname: django
   build:
     context: ../server_backend_django
     dockerfile: ../docker/Dockerfile.django
+  environment:
+    &common-django-env
+    << : *common-postgres-env
+    POSTGRES_HOST: postgres
   healthcheck:
     << : *common-healthcheck
     test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
 
 x-common-nginx:
   &common-nginx
+  hostname: nginx
   build:
     context: ..
     dockerfile: docker/Dockerfile
@@ -54,7 +61,6 @@ services:
       - ../volumes/prod/static:/var/www/static:ro
       - ../volumes/prod/media:/var/www/media:ro
   nginx-dev:
-    hostname: nginx
     << : *common-nginx
     profiles:
       - dev
@@ -69,12 +75,12 @@ services:
     profiles:
       - prod
     environment:
-      << : *common-env-postgres
-      POSTGRES_HOST: postgres
+      << : *common-django-env
       SECRET_KEY: changeme
       DEBUG: false
       ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django" # add your.own.domain here
       CORS_ALLOWED_ORIGINS: "http://localhost:8080" # add https://your.own.url here
+      WEB_CONCURRENCY: 4 # gunicorn workers
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,11 +91,9 @@ services:
     << : *common-django
     profiles:
       - dev
-    hostname: django
     command: ["pdm", "run", "./manage.py", "runserver", "0.0.0.0:8000"]
     environment:
-      << : *common-env-postgres
-      POSTGRES_HOST: postgres
+      << : *common-django-env
       SECRET_KEY: changeme
       DEBUG: true
       ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django"
@@ -110,7 +114,6 @@ services:
     << : *common-postgres
     profiles:
       - dev
-    hostname: postgres
     ports:
       - 5432:5432
     volumes:
