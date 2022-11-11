@@ -86,6 +86,7 @@ services:
     profiles:
       - dev
     hostname: django
+    command: ["pdm", "run", "./manage.py", "runserver", "0.0.0.0:8000"]
     environment:
       << : *common-env-postgres
       POSTGRES_HOST: postgres
