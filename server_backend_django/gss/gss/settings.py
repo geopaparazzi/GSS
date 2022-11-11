@@ -17,7 +17,9 @@ DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 GSS_VERSION = "4.0.0alpha"
 
 if DEBUG:
-    CORS_ORIGIN_ALLOW_ALL = True  
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = get_env_variable('CORS_ALLOWED_ORIGINS').split(' ')
 ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS').split(' ')
 
 

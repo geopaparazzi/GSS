@@ -74,6 +74,7 @@ services:
       SECRET_KEY: changeme
       DEBUG: false
       ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django" # add your.own.domain here
+      CORS_ALLOWED_ORIGINS: "http://localhost:8080" # add https://your.own.url here
     depends_on:
       postgres:
         condition: service_healthy
