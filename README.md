@@ -9,6 +9,11 @@ cd docker
 docker compose --profile dev up
 ```
 
+Run `./manage.py`
+```
+docker compose --profile prod exec django-dev ./manage.py
+```
+
 ## Production
 
 Add your domain in `ALLOWED_HOSTS` for the production `django` container, in `docker/docker-compose.yml`, then:

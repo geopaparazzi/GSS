@@ -10,14 +10,15 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     DEBIAN_FRONTEND=noninteractive apt-get -qy install libgdal28
 
 WORKDIR /app
-COPY requirements.txt .
+COPY pyproject.toml pdm.lock .
 
 RUN --mount=type=cache,sharing=locked,target=/root/.cache/pip \
-    python3 -m pip install -r requirements.txt
+    python3 -m pip install pdm && \
+    pdm install --no-self
 
 WORKDIR gss
 COPY gss .
 
 ENTRYPOINT ["/bin/bash", "entrypoint.sh"]
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["pdm", "run", "gunicorn", "gss.wsgi", "--bind", "0.0.0.0:8000"]
 EXPOSE 8000/tcp
