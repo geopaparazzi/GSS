@@ -2,6 +2,6 @@
 
 set -ueo pipefail
 
-python3 manage.py migrate
-python3 manage.py collectstatic --noinput
+pdm run ./manage.py migrate
+pdm run ./manage.py collectstatic --noinput
 exec "$@"

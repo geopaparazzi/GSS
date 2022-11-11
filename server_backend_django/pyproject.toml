@@ -1,13 +1,21 @@
 [project]
-name = ""
-version = ""
-description = ""
+name = "GSS"
+version = "4.0.0alpha"
+description = "GeoPaparazzi Survey Server"
 authors = [
+    {name = "Andrea Antonello", email = "andrea.antonello@gmail.com"},
     {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"},
 ]
 dependencies = [
     "Django>=4.0.4",
     "djangorestframework>=3.13.1",
+    "psycopg2-binary>=2.9.5",
+    "django-cors-headers>=3.13.0",
+    "django-json-widget>=1.1.1",
+    "django-leaflet>=0.28.3",
+    "Pillow>=9.3.0",
+    "owslib>=0.27.2",
+    "django-cleanup>=6.0.0",
 ]
 requires-python = ">=3.8"
 license = {text = "GPLv3"}

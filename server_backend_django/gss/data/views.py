@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group, User
 from django.views.decorators.csrf import csrf_exempt
-from requests import Response
 from rest_framework import permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
