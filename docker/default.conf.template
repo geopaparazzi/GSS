@@ -28,5 +28,9 @@ server {
         proxy_set_header   Upgrade          $http_upgrade;
         proxy_redirect     off;
     }
+
+    # upload size ketp high to ensure mapsforge file uploads
+    # this needs to be addressed better with chunking in future
+    client_max_body_size 1500M; 
 }
 
