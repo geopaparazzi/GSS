@@ -18,10 +18,7 @@ server {
         root   /usr/share/nginx/html;
     }
 
-    location /api/ {
-        proxy_pass   ${DJANGO_URL};
-    }
-    location /admin/ {
+    location ~ ^/(api|admin)/ {
         proxy_pass   ${DJANGO_URL};
 
         proxy_set_header   X-Real-IP        $remote_addr;
