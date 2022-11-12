@@ -1,0 +1,122 @@
+# to be run as
+# docker compose -f docker-compose-env.yml --env-file env --profile dev up --build
+version: "3"
+
+x-common-healthcheck:
+  &common-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 30s
+
+x-common-postgres-env:
+  &common-postgres-env
+  POSTGRES_USER: ${GSS_POSTGRES_USER}
+  POSTGRES_PASSWORD: ${GSS_POSTGRES_PASSWORD}
+  POSTGRES_PORT: ${GSS_POSTGRES_PORT}
+  POSTGRES_DB: ${GSS_POSTGRES_DB}
+
+x-common-postgres:
+  &common-postgres
+  image: postgis/postgis:14-3.3
+  hostname: postgres
+  environment:
+    << : *common-postgres-env
+  healthcheck:
+    << : *common-healthcheck
+    test: ["CMD", "pg_isready", "-U", "${GSS_POSTGRES_USER}"]
+
+x-common-django:
+  &common-django
+  hostname: django
+  build:
+    context: ../server_backend_django
+    dockerfile: ../docker/Dockerfile.django
+  environment:
+    &common-django-env
+    << : *common-postgres-env
+    POSTGRES_HOST: postgres
+  healthcheck:
+    << : *common-healthcheck
+    test: ["CMD", "curl", "-sI", "http://localhost:8000/admin"]
+
+x-common-nginx:
+  &common-nginx
+  hostname: nginx
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  environment:
+    DJANGO_URL: http://django:8000
+  ports:
+    - ${WEBAPP_PORT}:80
+
+services:
+  nginx:
+    << : *common-nginx
+    profiles:
+      - prod
+    depends_on:
+      django:
+        condition: service_healthy
+    volumes:
+      - ${GSS_VOLUME}/prod/static:/var/www/static:ro
+      - ${GSS_VOLUME}/prod/media:/var/www/media:ro
+  nginx-dev:
+    << : *common-nginx
+    profiles:
+      - dev
+    depends_on:
+      django-dev:
+        condition: service_healthy
+    volumes:
+      - ${GSS_VOLUME}/dev/static:/var/www/static:ro
+      - ${GSS_VOLUME}/dev/media:/var/www/media:ro
+  django:
+    << : *common-django
+    profiles:
+      - prod
+    environment:
+      << : *common-django-env
+      SECRET_KEY: changeme
+      DEBUG: false
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django ${PRODUCTION_DOMAIN}" # add your.own.domain here
+      CORS_ALLOWED_ORIGINS: "http://localhost:${WEBAPP_PORT} https://${PRODUCTION_DOMAIN}:${WEBAPP_PORT}" # add https://your.own.url here
+      WEB_CONCURRENCY: 4 # gunicorn workers
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ${GSS_VOLUME}/prod/static:/app/static
+      - ${GSS_VOLUME}/prod/media:/app/media
+  django-dev:
+    << : *common-django
+    profiles:
+      - dev
+    command: ["pdm", "run", "./manage.py", "runserver", "0.0.0.0:8000"]
+    environment:
+      << : *common-django-env
+      SECRET_KEY: changeme
+      DEBUG: true
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django"
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+    volumes:
+      - ${GSS_VOLUME}/dev/static:/app/static
+      - ${GSS_VOLUME}/dev/media:/app/media
+      - ../server_backend_django/gss:/app/gss
+  postgres:
+    << : *common-postgres
+    profiles:
+      - prod
+    volumes:
+     - ${GSS_VOLUME}/prod/data:/var/lib/postgresql/data
+  postgres-dev:
+    << : *common-postgres
+    profiles:
+      - dev
+    ports:
+      - 5432:5432
+    volumes:
+     - ${GSS_VOLUME}/dev/data:/var/lib/postgresql/data
