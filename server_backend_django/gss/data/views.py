@@ -63,11 +63,10 @@ def login(request):
 
 
 class StandardPermissionsViewSet(viewsets.ModelViewSet):
-
+    """
+    Permissions most views need to set.
+    """
     def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
         if self.action in ["list", "retrieve"]:
             permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
         elif self.action == "create":
@@ -76,9 +75,47 @@ class StandardPermissionsViewSet(viewsets.ModelViewSet):
             permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
+class SurveyPermissionsViewSet(viewsets.ModelViewSet):
+    """
+    Permissions that need to set for survey items.
+    """
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
-class ListRetrieveOnlyViewSet(StandardPermissionsViewSet):
+class WebPermissionsViewSet(viewsets.ModelViewSet):
+    """
+    Permissions that need to set for survey items.
+    """
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
+
+class StandardListRetrieveOnlyViewSet(StandardPermissionsViewSet):
+    def create(self, request):
+        response = {'message': 'Create function is not offered in this path.'}
+        return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def update(self, request, pk=None):
+        response = {'message': 'Update function is not offered in this path.'}
+        return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def destroy(self, request, pk=None):
+        response = {'message': 'Delete function is not offered in this path.'}
+        return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class SurveyListRetrieveOnlyViewSet(SurveyPermissionsViewSet):
     def create(self, request):
         response = {'message': 'Create function is not offered in this path.'}
         return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -132,7 +169,7 @@ class ProjectNameViewSet(viewsets.ModelViewSet):
         response = {'message': 'Delete function is not offered in this path.'}
         return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class ProjectDataViewSet(ListRetrieveOnlyViewSet):
+class ProjectDataViewSet(StandardListRetrieveOnlyViewSet):
     """
     API endpoint that allows projectsdata to be downloaded.
     """
@@ -210,7 +247,7 @@ class ProjectDataViewSet(ListRetrieveOnlyViewSet):
         # # seri = FieldImageBase64Serializer(data)
         # # return Response(seri.data)
 
-class RenderNoteViewSet(ListRetrieveOnlyViewSet):
+class RenderNoteViewSet(StandardListRetrieveOnlyViewSet):
     """
     API endpoint to get notes with minimal info for rendering.
     """
@@ -234,7 +271,7 @@ class RenderNoteViewSet(ListRetrieveOnlyViewSet):
             else:
                 return Note.objects.none()
 
-class NoteViewSet(StandardPermissionsViewSet):
+class NoteViewSet(SurveyPermissionsViewSet):
     """
     API endpoint that allows projects to be viewed or edited.
     """
@@ -259,7 +296,7 @@ class NoteViewSet(StandardPermissionsViewSet):
             else:
                 return Note.objects.none()
 
-class ImageViewSet(StandardPermissionsViewSet):
+class ImageViewSet(SurveyPermissionsViewSet):
     """
     API endpoint that allows images to be viewed or edited.
     """
@@ -282,7 +319,7 @@ class ImageViewSet(StandardPermissionsViewSet):
             else:
                 return Image.objects.none()
 
-class RenderImageViewSet(ListRetrieveOnlyViewSet):
+class RenderImageViewSet(StandardListRetrieveOnlyViewSet):
     """
     API endpoint to get images with minimal info for rendering.
     """
@@ -305,7 +342,7 @@ class RenderImageViewSet(ListRetrieveOnlyViewSet):
             else:
                 return Image.objects.none()
 
-class RenderSimpleImageViewSet(ListRetrieveOnlyViewSet):
+class RenderSimpleImageViewSet(StandardListRetrieveOnlyViewSet):
     """
     API endpoint to get simple images (i.e. only non form) with minimal info for rendering.
     """
@@ -328,7 +365,7 @@ class RenderSimpleImageViewSet(ListRetrieveOnlyViewSet):
             else:
                 return Image.objects.none()
 
-class GpslogViewSet(StandardPermissionsViewSet):
+class GpslogViewSet(SurveyPermissionsViewSet):
     """
     API endpoint that allows gpslogs to be viewed or edited.
     """
@@ -351,7 +388,7 @@ class GpslogViewSet(StandardPermissionsViewSet):
             else:
                 return GpsLog.objects.none()
 
-class WmsSourceViewSet(ListRetrieveOnlyViewSet):
+class WmsSourceViewSet(StandardListRetrieveOnlyViewSet):
     """
     API endpoint to get WmsSource info.
     """
@@ -411,7 +448,7 @@ class WmsSourceViewSet(ListRetrieveOnlyViewSet):
             else:
                 return WmsSource.objects.none()
 
-class TmsSourceViewSet(ListRetrieveOnlyViewSet):
+class TmsSourceViewSet(StandardListRetrieveOnlyViewSet):
     """
     API endpoint to get TmsSource info.
     """
@@ -471,7 +508,7 @@ class TmsSourceViewSet(ListRetrieveOnlyViewSet):
             else:
                 return TmsSource.objects.none()
 
-class UserConfigurationViewSet(StandardPermissionsViewSet):
+class UserConfigurationViewSet(WebPermissionsViewSet):
     """
     API endpoint to get and edit UserConfigurations.
     """
@@ -528,7 +565,7 @@ class UserConfigurationViewSet(StandardPermissionsViewSet):
             response = {'message': 'The current user does not have access to the project.'}
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
 
-class LastUserPositionViewSet(StandardPermissionsViewSet):
+class LastUserPositionViewSet(SurveyPermissionsViewSet):
     """
     API endpoint to get and send LastUserPosition.
     """
