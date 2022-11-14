@@ -78,8 +78,9 @@ services:
       << : *common-django-env
       SECRET_KEY: changeme
       DEBUG: false
-      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django" # add your.own.domain here
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1]" # add your.own.domain here
       CORS_ALLOWED_ORIGINS: "http://localhost:8080" # add https://your.own.url here
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8080" # add https://your.own.url here
       WEB_CONCURRENCY: 4 # gunicorn workers
     depends_on:
       postgres:
@@ -96,7 +97,9 @@ services:
       << : *common-django-env
       SECRET_KEY: changeme
       DEBUG: true
-      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1] django"
+      ALLOWED_HOSTS: ".localhost 127.0.0.1 [::1]"
+      CORS_ALLOWED_ORIGINS: "http://localhost:8080"
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8080"
     depends_on:
       postgres-dev:
         condition: service_healthy
