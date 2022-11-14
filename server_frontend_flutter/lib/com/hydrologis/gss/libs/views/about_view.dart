@@ -43,7 +43,7 @@ class AboutPage extends StatefulWidget {
 }
 
 class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
-  String _version = "3.3.0";
+  String _version = "4.0.0alpha";
   List<Widget> dbInfoWidgets;
 
   @override
