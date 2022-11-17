@@ -1,6 +1,9 @@
 server {
     listen       80;
+    listen       443 ssl;
     server_name  localhost;
+    ssl_certificate     nginx-selfsigned.crt;
+    ssl_certificate_key nginx-selfsigned.key;
 
     #access_log  /var/log/nginx/host.access.log  main;
 

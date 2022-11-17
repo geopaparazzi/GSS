@@ -13,11 +13,11 @@ target
 *.iml
 *.tar.gz
 bin/
-/mobile/gssmobile/nbproject/private/
-/mobile/gssmobile/build/
-CodenameOne_SRC.zip
-
-/mobile/gssmobile/dist/
 *.pdf
 .DS_Store
 *.html
+
+*.crt
+*.key
+*.tar
+docker/my_*
