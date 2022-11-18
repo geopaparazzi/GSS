@@ -55,32 +55,44 @@ class Command(BaseCommand):
         
         # we need at least a coordinator
         if coordsCount == 0:
-            coordUser = User(username = "coordinator", first_name="Mary", last_name="Coordinator", 
-                        is_staff=True, is_active=True, email="mary@gss.com")
-            coordUser.set_password("coordinator")
-            coordUser.save()
-            coordsGroup.user_set.add(coordUser)
-            webusersGroup.user_set.add(coordUser)
-            defaultGroup.user_set.add(coordUser)
+            coordUser = User.objects.filter(username="coordinator").first()
+            if not coordUser:
+                coordUser = User(username = "coordinator", first_name="Mary", last_name="Coordinator", 
+                            is_staff=True, is_active=True, email="mary@gss.com")
+                coordUser.set_password("coordinator")
+                coordUser.save()
+                coordsGroup.user_set.add(coordUser)
+                webusersGroup.user_set.add(coordUser)
+                defaultGroup.user_set.add(coordUser)
+            else:
+                coordsGroup.user_set.add(coordUser)
         
         # we need at least one surveyor
         if surveyorsCount == 0:
-            surveyorUser = User(username = "surveyor", first_name="Jack", last_name="Surveyor", 
-                        is_staff=True, is_active=True, email="jack@gss.com")
-            surveyorUser.set_password("surveyor")
-            surveyorUser.save()
-            surveyorsGroup.user_set.add(surveyorUser)
-            webusersGroup.user_set.add(surveyorUser)
-            defaultGroup.user_set.add(surveyorUser)
+            surveyorUser = User.objects.filter(username="surveyor").first()
+            if not surveyorUser:
+                surveyorUser = User(username = "surveyor", first_name="Jack", last_name="Surveyor", 
+                            is_staff=True, is_active=True, email="jack@gss.com")
+                surveyorUser.set_password("surveyor")
+                surveyorUser.save()
+                surveyorsGroup.user_set.add(surveyorUser)
+                webusersGroup.user_set.add(surveyorUser)
+                defaultGroup.user_set.add(surveyorUser)
+            else:
+                surveyorsGroup.user_set.add(surveyorUser)
         
         # we need at least one webuser apart of the coordinator and surveyor
         if webusersCount == 0:
-            webuserUser = User(username = "webuser", first_name="Lazy", last_name="Webuser", 
-                        is_staff=True, is_active=True, email="lazy@gss.com")
-            webuserUser.set_password("webuser")
-            webuserUser.save()
-            webusersGroup.user_set.add(webuserUser)
-            defaultGroup.user_set.add(webuserUser)
+            webuserUser = User.objects.filter(username="webuser").first()
+            if not webuserUser:
+                webuserUser = User(username = "webuser", first_name="Lazy", last_name="Webuser", 
+                            is_staff=True, is_active=True, email="lazy@gss.com")
+                webuserUser.set_password("webuser")
+                webuserUser.save()
+                webusersGroup.user_set.add(webuserUser)
+                defaultGroup.user_set.add(webuserUser)
+            else:
+                webusersGroup.user_set.add(webuserUser)
         
         superUser = User.objects.filter(username="admin").first()
         # check if the admin has been created
