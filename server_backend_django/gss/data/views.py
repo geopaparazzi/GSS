@@ -189,10 +189,14 @@ class ProjectDataViewSet(StandardListRetrieveOnlyViewSet):
             if projectModel:
                 newProjectData = []
                 for pd in projectModel.projectdata.all():
+                    file = pd.file
+                    localPath = file.path
+                    name = os.path.basename(localPath)
+
                     url = f"/api/projectdatas/{pd.id}"
                     newPd = ProjectData(
                         id = pd.id,
-                        label =  pd.label,
+                        label = name,
                         file = url
                     )
                     newProjectData.append(newPd)
