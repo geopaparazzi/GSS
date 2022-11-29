@@ -185,3 +185,32 @@ STATIC_URL = '/static/'
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1014 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2000 * 1024 * 1024
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'normal',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+    },
+    'formatters': {
+        'normal': {
+            'format': '[{asctime}] {levelname} {name}/{module}:: {message}',
+            'style': '{',
+        },
+    },
+}

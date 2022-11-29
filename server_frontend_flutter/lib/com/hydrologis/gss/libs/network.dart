@@ -171,14 +171,19 @@ class ServerApi {
   }
 
   static Future<List<Project>> getProjects() async {
-    var response = await get(Uri.parse(API_PROJECTNAMES));
-    if (response.statusCode == 200) {
-      var list = jsonDecode(response.body);
-      List<Project> projectsList = List<Project>.from(
-          list.map((projectMap) => Project.fromMap(projectMap)));
-      return projectsList;
-    } else {
-      throw new StateError(response.body);
+    try {
+      var response = await get(Uri.parse(API_PROJECTNAMES));
+      if (response.statusCode == 200) {
+        var list = jsonDecode(response.body);
+        List<Project> projectsList = List<Project>.from(
+            list.map((projectMap) => Project.fromMap(projectMap)));
+        return projectsList;
+      } else {
+        throw new StateError(response.body);
+      }
+    } on Exception catch (e) {
+      print(e);
+      return [];
     }
   }
 

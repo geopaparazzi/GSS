@@ -11,30 +11,26 @@ from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
                                     HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND)
 from django.db.models import Max
 import os
-from django.http import FileResponse
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
-from data.models import DbNamings, GpsLog, GpsLogData, Image, ImageData, Note, Project, ProjectData, UserConfiguration, WmsSource, TmsSource
+from data.models import DbNamings, GpsLog, Image, Note, Project, ProjectData, UserConfiguration, WmsSource, TmsSource
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
-                              ImageSerializer,ImageDataSerializer, LastUserPositionSerializer, NoteSerializer,
+                              ImageSerializer,LastUserPositionSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,ProjectDataSerializer,
                               UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
                               TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
 from owslib.wmts import WebMapTileService
 from owslib.wms import WebMapService
-from django.contrib.gis.geos import LineString, Point
+from django.contrib.gis.geos import Point
 from django.http import HttpRequest
 from django.http import HttpResponse
 from rest_framework import status
-from rest_framework.exceptions import NotFound, NotAcceptable
 from rest_framework.response import Response
-from rest_framework.generics import get_object_or_404
 from typing import Optional
 import io
 import mimetypes
+import logging
 
-
+LOGGER = logging.getLogger(__name__)
 
 @csrf_exempt
 @api_view(["POST"])
@@ -48,17 +44,20 @@ def login(request):
                         status=HTTP_400_BAD_REQUEST)
     user = authenticate(username=username, password=password)
     if not user:
+        LOGGER.warning(f"Unable to login with user '{username}'")
         return Response({'error': 'Invalid Credentials'},
                         status=HTTP_404_NOT_FOUND)
     # now check if the user is in the project
     project = Project.objects.filter(id=projectId).first()
     if not project:
-        return Response({'error': 'Invalid Project Name'},status=HTTP_404_NOT_FOUND)
+        LOGGER.warning(f"Unable to find project for ID {projectId}")
+        return Response({'error': 'Invalid Project Id'},status=HTTP_404_NOT_FOUND)
     if project.hasUser(user):
         token, _ = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'id': user.id},
                         status=HTTP_200_OK)
     else:
+        LOGGER.warning(f"User '{username}' tried to login to project '{project}', but is not part of it.")
         return Response({'error': f'User is not part of project "{project}"'},status=HTTP_403_FORBIDDEN)
 
 
@@ -232,24 +231,6 @@ class ProjectDataViewSet(StandardListRetrieveOnlyViewSet):
         else:
             response = {'message': 'No data for given id available.'}
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
-        
-        # data = FieldImage.objects.filter(field=field).get(id=pk)
-        # path = data.image.path
-        # # resize image to 800 to send less bytes
-        # im = Image.open(path)
-        # im.convert("RGB")
-        # # to rescale images longer side to 800
-        # coef = 800 / max(im.size)
-        # newsize = (int(im.size[0] * coef), int(im.size[1] * coef))
-        # thumb_io = BytesIO()
-        # out = im.resize(newsize)  # Resize to size
-        # out.save(thumb_io, "JPEG", quality=100)
-        # mimetype = "image/{}".format("jpg")
-        # return HttpResponse(thumb_io.getvalue(), content_type=mimetype)
-        # ## old method to return image in binary64
-        # # seri = FieldImageBase64Serializer(data)
-        # # return Response(seri.data)
 
 class RenderNoteViewSet(StandardListRetrieveOnlyViewSet):
     """
