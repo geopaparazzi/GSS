@@ -242,16 +242,16 @@ class _MainMapViewState extends State<MainMapView>
                         var backgroundLayers = mapState.getBackgroundLayers();
                         var names = backgroundLayers.keys.toList();
 
+                        var previousSelectedMapNames =
+                            SmashSession.getBasemap().split(",");
                         var selectedMapNames =
                             await SmashDialogs.showMultiSelectionComboDialog(
-                                context, "Select background map", names);
+                                context, "Select background maps", names,
+                                selectedItems: previousSelectedMapNames);
                         if (selectedMapNames != null &&
                             selectedMapNames.isNotEmpty) {
                           SmashSession.setBasemap(selectedMapNames.join(","));
-                          var mapstateModel = Provider.of<MapstateModel>(
-                              context,
-                              listen: false);
-                          mapstateModel.reloadMap();
+                          mapState.reloadMap();
                         }
                       }),
                   // Padding(

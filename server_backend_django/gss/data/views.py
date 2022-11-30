@@ -576,7 +576,7 @@ class LastUserPositionViewSet(SurveyPermissionsViewSet):
             else:
                 return LastUserPosition.objects.none()
     
-    def put(self, request, *args, **kwargs):
+    def create(self, request, pk=None):
         user = self.request.user
         projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
         if projectId is None:
