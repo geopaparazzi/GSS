@@ -201,7 +201,7 @@ LOGGING = {
         'level': 'WARNING',
     },
     'loggers': {
-        'django': {
+        'gss_data': {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
             'propagate': False,

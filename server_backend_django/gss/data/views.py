@@ -67,7 +67,7 @@ class StandardPermissionsViewSet(viewsets.ModelViewSet):
     """
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor, permissions.IsAuthenticated]
         elif self.action == "create":
             permission_classes = [IsCoordinator, permissions.IsAuthenticated]
         else:
@@ -77,6 +77,8 @@ class StandardPermissionsViewSet(viewsets.ModelViewSet):
 class SurveyPermissionsViewSet(viewsets.ModelViewSet):
     """
     Permissions that need to set for survey items.
+
+    The surveyor can create data, but all people from the project can read them.
     """
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -93,11 +95,12 @@ class WebPermissionsViewSet(viewsets.ModelViewSet):
     """
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
-            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor, permissions.IsAuthenticated]
-        elif self.action == "create":
-            permission_classes = [IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+            permission_classes = [IsCoordinator | IsWebuser, permissions.IsAuthenticated]
+        elif self.action in ["create", "update"]:
+            permission_classes = [IsCoordinator | IsWebuser, permissions.IsAuthenticated]
         else:
             permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+
         return [permission() for permission in permission_classes]
 
 
@@ -516,7 +519,7 @@ class UserConfigurationViewSet(WebPermissionsViewSet):
             else:
                 return UserConfiguration.objects.none()
     
-    def put(self, request, *args, **kwargs):
+    def create(self, request, pk=None):
         configList = request.data['configurations']
         user = self.request.user
         projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)

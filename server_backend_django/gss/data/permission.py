@@ -5,7 +5,6 @@ from data.models import DbNamings
 Base permission classes for GSS system users/groups
 """
 
-
 class IsSuperUser(IsAdminUser):
     def has_permission(self, request, view):
         return request.user and request.user.is_superuser
@@ -24,7 +23,8 @@ class IsSurveyor(BasePermission):
         superuser = bool(request.user and request.user.is_superuser)
         if superuser:
             return True
-        return DbNamings.GROUP_SURVEYORS in request.user.groups.values_list("name", flat=True)
+        isWebuserCheck = DbNamings.GROUP_SURVEYORS in request.user.groups.values_list("name", flat=True)
+        return isWebuserCheck
 
 
 class IsWebuser(BasePermission):
@@ -32,4 +32,6 @@ class IsWebuser(BasePermission):
         superuser = bool(request.user and request.user.is_superuser)
         if superuser:
             return True
-        return DbNamings.GROUP_WEBUSERS in request.user.groups.values_list("name", flat=True)
+
+        isWebuserCheck = DbNamings.GROUP_WEBUSERS in request.user.groups.values_list("name", flat=True)
+        return isWebuserCheck

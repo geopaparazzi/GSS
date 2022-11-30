@@ -225,7 +225,7 @@ class ServerApi {
     Response response;
     try {
       tokenHeader["Content-type"] = "application/json";
-      response = await put(uri, body: dataJson, headers: tokenHeader);
+      response = await post(uri, body: dataJson, headers: tokenHeader);
     } catch (e) {
       print(e);
     }
