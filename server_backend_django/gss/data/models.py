@@ -302,15 +302,11 @@ class GpsLogData(models.Model):
             models.Index(fields=[DbNamings.GPSLOGDATA_GPSLOGS]),
         ]
 
-class ImageDataAdmin(admin.ModelAdmin):
-    list_display = ['data_thumb']
-    readonly_fields = ["data_image"]
-
 class ImageData(models.Model):
     data = models.BinaryField(name=DbNamings.IMAGEDATA_DATA, null=False, default=bytearray([]))
 
     def data_thumb(self):
-        return mark_safe('<img src = "data: image/png; base64, {}" width="100">'.format(
+        return mark_safe('<img src = "data: image/png; base64, {}" width="300">'.format(
             b64encode(self.data).decode('utf8')
         ))
     data_thumb.short_description = 'Thumbnail'
@@ -322,6 +318,10 @@ class ImageData(models.Model):
         ))
     data_image.short_description = 'Image'
     data_image.allow_tags = True
+
+    def __str__(self):
+        return str(self.id)
+    
 
 class Image(models.Model):
     geometry = geomodels.PointField(
@@ -342,7 +342,7 @@ class Image(models.Model):
         ownedByForm = ""
         if self.notes != None:
             ownedByForm = f" - owned by note {self.notes.id}"
-        return f"{self.text}{ownedByForm}"
+        return f"{self.id}: {self.text}{ownedByForm}"
 
     class Meta:
         indexes = [
