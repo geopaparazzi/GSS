@@ -30,6 +30,7 @@ x-common-django:
   build:
     context: ../server_backend_django
     dockerfile: ../docker/Dockerfile.django
+  image: docker-django
   environment:
     &common-django-env
     << : *common-postgres-env
@@ -44,6 +45,7 @@ x-common-nginx:
   build:
     context: ..
     dockerfile: docker/Dockerfile.https
+  image: docker-nginx
   environment:
     DJANGO_URL: http://django:8000
   ports:
@@ -68,7 +70,7 @@ services:
     environment:
       << : *common-django-env
       SECRET_KEY: ${GSS_SECRETKEY}
-      DEBUG: false
+      DEBUG: "false"
       ALLOWED_HOSTS: "localhost ${GSS_HOST}" # add your.own.domain here
       CORS_ALLOWED_ORIGINS: "https://${GSS_HOST}" # add https://your.own.url here
       CSRF_TRUSTED_ORIGINS: "https://${GSS_HOST}" # add https://your.own.url here
