@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import (Note, Project, GpsLog, GpsLogData, Image, ImageData, Device,
                      UserDeviceAssociation,  WmsSource, ProjectData,
                      TmsSource, UserConfiguration)
+from .serializers import NoteSerializer
 from leaflet.admin import LeafletGeoAdmin
 from django_json_widget.widgets import JSONEditorWidget
 from django.db import models
@@ -11,6 +12,9 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.contrib.admin.widgets import AdminFileWidget
 from django.db.models.fields.files import FileField
+from django.http import HttpResponse
+from django.contrib import messages
+import json
 
 
 class ProjectDataAdminFileWidget(forms.FileInput):
@@ -136,13 +140,35 @@ class ImageDataAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super(ImageDataAdmin, self).get_queryset(request).defer(
             'data').all()
+
+
+class NoteTypeFilter(admin.SimpleListFilter):
+    title = 'type'
+
+    parameter_name = 'text'
+
+    def lookups(self, request, model_admin):
+        formNames = set([c.text for c in model_admin.model.objects.all() if c.form != None])
+        return [(fn, fn) for fn in formNames] + [
+          ('simple note', 'simple note')]
         
+
+    def queryset(self, request, queryset):
+        if self.value():
+            if self.value() == 'simple note':
+                return queryset.filter(form__isnull=True)
+            else:
+                return queryset.filter(text=self.value())
+        else:
+            return queryset.all()
+
 @admin.register(Note)
 class NoteAdmin(LeafletGeoAdmin):
     list_display = ('note_id', 'project', 'surveyor', 'date',
                     'images', 'parent')  # Modifies the Change List
 
-    list_filter = ['project', 'user', 'ts']
+    list_filter = ['project', 'user', NoteTypeFilter, 'ts']
+    actions = ['export_as_geojson']
 
     # list_select_related = True
 
@@ -166,6 +192,7 @@ class NoteAdmin(LeafletGeoAdmin):
     def date(self, obj):
         return str(obj.ts)[:-9]
 
+
     def parent(self, obj):
         if obj.previous != None:
             return mark_safe('<a href="{}">{}</a>'.format(
@@ -188,6 +215,48 @@ class NoteAdmin(LeafletGeoAdmin):
             return mark_safe(",".join(idsList))
         else:
             return ""
+        
+    @admin.action(description='Export selected form notes as geojson')
+    def export_as_geojson(self, request, queryset):
+        dataMap = {"type": "FeatureCollection"}
+        featuresList = []
+        dataMap["features"] = featuresList
+        for q in queryset:
+            if q.form != None:
+                geom = q.the_geom
+                properties = {"formtype": q.text}
+                feature = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [
+                            geom.x,
+                            geom.y
+                        ]
+                    },
+                    "properties": properties
+                }
+                # extract form data
+                form = q.form
+                formsList = form["forms"]
+                # here each form is a tab
+                for f in formsList:
+                    formItemList = f["formitems"]
+                    for fi in formItemList:
+                        key = fi["key"]
+                        value = fi["value"]
+                        properties[key] = value
+
+                featuresList.append(feature)
+
+
+        if dataMap:
+            response = HttpResponse(content=json.dumps(dataMap), content_type='text/json')
+            response['Content-Disposition'] = 'attachment; filename=gss_notes_dump.json'
+            return response 
+        else:
+            self.message_user(request, "No form notes selected. Check your selection.", messages.WARNING)
+
 
 
 
