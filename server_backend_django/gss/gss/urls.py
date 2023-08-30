@@ -49,6 +49,7 @@ router.register(r'forms', data.views.FormViewSet, 'forms')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('formlayers/', include('formlayers.urls')),
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
     path('api/login/', data.views.login),
