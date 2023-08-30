@@ -11,12 +11,12 @@ from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
                                     HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND)
 from django.db.models import Max
 import os
-from data.models import DbNamings, GpsLog, Image, Note, Project, ProjectData, UserConfiguration, WmsSource, TmsSource
+from data.models import DbNamings, GpsLog, Image, Note, Project, ProjectData, UserConfiguration, WmsSource, TmsSource, Form
 from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
                               ImageSerializer,LastUserPositionSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,ProjectDataSerializer,
-                              UserSerializer, RenderImageSerializer, WmsSourceSerializer, 
+                              UserSerializer, RenderImageSerializer, WmsSourceSerializer, FormSerializer,
                               TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
 from owslib.wmts import WebMapTileService
 from owslib.wms import WebMapService
@@ -170,6 +170,13 @@ class ProjectNameViewSet(viewsets.ModelViewSet):
     def destroy(self, request, pk=None):
         response = {'message': 'Delete function is not offered in this path.'}
         return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class FormViewSet(StandardPermissionsViewSet):
+    """
+    API endpoint that allows forms to be viewed or edited.
+    """
+    queryset = Form.objects.all()
+    serializer_class = FormSerializer
 
 class ProjectDataViewSet(StandardListRetrieveOnlyViewSet):
     """

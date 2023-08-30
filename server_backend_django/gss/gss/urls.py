@@ -41,6 +41,7 @@ router.register(r'tmssources', data.views.TmsSourceViewSet, 'tmssources')
 router.register(r'userconfigurations', data.views.UserConfigurationViewSet, 'userconfigurations')
 router.register(r'lastuserpositions', data.views.LastUserPositionViewSet, 'lastuserpositions')
 router.register(r'projectdatas', data.views.ProjectDataViewSet, 'projectdatas')
+router.register(r'forms', data.views.FormViewSet, 'forms')
 
 # @login_required
 # def protected_serve(request, path, document_root=None, show_indexes=False):

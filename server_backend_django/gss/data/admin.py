@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (Note, Project, GpsLog, GpsLogData, Image, ImageData, Device,
                      UserDeviceAssociation,  WmsSource, ProjectData,
-                     TmsSource, UserConfiguration)
+                     TmsSource, UserConfiguration, Form)
 from .serializers import NoteSerializer
 from leaflet.admin import LeafletGeoAdmin
 from django_json_widget.widgets import JSONEditorWidget
@@ -64,7 +64,16 @@ class ProjectDataAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', myurl, myurl)
 
 
+@admin.register(Form)
+class FormAdmin(admin.ModelAdmin):
+    list_display = ('name', 'enabled')
+
+    formfield_overrides = {
+        models.JSONField: {'widget': JSONEditorWidget(mode='tree')},
+    }
+
 # admin.site.register(Note, LeafletGeoAdmin)
+# admin.site.register(Form)
 admin.site.register(Project)
 # admin.site.register(GpsLog, LeafletGeoAdmin)
 # admin.site.register(GpsLogData, LeafletGeoAdmin)

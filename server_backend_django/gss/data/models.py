@@ -88,6 +88,10 @@ class DbNamings():
     PROJECTDATA_FILE = "file"
     PROJECTDATA_LABEL = "label"
     
+    FORM_NAME = "name"
+    FORM_DEFINITION = "definition"
+    FORM_ENABLED = "enabled"
+    
     WMSSOURCE_LABEL = "label"
     WMSSOURCE_VERSION = "version"
     WMSSOURCE_TRANSPARENT = "transparent"
@@ -177,12 +181,26 @@ class TmsSource(models.Model):
             models.Index(fields=[DbNamings.TMSSOURCE_LABEL]),
         ]
 
+
+class Form(models.Model):
+    name = models.CharField(name=DbNamings.FORM_NAME, max_length=200, null=False, unique=True)
+    definition = models.JSONField(name=DbNamings.FORM_DEFINITION, null=True, blank=True)
+    enabled = models.BooleanField(name=DbNamings.FORM_ENABLED, null=False, default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=[DbNamings.FORM_NAME]),
+            models.Index(fields=[DbNamings.FORM_ENABLED]),
+        ]
+
+
 class Project(models.Model):
     name = models.CharField(name=DbNamings.PROJECT_NAME, max_length=200, null=False, unique=True)
     description = models.TextField(name=DbNamings.PROJECT_DESCRIPTION,  null=True, default="")
     groups = models.ManyToManyField(Group, name=DbNamings.PROJECT_GROUPS)
 
     projectdata = models.ManyToManyField(ProjectData, blank=True)
+    forms = models.ManyToManyField(Form, blank=True)
     wmssources = models.ManyToManyField(WmsSource, blank=True)
     tmssources = models.ManyToManyField(TmsSource, blank=True)
     # TODO  configurations
@@ -401,6 +419,7 @@ class LastUserPosition(models.Model):
         ]
 
 
+
 class Utilities():
 
     @staticmethod
@@ -470,3 +489,4 @@ class Utilities():
                             if isLabel == "true":
                                 label = item['value']
                                 labelList.append(label)
+
