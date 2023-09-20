@@ -7,7 +7,7 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; \
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt \
     --mount=type=cache,sharing=locked,target=/var/lib/apt \
     apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get -qy install libgdal28
+    DEBIAN_FRONTEND=noninteractive apt-get -qy install libgdal32
 
 WORKDIR /app
 COPY pyproject.toml pdm.lock ./

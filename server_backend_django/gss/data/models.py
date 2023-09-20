@@ -337,6 +337,9 @@ class ImageData(models.Model):
     data_image.short_description = 'Image'
     data_image.allow_tags = True
 
+    def getAsBase64(self):
+        return b64encode(self.data).decode('utf8')
+
     def __str__(self):
         return str(self.id)
     

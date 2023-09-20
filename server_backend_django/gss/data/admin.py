@@ -254,6 +254,14 @@ class NoteAdmin(LeafletGeoAdmin):
                     for fi in formItemList:
                         key = fi["key"]
                         value = fi["value"]
+                        # ENABLE THIS IF pictures are toi be exported in json
+                        # if fi['type'] == 'pictures':
+                        #     imageID = int(value)
+                        #     # get image from Images
+                        #     image = Image.objects.select_related("imagedata").get(id=imageID)
+                        #     imageData = image.imagedata.getAsBase64()
+                        #     properties[key] = imageData
+                        # else:
                         properties[key] = value
 
                 featuresList.append(feature)
