@@ -12,6 +12,7 @@ from django.contrib import admin
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from gss.utils import Utilities
 
 class DbNamings():
     GROUP_COORDINATORS = "Coordinators"
@@ -421,75 +422,4 @@ class LastUserPosition(models.Model):
             models.Index(fields=[DbNamings.PROJECT]),
         ]
 
-
-
-class Utilities():
-
-    @staticmethod
-    def collectImageIds(dataMap, idsList):
-        for key in dataMap.keys():
-            value = dataMap[key]
-            if isinstance(value, dict):
-                Utilities.collectImageIds(value, idsList)
-            elif isinstance(value, list):
-                for item in value:
-                    Utilities.collectImageIds(item, idsList)
-            else:
-                if value == 'pictures':
-                    id = dataMap["value"]
-                    if len(id.strip()) > 0:
-                        tmpIds = str(id).split(";")
-                        for tmpId in tmpIds:
-                            idsList.append(int(tmpId))
-
-    @staticmethod
-    def updateImageIds(dataMap, old2NewIdsMap):
-        for key in dataMap.keys():
-            value = dataMap[key]
-            if isinstance(value, dict):
-                Utilities.updateImageIds(value, old2NewIdsMap)
-            elif isinstance(value, list):
-                for item in value:
-                    Utilities.updateImageIds(item, old2NewIdsMap)
-            else:
-                if value == 'pictures':
-                    id = dataMap["value"]
-                    if len(id.strip()) > 0:
-                        previousIds = str(id).split(";")
-                        newIds = []
-                        for previousId in previousIds:
-                            newId = old2NewIdsMap[int(previousId)]
-                            newIds.append(str(newId))
-                        
-                        dataMap["value"] = ";".join(newIds)
-
-    
-    @staticmethod
-    def collectIsLabelValue(dataMap, labelList):
-        if len(labelList) > 0:
-            return
-        for key in dataMap.keys():
-            value = dataMap[key]
-            if isinstance(value, dict):
-                Utilities.collectIsLabelValue(value, labelList)
-            elif isinstance(value, list):
-                if key == 'formitems':
-                    formitemsList = value
-                    for item in formitemsList:
-                        if 'islabel' in item:
-                            isLabel = item['islabel']
-                            if isLabel == "true":
-                                label = item['value']
-                                labelList.append(label)
-                for item in value:
-                    Utilities.collectIsLabelValue(item, labelList)
-            else:
-                if key == 'formitems':
-                    formitemsList = value
-                    for item in formitemsList:
-                        if 'islabel' in item:
-                            isLabel = item['islabel']
-                            if isLabel == "true":
-                                label = item['value']
-                                labelList.append(label)
 

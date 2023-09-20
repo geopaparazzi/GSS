@@ -7,7 +7,7 @@ from email.mime import image
 
 import requests
 from data.models import (DbNamings, GpsLog, GpsLogData, Image, ImageData, Note,
-                         Project, ProjectData, TmsSource, Utilities, WmsSource)
+                         Project, ProjectData, TmsSource, WmsSource)
 from django.conf import settings
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.gis.geos import LineString, Point
@@ -15,6 +15,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 from requests.auth import HTTPBasicAuth
+from gss.utils import Utilities
 
 
 class Command(BaseCommand):

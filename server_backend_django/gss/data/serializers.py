@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from io import BytesIO
 from rest_framework import serializers
-from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, Utilities, WmsSource, TmsSource, UserConfiguration, LastUserPosition, ProjectData, Form
+from .models import Note, DbNamings, Project, GpsLog, GpsLogData, Image, ImageData, WmsSource, TmsSource, UserConfiguration, LastUserPosition, ProjectData, Form
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.contrib.gis.geos import LineString, Point
@@ -10,6 +10,7 @@ import json
 from PIL import Image as PilImage
 from PIL import ImageOps as PilOps
 import base64
+from gss.utils import Utilities
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:

@@ -15,6 +15,8 @@ from django.db.models.fields.files import FileField
 from django.http import HttpResponse
 from django.contrib import messages
 import json
+from gss.utils import Utilities
+
 
 
 class ProjectDataAdminFileWidget(forms.FileInput):
@@ -233,7 +235,24 @@ class NoteAdmin(LeafletGeoAdmin):
         for q in queryset:
             if q.form != None:
                 geom = q.the_geom
-                properties = {"formtype": q.text}
+                properties = {
+                    "formtype": q.text,
+                    "note_id": q.id,
+                    "project": q.project_id,
+                    "user": q.user_id,
+                    "ts": Utilities.toStringWithSeconds(q.ts),
+                    "uploadts": Utilities.toStringWithSeconds(q.uploadts),
+                    "description": q.description,
+                    "marker": q.marker,
+                    "size": q.size,
+                    "rotation": q.rotation,
+                    "color": q.color,
+                    "accuracy": q.accuracy,
+                    "heading": q.heading,
+                    "speed": q.speed,
+                    "speedaccuracy": q.speedaccuracy,
+                    "altim": q.altim,
+                    }
                 feature = {
                     "type": "Feature",
                     "geometry": {

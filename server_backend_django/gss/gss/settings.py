@@ -44,7 +44,7 @@ LEAFLET_CONFIG = {
 
 INSTALLED_APPS = [
     'data',
-    'formlayers',
+    # 'formlayers',
     'leaflet',
     'django.contrib.admin',
     'django.contrib.auth',
