@@ -18,6 +18,8 @@ x-common-postgres:
   &common-postgres
   image: postgis/postgis:15-3.3
   hostname: postgres
+  ports:
+    - ${GSS_POSTGRES_PORT}:5432
   environment:
     << : *common-postgres-env
   healthcheck:
