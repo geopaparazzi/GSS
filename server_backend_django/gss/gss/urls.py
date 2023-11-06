@@ -24,6 +24,7 @@ from django.conf.urls.static import static
 from django.conf.urls import  include
 from django.contrib.auth.decorators import login_required
 from django.views.static import serve
+from django.views.generic import RedirectView
 
 router = routers.DefaultRouter()
 router.register(r'users', data.views.UserViewSet)
@@ -48,6 +49,7 @@ router.register(r'forms', data.views.FormViewSet, 'forms')
 #     return serve(request, path, document_root, show_indexes)
 
 urlpatterns = [
+    path('', RedirectView.as_view(url='/static/index.html'), name='index'),
     path('admin/', admin.site.urls),
     path('formlayers/', include('formlayers.urls')),
     path('api/', include(router.urls)),

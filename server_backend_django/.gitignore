@@ -259,3 +259,5 @@ cython_debug/
 
 *.gpap
 example_projects/
+static/
+gss/config.sh

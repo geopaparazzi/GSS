@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from hydrologis_utils import file_utils
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -178,16 +179,21 @@ REST_FRAMEWORK = {
 
 }
 
+# set redirect for home url /
 
-# absolute server path
+
+
+
+
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'media')
-# relative browser URL sends to api in order to allow for athenticated download
+if not file_utils.exists(MEDIA_ROOT):
+    file_utils.createFolder(MEDIA_ROOT)
 MEDIA_URL = '/media/'
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_ROOT = os.path.join(BASE_DIR.parent, 'static')
+if not file_utils.exists(STATIC_ROOT):
+    file_utils.createFolder(STATIC_ROOT)
 STATIC_URL = '/static/'
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1014 * 1024
