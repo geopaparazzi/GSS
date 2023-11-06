@@ -43,14 +43,15 @@ LEAFLET_CONFIG = {
 # Application definition
 
 INSTALLED_APPS = [
-    'data',
-    # 'formlayers',
     'leaflet',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+
+    'whitenoise.runserver_nostatic',
+
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'django_cleanup.apps.CleanupConfig',
@@ -58,11 +59,16 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
+
+    'data',
+    'formlayers',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -188,35 +194,43 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1014 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2000 * 1024 * 1024
 
 
+LOGLEVEL = os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
+
+LOGGING_DIR = os.path.join(BASE_DIR.parent, 'logs')  # Change this to your desired log directory
+
+if not os.path.exists(LOGGING_DIR):
+    os.makedirs(LOGGING_DIR)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGGING_DIR, 'django_gss.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
         'console': {
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'normal',
+            'formatter': 'simple',
         },
     },
     'root': {
-        'handlers': ['console'],
-        'level': 'WARNING',
-    },
-    'loggers': {
-        'gss_data': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'django.db.backends': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-    'formatters': {
-        'normal': {
-            'format': '[{asctime}] {levelname} {name}/{module}:: {message}',
-            'style': '{',
-        },
+        'handlers': ['file', 'console'],
+        'level': 'DEBUG',
     },
 }
