@@ -2,7 +2,7 @@
 
 set -ueo pipefail
 
-pdm run ./manage.py makemigrations
-pdm run ./manage.py migrate
+pdm run ./manage.py gss_makemigrations
+pdm run ./manage.py gss_migrate
 pdm run ./manage.py collectstatic --noinput
 exec "$@"

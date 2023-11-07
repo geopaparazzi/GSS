@@ -27,7 +27,7 @@ class _ModelsRegistry:
         list: the list of enabled forms.
         """
         forms = Form.objects.filter(enabled=True).all()
-        return [form.name for form in forms]
+        return [form for form in forms]
 
     def checkModelsExist(self) -> None:
         """
@@ -61,7 +61,7 @@ class _ModelsRegistry:
         forms = self._getEnabledForms()
         formSpecsDict = {}
         for form in forms:
-            formSpecsDict[form] = Form.objects.get(name=form).definition
+            formSpecsDict[form.name] = form.definition
         return formSpecsDict
     
     def getAllAppModels(self) -> list:
