@@ -4,6 +4,7 @@ from django.core.management import call_command
 from django.db import connection
 from django.db.utils import OperationalError
 import logging
+from data.models import Form
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,6 +17,52 @@ class _ModelsRegistry:
     """
     def __init__(self):
         self.appName = 'formlayers'
+
+    def _getEnabledForms(self) -> list:
+        """
+        Get the list of enabled forms.
+        
+        Returns
+        -------
+        list: the list of enabled forms.
+        """
+        forms = Form.objects.filter(enabled=True).all()
+        return [form.name for form in forms]
+
+    def checkModelsExist(self) -> None:
+        """
+        Check if the dynamic models of the Form table exist and create them if not.
+        """
+        forms = self._getEnabledForms()
+        for form in forms:
+            name = form.name
+            model = modelsRegistry.getModel(name)
+            if not model:
+                # if the model is not in registry, it needs to be created
+                
+                # first gather the fields needed
+                fields = modelsRegistry.fieldsFromDefinition(form.definition)
+
+                # convert them to django fields
+                djangoFields = modelsRegistry.djangoFieldsFromFields(fields)
+
+                # then create the model and register it (also migrate if necessary)
+                model = modelsRegistry.registerModel(name, djangoFields)
+
+    def getDynamicLayerSpecs(self) -> dict:
+        """
+        Get the dictionary of dynamic layers names and form definition.
+        
+        Returns
+        -------
+        dict: the dictionary of dynamic layers names and form definition.
+        """
+        self.checkModelsExist()
+        forms = self._getEnabledForms()
+        formSpecsDict = {}
+        for form in forms:
+            formSpecsDict[form] = Form.objects.get(name=form).definition
+        return formSpecsDict
     
     def getAllAppModels(self) -> list:
         """

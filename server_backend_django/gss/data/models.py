@@ -322,7 +322,7 @@ class GpsLogData(models.Model):
         ]
 
 class ImageData(models.Model):
-    data = models.BinaryField(name=DbNamings.IMAGEDATA_DATA, null=False, default=bytearray([]))
+    data = models.BinaryField(name=DbNamings.IMAGEDATA_DATA, null=True, blank=True)
 
     def data_thumb(self):
         return mark_safe('<img src = "data: image/png; base64, {}" width="300">'.format(
@@ -353,7 +353,7 @@ class Image(models.Model):
     uploadTimestamp = models.DateTimeField(name=DbNamings.IMAGE_UPLOADTIMESTAMP, null=False, default=datetime.now)
     azimuth = models.FloatField(name=DbNamings.IMAGE_AZIMUTH, null=False,default=0)
     text = models.TextField(name=DbNamings.IMAGE_TEXT, null=False, default="")
-    thumbnail = models.BinaryField(name=DbNamings.IMAGE_THUMB, null=False, default=bytearray([]))
+    thumbnail = models.BinaryField(name=DbNamings.IMAGE_THUMB, null=True, blank=True)
 
     note = models.ForeignKey(Note, on_delete=models.CASCADE, null=True, blank=True, name=DbNamings.IMAGE_NOTE, default=-1)
     imageData = models.ForeignKey(ImageData, on_delete=models.CASCADE, null=False, name=DbNamings.IMAGE_IMAGEDATA, default=-1)
