@@ -1,9 +1,28 @@
 from datetime import datetime
+from rest_framework.authtoken.models import Token
 
 class Utilities():
 
     PATTERN_WITH_SECONDS = "%Y-%m-%d %H:%M:%S"
     PATTERN_COMPACT = "%Y%m%d_%H%M%S"
+
+    @staticmethod
+    def getRestAuthenticatedUser(request):
+        # Get the token from the request's headers or another location
+        token_key = request.META.get("HTTP_AUTHORIZATION")
+
+        if token_key:
+            try:
+                # Attempt to fetch the user associated with the token
+                if token_key.startswith("Token "):
+                    token_key = token_key[6:]
+                if token_key.startswith("Bearer "):
+                    token_key = token_key[7:]
+                token = Token.objects.get(key=token_key)
+                user = token.user
+                return user
+            except Token.DoesNotExist:
+                return None
 
     @staticmethod
     def collectImageIds(dataMap, idsList):

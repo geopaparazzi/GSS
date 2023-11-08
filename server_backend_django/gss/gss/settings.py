@@ -170,20 +170,14 @@ REST_FRAMEWORK = {
 #        '%s000',
 #    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated', )
 
 }
-
-# set redirect for home url /
-
-
-
-
 
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, 'media')
 if not file_utils.exists(MEDIA_ROOT):

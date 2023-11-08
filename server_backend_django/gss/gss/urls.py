@@ -14,16 +14,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path, re_path
+from django.urls import include, path
 from rest_framework import routers
 import data.views
-from django.conf import settings
-from django.views.static import serve
-from django.conf.urls.static import static
 
 from django.conf.urls import  include
-from django.contrib.auth.decorators import login_required
-from django.views.static import serve
 from django.views.generic import RedirectView
 
 router = routers.DefaultRouter()
@@ -44,9 +39,6 @@ router.register(r'lastuserpositions', data.views.LastUserPositionViewSet, 'lastu
 router.register(r'projectdatas', data.views.ProjectDataViewSet, 'projectdatas')
 router.register(r'forms', data.views.FormViewSet, 'forms')
 
-# @login_required
-# def protected_serve(request, path, document_root=None, show_indexes=False):
-#     return serve(request, path, document_root, show_indexes)
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/static/index.html'), name='index'),
@@ -57,20 +49,5 @@ urlpatterns = [
     path('api/login/', data.views.login),
     # re_path(r'media/.*', ),
 
-    # TODO how to handle media auth?
-    # path('accounts/login/', data.views.login),
-    # re_path(r'^%s(?P<path>.*)$' % settings.MEDIA_URL[1:], protected_serve, {'document_root': settings.MEDIA_ROOT}),
+    path('accounts/login/', data.views.login),
 ]
-
-
-
-
-# if settings.DEBUG:
-#     # by default, Django doesn't serve media files during development
-#     urlpatterns += static(settings.MEDIA_URL,
-#                           document_root=settings.MEDIA_ROOT)
-# if settings.DEBUG:
-#     urlpatterns += re_path(
-#         r'^$', serve, dict(document_root=settings.STATIC_ROOT, path="index.html")),
-#     urlpatterns += re_path(
-#         r'^(?P<path>.*)$', serve, dict(document_root=settings.STATIC_ROOT)),

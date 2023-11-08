@@ -149,10 +149,11 @@ class _ModelsRegistry:
         for form in forms:
             formItems = form['formitems']
             for formItem in formItems:
-                itemKey = formItem['key']
-                itemType = formItem['type']
-                # itemMandatory = formItem.get('mandatory')
-                fields[itemKey] = itemType
+                itemKey = formItem.get('key')
+                if itemKey:
+                    itemType = formItem['type']
+                    # itemMandatory = formItem.get('mandatory')
+                    fields[itemKey] = itemType
         return fields
     
     def djangoFieldsFromFields(self, fields:dict) -> dict:
@@ -186,6 +187,8 @@ class _ModelsRegistry:
                 djangoFields[k] = models.BooleanField(null=True, blank=True)
             elif v == 'pictures' or v == 'sketch':
                 djangoFields[k] = models.BinaryField(null=True, blank=True)
+            elif v == 'connectedstringcombo' or v == 'autocompletestringcombo' or v == 'autocompleteconnectedstringcombo':
+                djangoFields[k] = models.TextField(null=True, blank=True)
             else:
                 LOGGER.info(f"ignored unknown field type: {v} for {k}")
         
