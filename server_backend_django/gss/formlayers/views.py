@@ -240,11 +240,46 @@ class DataListView(View):
         return JsonResponse({'message': f'Updated {len(updatedIds)} {form_name} objects (ids {", ".join(updatedIds)})'}, status=201)
         
 
-    def delete(self, request, form_name, form_id):
+    def delete(self, request, form_name):
         """
         DELETE method that allows for:
 
-        - /formlayers/data/form_name/form_id?project=id
-            to delete the item with the given id for the given form/layer and project. 
+        - /formlayers/data/form_name/?project=id
+            to delete a list of items defined by the ids of the payload for the given form/layer and project.
+
+            Format is:
+            [
+                {
+                    "id": 1
+                },
+                {
+                    "id": 2
+                }
+            ]
         """
-        pass
+        modelUserProject = _getModelFormUserProject(request, form_name)
+        if isinstance(modelUserProject, HttpResponse):
+            return modelUserProject
+        else:
+            model, form, user, projectModel = modelUserProject
+
+        data = json.loads(request.body)
+
+        # extract the data from the list/dictionary and create the model object
+        if isinstance(data, list):
+            dataList = data
+        else:
+            dataList = [data]
+
+        # check that all items have an id
+        deletedIds = []
+        for data in dataList:
+            id = data.get("id")
+            if id:
+                modelObj = model.objects.get(pk=id)
+                if modelObj:
+                    deletedIds.append(str(modelObj.id))
+                    modelObj.delete()
+
+        return JsonResponse({'message': f'Deleted {len(deletedIds)} {form_name} objects (ids {", ".join(deletedIds)})'}, status=201)
+                
