@@ -91,6 +91,7 @@ class DbNamings():
     
     FORM_NAME = "name"
     FORM_DEFINITION = "definition"
+    FORM_GEOMETRYTYPE = "geometrytype"
     FORM_ENABLED = "enabled"
     
     WMSSOURCE_LABEL = "label"
@@ -184,8 +185,15 @@ class TmsSource(models.Model):
 
 
 class Form(models.Model):
+    GEOMETRYTYPES = (
+        ("Point", "Point"),
+        ("LineString", "LineString"),
+        ("Polygon", "Polygon"),
+    )
+        
     name = models.CharField(name=DbNamings.FORM_NAME, max_length=200, null=False, unique=True)
     definition = models.JSONField(name=DbNamings.FORM_DEFINITION, null=True, blank=True)
+    geometrytype = models.CharField(name=DbNamings.FORM_GEOMETRYTYPE, max_length=10, null=False, choices=GEOMETRYTYPES, default=GEOMETRYTYPES[0][0]) 
     enabled = models.BooleanField(name=DbNamings.FORM_ENABLED, null=False, default=True)
 
     class Meta:

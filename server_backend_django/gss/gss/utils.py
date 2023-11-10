@@ -1,5 +1,7 @@
 from datetime import datetime
 from rest_framework.authtoken.models import Token
+from django.http import HttpResponse
+import json
 
 class Utilities():
 
@@ -175,3 +177,17 @@ class Utilities():
         :return: the millis since epoch.
         """
         return dt.timestamp() * 1000
+    
+    @staticmethod
+    def toHttpResponseWithError(message:str, errorCode:int = 500) -> HttpResponse:
+        """Create a HttpResponse with error status and message.
+
+        :param message: the error message.
+        :return: the HttpResponse.
+        """
+        # give some structure
+        error = {
+            "error": message
+        }
+        return HttpResponse(json.dumps(error), status=errorCode, content_type="application/json")
+        

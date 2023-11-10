@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views import View
 import json
 # Create your views here.
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
@@ -22,13 +22,16 @@ from data.models import DbNamings, Project
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes
+from hydrologis_utils.geojson_utils import HyGeojsonUtils
+from hydrologis_utils.geom_utils import HyGeomUtils
+import datetime
 
 
 def _getModelFormUserProject(request, form_name):
     user = Utilities.getRestAuthenticatedUser(request)
     if not user or not user.is_authenticated:
         # return auth error
-        return HttpResponseBadRequest(f"User not authenticated.")
+        return Utilities.toHttpResponseWithError(f"User not authenticated.")
 
     model = modelsRegistry.getModel(form_name)
     if not model:
@@ -36,13 +39,13 @@ def _getModelFormUserProject(request, form_name):
         modelsRegistry.checkModelsExist()
         model = modelsRegistry.getModel(form_name)
     if not model:
-        return HttpResponseBadRequest(f"No model {form_name} exists.")
+        return Utilities.toHttpResponseWithError(f"No model {form_name} exists.")
 
     # now check permissions to access that model
     projectId = request.GET.get(DbNamings.API_PARAM_PROJECT)
     if projectId is None:
         # the project parameter is mandatory to get the data
-        return HttpResponseBadRequest(f"The parameter 'project' is mandatory.")
+        return Utilities.toHttpResponseWithError(f"The parameter 'project' is mandatory.")
     else:
         projectId = int(projectId)
         
@@ -52,13 +55,13 @@ def _getModelFormUserProject(request, form_name):
             projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
         if projectModel is None:
             # the project parameter is mandatory to get the data
-            return HttpResponseBadRequest(f"The project with id {projectId} does not exist.")
+            return Utilities.toHttpResponseWithError(f"The project with id {projectId} does not exist.")
     
     # get form by name
     form = Form.objects.filter(name=form_name, project=projectModel).first()
     # check if the project has access to the form
     if form is None:
-        return HttpResponseBadRequest(f"The current form is not available in project: {projectModel.name}.")
+        return Utilities.toHttpResponseWithError(f"The current form is not available in project: {projectModel.name}.")
     return model, form, user, projectModel
 
 
@@ -75,13 +78,13 @@ def layers(request):
     # now check permissions to access that model
     projectId = request.GET.get(DbNamings.API_PARAM_PROJECT)
     if not projectId:
-        return HttpResponseBadRequest(f"Missing project.")
+        return Utilities.toHttpResponseWithError(f"Missing project.")
     else:
         projectId = int(projectId)
         user = Utilities.getRestAuthenticatedUser(request)
         if not user or not user.is_authenticated:
             # return auth error
-            return HttpResponseBadRequest(f"User not authenticated.")
+            return Utilities.toHttpResponseWithError(f"User not authenticated.")
         
         if user.is_superuser:
             projectModel = Project.objects.filter(id=projectId).first()
@@ -89,7 +92,7 @@ def layers(request):
             projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
         if projectModel is None:
             # the project parameter is mandatory to get the data
-            return HttpResponseBadRequest(f"No project found for given id.")
+            return Utilities.toHttpResponseWithError(f"No project found for given id.")
             
     dynamicLayers = modelsRegistry.getDynamicLayerSpecs()
     for name, form in dynamicLayers.items():
@@ -112,9 +115,9 @@ class DataListView(View):
         GET method that allows for:
 
         - /formlayers/data/form_name/?project=id
-            to get list of all items for the given form/layer and project
+            to get a geojson featurecollection of all items for the given form/layer and project
         - /formlayers/data/form_name/form_id?project=id
-            to get the single item for the given form/layer and id and project
+            to get the single geojson feature for the given form/layer and id and project
         """
         modelFormUserProject = _getModelFormUserProject(request, form_name)
         if isinstance(modelFormUserProject, HttpResponse):
@@ -129,46 +132,70 @@ class DataListView(View):
             # get the object with the given id
             querySet = model.objects.filter(id=form_id).all()
             if querySet.count() != 1:
-                return HttpResponseBadRequest(f"No object found with id {form_id}.")
+                return Utilities.toHttpResponseWithError(f"No object found with id {form_id}.")
 
             dataMap = {}
             item = list(querySet)[0]
             for key, value in formDef.items():
                 value = getattr(item, key)
-                dataMap[key] = value
+                if key != "id" and key != DbNamings.GEOM:
+                    dataMap[key] = value
 
             # also add id
             id = getattr(item, "id")
-            dataMap["id"] = id
+            geom = getattr(item, DbNamings.GEOM)
+            shapelyGeom = HyGeomUtils.fromWkt(geom.wkt)
+            if shapelyGeom.is_empty:
+                return Utilities.toHttpResponseWithError(f"Geometry is empty for object with id {form_id}.")
 
-            return JsonResponse(dataMap, safe=False, json_dumps_params={'indent': 4})
+            feature = HyGeojsonUtils.mapToFeature(properties=dataMap, geometry=shapelyGeom, id=id)
+            geojsonString = HyGeojsonUtils.featureToString(feature)
+
+            return HttpResponse(geojsonString, content_type="application/json")
         else:
             querySet = model.objects.all()
 
-            dataList = []
+            featuresList = []
             for item in querySet:
                 dataMap = {}
                 # for each key in formDef, get the attribute with the same name from the 
                 # item and add it to the dataMap
                 for key, value in formDef.items():
                     value = getattr(item, key)
-                    dataMap[key] = value
+                    if key != "id" and key != DbNamings.GEOM:
+                        # check if value is a datetime.time object
+                        if isinstance(value, datetime.time):
+                            value = value.strftime("%H:%M:%S")
+                        # check if value is a datetime.date object
+                        elif isinstance(value, datetime.date):
+                            value = value.strftime("%Y-%m-%d")
+                        # check if value is a datetime.datetime object
+                        elif isinstance(value, datetime.datetime):
+                            value = value.strftime("%Y-%m-%d %H:%M:%S")
+                        dataMap[key] = value
 
                 # also add id
                 id = getattr(item, "id")
-                dataMap["id"] = id
+                geom = getattr(item, DbNamings.GEOM)
+                shapelyGeom = HyGeomUtils.fromWkt(geom.wkt)
+                if shapelyGeom.is_empty:
+                    return Utilities.toHttpResponseWithError(f"Geometry is empty for object with id {form_id}.")
 
-                dataList.append(dataMap)
+                feature = HyGeojsonUtils.mapToFeature(properties=dataMap, geometry=shapelyGeom, id=id)
 
-            return JsonResponse(dataList, safe=False, json_dumps_params={'indent': 4})
+                featuresList.append(feature)
+
+            geojsonString = HyGeojsonUtils.featuresListToString(featuresList)
+
+            return HttpResponse(geojsonString, content_type="application/json")
 
     def post(self, request, form_name):
         """
         POST method that allows for:
         
         - /formlayers/data/form_name/?project=id
-            to create new items for the given form/layer and project. The body is the list 
-            of dictionaries with the data to create.
+            to create new items for the given form/layer and project. The body is a geojson 
+            featurecollection.
         """
         
         modelUserProject = _getModelFormUserProject(request, form_name)
@@ -177,23 +204,24 @@ class DataListView(View):
         else:
             model, form, user, projectModel = modelUserProject
         
-        data = json.loads(request.body)
-        # extract the data from the list/dictionary and create the model object
-        if isinstance(data, list):
-            dataList = data
-        else:
-            dataList = [data]
+        featureCollection = HyGeojsonUtils.stringToFeatureCollection(request.body)
         
         createdIds = []
-        for data in dataList:
+        for feature in featureCollection.features:
             modelObj = model()
+            data = feature.properties
             for key, value in data.items():
                 if key == "id":
                     continue
                 if not value:
                     continue
                 setattr(modelObj, key, value)
+            
+            geom = HyGeomUtils.fromGeoJson(str(feature.geometry))
+            setattr(modelObj, DbNamings.GEOM, geom.wkt)
+            
             modelObj.save()
+
             # after saving the id is available
             createdIds.append(str(modelObj.id))
         
@@ -213,27 +241,25 @@ class DataListView(View):
         else:
             model, form, user, projectModel = modelUserProject
 
-        data = json.loads(request.body)
-
-        # extract the data from the list/dictionary and create the model object
-        if isinstance(data, list):
-            dataList = data
-        else:
-            dataList = [data]
-
-        # check that all items have an id
-        for data in dataList:
-            if not data.get("id"):
-                return HttpResponseBadRequest(f"Missing id in data items: {data}")
-
+        featureCollection = HyGeojsonUtils.stringToFeatureCollection(request.body)
+        
         updatedIds = []
-        for data in dataList:
-            id = data["id"]
+        for feature in featureCollection.features:
+            modelObj = model()
+            data = feature.properties
+            id = feature.get('id', None)
+            if not id:
+                return Utilities.toHttpResponseWithError(f"Missing id in features.")
             modelObj = model.objects.get(pk=id)
             for key, value in data.items():
                 if key == "id":
                     continue
                 setattr(modelObj, key, value)
+            
+            
+            geom = HyGeomUtils.fromGeoJson(str(feature.geometry))
+            setattr(modelObj, DbNamings.GEOM, geom.wkt)
+            
             modelObj.save()
             updatedIds.append(str(modelObj.id))
 

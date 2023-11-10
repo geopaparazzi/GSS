@@ -5,6 +5,9 @@ from django.db import connection
 from django.db.utils import OperationalError
 import logging
 from data.models import Form
+from django.contrib.gis.db import models as geomodels
+from django.contrib.gis.geos import Point, LineString, Polygon
+from data.models import DbNamings
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,8 +29,11 @@ class _ModelsRegistry:
         -------
         list: the list of enabled forms.
         """
-        forms = Form.objects.filter(enabled=True).all()
-        return [form for form in forms]
+        formsQs = Form.objects.filter(enabled=True).all()
+        forms = []
+        for form in formsQs:
+            forms.append(form)
+        return forms
 
     def checkModelsExist(self) -> None:
         """
@@ -45,6 +51,16 @@ class _ModelsRegistry:
 
                 # convert them to django fields
                 djangoFields = modelsRegistry.djangoFieldsFromFields(fields)
+                # add the geometry field
+                if form.geometrytype == Form.GEOMETRYTYPES[0][0]:
+                    geometry = geomodels.PointField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Point())
+                elif form.geometrytype == Form.GEOMETRYTYPES[1][0]:
+                    geometry = geomodels.LineStringField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=LineString())
+                elif form.geometrytype == Form.GEOMETRYTYPES[2][0]:
+                    geometry = geomodels.PolygonField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Polygon())
+                
+                if geometry:
+                    djangoFields[DbNamings.GEOM] = geometry
 
                 # then create the model and register it (also migrate if necessary)
                 model = modelsRegistry.registerModel(name, djangoFields)
