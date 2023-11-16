@@ -74,7 +74,7 @@ def layers(request):
     Make sure that the user has access to the project and that the form
     is regeistered to the given project.
     """
-    modelsDict = {}
+    modelsList = []
     # now check permissions to access that model
     projectId = request.GET.get(DbNamings.API_PARAM_PROJECT)
     if not projectId:
@@ -98,10 +98,14 @@ def layers(request):
     for name, form in dynamicLayers.items():
         form = Form.objects.filter(name=name, project=projectModel).first()
         if form:
+            modelsDict = {}
+            modelsDict["name"] = name
+            modelsDict["geometrytype"] = form.geometrytype
             # fields = modelsRegistry.fieldsFromDefinition(form)
-            modelsDict[name] = form.definition
+            modelsDict["form"] = form.definition
+            modelsList.append(modelsDict)
 
-    return JsonResponse(modelsDict, json_dumps_params={'indent': 4})
+    return JsonResponse(modelsList, safe=False, json_dumps_params={'indent': 4})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -205,6 +209,9 @@ class DataListView(View):
             model, form, user, projectModel = modelUserProject
         
         featureCollection = HyGeojsonUtils.stringToFeatureCollection(request.body)
+
+        addUser = form.add_userinfo
+        addTimestamp = form.add_timestamp
         
         createdIds = []
         for feature in featureCollection.features:
@@ -219,6 +226,15 @@ class DataListView(View):
             
             geom = HyGeomUtils.fromGeoJson(str(feature.geometry))
             setattr(modelObj, DbNamings.GEOM, geom.wkt)
+
+            # when a new one is created, add user and timestamp
+            # and use the same user and timestamp for lastedit
+            if addUser:
+                setattr(modelObj, DbNamings.USER, user)
+                setattr(modelObj, DbNamings.LASTEDIT_USER, user)
+            if addTimestamp:
+                setattr(modelObj, DbNamings.CREATION_TIMESTAMP, datetime.datetime.now())
+                setattr(modelObj, DbNamings.LASTEDIT_TIMESTAMP, datetime.datetime.now())
             
             modelObj.save()
 
@@ -241,6 +257,9 @@ class DataListView(View):
         else:
             model, form, user, projectModel = modelUserProject
 
+        addUser = form.add_userinfo
+        addTimestamp = form.add_timestamp
+
         featureCollection = HyGeojsonUtils.stringToFeatureCollection(request.body)
         
         updatedIds = []
@@ -259,6 +278,11 @@ class DataListView(View):
             
             geom = HyGeomUtils.fromGeoJson(str(feature.geometry))
             setattr(modelObj, DbNamings.GEOM, geom.wkt)
+
+            if addUser:
+                setattr(modelObj, DbNamings.LASTEDIT_USER, user)
+            if addTimestamp:
+                setattr(modelObj, DbNamings.LASTEDIT_TIMESTAMP, datetime.datetime.now())
             
             modelObj.save()
             updatedIds.append(str(modelObj.id))

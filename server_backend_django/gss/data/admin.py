@@ -71,7 +71,7 @@ class FormAdmin(admin.ModelAdmin):
     list_display = ('name', 'enabled')
 
     formfield_overrides = {
-        models.JSONField: {'widget': JSONEditorWidget(mode='tree')},
+        models.JSONField: {'widget': JSONEditorWidget(mode='text')},
     }
 
 # admin.site.register(Note, LeafletGeoAdmin)

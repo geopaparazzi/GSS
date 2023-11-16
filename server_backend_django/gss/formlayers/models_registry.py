@@ -8,6 +8,8 @@ from data.models import Form
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.geos import Point, LineString, Polygon
 from data.models import DbNamings
+from django.contrib.auth.models import User, Group
+from datetime import datetime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ class _ModelsRegistry:
     def __init__(self):
         self.appName = 'formlayers'
 
-    def _getEnabledForms(self) -> list:
+    def _getEnabledForms(self) -> list[Form]:
         """
         Get the list of enabled forms.
         
@@ -61,6 +63,14 @@ class _ModelsRegistry:
                 
                 if geometry:
                     djangoFields[DbNamings.GEOM] = geometry
+
+                # also add user and timestamp fields if requested
+                if form.add_userinfo:
+                    djangoFields[DbNamings.USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.USER, default=-1)
+                    djangoFields[DbNamings.LASTEDIT_USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.LASTEDIT_USER, default=-1)
+                if form.add_timestamp:
+                    djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now())
+                    djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now())
 
                 # then create the model and register it (also migrate if necessary)
                 model = modelsRegistry.registerModel(name, djangoFields)
@@ -143,6 +153,16 @@ class _ModelsRegistry:
             call_command('migrate', self.appName, interactive=False)
 
         return model
+    
+    def onFormDelete(self, modelName: str):
+        # remove model from app models
+        if modelName in apps.all_models[self.appName]:
+            del apps.all_models[self.appName][modelName]
+
+        # migrate
+        call_command('makemigrations', self.appName, interactive=False)
+        call_command('migrate', self.appName, interactive=False)
+    
     
     def fieldsFromDefinition(self, formDefinition:list) -> dict:
         """

@@ -11,8 +11,11 @@ from base64 import b64encode
 from django.contrib import admin
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models.signals import pre_delete
-from django.dispatch import receiver
 from gss.utils import Utilities
+from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
+import json
+
 
 class DbNamings():
     GROUP_COORDINATORS = "Coordinators"
@@ -23,7 +26,11 @@ class DbNamings():
 
     GEOM = "the_geom"
     USER = "user" 
+    LASTEDIT_USER = "lastedituser" 
     PROJECT = "project" 
+    TIMESTAMP = "timestamp" 
+    CREATION_TIMESTAMP = "creationts" 
+    LASTEDIT_TIMESTAMP = "lasteditts" 
 
     NOTE_ID = "id"
     NOTE_PREV = "previous"
@@ -184,6 +191,50 @@ class TmsSource(models.Model):
         ]
 
 
+
+
+formNameValidator = RegexValidator(
+    regex=r'^[a-zA-Z0-9_]+$',
+    message='Only alphanumeric characters with no spaces are allowed.',
+)
+
+def validateFormContent(data):
+    # Check if the the form is valid json
+    try:
+        # the first level needs to be a list
+        if not isinstance(data, list):
+            raise ValidationError('The form must be a list.')
+        # the list has to contain only one value
+        if len(data) != 1:
+            raise ValidationError('The form must contain only one section element.')
+        # the section element has to be a dict and contain the keys sectionname and forms
+        if not isinstance(data[0], dict):
+            raise ValidationError('The section element must be a dict.')
+        if not "sectionname" in data[0]:
+            raise ValidationError('The section element must contain the key sectionname.')
+        if not "forms" in data[0]:
+            raise ValidationError('The section element must contain the key forms.')
+        # the forms element has to be a list
+        if not isinstance(data[0]["forms"], list):
+            raise ValidationError('The forms element must be a list.')
+        # each forms element has to contain a formitems key
+        for form in data[0]["forms"]:
+            if not "formitems" in form:
+                raise ValidationError('Each form element must contain the key formitems.')
+            # the formitems element has to be a list
+            if not isinstance(form["formitems"], list):
+                raise ValidationError('The formitems element must be a list.')
+            # each formitem has to contain a key key
+            for formitem in form["formitems"]:
+                if not "key" in formitem:
+                    raise ValidationError('Each formitem element must contain a key element.')
+                if not "value" in formitem:
+                    raise ValidationError('Each formitem element must contain a value element.')
+        
+    except ValueError as e:
+        raise ValidationError('The value must not contain spaces or special characters.')
+
+
 class Form(models.Model):
     GEOMETRYTYPES = (
         ("Point", "Point"),
@@ -191,9 +242,11 @@ class Form(models.Model):
         ("Polygon", "Polygon"),
     )
         
-    name = models.CharField(name=DbNamings.FORM_NAME, max_length=200, null=False, unique=True)
-    definition = models.JSONField(name=DbNamings.FORM_DEFINITION, null=True, blank=True)
+    name = models.CharField(name=DbNamings.FORM_NAME, max_length=200, null=False, unique=True, validators=[formNameValidator])
+    definition = models.JSONField(name=DbNamings.FORM_DEFINITION, null=False, default=list, validators=[validateFormContent])
     geometrytype = models.CharField(name=DbNamings.FORM_GEOMETRYTYPE, max_length=10, null=False, choices=GEOMETRYTYPES, default=GEOMETRYTYPES[0][0]) 
+    add_userinfo = models.BooleanField(name="add_userinfo", null=False, default=True)
+    add_timestamp = models.BooleanField(name="add_timestamp", null=False, default=True)
     enabled = models.BooleanField(name=DbNamings.FORM_ENABLED, null=False, default=True)
 
     class Meta:
@@ -201,6 +254,9 @@ class Form(models.Model):
             models.Index(fields=[DbNamings.FORM_NAME]),
             models.Index(fields=[DbNamings.FORM_ENABLED]),
         ]
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class Project(models.Model):
@@ -429,5 +485,8 @@ class LastUserPosition(models.Model):
             models.Index(fields=[DbNamings.USER]),
             models.Index(fields=[DbNamings.PROJECT]),
         ]
+
+
+
 
 
