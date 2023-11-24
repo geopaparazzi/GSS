@@ -267,7 +267,7 @@ class DataListView(View):
             modelObj = model()
             data = feature.properties
             id = feature.get('id', None)
-            if not id:
+            if id == None:
                 return Utilities.toHttpResponseWithError(f"Missing id in features.")
             modelObj = model.objects.get(pk=id)
             for key, value in data.items():
@@ -287,7 +287,7 @@ class DataListView(View):
             modelObj.save()
             updatedIds.append(str(modelObj.id))
 
-        return JsonResponse({'message': f'Updated {len(updatedIds)} {form_name} objects (ids {", ".join(updatedIds)})'}, status=201)
+        return JsonResponse({'message': f'Updated {len(updatedIds)} {form_name} objects (ids {", ".join(updatedIds)})'}, status=200)
         
 
     def delete(self, request, form_name):
@@ -331,5 +331,5 @@ class DataListView(View):
                     deletedIds.append(str(modelObj.id))
                     modelObj.delete()
 
-        return JsonResponse({'message': f'Deleted {len(deletedIds)} {form_name} objects (ids {", ".join(deletedIds)})'}, status=201)
+        return JsonResponse({'message': f'Deleted {len(deletedIds)} {form_name} objects (ids {", ".join(deletedIds)})'}, status=200)
                 
