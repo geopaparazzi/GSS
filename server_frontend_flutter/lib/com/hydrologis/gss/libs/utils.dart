@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -15,10 +16,10 @@ import 'package:smashlibs/smashlibs.dart';
 class NetworkImageWidget extends StatefulWidget {
   final double _height;
   final String _imageUrl;
-  final String _title;
+  final String? _title;
   final bool hideRotate;
   NetworkImageWidget(this._imageUrl, this._title, this._height,
-      {this.hideRotate = true, Key key})
+      {this.hideRotate = true, Key? key})
       : super(key: key);
 
   @override
@@ -31,8 +32,8 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
   final String _imageUrl;
 
   bool _imageReady = false;
-  List<int> _bytes;
-  String error;
+  List<int>? _bytes;
+  String? error;
   int quarterTurns = 0;
 
   _NetworkImageWidgetState(this._imageUrl, this._height);
@@ -45,7 +46,7 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
   }
 
   void downloadImage() async {
-    var tokenHeader = ServerApi.getTokenHeader();
+    var tokenHeader = WebServerApi.getTokenHeader();
     var project = SmashSession.getSessionProject();
     var uri = Uri.parse(_imageUrl + "?$API_PROJECT_PARAM${project.id}");
 
@@ -64,7 +65,7 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
   @override
   Widget build(BuildContext context) {
     if (error != null) {
-      return Center(child: SmashUI.errorWidget(error));
+      return Center(child: SmashUI.errorWidget(error!));
     } else if (!_imageReady) {
       return Padding(
         padding: EdgeInsets.only(top: _height / 2),
@@ -72,7 +73,7 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
       );
     } else {
       Image image = Image.memory(
-        _bytes,
+        Uint8List.fromList(_bytes!),
         fit: BoxFit.contain,
       );
 
@@ -86,10 +87,10 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (widget._title != null && widget._title.length > 0)
+            if (widget._title != null && widget._title!.length > 0)
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: SmashUI.titleText(widget._title),
+                child: SmashUI.titleText(widget._title!),
               ),
             Padding(
               padding: const EdgeInsets.all(18.0),
@@ -160,7 +161,7 @@ class _NetworkImageWidgetState extends State<NetworkImageWidget> {
 class OnlineSourceCard extends StatefulWidget {
   final name;
   final layer;
-  OnlineSourceCard(this.name, this.layer, {Key key}) : super(key: key);
+  OnlineSourceCard(this.name, this.layer, {Key? key}) : super(key: key);
 
   @override
   _OnlineSourceCardState createState() => _OnlineSourceCardState();
@@ -188,7 +189,7 @@ class _OnlineSourceCardState extends State<OnlineSourceCard> {
                         center: new LatLng(46.47781, 11.33140),
                         zoom: 13.0,
                       ),
-                      layers: [widget.layer],
+                      children: [widget.layer],
                     ),
                   )
                 ],

@@ -44,12 +44,12 @@ class AboutPage extends StatefulWidget {
 
 class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
   String _version = "4.0.0alpha";
-  List<Widget> dbInfoWidgets;
+  List<Widget>? dbInfoWidgets;
 
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
     var up = SmashSession.getSessionUser();
-    // var dbInfo = await ServerApi.getDbinfo(up[0], up[1]);
+    // var dbInfo = await WebServerApi.getDbinfo(up[0], up[1]);
     // var splitInfo = dbInfo.split("\n");
     // if (dbInfo.toLowerCase().contains("postgis")) {
     //   dbInfoWidgets = splitInfo.map((s) => SmashUI.smallText(s)).toList();
@@ -132,7 +132,7 @@ class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
                   bold: true, color: SmashColors.mainDecorations),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: dbInfoWidgets,
+                children: dbInfoWidgets!,
               ),
             ),
         ],

@@ -24,7 +24,7 @@ import 'package:dart_jts/dart_jts.dart' as JTS;
 // import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class MainMapView extends StatefulWidget {
-  MainMapView({Key key}) : super(key: key);
+  MainMapView({Key? key}) : super(key: key);
 
   @override
   _MainMapViewState createState() => _MainMapViewState();
@@ -33,14 +33,14 @@ class MainMapView extends StatefulWidget {
 class _MainMapViewState extends State<MainMapView>
     with AfterLayoutMixin<MainMapView> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  MapController _mapController;
-  AttributesTableWidget attributesTableWidget;
+  MapController? _mapController;
+  AttributesTableWidget? attributesTableWidget;
   final maxZoom = 25.0;
   final minZoom = 1.0;
   bool _showLastUserPositions = false;
   var userPositionsLayer;
 
-  int _heroCount;
+  int _heroCount = 0;
 
   static const _mapIconsPadding = 16.0;
   static const _mapIconsSizeNormal = 48.0;
@@ -77,13 +77,12 @@ class _MainMapViewState extends State<MainMapView>
     var screenHeight = size.height;
     mapstateModel.screenHeight = screenHeight;
 
-    var layers = <LayerOptions>[];
+    var layers = <Widget>[];
 
     if (mapstateModel.logs != null) {
-      layers.add(mapstateModel.logs);
+      layers.add(mapstateModel.logs!);
     }
-    if (mapstateModel.mapMarkers != null &&
-        mapstateModel.mapMarkers.isNotEmpty) {
+    if (mapstateModel.mapMarkers.isNotEmpty) {
       var markerCluster = MarkerClusterLayerOptions(
         maxClusterRadius: 20,
         size: Size(40, 40),
@@ -107,19 +106,17 @@ class _MainMapViewState extends State<MainMapView>
           );
         },
       );
-      layers.add(markerCluster);
+      layers.add(MarkerClusterLayerWidget(options: markerCluster));
     }
     if (userPositionsLayer != null) {
       layers.add(userPositionsLayer);
     }
 
     var xyz = SmashSession.getMapcenter();
-    if (xyz == null &&
-        mapstateModel.dataBounds != null &&
-        mapstateModel.dataBounds.isValid) {
+    if (xyz == null && mapstateModel.dataBounds != null) {
       xyz = [
-        mapstateModel.dataBounds.center.longitude,
-        mapstateModel.dataBounds.center.latitude,
+        mapstateModel.dataBounds!.center.longitude,
+        mapstateModel.dataBounds!.center.latitude,
         15
       ];
     }
@@ -130,7 +127,7 @@ class _MainMapViewState extends State<MainMapView>
     var lastUsedBasemapNames = lastUsedBasemapNamesStr.split(",");
     var backgroundLayers = mapstateModel.getBackgroundLayers();
     var backgroundLayersToLoad =
-        <TileLayerOptions>[]; // backgroundLayers[lastUsedBasemapNames];
+        <Widget>[]; // backgroundLayers[lastUsedBasemapNames];
     for (var basemapName in lastUsedBasemapNames) {
       var layer = backgroundLayers[basemapName];
       if (layer != null) {
@@ -141,11 +138,11 @@ class _MainMapViewState extends State<MainMapView>
       if (backgroundLayers.isNotEmpty) {
         // fallback on first
         var fallBackLayerName = backgroundLayers.keys.first;
-        backgroundLayersToLoad.add(backgroundLayers[fallBackLayerName]);
+        backgroundLayersToLoad.add(backgroundLayers[fallBackLayerName]!);
         SmashSession.setBasemap(fallBackLayerName);
       } else {
         // no layer, fallback on default
-        backgroundLayersToLoad.add(ServerApi.getDefaultLayer());
+        backgroundLayersToLoad.add(WebServerApi.getDefaultLayer());
         SmashSession.setBasemap(DEFAULTLAYERNAME);
       }
     }
@@ -167,13 +164,15 @@ class _MainMapViewState extends State<MainMapView>
                   onPointerSignal: (e) {
                     if (e is PointerScrollEvent) {
                       var delta = e.scrollDelta.direction;
-                      _mapController.move(_mapController.center,
-                          _mapController.zoom + (delta > 0 ? -0.2 : 0.2));
-                      var bounds = _mapController.bounds;
-                      mapstateModel.currentMapBounds = bounds;
-                      Provider.of<AttributesTableStateModel>(context,
-                              listen: false)
-                          .refresh();
+                      if (_mapController != null) {
+                        _mapController!.move(_mapController!.center,
+                            _mapController!.zoom + (delta > 0 ? -0.2 : 0.2));
+                        var bounds = _mapController!.bounds;
+                        mapstateModel.currentMapBounds = bounds;
+                        Provider.of<AttributesTableStateModel>(context,
+                                listen: false)
+                            .refresh();
+                      }
                     }
                   },
                   onPointerDown: (details) {
@@ -186,39 +185,39 @@ class _MainMapViewState extends State<MainMapView>
                     mapPointers--;
                     if (mapPointers == 0) {
                       // print("onMoveEnd");
-                      var bounds = _mapController.bounds;
-                      mapstateModel.currentMapBounds = bounds;
-                      Provider.of<AttributesTableStateModel>(context,
-                              listen: false)
-                          .refresh();
+                      if (_mapController != null) {
+                        var bounds = _mapController!.bounds;
+                        mapstateModel.currentMapBounds = bounds;
+                        Provider.of<AttributesTableStateModel>(context,
+                                listen: false)
+                            .refresh();
+                      }
                     }
                   },
                   behavior: HitTestBehavior.deferToChild,
                   child: FlutterMap(
                     options: new MapOptions(
-                      crs: backgroundLayersToLoad[0].wmsOptions != null
-                          ? backgroundLayersToLoad[0].wmsOptions.crs
-                          : Epsg3857(),
+                      crs:
+                          // backgroundLayersToLoad[0].wmsOptions != null
+                          //     ? backgroundLayersToLoad[0].wmsOptions.crs
+                          //     :
+                          Epsg3857(),
                       center: new LatLng(xyz[1], xyz[0]),
                       zoom: xyz[2],
                       minZoom: minZoom,
                       maxZoom: maxZoom,
-                      plugins: [
-                        MarkerClusterPlugin(),
-                        // TappablePolylineMapPlugin(),
-                      ],
                     ),
-                    layers: []
+                    children: []
                       ..addAll(backgroundLayersToLoad)
                       ..addAll(layers),
                     mapController: _mapController,
                   ),
                 ),
               ),
-              mapstateModel.showAttributes
+              mapstateModel.showAttributes && attributesTableWidget != null
                   ? Expanded(
                       flex: 1,
-                      child: attributesTableWidget,
+                      child: attributesTableWidget!,
                     )
                   : Container()
             ],
@@ -235,7 +234,8 @@ class _MainMapViewState extends State<MainMapView>
                       child: Icon(
                         MdiIcons.map,
                       ),
-                      backgroundColor: SmashColors.mainDecorations,
+                      backgroundColor: SmashColors.mainBackground,
+                      foregroundColor: SmashColors.mainDecorations,
                       onPressed: () async {
                         MapstateModel mapState =
                             Provider.of<MapstateModel>(context, listen: false);
@@ -279,7 +279,8 @@ class _MainMapViewState extends State<MainMapView>
                               ? MdiIcons.tableLargeRemove
                               : MdiIcons.tableLarge,
                         ),
-                        backgroundColor: SmashColors.mainDecorations,
+                        backgroundColor: SmashColors.mainBackground,
+                        foregroundColor: SmashColors.mainDecorations,
                         onPressed: () {
                           setState(() {
                             mapstateModel.showAttributes =
@@ -288,8 +289,9 @@ class _MainMapViewState extends State<MainMapView>
                             if (mapstateModel.showAttributes) {
                               delta = 1;
                             }
-                            _mapController.move(_mapController.center,
-                                _mapController.zoom + delta);
+                            if (_mapController != null)
+                              _mapController!.move(_mapController!.center,
+                                  _mapController!.zoom + delta);
                           });
                           // mapstateModel.reloadMap();
                         }),
@@ -300,7 +302,8 @@ class _MainMapViewState extends State<MainMapView>
                       tooltip: "Refresh data",
                       heroTag: "refresh_data_button",
                       child: Icon(MdiIcons.refresh),
-                      backgroundColor: SmashColors.mainDecorations,
+                      backgroundColor: SmashColors.mainBackground,
+                      foregroundColor: SmashColors.mainDecorations,
                       onPressed: () async {
                         var mapstateModel =
                             Provider.of<MapstateModel>(context, listen: false);
@@ -320,9 +323,10 @@ class _MainMapViewState extends State<MainMapView>
               padding: const EdgeInsets.all(_mapIconsPadding),
               child: FloatingActionButton(
                 heroTag: "opendrawer",
-                backgroundColor: SmashColors.mainDecorations,
+                backgroundColor: SmashColors.mainBackground,
+                foregroundColor: SmashColors.mainDecorations,
                 onPressed: () {
-                  _scaffoldKey.currentState.openDrawer();
+                  _scaffoldKey.currentState?.openDrawer();
                 },
                 child: Icon(MdiIcons.menu),
               ),
@@ -346,7 +350,7 @@ class _MainMapViewState extends State<MainMapView>
         child: Container(
           decoration: BoxDecoration(
             color: SmashColors.mainBackground.withAlpha(128),
-            borderRadius: BorderRadius.all(Radius.circular(40)),
+            borderRadius: BorderRadius.all(Radius.circular(10)),
             // border: Border.all(color: SmashColors.mainDecorations, width: 5),
           ),
           child: Padding(
@@ -362,17 +366,20 @@ class _MainMapViewState extends State<MainMapView>
                     height: _mapIconsSizeMini,
                     child: FloatingActionButton(
                       heroTag: "zoomin",
-                      backgroundColor: SmashColors.mainDecorations,
+                      backgroundColor: SmashColors.mainBackground,
+                      foregroundColor: SmashColors.mainDecorations,
                       mini: true,
                       onPressed: () {
-                        var zoom = _mapController.zoom - 1;
-                        if (zoom < minZoom) zoom = minZoom;
-                        _mapController.move(_mapController.center, zoom);
-                        var bounds = _mapController.bounds;
-                        mapstateModel.currentMapBounds = bounds;
-                        Provider.of<AttributesTableStateModel>(context,
-                                listen: false)
-                            .refresh();
+                        if (_mapController != null) {
+                          var zoom = _mapController!.zoom - 1;
+                          if (zoom < minZoom) zoom = minZoom;
+                          _mapController!.move(_mapController!.center, zoom);
+                          var bounds = _mapController!.bounds;
+                          mapstateModel.currentMapBounds = bounds;
+                          Provider.of<AttributesTableStateModel>(context,
+                                  listen: false)
+                              .refresh();
+                        }
                       },
                       child: Icon(MdiIcons.magnifyMinus),
                     ),
@@ -384,13 +391,15 @@ class _MainMapViewState extends State<MainMapView>
                     width: _mapIconsSizeMini,
                     height: _mapIconsSizeMini,
                     child: FloatingActionButton(
-                      backgroundColor: SmashColors.mainDecorations,
+                      backgroundColor: SmashColors.mainBackground,
+                      foregroundColor: SmashColors.mainDecorations,
                       heroTag: "zoomdata",
                       mini: true,
                       tooltip: "Zoom to data",
                       onPressed: () {
-                        if (mapstateModel.dataBounds.isValid) {
-                          _mapController.fitBounds(mapstateModel.dataBounds);
+                        if (mapstateModel.dataBounds != null &&
+                            _mapController != null) {
+                          _mapController!.fitBounds(mapstateModel.dataBounds!);
                           mapstateModel.currentMapBounds =
                               mapstateModel.dataBounds;
                           Provider.of<AttributesTableStateModel>(context,
@@ -408,7 +417,8 @@ class _MainMapViewState extends State<MainMapView>
                     width: _mapIconsSizeMini,
                     height: _mapIconsSizeMini,
                     child: FloatingActionButton(
-                      backgroundColor: SmashColors.mainDecorations,
+                      backgroundColor: SmashColors.mainBackground,
+                      foregroundColor: SmashColors.mainDecorations,
                       heroTag: "zoombookmarks",
                       mini: true,
                       tooltip: "Bookmarks",
@@ -425,18 +435,21 @@ class _MainMapViewState extends State<MainMapView>
                     width: _mapIconsSizeMini,
                     height: _mapIconsSizeMini,
                     child: FloatingActionButton(
-                      backgroundColor: SmashColors.mainDecorations,
+                      backgroundColor: SmashColors.mainBackground,
+                      foregroundColor: SmashColors.mainDecorations,
                       heroTag: "zoomout",
                       mini: true,
                       onPressed: () {
-                        var zoom = _mapController.zoom + 1;
-                        if (zoom > maxZoom) zoom = maxZoom;
-                        _mapController.move(_mapController.center, zoom);
-                        var bounds = _mapController.bounds;
-                        mapstateModel.currentMapBounds = bounds;
-                        Provider.of<AttributesTableStateModel>(context,
-                                listen: false)
-                            .refresh();
+                        if (_mapController != null) {
+                          var zoom = _mapController!.zoom + 1;
+                          if (zoom > maxZoom) zoom = maxZoom;
+                          _mapController!.move(_mapController!.center, zoom);
+                          var bounds = _mapController!.bounds;
+                          mapstateModel.currentMapBounds = bounds;
+                          Provider.of<AttributesTableStateModel>(context,
+                                  listen: false)
+                              .refresh();
+                        }
                       },
                       child: Icon(MdiIcons.magnifyPlus),
                     ),
@@ -518,7 +531,7 @@ class _MainMapViewState extends State<MainMapView>
               ),
               title: Text("Project"),
               subtitle: SmashUI.normalText(
-                  SmashSession.getSessionProject().name,
+                  SmashSession.getSessionProject().name ?? "Unknown Project",
                   bold: true),
             ),
             Padding(
@@ -537,7 +550,7 @@ class _MainMapViewState extends State<MainMapView>
                 ),
                 title: Text("Configuration"),
                 onTap: () {
-                  html.window.open(API_CONFIGRATION_URL, 'admin');
+                  html.window.open("$WEBAPP_URL$API_CONFIGRATION_URL", 'admin');
                 },
               ),
             ),
@@ -550,6 +563,7 @@ class _MainMapViewState extends State<MainMapView>
                         ? " (${userPositionsLayer.markers.length})"
                         : "")),
                 onChanged: (selection) async {
+                  if (selection == null) return;
                   if (selection) {
                     Timer.periodic(const Duration(seconds: 60),
                         (Timer timer) async {
@@ -559,8 +573,9 @@ class _MainMapViewState extends State<MainMapView>
                       } else {
                         // print("Get user positions.");
                         var lastUserPositions =
-                            await ServerApi.getLastUserPositions();
-                        if (lastUserPositions.isNotEmpty) {
+                            await WebServerApi.getLastUserPositions();
+                        if (lastUserPositions != null &&
+                            lastUserPositions.isNotEmpty) {
                           userPositionsLayer = await buildLastUserPositionLayer(
                               lastUserPositions,
                               TimeUtilities.ISO8601_TS_FORMATTER
@@ -570,8 +585,9 @@ class _MainMapViewState extends State<MainMapView>
                       }
                     });
                     var lastUserPositions =
-                        await ServerApi.getLastUserPositions();
-                    if (lastUserPositions.isNotEmpty) {
+                        await WebServerApi.getLastUserPositions();
+                    if (lastUserPositions != null &&
+                        lastUserPositions.isNotEmpty) {
                       userPositionsLayer = await buildLastUserPositionLayer(
                           lastUserPositions,
                           TimeUtilities.ISO8601_TS_FORMATTER
@@ -625,8 +641,9 @@ class _MainMapViewState extends State<MainMapView>
                 onTap: () {
                   _showLastUserPositions = false;
                   SmashSession.logout(
-                    mapCenter:
-                        "${_mapController.center.longitude};${_mapController.center.latitude};${_mapController.zoom}",
+                    mapCenter: _mapController != null
+                        ? "${_mapController!.center.longitude};${_mapController!.center.latitude};${_mapController!.zoom}"
+                        : null,
                   );
                   Navigator.pushReplacement(
                       context, MaterialPageRoute(builder: (_) => MainPage()));

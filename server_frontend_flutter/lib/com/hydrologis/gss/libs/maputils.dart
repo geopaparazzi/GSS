@@ -111,7 +111,7 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
           //   model.selectedNoteId = dataId;
           //   model.refresh();
           // } else {
-          openImageDialog(mapState.currentMapContext, name, dataId,
+          openImageDialog(mapState.currentMapContext!, name, dataId,
               hideRotate: false);
           // }
         },
@@ -159,7 +159,7 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
   );
 }
 
-Future<MarkerLayerOptions> buildLastUserPositionLayer(
+Future<MarkerLayer> buildLastUserPositionLayer(
     List<dynamic> lastUserPositions, var lastRefreshTimestamp) async {
   var list = <Marker>[];
   for (var e in lastUserPositions) {
@@ -167,9 +167,9 @@ Future<MarkerLayerOptions> buildLastUserPositionLayer(
     var userId = e['user'];
     var ts = e['ts'].replaceAll("T", " ");
     var uploadts = e['uploadts'].replaceAll("T", " ");
-    var userName = await ServerApi.getUserName(userId);
+    var userName = await WebServerApi.getUserName(userId) ?? "Unknown user";
 
-    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]) as JTS.Point;
     var lat = point.getY();
     var lon = point.getX();
     var size = 60.0;
@@ -203,64 +203,69 @@ Future<MarkerLayerOptions> buildLastUserPositionLayer(
     ));
   }
 
-  var userPositionsLayer = MarkerLayerOptions(
+  var userPositionsLayer = MarkerLayer(
     markers: list,
-    usePxCache: false,
+    // usePxCache: false,
   );
   return userPositionsLayer;
 }
 
 openNoteDialog(BuildContext context, int noteId) async {
-  var data = await ServerApi.getNote(noteId);
-  Map<String, dynamic> noteItem = jsonDecode(data);
-  var user = noteItem[USER];
-  var userName = await ServerApi.getUserName(user);
-  noteItem[USER] = userName;
-  var form = noteItem[FORM];
   var widget;
+
+  var data = await WebServerApi.getNote(noteId);
   var h = 300.0;
   var w = 400.0;
-  if (form != null) {
-    h = 900.0;
-    w = 900.0;
-    widget = VersionedNoteWidget(noteItem);
+  if (data == null) {
+    widget =
+        SmashDialogs.showErrorDialog(context, "No note with id $noteId found.");
   } else {
-    var id = noteItem[ID];
-    var name = noteItem[TEXT];
-    var ts = noteItem[TS];
+    Map<String, dynamic> noteItem = jsonDecode(data!);
+    var user = noteItem[USER];
+    var userName = await WebServerApi.getUserName(user);
+    noteItem[USER] = userName;
+    var form = noteItem[FORM];
+    if (form != null) {
+      h = 900.0;
+      w = 900.0;
+      widget = VersionedNoteWidget(noteItem);
+    } else {
+      var id = noteItem[ID];
+      var name = noteItem[TEXT];
+      var ts = noteItem[TS];
 
-    var geom = noteItem[THE_GEOM];
-    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
-    var map = {
-      "ID": id,
-      "Text": name,
-      "Timestamp": ts,
-      "Surveyor": userName,
-      "Latitude": point.getY().toStringAsFixed(6),
-      "Longitude": point.getX().toStringAsFixed(6),
-    };
+      var geom = noteItem[THE_GEOM];
+      JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]) as JTS.Point;
+      var map = {
+        "ID": id,
+        "Text": name,
+        "Timestamp": ts,
+        "Surveyor": userName,
+        "Latitude": point.getY().toStringAsFixed(6),
+        "Longitude": point.getX().toStringAsFixed(6),
+      };
 
-    widget = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SmashUI.titleText(
-            name,
-            textAlign: TextAlign.center,
-            useColor: true,
-          ),
-        ),
-        Expanded(
-          child: Padding(
+      widget = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Center(child: TableUtilities.fromMap(map)),
+            child: SmashUI.titleText(
+              name,
+              textAlign: TextAlign.center,
+              useColor: true,
+            ),
           ),
-        ),
-      ],
-    );
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Center(child: TableUtilities.fromMap(map)),
+            ),
+          ),
+        ],
+      );
+    }
   }
-
   Dialog openNoteDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: Container(
@@ -320,7 +325,7 @@ openLogDialog(BuildContext context, String logInfo) async {
       //           Navigator.pop(context);
       //           var userPwd = SmashSession.getSessionUser();
       //           String response =
-      //               await ServerApi.deleteGpsLog(userPwd[0], userPwd[1], id);
+      //               await WebServerApi.deleteGpsLog(userPwd[0], userPwd[1], id);
       //           if (response != null) {
       //             SmashDialogs.showErrorDialog(context, response);
       //           } else {
@@ -352,7 +357,7 @@ openImageDialog(BuildContext context, String name, int imageId,
   Dialog mapSelectionDialog = Dialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
     child: NetworkImageWidget(
-      "$API_IMAGES$imageId/",
+      "$WEBAPP_URL$API_IMAGES$imageId/",
       name,
       h * 0.7,
       hideRotate: hideRotate,
@@ -386,19 +391,19 @@ class VersionedNoteWidget extends StatefulWidget {
 }
 
 class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
-  Map<String, dynamic> noteItem;
-  int _initial;
-  int _current;
-  int _previous;
+  late Map<String, dynamic> noteItem;
+  late int _initial;
+  late int _current;
+  int? _previous;
   bool _hasHistory = true;
 
   @override
   void initState() {
     noteItem = widget.noteItem;
     // initially the last in time is shown, with a previous if available
-    _initial = noteItem[ID];
+    _initial = noteItem![ID];
     _current = _initial;
-    _previous = noteItem[PREVIOUSID];
+    _previous = noteItem![PREVIOUSID];
     if (_previous == -1) {
       _previous = null;
       _hasHistory = false;
@@ -407,9 +412,9 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
   }
 
   Future loadNote() async {
-    var data = await ServerApi.getNote(_current);
-    noteItem = jsonDecode(data);
-    var userName = await ServerApi.getUserName(noteItem[USER]);
+    var data = await WebServerApi.getNote(_current);
+    noteItem = jsonDecode(data!);
+    var userName = await WebServerApi.getUserName(noteItem[USER]);
     noteItem[USER] = userName;
     _current = noteItem[ID];
     _previous = noteItem[PREVIOUSID];
@@ -425,18 +430,19 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
     var name = noteItem[TEXT];
     var ts = noteItem[TS];
     var geom = noteItem[THE_GEOM];
-    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+    JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]) as JTS.Point;
     var p = LatLng(point.getY(), point.getX());
     var user = noteItem[USER];
     var sectionMap = noteItem[FORM];
-    var sectionName = sectionMap[ATTR_SECTIONNAME];
+    var section = SmashSection(sectionMap);
+    var sectionName = section.sectionName ?? " no section name";
     var titleWidget = SmashUI.titleText(
       sectionName,
       color: SmashColors.mainBackground,
       bold: true,
     );
     var formHelper =
-        ServerFormHelper(_current, sectionName, sectionMap, titleWidget, p);
+        ServerFormHelper(_current, sectionName, section, titleWidget, p);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -453,7 +459,10 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
           child: MasterDetailPage(
             formHelper,
             doScaffold: false,
-            isReadOnly: true,
+            presentationMode: PresentationMode(
+                isReadOnly: true,
+                doIgnoreEmpties: false,
+                detailMode: DetailMode.DETAILED),
           ),
         ),
         Padding(
@@ -476,7 +485,7 @@ class _VersionedNoteWidgetState extends State<VersionedNoteWidget> {
                       icon: Icon(MdiIcons.skipPrevious),
                       color: SmashColors.mainDecorations,
                       onPressed: () async {
-                        _current = _previous;
+                        _current = _previous!;
                         await loadNote();
                       },
                     )
@@ -520,22 +529,22 @@ class FilterWidget extends StatefulWidget {
 
 class _FilterWidgetState extends State<FilterWidget>
     with AfterLayoutMixin<FilterWidget> {
-  Map<String, bool> _projectsToActive;
-  Map<String, bool> _surveyorsToActive;
-  List<String> _projectNames;
-  List<String> _surveyorNames;
+  Map<String, bool> _projectsToActive = {};
+  Map<String, bool> _surveyorsToActive = {};
+  List<String> _projectNames = [];
+  List<String> _surveyorNames = [];
   bool _doSurveyors = true;
 
   bool _dataLoaded = false;
 
-  FilterStateModel _filterStateModel;
+  late FilterStateModel _filterStateModel;
 
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
     _filterStateModel = Provider.of<FilterStateModel>(context, listen: false);
     var sessionUser = SmashSession.getSessionUser();
     // String responsJson =
-    //     await ServerApi.getProjects(sessionUser[0], sessionUser[1]);
+    //     await WebServerApi.getProjects(sessionUser[0], sessionUser[1]);
 
     // var jsonMap = jsonDecode(responsJson);
 
@@ -551,7 +560,7 @@ class _FilterWidgetState extends State<FilterWidget>
     // _projectNames = _projectsToActive.keys.toList();
 
     // responsJson =
-    //     await ServerApi.getSurveyorsJson(sessionUser[0], sessionUser[1]);
+    //     await WebServerApi.getSurveyorsJson(sessionUser[0], sessionUser[1]);
 
     // jsonMap = jsonDecode(responsJson);
 
@@ -632,7 +641,9 @@ class _FilterWidgetState extends State<FilterWidget>
                       value: isActive,
                       onChanged: (selected) {
                         setState(() {
-                          name2active[name] = selected;
+                          if (selected != null) {
+                            name2active[name] = selected!;
+                          }
                         });
                       });
                 },
@@ -782,7 +793,8 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                         color: SmashColors.mainDecorations,
                       ),
                       onPressed: () {
-                        mapstateModel.mapController.fitBounds(b);
+                        if (mapstateModel.mapController != null)
+                          mapstateModel.mapController!.fitBounds(b);
                         mapstateModel.currentMapBounds = b;
                         Provider.of<AttributesTableStateModel>(context,
                                 listen: false)
@@ -819,13 +831,15 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
               TextButton(
                 child: const Text('ADD CURRENT'),
                 onPressed: () async {
-                  String name = await SmashDialogs.showInputDialog(
+                  String? name = await SmashDialogs.showInputDialog(
                       context, "BOOKMARK", "Enter a name for the bookmark.");
-                  if (name.trim().isNotEmpty) {
+                  if (name != null && name.trim().isNotEmpty) {
                     var b = mapstateModel.currentMapBounds;
-                    String bm =
-                        "$name:${b.west},${b.east},${b.south},${b.north}";
-                    bookmarks.insert(0, bm);
+                    if (b != null) {
+                      String bm =
+                          "$name:${b.west},${b.east},${b.south},${b.north}";
+                      bookmarks.insert(0, bm);
+                    }
                     setState(() {});
                     SmashSession.setBookmarks(bookmarks.join("@"));
                   }
@@ -840,22 +854,22 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
 }
 
 class Attributes {
-  Widget marker;
-  int id;
-  String text;
-  LatLng point;
+  Widget? marker;
+  int? id;
+  String? text;
+  LatLng? point;
 }
 
 class AttributesTableWidget extends StatefulWidget {
-  AttributesTableWidget({Key key}) : super(key: key);
+  AttributesTableWidget({Key? key}) : super(key: key);
 
   @override
   _AttributesTableWidgetState createState() => _AttributesTableWidgetState();
 }
 
 class _AttributesTableWidgetState extends State<AttributesTableWidget> {
-  List<List<Widget>> _dataRows;
-  double width;
+  List<List<Widget>> _dataRows = [];
+  late double width;
   double rowHeight = 52.0;
   var headerTexts = [
     "Marker",
@@ -881,8 +895,11 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
       var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
       _dataRows = mapstateModel.attributes.where((arrt) {
         var bounds = mapstateModel.currentMapBounds ??=
-            mapstateModel.mapController.bounds;
-        return bounds.contains(arrt.point);
+            mapstateModel.mapController?.bounds;
+        if (bounds == null || arrt.point == null) {
+          return false;
+        }
+        return bounds.contains(arrt.point!);
       }).map((attr) {
         var textFun = (String str) {
           return Center(child: SmashUI.normalText(str));
@@ -901,11 +918,12 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
                   ),
                   tooltip: "Zoom to note.",
                   onPressed: () {
-                    if (mapstateModel.mapController != null) {
-                      var ll = LatLng(attr.point.latitude - NOTE_ZOOM_BUFFER,
-                          attr.point.longitude - NOTE_ZOOM_BUFFER);
-                      var ur = LatLng(attr.point.latitude + NOTE_ZOOM_BUFFER,
-                          attr.point.longitude + NOTE_ZOOM_BUFFER);
+                    if (mapstateModel.mapController != null &&
+                        attr.point != null) {
+                      var ll = LatLng(attr.point!.latitude - NOTE_ZOOM_BUFFER,
+                          attr.point!.longitude - NOTE_ZOOM_BUFFER);
+                      var ur = LatLng(attr.point!.latitude + NOTE_ZOOM_BUFFER,
+                          attr.point!.longitude + NOTE_ZOOM_BUFFER);
 
                       mapstateModel.fitbounds(
                           newBounds: LatLngBounds.fromPoints([ll, ur]));
@@ -921,10 +939,10 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
                   tooltip: "View note.",
                   onPressed: () {
                     if (attr.marker is Image) {
-                      openImageDialog(context, attr.text, attr.id,
+                      openImageDialog(context, attr.text!, attr.id!,
                           hideRotate: false);
                     } else {
-                      openNoteDialog(context, attr.id);
+                      openNoteDialog(context, attr.id!);
                     }
                   },
                 ),
@@ -943,7 +961,7 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
                 //       if (doDelete) {
                 //         var up = SmashSession.getSessionUser();
                 //         var response =
-                //             await ServerApi.deleteNote(up[0], up[1], attr.id);
+                //             await WebServerApi.deleteNote(up[0], up[1], attr.id);
                 //         await mapstateModel.getData(context);
                 //         mapstateModel.reloadMap();
                 //         attrState.refresh();
@@ -957,7 +975,7 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
             ),
           ),
           textFun("${attr.id}"),
-          textFun(attr.text),
+          textFun(attr.text!),
           // textFun(TimeUtilities.ISO8601_TS_FORMATTER
           //     .format(DateTime.fromMillisecondsSinceEpoch(attr.timeStamp))),
           // textFun(attr.user ?? "- nv -"),

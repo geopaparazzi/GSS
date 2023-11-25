@@ -7,6 +7,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:smashlibs/com/hydrologis/flutterlibs/utils/logging.dart';
+import 'package:smashlibs/smashlibs.dart';
 
 const NETWORKERROR_PREFIX = "ERROR:";
 
@@ -16,7 +17,7 @@ const VALUE_KEY = "v";
 const doLocal = String.fromEnvironment('DOLOCAL', defaultValue: 'false');
 const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8000/" : "";
 
-const API_CONFIGRATION_URL = "${WEBAPP_URL}admin/";
+// const API_CONFIGRATION_URL = "${WEBAPP_URL}admin/";
 const API_LOGIN = "${WEBAPP_URL}api/login/";
 const API_USERS = "${WEBAPP_URL}api/users/";
 
@@ -27,19 +28,19 @@ const API_NOTES = "${WEBAPP_URL}api/notes/";
 const API_GPSLOGS = "${WEBAPP_URL}api/gpslogs/";
 const API_RENDERIMAGES = "${WEBAPP_URL}api/renderimages/";
 const API_RENDERSIMPLEIMAGES = "${WEBAPP_URL}api/rendersimpleimages/";
-const API_IMAGES = "${WEBAPP_URL}api/images/";
+// const API_IMAGES = "${WEBAPP_URL}api/images/";
 const API_WMSSOURCES = "${WEBAPP_URL}api/wmssources/";
 const API_TMSSOURCES = "${WEBAPP_URL}api/tmssources/";
 const API_USERCONFIGS = "${WEBAPP_URL}api/userconfigurations/";
 
-const API_PROJECT_PARAM = "project=";
+// const API_PROJECT_PARAM = "project=";
 
 const LOG = "log";
 const LOGTS = "ts";
 const LOGTYPE = "type";
 const LOGMSG = "msg";
 
-class ServerApi {
+class WebServerApi {
   /// Login to get a token using credentials.
   ///
   /// Returns a string starting with ERROR if problems arised.
@@ -61,7 +62,7 @@ class ServerApi {
     } catch (e) {
       return NETWORKERROR_PREFIX + "Permission denied.";
     }
-    if (response != null && response.statusCode == 200) {
+    if (response.statusCode == 200) {
       return json.decode(response.body)['token'];
     } else {
       return NETWORKERROR_PREFIX + response.body;
@@ -70,11 +71,11 @@ class ServerApi {
 
   static Map<String, String> getTokenHeader() {
     var sessionToken = SmashSession.getSessionToken();
-    var requestHeaders = {"Authorization": "Token " + sessionToken};
+    var requestHeaders = {"Authorization": "Token " + sessionToken!};
     return requestHeaders;
   }
 
-  static Future<Uint8List> getImageThumbnail(int id) async {
+  static Future<Uint8List?> getImageThumbnail(int id) async {
     var project = SmashSession.getSessionProject();
     var uri =
         Uri.parse("$API_RENDERIMAGES$id/" + "?$API_PROJECT_PARAM${project.id}");
@@ -91,7 +92,7 @@ class ServerApi {
     }
   }
 
-  static Future<List<dynamic>> getRenderImages() async {
+  static Future<List<dynamic>?> getRenderImages() async {
     var project = SmashSession.getSessionProject();
     var uri =
         Uri.parse("$API_RENDERSIMPLEIMAGES?$API_PROJECT_PARAM${project.id}");
@@ -119,7 +120,7 @@ class ServerApi {
     }
   }
 
-  static Future<List<dynamic>> getLastUserPositions() async {
+  static Future<List<dynamic>?> getLastUserPositions() async {
     var tokenHeader = getTokenHeader();
     var project = SmashSession.getSessionProject();
     var uri =
@@ -146,7 +147,7 @@ class ServerApi {
     }
   }
 
-  static Future<String> getNote(int noteId) async {
+  static Future<String?> getNote(int noteId) async {
     var tokenHeader = getTokenHeader();
     var project = SmashSession.getSessionProject();
     var uri = Uri.parse(API_NOTES + "$noteId/?$API_PROJECT_PARAM${project.id}");
@@ -158,7 +159,7 @@ class ServerApi {
     }
   }
 
-  static Future<String> getUserName(int userId) async {
+  static Future<String?> getUserName(int userId) async {
     var tokenHeader = getTokenHeader();
     var uri = Uri.parse(API_USERS + "$userId/");
     var response = await get(uri, headers: tokenHeader);
@@ -170,13 +171,13 @@ class ServerApi {
     }
   }
 
-  static Future<List<Project>> getProjects() async {
+  static Future<List<WebProject>> getProjects() async {
     try {
       var response = await get(Uri.parse(API_PROJECTNAMES));
       if (response.statusCode == 200) {
         var list = jsonDecode(response.body);
-        List<Project> projectsList = List<Project>.from(
-            list.map((projectMap) => Project.fromMap(projectMap)));
+        List<WebProject> projectsList = List<WebProject>.from(
+            list.map((projectMap) => WebProject.fromMap(projectMap)));
         return projectsList;
       } else {
         throw new StateError(response.body);
@@ -187,7 +188,7 @@ class ServerApi {
     }
   }
 
-  static Future<Map<String, String>> getUserConfigurations() async {
+  static Future<Map<String, String>?> getUserConfigurations() async {
     Map<String, String> config = {};
     var tokenHeader = getTokenHeader();
     var project = SmashSession.getSessionProject();
@@ -206,7 +207,7 @@ class ServerApi {
     }
   }
 
-  static Future<String> saveUserConfigurations(tokenHeader, Project project,
+  static Future<String?> saveUserConfigurations(tokenHeader, WebProject project,
       {basemap, mapCenter, bookmarks}) async {
     var uri = Uri.parse(API_USERCONFIGS + "?$API_PROJECT_PARAM${project.id}");
 
@@ -226,18 +227,19 @@ class ServerApi {
     try {
       tokenHeader["Content-type"] = "application/json";
       response = await post(uri, body: dataJson, headers: tokenHeader);
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        return null;
+      }
     } catch (e) {
       print(e);
-    }
-    if (response.statusCode == 200) {
-      return response.body;
-    } else {
       return null;
     }
   }
 
-  static Future<Map<String, TileLayerOptions>> getBackGroundLayers() async {
-    Map<String, TileLayerOptions> layers = {};
+  static Future<Map<String, Widget>> getBackGroundLayers() async {
+    Map<String, Widget> layers = {};
 
     bool error = false;
     try {
@@ -250,29 +252,31 @@ class ServerApi {
         for (var item in list) {
           var epsg = item['epsg'];
           var crs = epsg == 4326 ? Epsg4326() : Epsg3857();
-          layers[item['label']] = TileLayerOptions(
-            additionalOptions: {
-              "name": item['label'],
-              "Attribution": item['attribution'],
-            },
-            maxZoom: 21,
-            maxNativeZoom: 21,
+          layers[item['label']] = Opacity(
             opacity: item['opacity'],
-            backgroundColor: Colors.transparent,
-            wmsOptions: WMSTileLayerOptions(
-              crs: crs,
-              version: item['version'],
-              transparent: item['transparent'],
-              format: item['imageformat'],
-              baseUrl: item['getcapabilities'] + "?",
-              layers: [item['layername']],
+            child: TileLayer(
+              additionalOptions: {
+                "name": item['label'],
+                "Attribution": item['attribution'],
+              },
+              maxZoom: 21,
+              maxNativeZoom: 21,
+              backgroundColor: Colors.transparent,
+              wmsOptions: WMSTileLayerOptions(
+                crs: crs,
+                version: item['version'],
+                transparent: item['transparent'],
+                format: item['imageformat'],
+                baseUrl: item['getcapabilities'] + "?",
+                layers: [item['layername']],
+              ),
+              // overrideTilesWhenUrlChanges: true,
+              errorTileCallback: (tile, exception, stacktrace) {
+                // ignore tiles that can't load to avoid
+                SMLogger().e("Unable to load WMS tile: ${tile.coordinatesKey}",
+                    null, stacktrace);
+              },
             ),
-            overrideTilesWhenUrlChanges: true,
-            errorTileCallback: (tile, exception) {
-              // ignore tiles that can't load to avoid
-              SMLogger().e("Unable to load WMS tile: ${tile.coordsKey}",
-                  exception, null);
-            },
           );
         }
       }
@@ -282,30 +286,37 @@ class ServerApi {
       if (response.statusCode == 200) {
         var list = jsonDecode(response.body);
         for (var item in list) {
-          layers[item['label']] = TileLayerOptions(
-            tms: false,
-            additionalOptions: {
-              "name": item['label'],
-              "Attribution": item['attribution'],
-            },
-            subdomains:
-                item['subdomains'] != null ? item['subdomains'].split(',') : [],
-            maxZoom: item['maxzoom'],
+          layers[item['label']] = Opacity(
             opacity: item['opacity'],
-            urlTemplate: item['urltemplate'],
-            backgroundColor: Colors.transparent,
-            overrideTilesWhenUrlChanges: true,
-            errorTileCallback: (tile, exception) {
-              // ignore tiles that can't load to avoid
-              SMLogger().e("Unable to load TMS tile: ${tile.coordsKey}",
-                  exception, null);
-            },
+            child: TileLayer(
+              tms: false,
+              additionalOptions: {
+                "name": item['label'],
+                "Attribution": item['attribution'],
+              },
+              subdomains: item['subdomains'] != null
+                  ? item['subdomains'].split(',')
+                  : [],
+              maxZoom: item['maxzoom'],
+              urlTemplate: item['urltemplate'],
+              backgroundColor: Colors.transparent,
+              // overrideTilesWhenUrlChanges: true,
+              errorTileCallback: (tile, exception, stacktrace) {
+                // ignore tiles that can't load to avoid
+                SMLogger().e("Unable to load TMS tile: ${tile.coordinatesKey}",
+                    null, stacktrace);
+              },
+            ),
           );
         }
       }
     } catch (e) {
       error = true;
-      SMLogger().e("ERROR", e, null);
+      if (e is Exception) {
+        SMLogger().e("ERROR", e, null);
+      } else {
+        SMLogger().e(e.toString(), null, null);
+      }
     }
     if (error || layers.isEmpty) {
       // fallback on OSM
@@ -314,8 +325,8 @@ class ServerApi {
     return layers;
   }
 
-  static TileLayerOptions getDefaultLayer() {
-    return TileLayerOptions(
+  static TileLayer getDefaultLayer() {
+    return TileLayer(
       tms: false,
       subdomains: const ['a', 'b', 'c'],
       maxZoom: 19,
@@ -325,9 +336,9 @@ class ServerApi {
   }
 }
 
-class Project {
-  int id;
-  String name;
+class WebProject {
+  int? id;
+  String? name;
 
   String toJsonString() {
     return jsonEncode(toMap());
@@ -340,20 +351,20 @@ class Project {
     };
   }
 
-  static Project fromJson(String projectJson) {
+  static WebProject fromJson(String projectJson) {
     var projectMap = jsonDecode(projectJson);
     return fromMap(projectMap);
   }
 
-  static Project fromMap(Map<String, dynamic> projectMap) {
-    return Project()
+  static WebProject fromMap(Map<String, dynamic> projectMap) {
+    return WebProject()
       ..id = projectMap['id']
       ..name = projectMap['name'];
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Project && id == other.id;
+      identical(this, other) || other is WebProject && id == other.id;
 
   @override
   int get hashCode => id.hashCode;

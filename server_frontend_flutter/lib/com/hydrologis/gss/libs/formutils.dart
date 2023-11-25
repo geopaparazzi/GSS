@@ -5,19 +5,24 @@ import 'package:smashlibs/smashlibs.dart';
 
 const IMAGE_ID_SEPARATOR = ";";
 
-class ServerFormHelper implements AFormhelper {
+class ServerFormHelper extends AFormhelper {
   String _sectionName;
-  Map<String, dynamic> _sectionMap;
+  SmashSection _section;
   Widget _titleWidget;
   int _id;
   dynamic _position;
 
-  ServerFormHelper(this._id, this._sectionName, this._sectionMap,
+  ServerFormHelper(this._id, this._sectionName, this._section,
       this._titleWidget, this._position);
 
   @override
   Future<bool> init() async {
     return true;
+  }
+
+  @override
+  SmashSection getSection() {
+    return _section;
   }
 
   @override
@@ -42,37 +47,29 @@ class ServerFormHelper implements AFormhelper {
   }
 
   @override
-  Map<String, dynamic> getSectionMap() {
-    return _sectionMap;
-  }
-
-  @override
   String getSectionName() {
     return _sectionName;
   }
 
   /// Get thumbnails from the database
-  Future<List<Widget>> getThumbnailsFromDb(
-    BuildContext context,
-    Map<String, dynamic> itemMap,
-    List<String> imageSplit,
-  ) async {
+  Future<List<Widget>> getThumbnailsFromDb(BuildContext context,
+      SmashFormItem formItem, List<String> imageSplit) async {
     List<Widget> thumbList = [];
-    String value = ""; //$NON-NLS-1$
-    if (itemMap.containsKey(TAG_VALUE)) {
-      value = itemMap[TAG_VALUE].trim();
-    }
+
+    String value = formItem.value ?? ""; //$NON-NLS-1$
     if (value.isNotEmpty) {
-      imageSplit.clear();
-      imageSplit.addAll(value.split(IMAGE_ID_SEPARATOR));
-    } else {
-      return Future.value(thumbList);
+      var split = value.split(IMAGE_ID_SEPARATOR);
+      split.forEach((v) {
+        if (!imageSplit.contains(v)) {
+          imageSplit.add(v);
+        }
+      });
     }
 
     for (int i = 0; i < imageSplit.length; i++) {
       var id = int.parse(imageSplit[i]);
-      var bytes = await ServerApi.getImageThumbnail(id);
-      Image img = Image.memory(bytes);
+      var bytes = await WebServerApi.getImageThumbnail(id);
+      Image img = Image.memory(bytes!);
       Widget withBorder = Container(
         padding: SmashUI.defaultPadding(),
         child: GestureDetector(
@@ -93,16 +90,27 @@ class ServerFormHelper implements AFormhelper {
   }
 
   @override
-  Future<String> takePictureForForms(
+  Future<String?> takePictureForForms(
       BuildContext context, bool fromGallery, List<String> _position) async {
     // Adding pictures serverside is not implemented yet.
     return null;
   }
 
   @override
-  Future<String> takeSketchForForms(
+  Future<String?> takeSketchForForms(
       BuildContext context, List<String> imageSplit) {
     // Adding sketches serverside is not implemented yet.
-    return null;
+    return Future.value(null);
+  }
+
+  @override
+  Map<String, dynamic> getFormChangedData() {
+    // should not be called on web
+    throw UnimplementedError();
+  }
+
+  @override
+  void setData(Map<String, dynamic> newValues) {
+    // forms are readonly on web
   }
 }

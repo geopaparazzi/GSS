@@ -9,6 +9,8 @@ import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/views/map_view.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
+import 'package:smashlibs/generated/l10n.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 export 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
@@ -26,56 +28,117 @@ class GssApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AttributesTableStateModel()),
       ],
       child: MaterialApp(
+        localizationsDelegates: [
+          // SL.delegate,
+          // IEL.delegate,
+          SLL.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('en', ''),
+        ],
         routes: {'/': (context) => MainPage()},
         title: TITLE,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-            primarySwatch: SmashColors.mainDecorationsMc,
-            accentColor: SmashColors.mainSelectionMc,
-            canvasColor: SmashColors.mainBackground,
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: SmashColors.mainDecorations,
+            background: SmashColors.mainBackground,
+            primary: SmashColors.mainDecorations,
+            // secondary: SmashColors.mainSelection,
             brightness: Brightness.light,
-            fontFamily: 'Arial',
-            inputDecorationTheme: InputDecorationTheme(
-              border: const OutlineInputBorder(
-                borderSide: BorderSide(
-                    color: Color.fromARGB(
-                        255,
-                        SmashColors.mainDecorationsDarkR,
-                        SmashColors.mainDecorationsDarkG,
-                        SmashColors.mainDecorationsDarkB)),
+          ),
+          appBarTheme: AppBarTheme(
+            backgroundColor: SmashColors.mainDecorations,
+            foregroundColor: SmashColors.mainBackground,
+            titleTextStyle: TextStyle(
+              color: SmashColors.mainBackground,
+              fontWeight: FontWeight.bold,
+              fontSize: SmashUI.BIG_SIZE,
+            ),
+          ),
+          bottomAppBarTheme: BottomAppBarTheme(
+              color: SmashColors.mainBackground,
+              surfaceTintColor: SmashColors.mainBackground),
+          tabBarTheme: TabBarTheme(
+              labelColor: SmashColors.mainBackground,
+              unselectedLabelColor: Colors.grey.shade400),
+          cardTheme: CardTheme(
+            surfaceTintColor: SmashColors.mainBackground,
+            color: SmashColors.mainBackground,
+          ),
+          drawerTheme: DrawerThemeData(
+            backgroundColor: SmashColors.mainBackground,
+            surfaceTintColor: SmashColors.mainBackground,
+          ),
+          dialogTheme: DialogTheme(
+            backgroundColor: SmashColors.mainBackground,
+            shape: BeveledRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              side: BorderSide(
+                color: SmashColors.mainDecorations,
+                width: 2.0,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                    color: Color.fromARGB(
-                        255,
-                        SmashColors.mainDecorationsDarkR,
-                        SmashColors.mainDecorationsDarkG,
-                        SmashColors.mainDecorationsDarkB)),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderSide:
-                    BorderSide(color: Color.fromARGB(255, 128, 128, 128)),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(
-                    color: Color.fromARGB(
-                        255,
-                        SmashColors.mainSelectionBorderR,
-                        SmashColors.mainSelectionBorderG,
-                        SmashColors.mainSelectionBorderB)),
-              ),
+            ),
+            surfaceTintColor: SmashColors.mainBackground,
+            titleTextStyle: TextStyle(
+              color: SmashColors.mainDecorations,
+              fontWeight: FontWeight.bold,
+              fontSize: SmashUI.BIG_SIZE,
+            ),
+          ),
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+//          ThemeData(
+//             primarySwatch: SmashColors.mainDecorationsMc,
+//             accentColor: SmashColors.mainSelectionMc,
+//             canvasColor: SmashColors.mainBackground,
+//             brightness: Brightness.light,
+//             fontFamily: 'Arial',
+//             inputDecorationTheme: InputDecorationTheme(
+//               border: const OutlineInputBorder(
+//                 borderSide: BorderSide(
+//                     color: Color.fromARGB(
+//                         255,
+//                         SmashColors.mainDecorationsDarkR,
+//                         SmashColors.mainDecorationsDarkG,
+//                         SmashColors.mainDecorationsDarkB)),
+//               ),
+//               enabledBorder: OutlineInputBorder(
+//                 borderSide: BorderSide(
+//                     color: Color.fromARGB(
+//                         255,
+//                         SmashColors.mainDecorationsDarkR,
+//                         SmashColors.mainDecorationsDarkG,
+//                         SmashColors.mainDecorationsDarkB)),
+//               ),
+//               disabledBorder: OutlineInputBorder(
+//                 borderSide:
+//                     BorderSide(color: Color.fromARGB(255, 128, 128, 128)),
+//               ),
+//               focusedBorder: const OutlineInputBorder(
+//                 borderSide: BorderSide(
+//                     color: Color.fromARGB(
+//                         255,
+//                         SmashColors.mainSelectionBorderR,
+//                         SmashColors.mainSelectionBorderG,
+//                         SmashColors.mainSelectionBorderB)),
+//               ),
 
-//            labelStyle: const TextStyle(
-//              color: Color.fromARGB(255, 128, 128, 128),
-//            ),
-            )),
+// //            labelStyle: const TextStyle(
+// //              color: Color.fromARGB(255, 128, 128, 128),
+// //            ),
+//             )),
       ),
     );
   }
 }
 
 class MainPage extends StatefulWidget {
-  MainPage({Key key}) : super(key: key);
+  MainPage({Key? key}) : super(key: key);
 
   @override
   _MainPageState createState() => _MainPageState();
@@ -83,7 +146,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   String _errortext = "";
-  Project selectedProject;
+  WebProject? selectedProject;
 
   @override
   Widget build(BuildContext context) {
@@ -122,15 +185,15 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<Widget> getMainWidget(BuildContext context) async {
-    Map<String, TileLayerOptions> layersMap =
-        await ServerApi.getBackGroundLayers();
+    await GpPreferences().initialize();
+    Map<String, Widget> layersMap = await WebServerApi.getBackGroundLayers();
     MapstateModel mapState = Provider.of<MapstateModel>(context, listen: false);
     mapState.setBackgroundLayers(layersMap);
     return MainMapView();
   }
 
   Future<Scaffold> getLoginWidget(BuildContext context) async {
-    List<Project> projectsList = await ServerApi.getProjects();
+    List<WebProject> projectsList = await WebServerApi.getProjects();
 
     if (projectsList.length == 0) {
       return Scaffold(
@@ -160,12 +223,12 @@ class _MainPageState extends State<MainPage> {
       selectedProject = projectsList[0];
     }
 
-    var projectsCombo = DropdownButton<Project>(
+    var projectsCombo = DropdownButton<WebProject>(
       isExpanded: true,
-      items: projectsList.map((Project value) {
-        return DropdownMenuItem<Project>(
+      items: projectsList.map((WebProject value) {
+        return DropdownMenuItem<WebProject>(
           value: value,
-          child: Text(value.name),
+          child: Text(value.name!),
         );
       }).toList(),
       value: selectedProject,
@@ -209,12 +272,16 @@ class _MainPageState extends State<MainPage> {
         minWidth: MediaQuery.of(context).size.width,
         padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
         onPressed: () async {
-          String user = userNameController.text;
-          String password = passwordController.text;
-          var loginOk =
-              await SmashSession.login(user, password, selectedProject);
-          if (loginOk != null) {
-            _errortext = loginOk;
+          if (selectedProject == null) {
+            _errortext = "Please select a project.";
+          } else {
+            String user = userNameController.text;
+            String password = passwordController.text;
+            var loginOk =
+                await SmashSession.login(user, password, selectedProject!);
+            if (loginOk != null) {
+              _errortext = loginOk;
+            }
           }
           setState(() {});
         },

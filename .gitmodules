@@ -1,0 +1,4 @@
+[submodule "server_frontend_flutter/smashlibs"]
+	path = server_frontend_flutter/smashlibs
+	url = https://github.com/moovida/smashlibs.git
+	branch = master

@@ -15,15 +15,15 @@ import 'package:dart_jts/dart_jts.dart' as JTS;
 // import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 
 class FilterStateModel extends ChangeNotifier {
-  List<String> _surveyors;
+  List<String>? _surveyors;
 
-  List<int> _fromToTimestamp;
+  List<int>? _fromToTimestamp;
 
-  List<String> _projects;
+  List<String>? _projects;
 
-  String _matchingText;
+  String? _matchingText;
 
-  List<String> get surveyors => _surveyors;
+  List<String>? get surveyors => _surveyors;
 
   void setSurveyors(List<String> surveyors) {
     _surveyors = surveyors;
@@ -34,14 +34,14 @@ class FilterStateModel extends ChangeNotifier {
     _surveyors = surveyors;
   }
 
-  List<int> get fromToTimestamp => _fromToTimestamp;
+  List<int>? get fromToTimestamp => _fromToTimestamp;
 
   void setFromToTimestamp(List<int> fromToTimestamp) {
     _fromToTimestamp = fromToTimestamp;
     notifyListeners();
   }
 
-  List<String> get projects => _projects;
+  List<String>? get projects => _projects;
 
   void setProjects(List<String> projects) {
     _projects = projects;
@@ -52,7 +52,7 @@ class FilterStateModel extends ChangeNotifier {
     _projects = projects;
   }
 
-  String get matchingText => _matchingText;
+  String? get matchingText => _matchingText;
 
   void setMatchingText(String matchingText) {
     _matchingText = matchingText;
@@ -72,9 +72,9 @@ class FilterStateModel extends ChangeNotifier {
     if (_fromToTimestamp != null) {
       timespan = "Timespan: ";
       timespan +=
-          "${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(_fromToTimestamp[0]))}";
+          "${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(_fromToTimestamp![0]))}";
       timespan +=
-          " to ${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(_fromToTimestamp[1]))}";
+          " to ${TimeUtilities.ISO8601_TS_FORMATTER.format(DateTime.fromMillisecondsSinceEpoch(_fromToTimestamp![1]))}";
     }
 
     String str = """
@@ -88,7 +88,7 @@ class FilterStateModel extends ChangeNotifier {
 }
 
 class AttributesTableStateModel extends ChangeNotifier {
-  int selectedNoteId;
+  int? selectedNoteId;
 
   void refresh() {
     notifyListeners();
@@ -96,39 +96,39 @@ class AttributesTableStateModel extends ChangeNotifier {
 }
 
 class MapstateModel extends ChangeNotifier {
-  PolylineLayerOptions logs;
+  PolylineLayer? logs;
   // TappablePolylineLayerOptions logs;
   List<Marker> mapMarkers = [];
   List<Attributes> attributes = [];
-  LatLngBounds dataBounds = LatLngBounds();
-  BuildContext currentMapContext;
+  LatLngBounds? dataBounds = null;
+  BuildContext? currentMapContext;
 
   double screenHeight = 600;
 
   bool showAttributes = false;
 
-  MapController mapController;
+  MapController? mapController;
 
-  LatLngBounds currentMapBounds;
+  LatLngBounds? currentMapBounds;
 
-  Map<String, TileLayerOptions> layersMap = {};
+  Map<String, Widget> layersMap = {};
 
   void reloadMap() {
     notifyListeners();
   }
 
-  void fitbounds({LatLngBounds newBounds}) {
-    if (mapController != null) {
-      mapController.fitBounds(newBounds ?? dataBounds);
-      currentMapBounds = mapController.bounds;
+  void fitbounds({LatLngBounds? newBounds}) {
+    if (mapController != null && (newBounds != null || dataBounds != null)) {
+      mapController!.fitBounds(newBounds ?? dataBounds!);
+      currentMapBounds = mapController!.bounds;
     }
   }
 
-  void setBackgroundLayers(Map<String, TileLayerOptions> layers) {
+  void setBackgroundLayers(Map<String, Widget> layers) {
     layersMap = layers;
   }
 
-  Map<String, TileLayerOptions> getBackgroundLayers() {
+  Map<String, Widget> getBackgroundLayers() {
     return layersMap;
   }
 
@@ -139,16 +139,16 @@ class MapstateModel extends ChangeNotifier {
     //     Provider.of<FilterStateModel>(context, listen: false);
 
     // GET DATA FROM SERVER
-    var notesList = await ServerApi.getRenderNotes(
+    var notesList = await WebServerApi.getRenderNotes(
         // surveyors: filterStateModel.surveyors,
         // projects: filterStateModel.projects,
         // matchString: filterStateModel.matchingText,
         // fromTo: filterStateModel.fromToTimestamp,
         );
 
-    dataBounds = LatLngBounds();
+    dataBounds = null;
 
-    var logsList = await ServerApi.getGpslogs();
+    var logsList = await WebServerApi.getGpslogs();
 
     // LOAD LOG DATA
     if (logsList != null) {
@@ -171,16 +171,24 @@ class MapstateModel extends ChangeNotifier {
         var endts = logItem[ENDTS];
 
         var geom = logItem[THE_GEOM];
-        JTS.LineString line = JTS.WKTReader().read(geom.split(";")[1]);
+        JTS.LineString line =
+            JTS.WKTReader().read(geom.split(";")[1]) as JTS.LineString;
         var coordinates = line.getCoordinates();
         List<LatLng> points =
             coordinates.map((c) => LatLongHelper.fromLatLon(c.y, c.x)).toList();
 
         var env = line.getEnvelopeInternal();
-        dataBounds
-            .extend(LatLongHelper.fromLatLon(env.getMinY(), env.getMinX()));
-        dataBounds
-            .extend(LatLongHelper.fromLatLon(env.getMaxY(), env.getMaxX()));
+        if (dataBounds == null) {
+          dataBounds = LatLngBounds(
+            LatLongHelper.fromLatLon(env.getMinY(), env.getMinX()),
+            LatLongHelper.fromLatLon(env.getMaxY(), env.getMaxX()),
+          );
+        } else {
+          dataBounds!
+              .extend(LatLongHelper.fromLatLon(env.getMinY(), env.getMinX()));
+          dataBounds!
+              .extend(LatLongHelper.fromLatLon(env.getMaxY(), env.getMaxX()));
+        }
 
         lines.add(
           Polyline(
@@ -198,7 +206,7 @@ class MapstateModel extends ChangeNotifier {
         //   ),
         // );
       }
-      logs = PolylineLayerOptions(
+      logs = PolylineLayer(
         polylines: lines,
         polylineCulling: true,
       );
@@ -218,7 +226,7 @@ class MapstateModel extends ChangeNotifier {
     List<Marker> markers = <Marker>[];
     List<Attributes> attributesList = [];
 
-    var renderImages = await ServerApi.getRenderImages();
+    var renderImages = await WebServerApi.getRenderImages();
     // LOAD SIMPLE IMAGES
     if (renderImages != null) {
       for (int i = 0; i < renderImages.length; i++) {
@@ -228,11 +236,15 @@ class MapstateModel extends ChangeNotifier {
         // var data = imageItem[DATA];
         var name = imageItem[TEXT];
         var geom = imageItem[THE_GEOM];
-        JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+        JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]) as JTS.Point;
         // var x = imageItem[X];
         // var y = imageItem[Y];
         var latLng = LatLongHelper.fromLatLon(point.getY(), point.getX());
-        dataBounds.extend(latLng);
+        if (dataBounds == null) {
+          dataBounds = LatLngBounds(latLng, latLng);
+        } else {
+          dataBounds!.extend(latLng);
+        }
         var thumb = imageItem[THUMBNAIL];
         var imgData = Base64Decoder().convert(thumb);
         var imageWidget = Image.memory(
@@ -258,9 +270,13 @@ class MapstateModel extends ChangeNotifier {
         var id = noteItem[ID];
         var name = noteItem['label'];
         var geom = noteItem[THE_GEOM];
-        JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]);
+        JTS.Point point = JTS.WKTReader().read(geom.split(";")[1]) as JTS.Point;
         var latLng = LatLongHelper.fromLatLon(point.getY(), point.getX());
-        dataBounds.extend(latLng);
+        if (dataBounds == null) {
+          dataBounds = LatLngBounds(latLng, latLng);
+        } else {
+          dataBounds!.extend(latLng);
+        }
 
         var marker = noteItem[MARKER];
         var size = noteItem[SIZE];
@@ -287,12 +303,12 @@ class MapstateModel extends ChangeNotifier {
     attributes = attributesList;
 
     var delta = 0.01;
-    if (mapMarkers.length > 0) {
+    if (mapMarkers.length > 0 && dataBounds != null) {
       dataBounds = LatLngBounds(
         LatLongHelper.fromLatLon(
-            dataBounds.south - delta, dataBounds.west - delta),
+            dataBounds!.south - delta, dataBounds!.west - delta),
         LatLongHelper.fromLatLon(
-            dataBounds.north + delta, dataBounds.east + delta),
+            dataBounds!.north + delta, dataBounds!.east + delta),
       );
     } else {
       dataBounds = LatLngBounds(LatLng(-45, -90), LatLng(45, 90));
