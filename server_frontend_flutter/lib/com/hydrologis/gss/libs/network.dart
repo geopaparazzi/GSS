@@ -15,7 +15,7 @@ const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
 const VALUE_KEY = "v";
 const doLocal = String.fromEnvironment('DOLOCAL', defaultValue: 'false');
-const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8000/" : "";
+const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8000/" : "../";
 
 // const API_CONFIGRATION_URL = "${WEBAPP_URL}admin/";
 const API_LOGIN = "${WEBAPP_URL}api/login/";
