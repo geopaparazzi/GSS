@@ -25,6 +25,7 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from hydrologis_utils.geojson_utils import HyGeojsonUtils
 from hydrologis_utils.geom_utils import HyGeomUtils
 import datetime
+import base64
 
 
 def _getModelFormUserProject(request, form_name):
@@ -114,6 +115,29 @@ class DataListView(View):
     The datalist view allows to list existing data and add new data to the database.
     """
 
+    def _checkValue(self, modelObj, key, value):
+        if not value or not key:
+            return None
+        if not hasattr(modelObj, key):
+            return None
+        field = modelObj._meta.get_field(key)
+        fieldType = field.get_internal_type()
+        if len(value) == 0:
+            return None
+        # if field is a DateTimeField and value is a string, make sure the string is properly formatted
+        if fieldType == "DateField" and isinstance(value, str):
+            value = datetime.datetime.strptime(value, "%Y-%m-%d")
+        # if field is a BinaryField and value is a string, assume it is a base64 image and convert it to bytes
+        elif fieldType == "BinaryField" and isinstance(value, str):
+            # base 64 conversion
+            value = base64.b64decode(value)
+        # if field is a TimeField and value is a string, make sure the string is properly formatted
+        elif fieldType == "TimeField" and isinstance(value, str):
+            value = datetime.datetime.strptime(value, "%H:%M:%S")
+        
+        return value
+    
+
     def get(self, request, form_name, form_id=None):
         """
         GET method that allows for:
@@ -176,6 +200,14 @@ class DataListView(View):
                         # check if value is a datetime.datetime object
                         elif isinstance(value, datetime.datetime):
                             value = value.strftime("%Y-%m-%d %H:%M:%S")
+                        else:
+                            if value:
+                                field = model._meta.get_field(key)
+                                fieldType = field.get_internal_type()
+                                if fieldType == "BinaryField":
+                                    # base 64 conversion
+                                    value = base64.b64encode(value).decode("utf-8")
+
                         dataMap[key] = value
 
                 # also add id
@@ -220,10 +252,11 @@ class DataListView(View):
             for key, value in data.items():
                 if key == "id":
                     continue
+                value = self._checkValue(modelObj, key, value)
                 if not value:
                     continue
                 setattr(modelObj, key, value)
-            
+                
             geom = HyGeomUtils.fromGeoJson(str(feature.geometry))
             setattr(modelObj, DbNamings.GEOM, geom.wkt)
 
@@ -272,6 +305,10 @@ class DataListView(View):
             modelObj = model.objects.get(pk=id)
             for key, value in data.items():
                 if key == "id":
+                    continue
+                
+                value = self._checkValue(modelObj, key, value)
+                if not value:
                     continue
                 setattr(modelObj, key, value)
             
