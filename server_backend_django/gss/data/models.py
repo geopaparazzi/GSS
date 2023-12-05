@@ -15,6 +15,7 @@ from gss.utils import Utilities
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 import json
+import re
 
 
 class DbNamings():
@@ -100,6 +101,7 @@ class DbNamings():
     FORM_DEFINITION = "definition"
     FORM_GEOMETRYTYPE = "geometrytype"
     FORM_ENABLED = "enabled"
+    FORM_SHOW_IN_PROJECTDATA = "show_in_projectdata"
     
     WMSSOURCE_LABEL = "label"
     WMSSOURCE_VERSION = "version"
@@ -200,6 +202,7 @@ formNameValidator = RegexValidator(
 
 def validateFormContent(data):
     # Check if the the form is valid json
+    keysList = []
     try:
         # the first level needs to be a list
         if not isinstance(data, list):
@@ -230,6 +233,16 @@ def validateFormContent(data):
                     raise ValidationError('Each formitem element must contain a key element.')
                 if not "value" in formitem:
                     raise ValidationError('Each formitem element must contain a value element.')
+                # keys have to be unique
+                key = formitem["key"]
+                # key can't contain spaces or special characters, check the string
+                if not re.match(r'^[a-zA-Z0-9_]+$', key):
+                    raise ValidationError(f'The key element must not contain spaces or special characters: {key}')
+                if key in keysList:
+                    raise ValidationError(f'The key element must be unique in the form: {key}')
+                else:
+                    keysList.append(key)
+                
         
     except ValueError as e:
         raise ValidationError('The value must not contain spaces or special characters.')
@@ -248,11 +261,13 @@ class Form(models.Model):
     add_userinfo = models.BooleanField(name="add_userinfo", null=False, default=True)
     add_timestamp = models.BooleanField(name="add_timestamp", null=False, default=True)
     enabled = models.BooleanField(name=DbNamings.FORM_ENABLED, null=False, default=True)
+    show_in_projectdata_download = models.BooleanField(name=DbNamings.FORM_SHOW_IN_PROJECTDATA, null=False, default=True)
 
     class Meta:
         indexes = [
             models.Index(fields=[DbNamings.FORM_NAME]),
             models.Index(fields=[DbNamings.FORM_ENABLED]),
+            models.Index(fields=[DbNamings.FORM_SHOW_IN_PROJECTDATA]),
         ]
 
     def __str__(self):
@@ -301,6 +316,21 @@ class UserConfiguration(models.Model):
             models.Index(fields=[DbNamings.USER]),
             models.Index(fields=[DbNamings.PROJECT]),
         ]
+
+# class MobileUIConfiguration(models.Model):
+#     key = models.CharField(name=DbNamings.USERCONFIG_KEY, max_length=200, null=False)
+#     value = models.TextField(name=DbNamings.USERCONFIG_VALUE, null=False)
+#     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, name=DbNamings.USER, default=-1)
+
+#     def __str__(self):
+#         return f"{self.key}={self.value[:20]} ...       (user: {self.user.username})"
+
+#     class Meta:
+#         unique_together = (DbNamings.USERCONFIG_KEY, DbNamings.USER)
+#         indexes = [
+#             models.Index(fields=[DbNamings.USERCONFIG_KEY]),
+#             models.Index(fields=[DbNamings.USER]),
+#         ]
 
 class Note(models.Model):
     geometry = geomodels.PointField(

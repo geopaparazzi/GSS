@@ -175,8 +175,28 @@ class FormViewSet(StandardPermissionsViewSet):
     """
     API endpoint that allows forms to be viewed or edited.
     """
-    queryset = Form.objects.all()
     serializer_class = FormSerializer
+
+    def get_queryset(self):
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
+            # the project parameter is mandatory to get the data
+            return ProjectData.objects.none()
+        else:
+            user = self.request.user
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if projectModel:
+                filteredForms = []
+                for form in projectModel.forms.all():
+                    if form.show_in_projectdata:
+                        filteredForms.append(form)
+
+                return filteredForms
+            else:
+                return Form.objects.none()
 
 class ProjectDataViewSet(StandardListRetrieveOnlyViewSet):
     """
