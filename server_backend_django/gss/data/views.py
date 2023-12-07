@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
                                     HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND)
@@ -29,10 +29,12 @@ from typing import Optional
 import io
 import mimetypes
 import logging
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+
 
 LOGGER = logging.getLogger(__name__)
 
-@csrf_exempt
 @api_view(["POST"])
 @permission_classes((AllowAny,))
 def login(request):
@@ -59,7 +61,6 @@ def login(request):
     else:
         LOGGER.warning(f"User '{username}' tried to login to project '{project}', but is not part of it.")
         return Response({'error': f'User is not part of project "{project}"'},status=HTTP_403_FORBIDDEN)
-
 
 class StandardPermissionsViewSet(viewsets.ModelViewSet):
     """

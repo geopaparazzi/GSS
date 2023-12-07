@@ -21,4 +21,5 @@ bin/
 *.key
 *.tar
 docker/my_*
+server_backend_django/static/*
 

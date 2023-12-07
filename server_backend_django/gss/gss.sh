@@ -23,17 +23,11 @@ if [ -f ./config.sh ]; then
     source ./config.sh
 fi
 
-start_collectstatic() {
-    python manage.py collectstatic --noinput
-}
-
-
 start_gunicorn() {
     gunicorn gss.wsgi --bind 0.0.0.0:8000 --timeout 0
 }
 
 stop_processes() {
-    pkill -f "python manage.py collectstatic --noinput" &
     pkill -f "gunicorn gss.wsgi" 
 }
 
@@ -43,7 +37,6 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 if [ "$1" == "start" ]; then
-    start_collectstatic &
     start_gunicorn
 elif [ "$1" == "stop" ]; then
     stop_processes

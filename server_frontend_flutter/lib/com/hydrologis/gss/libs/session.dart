@@ -69,6 +69,21 @@ class SmashSession {
     return token;
   }
 
+  static String getCsrfToken() {
+    final cookie = html.document.cookie!;
+    final entity = cookie.split("; ").map((item) {
+      final split = item.split("=");
+      return MapEntry(split[0], split[1]);
+    });
+    final cookieMap = Map.fromEntries(entity);
+
+    var token = cookieMap["csrftoken"];
+    if (token == null) {
+      throw Exception("No csrf token found.");
+    }
+    return token;
+  }
+
   static WebProject getSessionProject() {
     var projectJson = html.window.sessionStorage[KEY_PROJECT];
     if (projectJson == null) {

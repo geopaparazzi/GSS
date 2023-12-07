@@ -21,6 +21,8 @@ CORS_ALLOWED_ORIGINS = get_env_variable('CORS_ALLOWED_ORIGINS').split(' ')
 CSRF_TRUSTED_ORIGINS = get_env_variable('CSRF_TRUSTED_ORIGINS').split(' ')
 ALLOWED_HOSTS = get_env_variable('ALLOWED_HOSTS').split(' ')
 
+CSRF_COOKIE_PATH = '/'
+SESSION_COOKIE_PATH = '/'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

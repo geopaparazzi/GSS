@@ -47,7 +47,6 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
     path('api/login/', data.views.login),
-    # re_path(r'media/.*', ),
 
     path('accounts/login/', data.views.login),
 ]

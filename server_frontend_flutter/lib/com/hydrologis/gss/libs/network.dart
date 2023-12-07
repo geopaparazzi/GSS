@@ -8,6 +8,7 @@ import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:smashlibs/com/hydrologis/flutterlibs/utils/logging.dart';
 import 'package:smashlibs/smashlibs.dart';
+import 'dart:html' as html;
 
 const NETWORKERROR_PREFIX = "ERROR:";
 
@@ -19,6 +20,7 @@ const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8000/" : "../";
 
 // const API_CONFIGRATION_URL = "${WEBAPP_URL}admin/";
 const API_LOGIN = "${WEBAPP_URL}api/login/";
+const API_CSRF = "${WEBAPP_URL}api/csrf/";
 const API_USERS = "${WEBAPP_URL}api/users/";
 
 const API_PROJECTNAMES = "${WEBAPP_URL}api/projectnames/";
@@ -41,6 +43,19 @@ const LOGTYPE = "type";
 const LOGMSG = "msg";
 
 class WebServerApi {
+  /// Wrapper of post to add csrf token.
+  static Future<Response> csrfPost(Uri uri,
+      {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+    // add csrf token for posts
+    var csrfToken = SmashSession.getCsrfToken();
+    if (headers == null) {
+      headers = {};
+    }
+    headers["X-CSRFToken"] = csrfToken;
+
+    return await post(uri, headers: headers, body: body);
+  }
+
   /// Login to get a token using credentials.
   ///
   /// Returns a string starting with ERROR if problems arised.
@@ -54,13 +69,13 @@ class WebServerApi {
     final uri = Uri.parse("$API_LOGIN");
     Response response;
     try {
-      response = await post(
+      response = await csrfPost(
         uri,
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
         body: json.encode(formData),
       );
     } catch (e) {
-      return NETWORKERROR_PREFIX + "Permission denied.";
+      return NETWORKERROR_PREFIX + "{\"error\": \"${e.toString()}\"}";
     }
     if (response.statusCode == 200) {
       return json.decode(response.body)['token'];
@@ -226,7 +241,7 @@ class WebServerApi {
     Response response;
     try {
       tokenHeader["Content-type"] = "application/json";
-      response = await post(uri, body: dataJson, headers: tokenHeader);
+      response = await csrfPost(uri, body: dataJson, headers: tokenHeader);
       if (response.statusCode == 200) {
         return response.body;
       } else {
@@ -327,10 +342,10 @@ class WebServerApi {
 
   static TileLayer getDefaultLayer() {
     return TileLayer(
-      tms: false,
-      subdomains: const ['a', 'b', 'c'],
-      maxZoom: 19,
-      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      // tms: false,
+      maxZoom: 21,
+      maxNativeZoom: 16,
+      urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       tileProvider: NetworkNoRetryTileProvider(),
     );
   }
