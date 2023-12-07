@@ -1,5 +1,7 @@
 set -x 
 
-docker image rm gss-docker
-docker build -t gss-docker:4.0 -f docker/Dockerfile .
+VERSION=`git describe --tags --abbrev=0`
+
+docker image rm moovida/gss-docker:$VERSION
+docker build -t moovida/gss-docker:$VERSION -f docker/Dockerfile .
 
