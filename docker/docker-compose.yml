@@ -22,7 +22,7 @@ services:
     depends_on:
       - database
     volumes:
-      - ${GSS_MEDIAFOLDER}:/basefolder/gss/media
+      - ${GSS_MEDIAFOLDER}:/basefolder/media
     networks:
       - gss_network
 
