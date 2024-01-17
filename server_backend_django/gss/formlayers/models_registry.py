@@ -114,7 +114,18 @@ class _ModelsRegistry:
         Model:
             the model found or None.
         """
-        return apps.all_models[self.appName].get(modelName)
+        models4app = apps.all_models[self.appName]
+        rightModel = models4app.get(modelName)
+        if not rightModel:
+            # get keys of the dict
+            keys = models4app.keys()
+            # get the model that has the same name, even if case insensitive
+            for key in keys:
+                if key.lower() == modelName.lower():
+                    rightModel = models4app[key]
+                    break
+        return rightModel
+
 
     def registerModel(self, modelName: str, fields: dict, forceMigration: bool = False) -> models.Model:
         """
