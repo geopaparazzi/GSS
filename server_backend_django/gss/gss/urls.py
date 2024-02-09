@@ -40,6 +40,12 @@ router.register(r'projectdatas', data.views.ProjectDataViewSet, 'projectdatas')
 router.register(r'forms', data.views.FormViewSet, 'forms')
 
 
+# def get_admin_urls():
+#     return [
+#             path('admin/', admin.site.urls),
+#     ]
+# admin_urls = get_admin_urls()
+
 urlpatterns = [
     path('', RedirectView.as_view(url='/static/index.html'), name='index'),
     path('admin/', admin.site.urls),
@@ -50,3 +56,18 @@ urlpatterns = [
 
     path('accounts/login/', data.views.login),
 ]
+# urlpatterns.extend(admin_urls)
+
+# def updateUrlPatterns():
+#     global urlpatterns  
+#     urlpatterns = [
+#         path('', RedirectView.as_view(url='/static/index.html'), name='index'),
+#         # path('admin/', admin.site.urls),
+#         path('formlayers/', include('formlayers.urls')),
+#         path('api/', include(router.urls)),
+#         path('api-auth/', include('rest_framework.urls')),
+#         path('api/login/', data.views.login),
+
+#         path('accounts/login/', data.views.login),
+#     ]
+#     urlpatterns.extend(admin_urls)

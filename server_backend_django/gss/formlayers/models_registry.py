@@ -36,6 +36,85 @@ class _ModelsRegistry:
         for form in formsQs:
             forms.append(form)
         return forms
+    
+
+    def onFormSaved(self) -> None:
+        """
+        Trigger the model registry to generate the table if necessary and anyways migrate.
+        """
+        forms = self._getEnabledForms()
+        for form in forms:
+            name = form.name
+            # model = modelsRegistry.getModel(name)
+            # if not model:
+            # if the model is not in registry, it needs to be created
+                
+            # first gather the fields needed
+            fields = modelsRegistry.fieldsFromDefinition(form.definition)
+
+            # convert them to django fields
+            djangoFields = modelsRegistry.djangoFieldsFromFields(fields)
+            # add the geometry field
+            if form.geometrytype == Form.GEOMETRYTYPES[0][0]:
+                geometry = geomodels.PointField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Point())
+            elif form.geometrytype == Form.GEOMETRYTYPES[1][0]:
+                geometry = geomodels.LineStringField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=LineString())
+            elif form.geometrytype == Form.GEOMETRYTYPES[2][0]:
+                geometry = geomodels.PolygonField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Polygon())
+            
+            if geometry:
+                djangoFields[DbNamings.GEOM] = geometry
+
+            # also add user and timestamp fields if requested
+            if form.add_userinfo:
+                djangoFields[DbNamings.USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.USER, default=-1)
+                djangoFields[DbNamings.LASTEDIT_USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.LASTEDIT_USER, default=-1)
+            if form.add_timestamp:
+                djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now())
+                djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now())
+
+            # then create the model and register it (also migrate if necessary)
+            modelsRegistry.registerModel(name, djangoFields)
+    
+    def updateFormsRegistry(self) -> None:
+        """
+        Trigger the model registry to generate the table if necessary and anyways migrate.
+        """
+
+        # remove all models from registry
+        apps.all_models[self.appName].clear()
+        # then add the upddated list
+        forms = Form.objects.all()
+        for form in forms:
+            name = form.name
+                
+            # first gather the fields needed
+            fields = modelsRegistry.fieldsFromDefinition(form.definition)
+
+            # convert them to django fields
+            djangoFields = modelsRegistry.djangoFieldsFromFields(fields)
+            # add the geometry field
+            if form.geometrytype == Form.GEOMETRYTYPES[0][0]:
+                geometry = geomodels.PointField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Point())
+            elif form.geometrytype == Form.GEOMETRYTYPES[1][0]:
+                geometry = geomodels.LineStringField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=LineString())
+            elif form.geometrytype == Form.GEOMETRYTYPES[2][0]:
+                geometry = geomodels.PolygonField(name=DbNamings.GEOM, srid=4326, spatial_index=True, null=False, default=Polygon())
+            
+            if geometry:
+                djangoFields[DbNamings.GEOM] = geometry
+
+            # also add user and timestamp fields if requested
+            if form.add_userinfo:
+                djangoFields[DbNamings.USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.USER, default=-1)
+                djangoFields[DbNamings.LASTEDIT_USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.LASTEDIT_USER, default=-1)
+            if form.add_timestamp:
+                djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now())
+                djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now())
+
+            # then create the model and register it (also migrate if necessary)
+            modelsRegistry.registerModel(name, djangoFields)
+
 
     def checkModelsExist(self) -> None:
         """
@@ -127,7 +206,7 @@ class _ModelsRegistry:
         return rightModel
 
 
-    def registerModel(self, modelName: str, fields: dict, forceMigration: bool = False) -> models.Model:
+    def registerModel(self, modelName: str, fields: dict) -> models.Model:
         """
         Register a new model with the app config.
         
@@ -146,34 +225,68 @@ class _ModelsRegistry:
             the created or existing model or None.
         """
         model = self.getModel(modelName)
-        if not model:
-            # add the module
-            fields.update({'__module__':f'{self.appName}.models'})
+        if model:
+            # if the model exists, delete it to replace it
+            self.onFormDelete(modelName)
 
-            model = type(modelName, (models.Model,), fields)
-            # You can also set the app_label and db_table attributes if needed
-            model._meta.app_label = self.appName
-            # DynamicModel._meta.db_table = 'dynamic_table'
+        # add the module
+        fields.update({'__module__':f'{self.appName}.models'})
+
+        model = type(modelName, (models.Model,), fields)
+        # You can also set the app_label and db_table attributes if needed
+        model._meta.app_label = self.appName
+        # DynamicModel._meta.db_table = 'dynamic_table'
 
         # if it exists but is not in db, do migrations
-        hasModelInDB = _ModelsRegistry.isModelTableCreated(model)
-        if not hasModelInDB or forceMigration:
-            apps.all_models[self.appName][model.__name__] = model
+        # hasModelInDB = _ModelsRegistry.isModelTableCreated(model)
+        # if not hasModelInDB:
+        #     apps.all_models[self.appName][model.__name__] = model
 
-            call_command('makemigrations', self.appName, interactive=False)
-            call_command('migrate', self.appName, interactive=False)
+        # TODO not able to create admin part
+        # if admin.site.is_registered(model):
+        #     admin.site.unregister(model)        
+        # admin.site.register(model)
+        # updateUrlPatterns()
+
 
         return model
     
-    def onFormDelete(self, modelName: str):
-        # remove model from app models
-        if modelName in apps.all_models[self.appName]:
-            del apps.all_models[self.appName][modelName]
-
-        # migrate
-        call_command('makemigrations', self.appName, interactive=False)
-        call_command('migrate', self.appName, interactive=False)
+    def getRightModelName(self, modelName: str) -> str:
+        """
+        Get the right model name from the given one. (there might be case issues)
+        
+        Parameters
+        ----------
+        modelName: str
+            the model name to check.
+        
+        Returns
+        -------
+        str:
+            the right model name if found.
+        """
+        models4app = apps.all_models[self.appName]
+        rightModelName = models4app.get(modelName)
+        if not rightModelName:
+            # get keys of the dict
+            keys = models4app.keys()
+            # get the model that has the same name, even if case insensitive
+            for key in keys:
+                if key.lower() == modelName.lower():
+                    rightModelName = key
+                    break
+        return rightModelName
     
+    def onFormDelete(self, modelName: str):
+        rightModelName = self.getRightModelName(modelName)
+        if rightModelName:
+            del apps.all_models[self.appName][rightModelName]
+            print(f"deleted model {rightModelName}")    
+            # remove model from app models
+            # if modelName in apps.all_models[self.appName]:
+            #     del apps.all_models[self.appName][rightModelName]
+
+   
     
     def fieldsFromDefinition(self, formDefinition:list) -> dict:
         """
@@ -235,6 +348,8 @@ class _ModelsRegistry:
             elif v == 'pictures' or v == 'sketch':
                 djangoFields[k] = models.BinaryField(null=True, blank=True)
             elif v == 'connectedstringcombo' or v == 'autocompletestringcombo' or v == 'autocompleteconnectedstringcombo':
+                djangoFields[k] = models.TextField(null=True, blank=True)
+            elif v == 'multistringcombo' or v == 'multiintcombo':
                 djangoFields[k] = models.TextField(null=True, blank=True)
             else:
                 LOGGER.info(f"ignored unknown field type: {v} for {k}")
