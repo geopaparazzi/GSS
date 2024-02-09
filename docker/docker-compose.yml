@@ -23,6 +23,7 @@ services:
       - database
     volumes:
       - ${GSS_MEDIAFOLDER}:/basefolder/media
+      - ${GSS_DYNAMICMIGRATIONSFOLDER}:/basefolder/gss/formlayers/migrations
     networks:
       - gss_network
 
