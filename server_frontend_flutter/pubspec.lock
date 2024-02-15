@@ -443,6 +443,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
+  flutter_slidable:
+    dependency: transitive
+    description:
+      name: flutter_slidable
+      sha256: "19ed4813003a6ff4e9c6bcce37e792a2a358919d7603b2b31ff200229191e44c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.1"
   flutter_svg:
     dependency: transitive
     description:
@@ -473,18 +481,18 @@ packages:
     dependency: transitive
     description:
       name: flutter_widget_from_html
-      sha256: "507041cc84d0c26316ac08fa0393ad4e7516c7b20a9ef387898a6ccd5f7f9c34"
+      sha256: "22c911b6ccf82b83e0c457d987bac4e703440fea0fc88dab24f4dfe995a5f33f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.7"
+    version: "0.14.11"
   flutter_widget_from_html_core:
     dependency: transitive
     description:
       name: flutter_widget_from_html_core
-      sha256: d3239b1670e83fafb209d0ddccfd19bb1cd5382b3ac9a507eb1b36274df78fec
+      sha256: "028f4989b9ff4907466af233d50146d807772600d98a3e895662fbdb09c39225"
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.7"
+    version: "0.14.11"
   frontend_server_client:
     dependency: transitive
     description:
@@ -521,10 +529,10 @@ packages:
     dependency: transitive
     description:
       name: fwfh_svg
-      sha256: "26df142c1784c29c3675ad0d37f589fc5c2173a14fc002d2c38cde3d0f117302"
+      sha256: "3fd83926b7245d287f133a437ef430befd99d3b00ba8c600f26cc324af281f72"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0+4"
+    version: "0.8.1"
   fwfh_url_launcher:
     dependency: transitive
     description:
@@ -537,10 +545,10 @@ packages:
     dependency: transitive
     description:
       name: fwfh_webview
-      sha256: "86531afae48a5838d2dce9719dfc6d46c3179237dacf47ea2b2c068243b2e88f"
+      sha256: b828bb5ddd4361a866cdb8f1b0de4f3348f332915ecf2f4215ba17e46c656adc
       url: "https://pub.dev"
     source: hosted
-    version: "0.14.2"
+    version: "0.14.8"
   geoimage:
     dependency: transitive
     description:

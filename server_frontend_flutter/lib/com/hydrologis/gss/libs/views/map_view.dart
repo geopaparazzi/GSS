@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/formutils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/views/about_view.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
@@ -39,6 +40,7 @@ class _MainMapViewState extends State<MainMapView>
   final minZoom = 1.0;
   bool _showLastUserPositions = false;
   var userPositionsLayer;
+  var formBuilderHelper = FormBuilderFormHelper();
 
   int _heroCount = 0;
 
@@ -487,21 +489,6 @@ class _MainMapViewState extends State<MainMapView>
             //   padding: const EdgeInsets.all(8.0),
             //   child: ListTile(
             //     leading: new Icon(
-            //       MdiIcons.notebook,
-            //       color: SmashColors.mainDecorations,
-            //       size: iconSize,
-            //     ),
-            //     title: Text("Form Builder"),
-            //     onTap: () {
-            //       // TODO
-            //       Navigator.of(context).pop();
-            //     },
-            //   ),
-            // ),
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: ListTile(
-            //     leading: new Icon(
             //       MdiIcons.databaseExport,
             //       color: SmashColors.mainDecorations,
             //       size: iconSize,
@@ -554,6 +541,31 @@ class _MainMapViewState extends State<MainMapView>
                 },
               ),
             ),
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: ListTile(
+            //     leading: new Icon(
+            //       MdiIcons.formSelect,
+            //       color: SmashColors.mainDecorations,
+            //       size: iconSize,
+            //     ),
+            //     title: Text("Form Builder"),
+            //     onTap: () {
+            //       Navigator.push(
+            //           context,
+            //           MaterialPageRoute(
+            //             builder: (context) => MainFormWidget(
+            //               formBuilderHelper,
+            //               presentationMode:
+            //                   PresentationMode(isFormbuilder: true),
+            //               doScaffold: true,
+            //             ),
+            //           ));
+
+            //       // Navigator.of(context).pop();
+            //     },
+            //   ),
+            // ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: CheckboxListTile(

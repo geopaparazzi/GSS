@@ -69,8 +69,11 @@ class SmashSession {
     return token;
   }
 
-  static String getCsrfToken() {
+  static String? getCsrfToken() {
     final cookie = html.document.cookie!;
+    if (cookie.isEmpty) {
+      return null;
+    }
     final entity = cookie.split("; ").map((item) {
       final split = item.split("=");
       return MapEntry(split[0], split[1]);

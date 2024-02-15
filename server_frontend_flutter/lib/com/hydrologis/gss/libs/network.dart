@@ -48,10 +48,12 @@ class WebServerApi {
       {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
     // add csrf token for posts
     var csrfToken = SmashSession.getCsrfToken();
-    if (headers == null) {
-      headers = {};
+    if (csrfToken != null) {
+      if (headers == null) {
+        headers = {};
+      }
+      headers["X-CSRFToken"] = csrfToken;
     }
-    headers["X-CSRFToken"] = csrfToken;
 
     return await post(uri, headers: headers, body: body);
   }

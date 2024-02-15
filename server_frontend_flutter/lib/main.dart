@@ -26,6 +26,7 @@ class GssApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MapstateModel()),
         ChangeNotifierProvider(create: (_) => FilterStateModel()),
         ChangeNotifierProvider(create: (_) => AttributesTableStateModel()),
+        ChangeNotifierProvider(create: (_) => FormHandlerState()),
       ],
       child: MaterialApp(
         localizationsDelegates: [
