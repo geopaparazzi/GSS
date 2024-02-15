@@ -7,17 +7,17 @@ authors = [
     {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"},
 ]
 dependencies = [
-    "Django>=4.1.4",
+    "Django>=4.2.7",
     "djangorestframework>=3.14.0",
-    "psycopg2-binary>=2.9.5",
+    "psycopg2-binary>=2.9.7",
     "django-cors-headers>=3.13.0",
     "django-json-widget>=1.1.1",
     "django-leaflet>=0.28.3",
-    "Pillow>=9.3.0",
+    "Pillow>=10.0.0",
     "owslib>=0.27.2",
     "django-cleanup>=6.0.0",
     "django_debug_toolbar>=4.2.0",
-    "whitenoise>=6.5.0",
+    "whitenoise>=6.6.0",
     "gunicorn>=20.1.0",
     "hydrologis-utils @ git+https://moovida@bitbucket.org/moovida/hydrologis_utils.git@master" # version_0.1.8"
 ]

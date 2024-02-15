@@ -140,7 +140,7 @@ class NoteSerializer(serializers.ModelSerializer):
                         h = pilImage.size[1]
                         thumbW = 150.0
                         thumbH = thumbW * h / w
-                        thumbnail = PilOps.fit(pilImage, (round(thumbW), round(thumbH)), PilImage.ANTIALIAS)
+                        thumbnail = PilOps.fit(pilImage, (round(thumbW), round(thumbH)), PilImage.LANCZOS)
                         thumbByteArray = BytesIO()
                         thumbnail.save(thumbByteArray, format='PNG')
                         thumbByteArray = thumbByteArray.getvalue()
