@@ -38,6 +38,7 @@ router.register(r'userconfigurations', data.views.UserConfigurationViewSet, 'use
 router.register(r'lastuserpositions', data.views.LastUserPositionViewSet, 'lastuserpositions')
 router.register(r'projectdatas', data.views.ProjectDataViewSet, 'projectdatas')
 router.register(r'forms', data.views.FormViewSet, 'forms')
+router.register(r'formnames', data.views.FormNamesViewSet, 'formnames')
 
 
 # def get_admin_urls():

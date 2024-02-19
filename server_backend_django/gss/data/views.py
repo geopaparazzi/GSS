@@ -16,7 +16,7 @@ from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
 from data.serializers import (GpslogSerializer, GroupSerializer,
                               ImageSerializer,LastUserPositionSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,ProjectDataSerializer,
-                              UserSerializer, RenderImageSerializer, WmsSourceSerializer, FormSerializer,
+                              UserSerializer, RenderImageSerializer, WmsSourceSerializer, FormSerializer,FormNameSerializer,
                               TmsSourceSerializer, UserConfigurationSerializer, LastUserPosition)
 from owslib.wmts import WebMapTileService
 from owslib.wms import WebMapService
@@ -73,6 +73,15 @@ class StandardPermissionsViewSet(viewsets.ModelViewSet):
             permission_classes = [IsCoordinator, permissions.IsAuthenticated]
         else:
             permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+class ListonlyPermissionsViewSet(viewsets.ModelViewSet):
+    """
+    Permissions most views need to set.
+    """
+    def get_permissions(self):
+        if self.action in ["list"]:
+            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor, permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
 class SurveyPermissionsViewSet(viewsets.ModelViewSet):
@@ -196,6 +205,29 @@ class FormViewSet(StandardPermissionsViewSet):
                         filteredForms.append(form)
 
                 return filteredForms
+            else:
+                return Form.objects.none()
+
+class FormNamesViewSet(ListonlyPermissionsViewSet):
+    """
+    API endpoint that allows form names to be viewed.
+    """
+    serializer_class = FormNameSerializer
+
+    def get_queryset(self):
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
+            # the project parameter is mandatory to get the data
+            return ProjectData.objects.none()
+        else:
+            user = self.request.user
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+
+            if projectModel:
+                return projectModel.forms.all()
             else:
                 return Form.objects.none()
 

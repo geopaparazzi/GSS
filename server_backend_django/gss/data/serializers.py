@@ -34,6 +34,11 @@ class FormSerializer(serializers.ModelSerializer):
         model = Form
         fields = '__all__'
 
+class FormNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Form
+        fields = ['name']
+
 class ProjectDataSerializer(serializers.ModelSerializer):
     file = serializers.StringRelatedField()
     
@@ -271,7 +276,7 @@ class ImageSerializer(serializers.ModelSerializer):
                 h = pilImage.size[1]
                 thumbW = 150.0
                 thumbH = thumbW * h / w
-                thumbnail = PilOps.fit(pilImage, (round(thumbW), round(thumbH)), PilImage.ANTIALIAS)
+                thumbnail = PilOps.fit(pilImage, (round(thumbW), round(thumbH)), PilImage.LANCZOS)
                 thumbByteArray = BytesIO()
                 thumbnail.save(thumbByteArray, format='PNG')
                 thumbByteArray = thumbByteArray.getvalue()
