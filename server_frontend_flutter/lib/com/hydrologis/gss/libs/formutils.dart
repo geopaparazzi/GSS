@@ -188,33 +188,37 @@ class FormBuilderFormHelper extends AFormhelper {
           onPressed: () async {
             // gather the existing gss layers
             // ! TODO
+            var formNames = await WebServerApi.getFormNames();
 
-            var answer = await SmashDialogs.showInputDialog(
-                context,
-                SLL.of(context).formbuilder_action_create_new_dialog_title,
-                SLL.of(context).formbuilder_action_create_new_dialog_prompt,
-                validationFunction: (String? value) {
-              if (value == null || value.isEmpty) {
-                return SLL
-                    .of(context)
-                    .formbuilder_action_create_new_error_empty;
-              }
-              // no spaces
-              if (value.contains(" ")) {
-                return SLL
-                    .of(context)
-                    .formbuilder_action_create_new_error_spaces;
-              }
-              return null;
-            });
-            if (answer != null) {
-              var emptyTagsString = TagsManager.getEmptyTagsString(answer);
-              var tm = TagsManager();
-              await tm.readTags(tagsString: emptyTagsString);
-              section = tm.getTags().getSections()[0];
+            String? result = await SmashDialogs.showSingleChoiceDialog(
+                context, "SELECT FORM", formNames);
 
-              if (postAction != null) postAction();
-            }
+            // var answer = await SmashDialogs.showInputDialog(
+            //     context,
+            //     SLL.of(context).formbuilder_action_create_new_dialog_title,
+            //     SLL.of(context).formbuilder_action_create_new_dialog_prompt,
+            //     validationFunction: (String? value) {
+            //   if (value == null || value.isEmpty) {
+            //     return SLL
+            //         .of(context)
+            //         .formbuilder_action_create_new_error_empty;
+            //   }
+            //   // no spaces
+            //   if (value.contains(" ")) {
+            //     return SLL
+            //         .of(context)
+            //         .formbuilder_action_create_new_error_spaces;
+            //   }
+            //   return null;
+            // });
+            // if (answer != null) {
+            //   var emptyTagsString = TagsManager.getEmptyTagsString(answer);
+            //   var tm = TagsManager();
+            //   await tm.readTags(tagsString: emptyTagsString);
+            //   section = tm.getTags().getSections()[0];
+
+            //   if (postAction != null) postAction();
+            // }
           },
           icon: Icon(MdiIcons.folderOpenOutline)),
     );

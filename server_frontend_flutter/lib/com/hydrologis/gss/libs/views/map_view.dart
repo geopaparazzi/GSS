@@ -541,31 +541,35 @@ class _MainMapViewState extends State<MainMapView>
                 },
               ),
             ),
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: ListTile(
-            //     leading: new Icon(
-            //       MdiIcons.formSelect,
-            //       color: SmashColors.mainDecorations,
-            //       size: iconSize,
-            //     ),
-            //     title: Text("Form Builder"),
-            //     onTap: () {
-            //       Navigator.push(
-            //           context,
-            //           MaterialPageRoute(
-            //             builder: (context) => MainFormWidget(
-            //               formBuilderHelper,
-            //               presentationMode:
-            //                   PresentationMode(isFormbuilder: true),
-            //               doScaffold: true,
-            //             ),
-            //           ));
-
-            //       // Navigator.of(context).pop();
-            //     },
-            //   ),
-            // ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListTile(
+                leading: new Icon(
+                  MdiIcons.formSelect,
+                  color: SmashColors.mainDecorations,
+                  size: iconSize,
+                ),
+                title: Text("Form Builder"),
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MainFormWidget(
+                          formBuilderHelper,
+                          presentationMode:
+                              PresentationMode(isFormbuilder: true),
+                          doScaffold: true,
+                        ),
+                      ));
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Divider(
+                color: SmashColors.mainDecorations,
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: CheckboxListTile(

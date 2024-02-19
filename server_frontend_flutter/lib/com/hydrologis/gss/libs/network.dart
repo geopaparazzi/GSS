@@ -34,6 +34,7 @@ const API_RENDERSIMPLEIMAGES = "${WEBAPP_URL}api/rendersimpleimages/";
 const API_WMSSOURCES = "${WEBAPP_URL}api/wmssources/";
 const API_TMSSOURCES = "${WEBAPP_URL}api/tmssources/";
 const API_USERCONFIGS = "${WEBAPP_URL}api/userconfigurations/";
+const API_FORMNAMES = "${WEBAPP_URL}api/formnames/";
 
 // const API_PROJECT_PARAM = "project=";
 
@@ -201,6 +202,25 @@ class WebServerApi {
       }
     } on Exception catch (e) {
       print(e);
+      return [];
+    }
+  }
+
+  static Future<List<String>> getFormNames() async {
+    var tokenHeader = getTokenHeader();
+    var project = SmashSession.getSessionProject();
+
+    var uri = Uri.parse("$API_FORMNAMES?$API_PROJECT_PARAM${project.id}");
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      var formsList = jsonDecode(response.body);
+      // get names from list of maps
+      var names = <String>[];
+      for (var form in formsList) {
+        names.add(form['name']);
+      }
+      return names;
+    } else {
       return [];
     }
   }
