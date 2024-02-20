@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:http/http.dart';
 import 'dart:typed_data';
 
@@ -35,6 +36,7 @@ const API_WMSSOURCES = "${WEBAPP_URL}api/wmssources/";
 const API_TMSSOURCES = "${WEBAPP_URL}api/tmssources/";
 const API_USERCONFIGS = "${WEBAPP_URL}api/userconfigurations/";
 const API_FORMNAMES = "${WEBAPP_URL}api/formnames/";
+const API_FORMS = "${WEBAPP_URL}api/forms/";
 
 // const API_PROJECT_PARAM = "project=";
 
@@ -206,7 +208,7 @@ class WebServerApi {
     }
   }
 
-  static Future<List<String>> getFormNames() async {
+  static Future<Map<int, String>> getFormNames() async {
     var tokenHeader = getTokenHeader();
     var project = SmashSession.getSessionProject();
 
@@ -215,13 +217,31 @@ class WebServerApi {
     if (response.statusCode == 200) {
       var formsList = jsonDecode(response.body);
       // get names from list of maps
-      var names = <String>[];
-      for (var form in formsList) {
-        names.add(form['name']);
+      var id2namesMap = <int, String>{};
+      for (var formMap in formsList) {
+        id2namesMap[formMap['id']] = formMap['name'];
       }
-      return names;
+      return id2namesMap;
     } else {
-      return [];
+      return {};
+    }
+  }
+
+  static Future<ServerForm?> getForm(int id) async {
+    var tokenHeader = getTokenHeader();
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(
+        "$API_FORMS?$API_PROJECT_PARAM${project.id}&$API_ID_PARAM$id");
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      dynamic formMap = jsonDecode(response.body);
+      if (formMap is List && formMap.isNotEmpty) {
+        formMap = formMap[0];
+      }
+      ServerForm form = ServerForm.fromMap(formMap);
+      return form;
+    } else {
+      return null;
     }
   }
 

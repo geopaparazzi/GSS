@@ -37,7 +37,7 @@ class FormSerializer(serializers.ModelSerializer):
 class FormNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Form
-        fields = ['name']
+        fields = ['id', 'name']
 
 class ProjectDataSerializer(serializers.ModelSerializer):
     file = serializers.StringRelatedField()

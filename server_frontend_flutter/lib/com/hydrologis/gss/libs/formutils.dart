@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
+import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:smashlibs/smashlibs.dart';
 import 'package:smashlibs/generated/l10n.dart';
@@ -181,51 +184,40 @@ class FormBuilderFormHelper extends AFormhelper {
   }
 
   @override
-  Widget? getOpenFormBuilderAction(BuildContext context, Function? postAction) {
+  Widget? getOpenFormBuilderAction(BuildContext context,
+      {Function? postAction}) {
     return Tooltip(
       message: SLL.of(context).formbuilder_action_open_existing_tooltip,
       child: IconButton(
           onPressed: () async {
             // gather the existing gss layers
-            // ! TODO
-            var formNames = await WebServerApi.getFormNames();
+            Map<int, String> id2nameMap = await WebServerApi.getFormNames();
 
-            String? result = await SmashDialogs.showSingleChoiceDialog(
+            // create a list of id) names
+            List<String> formNames = [];
+            id2nameMap.forEach((id, name) {
+              formNames.add("$id) $name");
+            });
+
+            String? idNameSelected = await SmashDialogs.showSingleChoiceDialog(
                 context, "SELECT FORM", formNames);
-
-            // var answer = await SmashDialogs.showInputDialog(
-            //     context,
-            //     SLL.of(context).formbuilder_action_create_new_dialog_title,
-            //     SLL.of(context).formbuilder_action_create_new_dialog_prompt,
-            //     validationFunction: (String? value) {
-            //   if (value == null || value.isEmpty) {
-            //     return SLL
-            //         .of(context)
-            //         .formbuilder_action_create_new_error_empty;
-            //   }
-            //   // no spaces
-            //   if (value.contains(" ")) {
-            //     return SLL
-            //         .of(context)
-            //         .formbuilder_action_create_new_error_spaces;
-            //   }
-            //   return null;
-            // });
-            // if (answer != null) {
-            //   var emptyTagsString = TagsManager.getEmptyTagsString(answer);
-            //   var tm = TagsManager();
-            //   await tm.readTags(tagsString: emptyTagsString);
-            //   section = tm.getTags().getSections()[0];
-
-            //   if (postAction != null) postAction();
-            // }
+            if (idNameSelected != null) {
+              var id = int.parse(idNameSelected.split(")")[0]);
+              ServerForm? serverForm = await WebServerApi.getForm(id);
+              if (serverForm != null) {
+                var sectionMap = jsonDecode(serverForm.definition);
+                section = SmashSection(sectionMap);
+                if (postAction != null) postAction();
+              }
+            }
           },
           icon: Icon(MdiIcons.folderOpenOutline)),
     );
   }
 
   @override
-  Widget? getNewFormBuilderAction(BuildContext context, Function? postAction) {
+  Widget? getNewFormBuilderAction(BuildContext context,
+      {Function? postAction}) {
     return Tooltip(
       message: SLL.of(context).formbuilder_action_create_new_tooltip,
       child: IconButton(
@@ -262,7 +254,8 @@ class FormBuilderFormHelper extends AFormhelper {
   }
 
   @override
-  Widget? getSaveFormBuilderAction(BuildContext context, Function? postAction) {
+  Widget? getSaveFormBuilderAction(BuildContext context,
+      {Function? postAction}) {
     return Tooltip(
       message: SLL.of(context).formbuilder_action_save_tooltip,
       child: IconButton(
@@ -289,8 +282,8 @@ class FormBuilderFormHelper extends AFormhelper {
   }
 
   @override
-  Widget? getRenameFormBuilderAction(
-      BuildContext context, Function? postAction) {
+  Widget? getRenameFormBuilderAction(BuildContext context,
+      {Function? postAction}) {
     return Tooltip(
       message: SLL.of(context).formbuilder_action_rename_tooltip,
       child: IconButton(

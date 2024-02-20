@@ -315,3 +315,27 @@ class MapstateModel extends ChangeNotifier {
     }
   }
 }
+
+class ServerForm {
+  String name;
+  String definition;
+  String geometrytype;
+  bool addUserinfo = true;
+  bool addTimestamp = true;
+  bool enabled;
+  bool showInProjectdataDownload;
+
+  // create constructor with mandatory arguments
+  ServerForm(this.name, this.definition, this.geometrytype, this.enabled,
+      this.showInProjectdataDownload,
+      {this.addUserinfo = true, this.addTimestamp = true});
+
+  ServerForm.fromMap(Map<String, dynamic> map)
+      : name = map['name'],
+        definition = jsonEncode(map['definition'][0]),
+        geometrytype = map['geometrytype'],
+        addUserinfo = map['add_userinfo'],
+        addTimestamp = map['add_timestamp'],
+        enabled = map['enabled'],
+        showInProjectdataDownload = map['show_in_projectdata'];
+}

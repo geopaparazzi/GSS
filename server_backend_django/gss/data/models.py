@@ -131,6 +131,7 @@ class DbNamings():
     USERCONFIG_KEY_BOOKMARKS = "bookmarks";
 
     API_PARAM_PROJECT = "project"
+    API_PARAM_ID = "id"
 
 class ProjectData(models.Model):
     label = models.CharField(name=DbNamings.PROJECTDATA_LABEL, max_length=100, null=False, unique=True)

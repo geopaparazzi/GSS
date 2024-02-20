@@ -189,6 +189,7 @@ class FormViewSet(StandardPermissionsViewSet):
 
     def get_queryset(self):
         projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        formId = self.request.query_params.get(DbNamings.API_PARAM_ID)
         if projectId is None:
             # the project parameter is mandatory to get the data
             return ProjectData.objects.none()
@@ -199,12 +200,16 @@ class FormViewSet(StandardPermissionsViewSet):
             else:
                 projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                filteredForms = []
-                for form in projectModel.forms.all():
-                    if form.show_in_projectdata:
-                        filteredForms.append(form)
 
-                return filteredForms
+                if formId:
+                    return projectModel.forms.filter(id=formId).all()
+                else:
+                    filteredForms = []
+                    for form in projectModel.forms.all():
+                        if form.show_in_projectdata:
+                            filteredForms.append(form)
+
+                    return filteredForms
             else:
                 return Form.objects.none()
 
