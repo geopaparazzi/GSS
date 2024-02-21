@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'dart:convert';
 
 import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart' hide SIZE;
@@ -317,6 +319,16 @@ class MapstateModel extends ChangeNotifier {
 }
 
 class ServerForm {
+  static String KEY_NAME = 'name';
+  static String KEY_ID = 'id';
+  static String KEY_DEFINITION = 'definition';
+  static String KEY_GEOMETRYTYPE = 'geometrytype';
+  static String KEY_ADDUSERINFO = 'add_userinfo';
+  static String KEY_ADDTIMESTAMP = 'add_timestamp';
+  static String KEY_ENABLED = 'enabled';
+  static String KEY_SHOWINPROJECTDATADOWNLOAD = 'show_in_projectdata';
+
+  int id;
   String name;
   String definition;
   String geometrytype;
@@ -326,16 +338,37 @@ class ServerForm {
   bool showInProjectdataDownload;
 
   // create constructor with mandatory arguments
-  ServerForm(this.name, this.definition, this.geometrytype, this.enabled,
-      this.showInProjectdataDownload,
+  ServerForm(this.id, this.name, this.definition, this.geometrytype,
+      this.enabled, this.showInProjectdataDownload,
       {this.addUserinfo = true, this.addTimestamp = true});
 
   ServerForm.fromMap(Map<String, dynamic> map)
-      : name = map['name'],
-        definition = jsonEncode(map['definition'][0]),
-        geometrytype = map['geometrytype'],
-        addUserinfo = map['add_userinfo'],
-        addTimestamp = map['add_timestamp'],
-        enabled = map['enabled'],
-        showInProjectdataDownload = map['show_in_projectdata'];
+      : id = map[KEY_ID],
+        name = map[KEY_NAME],
+        definition = jsonEncode(map[KEY_DEFINITION][0]),
+        geometrytype = map[KEY_GEOMETRYTYPE],
+        addUserinfo = map[KEY_ADDUSERINFO],
+        addTimestamp = map[KEY_ADDTIMESTAMP],
+        enabled = map[KEY_ENABLED],
+        showInProjectdataDownload = map[KEY_SHOWINPROJECTDATADOWNLOAD];
+
+  Map<String, dynamic> toMap() {
+    return {
+      KEY_ID: id,
+      KEY_NAME: name,
+      KEY_DEFINITION: definition,
+      KEY_GEOMETRYTYPE: geometrytype,
+      KEY_ADDUSERINFO: addUserinfo,
+      KEY_ADDTIMESTAMP: addTimestamp,
+      KEY_ENABLED: enabled,
+      KEY_SHOWINPROJECTDATADOWNLOAD: showInProjectdataDownload,
+    };
+  }
+
+  Map<String, dynamic> toMapForRename() {
+    return {
+      KEY_ID: id,
+      KEY_NAME: name,
+    };
+  }
 }

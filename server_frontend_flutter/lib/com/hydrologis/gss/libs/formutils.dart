@@ -122,6 +122,7 @@ class ServerFormHelper extends AFormhelper {
 
 class FormBuilderFormHelper extends AFormhelper {
   SmashSection? section;
+  ServerForm? _serverForm;
 
   FormBuilderFormHelper();
 
@@ -137,7 +138,7 @@ class FormBuilderFormHelper extends AFormhelper {
 
   @override
   int getId() {
-    return 1;
+    return _serverForm?.id ?? -1;
   }
 
   @override
@@ -193,20 +194,22 @@ class FormBuilderFormHelper extends AFormhelper {
             // gather the existing gss layers
             Map<int, String> id2nameMap = await WebServerApi.getFormNames();
 
-            // create a list of id) names
+            // create a list of names with id
             List<String> formNames = [];
             id2nameMap.forEach((id, name) {
-              formNames.add("$id) $name");
+              formNames.add("$name ($id)");
             });
 
             String? idNameSelected = await SmashDialogs.showSingleChoiceDialog(
                 context, "SELECT FORM", formNames);
             if (idNameSelected != null) {
-              var id = int.parse(idNameSelected.split(")")[0]);
+              var id = int.parse(idNameSelected.split("(")[1].split(")")[0]);
               ServerForm? serverForm = await WebServerApi.getForm(id);
               if (serverForm != null) {
+                _serverForm = serverForm;
                 var sectionMap = jsonDecode(serverForm.definition);
                 section = SmashSection(sectionMap);
+                section!.setSectionName(serverForm.name);
                 if (postAction != null) postAction();
               }
             }
@@ -288,26 +291,48 @@ class FormBuilderFormHelper extends AFormhelper {
       message: SLL.of(context).formbuilder_action_rename_tooltip,
       child: IconButton(
           onPressed: () async {
-            // Directory formsFolder = await Workspace.getFormsFolder();
-            // if (section != null && context.mounted) {
-            //   var newName = await SmashDialogs.showInputDialog(
-            //       context,
-            //       SLL.of(context).formbuilder_action_rename_dialog_title,
-            //       SLL.of(context).formbuilder_action_create_new_dialog_prompt,
-            //       validationFunction: (txt) {
-            //     var filePath = FileUtilities.joinPaths(
-            //         formsFolder.path, "${txt.replaceAll(" ", "_")}_tags.json");
-            //     if (File(filePath).existsSync()) {
-            //       return SLL.of(context).formbuilder_action_rename_error_empty;
-            //     }
-            //     return null;
-            //   });
+            if (section != null && context.mounted) {
+              // gather the existing gss layers
+              Map<int, String> id2nameMap = await WebServerApi.getFormNames();
+              // create a list of names
+              List<String> formNames = [];
+              id2nameMap.forEach((id, name) {
+                formNames.add(name);
+              });
 
-            //   if (newName != null) {
-            //     section!.setSectionName(newName);
-            //     if (postAction != null) postAction();
-            //   }
-            // }
+              var newName = await SmashDialogs.showInputDialog(
+                  context,
+                  SLL.of(context).formbuilder_action_rename_dialog_title,
+                  SLL.of(context).formbuilder_action_create_new_dialog_prompt,
+                  defaultText: section!.sectionName, validationFunction: (txt) {
+                if (txt == null || txt.isEmpty) {
+                  return SLL
+                      .of(context)
+                      .formbuilder_action_create_new_error_empty;
+                }
+                if (txt.contains(" ")) {
+                  return SLL
+                      .of(context)
+                      .formbuilder_action_create_new_error_spaces;
+                }
+                if (id2nameMap.values.contains(txt)) {
+                  return SLL.of(context).formbuilder_action_rename_error_empty;
+                }
+                return null;
+              });
+
+              if (newName != null) {
+                section!.setSectionName(newName);
+                _serverForm!.name = newName;
+                var error =
+                    await WebServerApi.putForm(_serverForm!, onlyRename: true);
+                if (error != null) {
+                  SmashDialogs.showErrorDialog(context, error);
+                } else {
+                  if (postAction != null) postAction();
+                }
+              }
+            }
           },
           icon: Icon(MdiIcons.rename)),
     );

@@ -31,6 +31,7 @@ import mimetypes
 import logging
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
+import json
 
 
 LOGGER = logging.getLogger(__name__)
@@ -189,10 +190,11 @@ class FormViewSet(StandardPermissionsViewSet):
 
     def get_queryset(self):
         projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
-        formId = self.request.query_params.get(DbNamings.API_PARAM_ID)
+        pk = self.kwargs.get('pk') # get the form id
+
         if projectId is None:
             # the project parameter is mandatory to get the data
-            return ProjectData.objects.none()
+            return Form.objects.none()
         else:
             user = self.request.user
             if user.is_superuser:
@@ -201,8 +203,8 @@ class FormViewSet(StandardPermissionsViewSet):
                 projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
 
-                if formId:
-                    return projectModel.forms.filter(id=formId).all()
+                if pk:
+                    return projectModel.forms.filter(id=pk).all()
                 else:
                     filteredForms = []
                     for form in projectModel.forms.all():
@@ -212,6 +214,35 @@ class FormViewSet(StandardPermissionsViewSet):
                     return filteredForms
             else:
                 return Form.objects.none()
+            
+    # put support
+    def update(self, request, pk=None):
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        # formId = self.request.query_params.get(DbNamings.API_PARAM_ID)
+        if projectId is None or pk is None:
+            response = {'message': 'Project id and form id are mandatory.'}
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = self.request.user
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if projectModel:
+                # get the form
+                form = projectModel.forms.get(id=pk)
+                if form:
+                    map = json.loads(request.body)
+                    form.name = map['name']
+                    form.save()
+                    serializer = FormSerializer(form)
+                    return Response(serializer.data)
+                else:
+                    response = {'message': 'Form not found.'}
+                    return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                response = {'message': f'No Project found for id {projectId}.'}
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 class FormNamesViewSet(ListonlyPermissionsViewSet):
     """

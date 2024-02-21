@@ -230,8 +230,7 @@ class WebServerApi {
   static Future<ServerForm?> getForm(int id) async {
     var tokenHeader = getTokenHeader();
     var project = SmashSession.getSessionProject();
-    var uri = Uri.parse(
-        "$API_FORMS?$API_PROJECT_PARAM${project.id}&$API_ID_PARAM$id");
+    var uri = Uri.parse("$API_FORMS$id?$API_PROJECT_PARAM${project.id}");
     var response = await get(uri, headers: tokenHeader);
     if (response.statusCode == 200) {
       dynamic formMap = jsonDecode(response.body);
@@ -242,6 +241,25 @@ class WebServerApi {
       return form;
     } else {
       return null;
+    }
+  }
+
+  static Future<String?> putForm(ServerForm form,
+      {bool onlyRename = false}) async {
+    var tokenHeader = getTokenHeader();
+    var project = SmashSession.getSessionProject();
+    var uri =
+        Uri.parse("$API_FORMS${form.id}/?$API_PROJECT_PARAM${project.id}");
+    var formMap = form.toMap();
+    if (onlyRename) {
+      formMap = form.toMapForRename();
+    }
+    var response =
+        await put(uri, headers: tokenHeader, body: jsonEncode(formMap));
+    if (response.statusCode == 200) {
+      return null;
+    } else {
+      return response.body;
     }
   }
 
