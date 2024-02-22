@@ -215,6 +215,36 @@ class FormViewSet(StandardPermissionsViewSet):
             else:
                 return Form.objects.none()
             
+    # post support
+    def create(self, request):
+        projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
+        if projectId is None:
+            response = {'message': 'Project id is mandatory.'}
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            user = self.request.user
+            if user.is_superuser:
+                projectModel = Project.objects.filter(id=projectId).first()
+            else:
+                projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
+            if projectModel:
+                map = json.loads(request.body)
+
+                form = Form.objects.create(
+                    name = map['name'],
+                    definition = map['definition'],
+                    geometrytype = map['geometrytype'],
+                    add_userinfo =  map['add_userinfo'],
+                    add_timestamp = map['add_timestamp'],
+                    enabled = map['enabled'],
+                    show_in_projectdata_download = map['show_in_projectdata']
+                )
+                responseJson = {"id": form.id}
+                return Response(responseJson, status=status.HTTP_201_CREATED)
+            else:
+                response = {'message': f'No Project found for id {projectId}.'}
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            
     # put support
     def update(self, request, pk=None):
         projectId = self.request.query_params.get(DbNamings.API_PARAM_PROJECT)
@@ -235,8 +265,8 @@ class FormViewSet(StandardPermissionsViewSet):
                     map = json.loads(request.body)
                     form.name = map['name']
                     form.save()
-                    serializer = FormSerializer(form)
-                    return Response(serializer.data)
+                    
+                    return Response(status=status.HTTP_200_OK)
                 else:
                     response = {'message': 'Form not found.'}
                     return Response(response, status=status.HTTP_400_BAD_REQUEST)

@@ -263,6 +263,27 @@ class WebServerApi {
     }
   }
 
+  static Future<String?> postForm(ServerForm form,
+      {bool onlyRename = false}) async {
+    var tokenHeader = getTokenHeader();
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse("$API_FORMS?$API_PROJECT_PARAM${project.id}");
+    var formMap = form.toMap();
+    if (onlyRename) {
+      formMap = form.toMapForRename();
+    }
+    var response =
+        await put(uri, headers: tokenHeader, body: jsonEncode(formMap));
+    if (response.statusCode == 200) {
+      var responseMap = jsonDecode(response.body);
+      var newFormId = responseMap['id'];
+      form.id = newFormId;
+      return null;
+    } else {
+      return response.body;
+    }
+  }
+
   static Future<Map<String, String>?> getUserConfigurations() async {
     Map<String, String> config = {};
     var tokenHeader = getTokenHeader();

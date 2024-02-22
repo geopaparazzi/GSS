@@ -260,9 +260,16 @@ class FormBuilderFormHelper extends AFormhelper {
   Widget? getSaveFormBuilderAction(BuildContext context,
       {Function? postAction}) {
     return Tooltip(
-      message: SLL.of(context).formbuilder_action_save_tooltip,
+      message: "Save the form to the server.",
       child: IconButton(
           onPressed: () async {
+            if (_serverForm == null) {
+              // save form for the first time
+              var sectionMap = section!.sectionMap;
+              var jsonString =
+                  const JsonEncoder.withIndent("  ").convert([sectionMap]);
+              _serverForm!.definition = jsonString;
+            } else {}
             // in this demo version we save the form with the name of the section and _tags.json
             // into the forms folder
             // if (section != null) {
@@ -323,9 +330,14 @@ class FormBuilderFormHelper extends AFormhelper {
 
               if (newName != null) {
                 section!.setSectionName(newName);
-                _serverForm!.name = newName;
-                var error =
-                    await WebServerApi.putForm(_serverForm!, onlyRename: true);
+
+                String? error;
+                if (_serverForm != null) {
+                  // only send if the form has been saved before
+                  _serverForm!.name = newName;
+                  error = await WebServerApi.putForm(_serverForm!,
+                      onlyRename: true);
+                }
                 if (error != null) {
                   SmashDialogs.showErrorDialog(context, error);
                 } else {
@@ -335,6 +347,119 @@ class FormBuilderFormHelper extends AFormhelper {
             }
           },
           icon: Icon(MdiIcons.rename)),
+    );
+  }
+
+  Widget? getDeleteFormBuilderAction(BuildContext context,
+      {Function? postAction}) {
+    return null;
+  }
+
+  Widget? getExtraFormBuilderAction(BuildContext context,
+      {Function? postAction}) {
+    var gType = "Point";
+    bool addExtraInfo = true;
+    bool isEnabled = true;
+    bool showInProjectdataDownloads = true;
+    if (_serverForm != null) {
+      gType = _serverForm!.geometrytype;
+      addExtraInfo = _serverForm!.addTimestamp && _serverForm!.addUserinfo;
+      isEnabled = _serverForm!.enabled;
+      showInProjectdataDownloads = _serverForm!.showInProjectdataDownload;
+    }
+
+    List<Widget> widgets = [
+      Padding(
+        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+              child: SmashUI.normalText("Geometry type: ",
+                  color: SmashColors.mainDecorationsDarker),
+            ),
+            DropdownButton<String>(
+              style: TextStyle(
+                  color: SmashColors.mainDecorationsDarker,
+                  fontWeight: FontWeight.bold),
+              dropdownColor: SmashColors.mainBackground,
+              value: gType,
+              items: [
+                "Point",
+                "LineString",
+                "Polygon",
+              ].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (_serverForm != null && value != null) {
+                  _serverForm!.geometrytype = value;
+                  if (postAction != null) postAction();
+                  Navigator.pop(context);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+        child: CheckboxListTile(
+            controlAffinity: ListTileControlAffinity.leading,
+            title: SmashUI.normalText("Add extra info to the form",
+                color: SmashColors.mainDecorationsDarker),
+            value: addExtraInfo,
+            onChanged: (changed) {
+              if (_serverForm != null) {
+                _serverForm!.addTimestamp = changed!;
+                _serverForm!.addUserinfo = changed;
+                if (postAction != null) postAction();
+                Navigator.pop(context);
+              }
+            }),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+        child: CheckboxListTile(
+            controlAffinity: ListTileControlAffinity.leading,
+            value: isEnabled,
+            title: SmashUI.normalText(
+                isEnabled ? "Disable the form." : "Enable the form.",
+                color: SmashColors.mainDecorationsDarker),
+            onChanged: (changed) {
+              if (_serverForm != null) {
+                _serverForm!.enabled = changed!;
+                if (postAction != null) postAction();
+                Navigator.pop(context);
+              }
+            }),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+        child: CheckboxListTile(
+            controlAffinity: ListTileControlAffinity.leading,
+            value: showInProjectdataDownloads,
+            title: SmashUI.normalText("Show form in client project data.",
+                color: SmashColors.mainDecorationsDarker),
+            onChanged: (changed) {
+              if (_serverForm != null) {
+                _serverForm!.showInProjectdataDownload = changed!;
+                if (postAction != null) postAction();
+                Navigator.pop(context);
+              }
+            }),
+      ),
+    ];
+    // open a dialog with teh widgets
+    return IconButton(
+      onPressed: () async {
+        await SmashDialogs.showWidgetListDialog(
+            context, "EXTRA CONFIGURATIONS", widgets);
+      },
+      icon: Icon(MdiIcons.dotsVertical, color: SmashColors.mainBackground),
     );
   }
 }

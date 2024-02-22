@@ -328,14 +328,14 @@ class ServerForm {
   static String KEY_ENABLED = 'enabled';
   static String KEY_SHOWINPROJECTDATADOWNLOAD = 'show_in_projectdata';
 
-  int id;
+  int? id;
   String name;
   String definition;
   String geometrytype;
   bool addUserinfo = true;
   bool addTimestamp = true;
-  bool enabled;
-  bool showInProjectdataDownload;
+  bool enabled = true;
+  bool showInProjectdataDownload = true;
 
   // create constructor with mandatory arguments
   ServerForm(this.id, this.name, this.definition, this.geometrytype,
@@ -353,8 +353,7 @@ class ServerForm {
         showInProjectdataDownload = map[KEY_SHOWINPROJECTDATADOWNLOAD];
 
   Map<String, dynamic> toMap() {
-    return {
-      KEY_ID: id,
+    var map = {
       KEY_NAME: name,
       KEY_DEFINITION: definition,
       KEY_GEOMETRYTYPE: geometrytype,
@@ -363,9 +362,16 @@ class ServerForm {
       KEY_ENABLED: enabled,
       KEY_SHOWINPROJECTDATADOWNLOAD: showInProjectdataDownload,
     };
+    if (id != null) {
+      map[KEY_ID] = id!;
+    }
+    return map;
   }
 
   Map<String, dynamic> toMapForRename() {
+    if (id == null) {
+      throw "Form id is null, cannot rename.";
+    }
     return {
       KEY_ID: id,
       KEY_NAME: name,
