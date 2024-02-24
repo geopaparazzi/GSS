@@ -352,7 +352,7 @@ class _ModelsRegistry:
             elif v == 'multistringcombo' or v == 'multiintcombo':
                 djangoFields[k] = models.TextField(null=True, blank=True)
             else:
-                LOGGER.info(f"ignored unknown field type: {v} for {k}")
+                LOGGER.warning(f"ignored unknown field type: {v} for {k}")
         
         return djangoFields
 

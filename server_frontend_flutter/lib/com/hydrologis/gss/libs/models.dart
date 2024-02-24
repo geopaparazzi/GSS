@@ -338,9 +338,9 @@ class ServerForm {
   bool showInProjectdataDownload = true;
 
   // create constructor with mandatory arguments
-  ServerForm(this.id, this.name, this.definition, this.geometrytype,
-      this.enabled, this.showInProjectdataDownload,
-      {this.addUserinfo = true, this.addTimestamp = true});
+  ServerForm(this.name, this.definition, this.geometrytype, this.enabled,
+      this.showInProjectdataDownload,
+      {this.id, this.addUserinfo = true, this.addTimestamp = true});
 
   ServerForm.fromMap(Map<String, dynamic> map)
       : id = map[KEY_ID],

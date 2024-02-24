@@ -228,17 +228,23 @@ class FormViewSet(StandardPermissionsViewSet):
             else:
                 projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                map = json.loads(request.body)
-
+                data = json.loads(request.body)
+                # if is list get dict out of it
+                map = data[0] if isinstance(data, list) else data
+                jsonFormDefinition = json.loads(map['definition'])
                 form = Form.objects.create(
                     name = map['name'],
-                    definition = map['definition'],
+                    definition = [jsonFormDefinition],
                     geometrytype = map['geometrytype'],
                     add_userinfo =  map['add_userinfo'],
                     add_timestamp = map['add_timestamp'],
                     enabled = map['enabled'],
-                    show_in_projectdata_download = map['show_in_projectdata']
+                    show_in_projectdata = map['show_in_projectdata']
                 )
+                # also add the form to the current project
+                projectModel.forms.add(form)
+                projectModel.save()
+
                 responseJson = {"id": form.id}
                 return Response(responseJson, status=status.HTTP_201_CREATED)
             else:
@@ -263,7 +269,22 @@ class FormViewSet(StandardPermissionsViewSet):
                 form = projectModel.forms.get(id=pk)
                 if form:
                     map = json.loads(request.body)
-                    form.name = map['name']
+                    if 'name' in map:
+                        form.name = map['name']
+                    if 'definition' in map:
+                        jsonFormDefinition = json.loads(map['definition'])
+                        form.definition = [jsonFormDefinition]
+                    if 'geometrytype' in map:
+                        form.geometrytype = map['geometrytype']
+                    if 'add_userinfo' in map:
+                        form.add_userinfo = map['add_userinfo']
+                    if 'add_timestamp' in map:
+                        form.add_timestamp = map['add_timestamp']
+                    if 'enabled' in map:
+                        form.enabled = map['enabled']
+                    if 'show_in_projectdata' in map:
+                        form.show_in_projectdata = map['show_in_projectdata']
+                        
                     form.save()
                     
                     return Response(status=status.HTTP_200_OK)

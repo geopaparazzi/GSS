@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
+import 'package:smashlibs/com/hydrologis/flutterlibs/utils/logging.dart';
 import 'package:smashlibs/smashlibs.dart';
 import 'package:smashlibs/generated/l10n.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -249,7 +250,15 @@ class FormBuilderFormHelper extends AFormhelper {
               await tm.readTags(tagsString: emptyTagsString);
               section = tm.getTags().getSections()[0];
 
-              if (postAction != null) postAction();
+              _serverForm = ServerForm(section!.sectionName ?? "untitled",
+                  jsonEncode(section!.sectionMap), "Point", true, true);
+
+              String? error = await WebServerApi.postForm(_serverForm!);
+              if (error != null) {
+                SmashDialogs.showErrorDialog(context, error);
+              } else {
+                if (postAction != null) postAction();
+              }
             }
           },
           icon: Icon(MdiIcons.newspaperPlus)),
@@ -263,29 +272,22 @@ class FormBuilderFormHelper extends AFormhelper {
       message: "Save the form to the server.",
       child: IconButton(
           onPressed: () async {
-            if (_serverForm == null) {
-              // save form for the first time
-              var sectionMap = section!.sectionMap;
-              var jsonString =
-                  const JsonEncoder.withIndent("  ").convert([sectionMap]);
-              _serverForm!.definition = jsonString;
-            } else {}
-            // in this demo version we save the form with the name of the section and _tags.json
-            // into the forms folder
-            // if (section != null) {
-            //   Directory formsFolder = await Workspace.getFormsFolder();
-            //   var name = section!.sectionName ?? "untitled";
-            //   var saveFilePath = FileUtilities.joinPaths(
-            //       formsFolder.path, "${name.replaceAll(" ", "_")}_tags.json");
-            //   var sectionMap = section!.sectionMap;
-            //   var jsonString =
-            //       const JsonEncoder.withIndent("  ").convert([sectionMap]);
-            //   FileUtilities.writeStringToFile(saveFilePath, jsonString);
-
-            //   if (context.mounted) {
-            //     SmashDialogs.showToast(context, "Form saved to $saveFilePath");
-            //   }
-            // }
+            if (_serverForm != null) {
+              String? error;
+              if (_serverForm != null && section != null) {
+                // only send if the form has been saved before
+                var definition = jsonEncode(section!.sectionMap);
+                _serverForm!.definition = definition;
+                error = await WebServerApi.putForm(_serverForm!);
+              }
+              if (error != null) {
+                SmashDialogs.showErrorDialog(context, error);
+              } else {
+                if (postAction != null) postAction();
+              }
+            } else {
+              SmashDialogs.showErrorDialog(context, "Error: No form to save.");
+            }
           },
           icon: Icon(MdiIcons.contentSave)),
     );
@@ -299,6 +301,14 @@ class FormBuilderFormHelper extends AFormhelper {
       child: IconButton(
           onPressed: () async {
             if (section != null && context.mounted) {
+              bool? answer = await SmashDialogs.showConfirmDialog(
+                  context,
+                  "WARNING",
+                  "Renaming tables that contain data leads to the loss of the data. Do you want to continue?");
+              if (answer == null || !answer) {
+                return;
+              }
+
               // gather the existing gss layers
               Map<int, String> id2nameMap = await WebServerApi.getFormNames();
               // create a list of names

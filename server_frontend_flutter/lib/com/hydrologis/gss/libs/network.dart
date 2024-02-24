@@ -273,8 +273,8 @@ class WebServerApi {
       formMap = form.toMapForRename();
     }
     var response =
-        await put(uri, headers: tokenHeader, body: jsonEncode(formMap));
-    if (response.statusCode == 200) {
+        await post(uri, headers: tokenHeader, body: jsonEncode(formMap));
+    if (response.statusCode == 201) {
       var responseMap = jsonDecode(response.body);
       var newFormId = responseMap['id'];
       form.id = newFormId;
