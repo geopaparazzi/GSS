@@ -13,6 +13,7 @@ const KEY_TOKEN = "token";
 const KEY_BASEMAP = "basemap";
 const KEY_MAPCENTER = "mapcenter_xyz";
 const KEY_BOOKMARKS = "bookmarks";
+const KEY_FORMBUILDER = "formbuilder";
 
 const KEY_SURVEYORS = "surveyors";
 const KEY_WEBUSERS = "webusers";

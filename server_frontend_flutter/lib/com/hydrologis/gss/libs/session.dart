@@ -31,6 +31,10 @@ class SmashSession {
       if (bookmarks != null) {
         html.window.sessionStorage[KEY_BOOKMARKS] = bookmarks;
       }
+      var isFormbuilder = configMap[KEY_FORMBUILDER];
+      if (isFormbuilder != null) {
+        html.window.sessionStorage[KEY_FORMBUILDER] = isFormbuilder;
+      }
       return null;
     } else {
       var errorMap =
@@ -142,5 +146,11 @@ class SmashSession {
 
     await WebServerApi.saveUserConfigurations(tokenheader, projectName,
         basemap: baseMap, mapCenter: mapCenter, bookmarks: bookmarks);
+  }
+
+  static bool isFormbuilder() {
+    var isBuilder = html.window.sessionStorage[KEY_FORMBUILDER] ?? "false";
+    bool isFormBuilder = bool.tryParse(isBuilder) ?? false;
+    return isFormBuilder;
   }
 }

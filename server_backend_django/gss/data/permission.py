@@ -26,6 +26,14 @@ class IsSurveyor(BasePermission):
         isWebuserCheck = DbNamings.GROUP_SURVEYORS in request.user.groups.values_list("name", flat=True)
         return isWebuserCheck
 
+class IsFormbuilder(BasePermission):
+    def has_permission(self, request, view):
+        superuser = bool(request.user and request.user.is_superuser)
+        if superuser:
+            return True
+        isWebuserCheck = DbNamings.GROUP_FORMBUILDERS in request.user.groups.values_list("name", flat=True)
+        return isWebuserCheck
+
 
 class IsWebuser(BasePermission):
     def has_permission(self, request, view):

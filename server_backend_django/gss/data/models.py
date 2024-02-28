@@ -21,6 +21,7 @@ import re
 class DbNamings():
     GROUP_COORDINATORS = "Coordinators"
     GROUP_SURVEYORS = "Surveyors"
+    GROUP_FORMBUILDERS = "Formbuilders"
     GROUP_WEBUSERS = "Webusers"
     GROUP_DEFAULT = "Default"
     PROJECT_DEFAULT = "Default"
@@ -129,6 +130,7 @@ class DbNamings():
     USERCONFIG_KEY_BASEMAP = "basemap";    
     USERCONFIG_KEY_MAPCENTER = "mapcenter_xyz";
     USERCONFIG_KEY_BOOKMARKS = "bookmarks";
+    USERCONFIG_KEY_FORMBUILDER = "formbuilder";
 
     API_PARAM_PROJECT = "project"
     API_PARAM_ID = "id"

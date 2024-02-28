@@ -12,7 +12,7 @@ from rest_framework.status import (HTTP_200_OK, HTTP_400_BAD_REQUEST,
 from django.db.models import Max
 import os
 from data.models import DbNamings, GpsLog, Image, Note, Project, ProjectData, UserConfiguration, WmsSource, TmsSource, Form
-from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser
+from data.permission import IsCoordinator, IsSuperUser, IsSurveyor, IsWebuser, IsFormbuilder
 from data.serializers import (GpslogSerializer, GroupSerializer,
                               ImageSerializer,LastUserPositionSerializer, NoteSerializer,
                               ProjectSerializer, RenderNoteSerializer,ProjectNameSerializer,ProjectDataSerializer,
@@ -69,7 +69,7 @@ class StandardPermissionsViewSet(viewsets.ModelViewSet):
     """
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
-            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor | IsFormbuilder, permissions.IsAuthenticated]
         elif self.action == "create":
             permission_classes = [IsCoordinator, permissions.IsAuthenticated]
         else:
@@ -82,7 +82,7 @@ class ListonlyPermissionsViewSet(viewsets.ModelViewSet):
     """
     def get_permissions(self):
         if self.action in ["list"]:
-            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor, permissions.IsAuthenticated]
+            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor | IsFormbuilder, permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
 class SurveyPermissionsViewSet(viewsets.ModelViewSet):
@@ -98,6 +98,21 @@ class SurveyPermissionsViewSet(viewsets.ModelViewSet):
             permission_classes = [IsCoordinator | IsSurveyor, permissions.IsAuthenticated]
         else:
             permission_classes = [IsSuperUser | IsCoordinator, permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
+class FormPermissionsViewSet(viewsets.ModelViewSet):
+    """
+    Permissions that need to set for form items.
+
+    Only the formbuilder can write forms.
+    """
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsCoordinator | IsWebuser | IsSurveyor | IsFormbuilder, permissions.IsAuthenticated]
+        elif self.action == "create":
+            permission_classes = [IsCoordinator | IsFormbuilder, permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsSuperUser | IsCoordinator | IsFormbuilder, permissions.IsAuthenticated]
         return [permission() for permission in permission_classes]
 
 class WebPermissionsViewSet(viewsets.ModelViewSet):
@@ -182,7 +197,7 @@ class ProjectNameViewSet(viewsets.ModelViewSet):
         response = {'message': 'Delete function is not offered in this path.'}
         return Response(response, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class FormViewSet(StandardPermissionsViewSet):
+class FormViewSet(FormPermissionsViewSet):
     """
     API endpoint that allows forms to be viewed or edited.
     """
@@ -662,7 +677,24 @@ class UserConfigurationViewSet(WebPermissionsViewSet):
             else:
                 projectModel = Project.objects.filter(id=projectId, groups__user__username=user.username).first()
             if projectModel:
-                return UserConfiguration.objects.filter(project=projectModel, user=user);
+                queryset = UserConfiguration.objects.filter(project=projectModel, user=user)
+
+                # check also if the user is of the group frombuilders
+                isFormbuilder = False
+                if user.groups.filter(name=DbNamings.GROUP_FORMBUILDERS).exists():
+                    isFormbuilder = True
+                if isFormbuilder:
+                    # add an additional dynamically create configuration for the formbuilder: formbuilder=true
+                    formbuilderConfig = UserConfiguration(
+                        key=DbNamings.USERCONFIG_KEY_FORMBUILDER, 
+                        value = "true",
+                        user=user, 
+                        project=projectModel
+                    )
+                    queryset = list(queryset)
+                    queryset.append(formbuilderConfig)
+
+                return queryset
             else:
                 return UserConfiguration.objects.none()
     

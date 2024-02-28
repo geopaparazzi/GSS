@@ -34,6 +34,12 @@ class Command(BaseCommand):
         if not webusersGroup:
             existsingMandatoryGroups-=1
             webusersGroup = Group.objects.create(name=DbNamings.GROUP_WEBUSERS)
+
+        formbuildersGroup = Group.objects.filter(name=DbNamings.GROUP_FORMBUILDERS).first()
+        # create formbuilders group if it doesn't exist, since it is necessary
+        if not formbuildersGroup:
+            existsingMandatoryGroups-=1
+            formbuildersGroup = Group.objects.create(name=DbNamings.GROUP_FORMBUILDERS)
         
         defaultGroup = Group.objects.filter(name=DbNamings.GROUP_DEFAULT).first()
         # create default group if it doesn't exist, since it is necessary
@@ -51,6 +57,7 @@ class Command(BaseCommand):
 
         coordsCount = User.objects.filter(groups__name=DbNamings.GROUP_COORDINATORS).count()
         surveyorsCount = User.objects.filter(groups__name=DbNamings.GROUP_SURVEYORS).count()
+        formbuildersCount = User.objects.filter(groups__name=DbNamings.GROUP_FORMBUILDERS).count()
         webusersCount = User.objects.filter(groups__name=DbNamings.GROUP_WEBUSERS).count()
         
         # we need at least a coordinator
@@ -91,6 +98,7 @@ class Command(BaseCommand):
                 webuserUser.save()
                 webusersGroup.user_set.add(webuserUser)
                 defaultGroup.user_set.add(webuserUser)
+                formbuildersGroup.user_set.add(webuserUser)
             else:
                 webusersGroup.user_set.add(webuserUser)
         

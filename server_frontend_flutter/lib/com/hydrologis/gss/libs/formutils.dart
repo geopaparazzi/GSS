@@ -226,6 +226,9 @@ class FormBuilderFormHelper extends AFormhelper {
       message: SLL.of(context).formbuilder_action_create_new_tooltip,
       child: IconButton(
           onPressed: () async {
+            // gather the existing gss layers
+            Map<int, String> id2nameMap = await WebServerApi.getFormNames();
+
             var answer = await SmashDialogs.showInputDialog(
                 context,
                 SLL.of(context).formbuilder_action_create_new_dialog_title,
@@ -241,6 +244,9 @@ class FormBuilderFormHelper extends AFormhelper {
                 return SLL
                     .of(context)
                     .formbuilder_action_create_new_error_spaces;
+              }
+              if (id2nameMap.values.contains(value)) {
+                return SLL.of(context).formbuilder_action_rename_error_empty;
               }
               return null;
             });
@@ -266,10 +272,62 @@ class FormBuilderFormHelper extends AFormhelper {
   }
 
   @override
+  Widget? getDuplicateFormBuilderAction(BuildContext context,
+      {Function? postAction}) {
+    return Tooltip(
+      message: "Duplicate form with new name",
+      child: IconButton(
+          onPressed: () async {
+            if (section == null || _serverForm == null) {
+              return;
+            }
+            // gather the existing gss layers
+            Map<int, String> id2nameMap = await WebServerApi.getFormNames();
+
+            var answer = await SmashDialogs.showInputDialog(
+                context,
+                "DUPLICATE",
+                SLL.of(context).formbuilder_action_create_new_dialog_prompt,
+                validationFunction: (String? value) {
+              if (value == null || value.isEmpty) {
+                return SLL
+                    .of(context)
+                    .formbuilder_action_create_new_error_empty;
+              }
+              // no spaces
+              if (value.contains(" ")) {
+                return SLL
+                    .of(context)
+                    .formbuilder_action_create_new_error_spaces;
+              }
+              if (id2nameMap.values.contains(value)) {
+                return SLL.of(context).formbuilder_action_rename_error_empty;
+              }
+              return null;
+            });
+            if (answer != null) {
+              section!.sectionName = answer;
+              _serverForm!.name = answer;
+              _serverForm!.id = -1;
+              _serverForm!.definition = jsonEncode(section!.sectionMap);
+
+              String? error = await WebServerApi.postForm(_serverForm!);
+              if (error != null) {
+                SmashDialogs.showErrorDialog(context, error);
+              } else {
+                if (postAction != null) postAction();
+              }
+            }
+          },
+          icon: Icon(MdiIcons.contentDuplicate)),
+    );
+  }
+
+  @override
   Widget? getSaveFormBuilderAction(BuildContext context,
       {Function? postAction}) {
     return Tooltip(
-      message: "Save the form to the server.",
+      message: "Save the form.",
       child: IconButton(
           onPressed: () async {
             if (_serverForm != null) {
@@ -311,11 +369,6 @@ class FormBuilderFormHelper extends AFormhelper {
 
               // gather the existing gss layers
               Map<int, String> id2nameMap = await WebServerApi.getFormNames();
-              // create a list of names
-              List<String> formNames = [];
-              id2nameMap.forEach((id, name) {
-                formNames.add(name);
-              });
 
               var newName = await SmashDialogs.showInputDialog(
                   context,
