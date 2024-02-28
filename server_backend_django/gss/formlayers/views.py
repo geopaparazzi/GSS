@@ -142,8 +142,10 @@ class DataListView(View):
         """
         GET method that allows for:
 
-        - /formlayers/data/form_name/?project=id
-            to get a geojson featurecollection of all items for the given form/layer and project
+        - /formlayers/data/form_name/?project=id&downloadmode=0
+            to get a geojson featurecollection of all items for the given form/layer and project.
+            The downloadmode parameter is optional and can be 0 (get all data), 1 (get only user's data)
+            or 2 (don't download any data).
         - /formlayers/data/form_name/form_id?project=id
             to get the single geojson feature for the given form/layer and id and project
         """
@@ -181,7 +183,13 @@ class DataListView(View):
 
             return HttpResponse(geojsonString, content_type="application/json")
         else:
-            querySet = model.objects.all()
+            downloadMode = request.GET.get(DbNamings.API_PARAM_DOWNLOADMODE)
+            if not downloadMode or downloadMode == 0:
+                querySet = model.objects.all()
+            elif downloadMode == 1:
+                querySet = model.objects.filter(user_id=user.id)
+            else:
+                querySet = model.objects.none()
 
             featuresList = []
             for item in querySet:
