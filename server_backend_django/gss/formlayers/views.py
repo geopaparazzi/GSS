@@ -122,7 +122,7 @@ class DataListView(View):
             return None
         field = modelObj._meta.get_field(key)
         fieldType = field.get_internal_type()
-        if len(value) == 0:
+        if isinstance(value, str) and len(value) == 0:
             return None
         # if field is a DateTimeField and value is a string, make sure the string is properly formatted
         if fieldType == "DateField" and isinstance(value, str):
@@ -266,7 +266,7 @@ class DataListView(View):
                     continue
                 if value == 'false' or value == 'true':
                     value = value == 'true'
-                    
+
                 setattr(modelObj, key, value)
                 
             geom = HyGeomUtils.fromGeoJson(str(feature.geometry))
