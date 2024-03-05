@@ -197,26 +197,27 @@ class DataListView(View):
                 # for each key in formDef, get the attribute with the same name from the 
                 # item and add it to the dataMap
                 for key, value in formDef.items():
-                    value = getattr(item, key)
-                    if key != "id" and key != DbNamings.GEOM:
-                        # check if value is a datetime.time object
-                        if isinstance(value, datetime.time):
-                            value = value.strftime("%H:%M:%S")
-                        # check if value is a datetime.date object
-                        elif isinstance(value, datetime.date):
-                            value = value.strftime("%Y-%m-%d")
-                        # check if value is a datetime.datetime object
-                        elif isinstance(value, datetime.datetime):
-                            value = value.strftime("%Y-%m-%d %H:%M:%S")
-                        else:
-                            if value:
-                                field = model._meta.get_field(key)
-                                fieldType = field.get_internal_type()
-                                if fieldType == "BinaryField":
-                                    # base 64 conversion
-                                    value = base64.b64encode(value).decode("utf-8")
+                    if hasattr(item, key):
+                        value = getattr(item, key)
+                        if key != "id" and key != DbNamings.GEOM:
+                            # check if value is a datetime.time object
+                            if isinstance(value, datetime.time):
+                                value = value.strftime("%H:%M:%S")
+                            # check if value is a datetime.date object
+                            elif isinstance(value, datetime.date):
+                                value = value.strftime("%Y-%m-%d")
+                            # check if value is a datetime.datetime object
+                            elif isinstance(value, datetime.datetime):
+                                value = value.strftime("%Y-%m-%d %H:%M:%S")
+                            else:
+                                if value:
+                                    field = model._meta.get_field(key)
+                                    fieldType = field.get_internal_type()
+                                    if fieldType == "BinaryField":
+                                        # base 64 conversion
+                                        value = base64.b64encode(value).decode("utf-8")
 
-                        dataMap[key] = value
+                            dataMap[key] = value
 
                 # also add id
                 id = getattr(item, "id")
@@ -263,6 +264,9 @@ class DataListView(View):
                 value = self._checkValue(modelObj, key, value)
                 if not value:
                     continue
+                if value == 'false' or value == 'true':
+                    value = value == 'true'
+                    
                 setattr(modelObj, key, value)
                 
             geom = HyGeomUtils.fromGeoJson(str(feature.geometry))
