@@ -69,6 +69,8 @@ class Utilities():
     def collectIsLabelValue(dataMap, labelList):
         if len(labelList) > 0:
             return
+        if isinstance(dataMap, list):
+            return
         for key in dataMap.keys():
             value = dataMap[key]
             if isinstance(value, dict):
