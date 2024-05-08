@@ -15,7 +15,7 @@ def get_env_variable(var_name):
 
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 
-GSS_VERSION = "4.0.0alpha"
+GSS_VERSION = "4.8"
 
 CORS_ALLOWED_ORIGINS = get_env_variable('CORS_ALLOWED_ORIGINS').split(' ')
 CSRF_TRUSTED_ORIGINS = get_env_variable('CSRF_TRUSTED_ORIGINS').split(' ')
@@ -236,3 +236,43 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+
+
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+## print out some nifty startup messages
+logger.warning("########################################################")
+logger.warning("#    CONFIGURED SETTINGS")
+logger.warning("########################################################")
+logger.warning(f"# VERSION: {GSS_VERSION}")
+logger.warning(f"# DEBUG: {DEBUG}")
+logger.warning(f"# BASE_DIR: {BASE_DIR}")
+logger.warning(f"# CORS_ALLOWED_ORIGINS: {CORS_ALLOWED_ORIGINS}")
+logger.warning(f"# CSRF_TRUSTED_ORIGINS: {CSRF_TRUSTED_ORIGINS}")
+logger.warning(f"# ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+logger.warning(f"# DATABASES: {DATABASES.keys()}")
+logger.warning(f"# IR_POSTGRES_USER: {POSTGRES_USER}")
+logger.warning(f"# POSTGRES_DB: {POSTGRES_DB}")
+logger.warning(f"# IR_POSTGRES_HOST: {POSTGRES_HOST}")
+logger.warning(f"# IR_POSTGRES_PORT: {POSTGRES_PORT}")
+logger.warning(f"# LANGUAGE_CODE: {LANGUAGE_CODE}")
+logger.warning(f"# TIME_ZONE: {TIME_ZONE}")
+logger.warning(f"# USE_I18N: {USE_I18N}")
+logger.warning(f"# USE_TZ: {USE_TZ}")
+logger.warning(f"# MEDIA_ROOT: {MEDIA_ROOT}")
+logger.warning(f"# MEDIA_URL: {MEDIA_URL}")
+logger.warning(f"# STATIC_ROOT: {STATIC_ROOT}")
+logger.warning(f"# STATIC_URL: {STATIC_URL}")
+logger.warning(f"# DATA_UPLOAD_MAX_MEMORY_SIZE: {DATA_UPLOAD_MAX_MEMORY_SIZE}")
+logger.warning(f"# FILE_UPLOAD_MAX_MEMORY_SIZE: {FILE_UPLOAD_MAX_MEMORY_SIZE}")
+logger.warning(f"# LOGLEVEL: {LOGLEVEL}")
+logger.warning(f"# LOGGING_DIR: {LOGGING_DIR}")
+logger.warning('# Test log levels INFO, DEBUG, WARNING, ERROR:')
+logger.info('# -> Test log INFO')
+logger.debug('# -> Test log DEBUG')
+logger.warning('# -> Test log WARNING')
+logger.error('# -> Test log ERROR')
+logger.warning("########################################################")

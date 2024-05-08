@@ -2,7 +2,7 @@ version: '3'
 
 services:
   webapp:
-    image: gss-docker
+    image: moovida/gss-docker:4.9
     container_name: gss-docker
     ports:
       - 80:80

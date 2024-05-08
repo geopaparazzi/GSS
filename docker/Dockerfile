@@ -28,8 +28,8 @@ RUN chmod 644 /basefolder/gss/nginx-selfsigned.key
 
 
 # start the server using the gss.sh bash script
-EXPOSE 8000/tcp
+# EXPOSE 8000/tcp
 # Expose port 80 and 443 for Nginx
 EXPOSE 80
 EXPOSE 443
-ENTRYPOINT ["/bin/bash", "gss_nginx.sh", "start"]
+ENTRYPOINT ["/bin/bash", "gss_nginx.sh"]

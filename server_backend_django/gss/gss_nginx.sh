@@ -19,22 +19,28 @@ if [ -f ./config.sh ]; then
     source ./config.sh
 fi
 
-start_gunicorn() {
-    nginx -c /basefolder/gss/nginx.conf
-    gunicorn gss.wsgi --bind 0.0.0.0:8000 --timeout 0
-}
-
-stop_processes() {
-    pkill -f "gunicorn gss.wsgi" 
-}
-
-# if no argument was passed to the script print usager
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 [start|stop]"
-    exit 1
+set -x
+# get the number of cores of the host machine
+if [ -f /proc/cpuinfo ]; then
+    CORES=$(grep -c ^processor /proc/cpuinfo)
+    # make sure it is a number
+    if ! [[ "$CORES" =~ ^[0-9]+$ ]]; then
+        CORES=4
+    fi
+else
+    CORES=4
 fi
-if [ "$1" == "start" ]; then
-    start_gunicorn
-elif [ "$1" == "stop" ]; then
-    stop_processes
-fi
+echo "USING $CORES CORES."
+
+echo "WAIT FOR DB TO STARTUP..."
+sleep 20
+echo "ENSURE MINIMAL DB SETUP"
+python manage.py migrate
+python manage.py populate_for_gss 
+echo "RUN COLLECTSTATIC"
+python manage.py collectstatic --noinput
+echo "START NGINX"
+nginx -c /basefolder/gss/nginx.conf
+sleep 5
+echo "START SERVER"
+gunicorn gss.wsgi  -w $CORES --bind 0.0.0.0:8000 --timeout 0
