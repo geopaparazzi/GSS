@@ -134,6 +134,12 @@ class DataListView(View):
         # if field is a TimeField and value is a string, make sure the string is properly formatted
         elif fieldType == "TimeField" and isinstance(value, str):
             value = datetime.datetime.strptime(value, "%H:%M:%S")
+        # if field is BooleanField and value is a string (si', Si', yes, No, no, true, false, TRUE, FALSE), convert it to boolean
+        elif fieldType == "BooleanField" and isinstance(value, str):
+            if value.lower() == 'si' or value.lower() == 'yes' or value.lower() == 'true':
+                value = True
+            elif value.lower() == 'no' or value.lower() == 'false':
+                value = False
         
         return value
     
@@ -184,9 +190,9 @@ class DataListView(View):
             return HttpResponse(geojsonString, content_type="application/json")
         else:
             downloadMode = request.GET.get(DbNamings.API_PARAM_DOWNLOADMODE)
-            if not downloadMode or downloadMode == 0:
+            if not downloadMode or downloadMode == 0 or downloadMode == "0":
                 querySet = model.objects.all()
-            elif downloadMode == 1:
+            elif downloadMode == 1 or downloadMode == "1":
                 querySet = model.objects.filter(user_id=user.id)
             else:
                 querySet = model.objects.none()
@@ -254,10 +260,11 @@ class DataListView(View):
         addUser = form.add_userinfo
         addTimestamp = form.add_timestamp
         
-        createdIds = []
+        createdIdsMapping = {}
         for feature in featureCollection.features:
             modelObj = model()
             data = feature.properties
+            oldId = feature['id']
             for key, value in data.items():
                 if key == "id":
                     continue
@@ -282,11 +289,17 @@ class DataListView(View):
                 setattr(modelObj, DbNamings.LASTEDIT_TIMESTAMP, datetime.datetime.now())
             
             modelObj.save()
+            
+            # store the old id and the new id
+            createdIdsMapping[oldId] = modelObj.id
 
-            # after saving the id is available
-            createdIds.append(str(modelObj.id))
+        # return the map of ids created
+        returnDict = {
+            'message': f'Created {len(createdIdsMapping)} {form_name} objects (ids {", ".join([str(v) for v in createdIdsMapping.values()])})',
+            'ids': createdIdsMapping
+        }
         
-        return JsonResponse({'message': f'Created {len(createdIds)} {form_name} objects (ids {", ".join(createdIds)})'}, status=201)
+        return JsonResponse(returnDict, safe=False, status=201)
     
     def put(self, request, form_name):
         """
@@ -318,7 +331,6 @@ class DataListView(View):
             for key, value in data.items():
                 if key == "id":
                     continue
-                
                 value = self._checkValue(modelObj, key, value)
                 if not value:
                     continue
