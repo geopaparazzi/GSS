@@ -43,7 +43,7 @@ class AboutPage extends StatefulWidget {
 }
 
 class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
-  String _version = "4.0.0alpha";
+  String _version = "4.10";
   List<Widget>? dbInfoWidgets;
 
   @override
@@ -105,7 +105,7 @@ class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
             title: SmashUI.normalText("Legal Information",
                 bold: true, color: SmashColors.mainDecorations),
             subtitle: SmashUI.smallText(
-                "Copyright 2020, HydroloGIS S.r.l., some rights reserved. Tap to visit.",
+                "Copyright 2024, HydroloGIS S.r.l., some rights reserved. Tap to visit.",
                 overflow: null),
             onTap: () async {
               if (await canLaunch("http://www.hydrologis.com")) {

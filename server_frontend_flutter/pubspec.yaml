@@ -1,7 +1,7 @@
 name: flutter_server
 description: Geopaparazzi Survey Server.
 
-version: 4.3.0
+version: 4.10.0
 publish_to: none
 
 environment:
