@@ -1,6 +1,6 @@
 [project]
 name = "GSS"
-version = "4.29+BB"
+version = "4.30+BB"
 description = "GeoPaparazzi Survey Server"
 authors = [
     {name = "Andrea Antonello", email = "andrea.antonello@gmail.com"},

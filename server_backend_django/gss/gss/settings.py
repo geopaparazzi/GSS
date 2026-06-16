@@ -15,7 +15,7 @@ def get_env_variable(var_name):
 
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 
-GSS_VERSION = "4.29+BB"
+GSS_VERSION = "4.30+BB"
 
 CORS_ALLOWED_ORIGINS = get_env_variable('CORS_ALLOWED_ORIGINS').split(' ')
 CSRF_TRUSTED_ORIGINS = get_env_variable('CSRF_TRUSTED_ORIGINS').split(' ')
