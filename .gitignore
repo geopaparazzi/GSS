@@ -1,6 +1,7 @@
 .classpath
 .project
 .settings
+.env
 target
 *~
 *.class
@@ -23,3 +24,7 @@ bin/
 docker/my_*
 server_backend_django/static/*
 
+devtools_options.yaml
+
+.pdm-python
+.python-version

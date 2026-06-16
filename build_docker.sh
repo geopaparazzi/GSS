@@ -1,7 +1,7 @@
-set -x 
+set -x
 
-VERSION=`git describe --tags --abbrev=0`
+VERSION=$(git describe --tags --abbrev=0)
+DOCKER_VERSION=${VERSION//+/_}
 
-docker image rm moovida/gss-docker:$VERSION
-docker build -t moovida/gss-docker:$VERSION -f docker/Dockerfile .
-
+docker image rm bluebiloba/gss-docker:$DOCKER_VERSION
+docker build -t bluebiloba/gss-docker:$DOCKER_VERSION -f docker/Dockerfile .

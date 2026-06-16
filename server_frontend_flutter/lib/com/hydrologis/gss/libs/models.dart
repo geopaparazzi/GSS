@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:dart_hydrologis_utils/dart_hydrologis_utils.dart' hide SIZE;
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/maputils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
@@ -121,8 +121,9 @@ class MapstateModel extends ChangeNotifier {
 
   void fitbounds({LatLngBounds? newBounds}) {
     if (mapController != null && (newBounds != null || dataBounds != null)) {
-      mapController!.fitBounds(newBounds ?? dataBounds!);
-      currentMapBounds = mapController!.bounds;
+      mapController!.fitCamera(
+          CameraFit.bounds(bounds: newBounds ?? dataBounds!));
+      currentMapBounds = mapController!.camera.visibleBounds;
     }
   }
 
@@ -210,7 +211,6 @@ class MapstateModel extends ChangeNotifier {
       }
       logs = PolylineLayer(
         polylines: lines,
-        polylineCulling: true,
       );
       // logs = TappablePolylineLayerOptions(
       //   polylines: lines,

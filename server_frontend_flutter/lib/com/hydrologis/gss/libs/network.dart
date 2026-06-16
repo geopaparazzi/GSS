@@ -4,7 +4,7 @@ import 'package:http/http.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:smashlibs/com/hydrologis/flutterlibs/utils/logging.dart';
@@ -17,7 +17,11 @@ const DATA_NV_INTERVAL_SECONDS = 600;
 const TIMESTAMP_KEY = "ts";
 const VALUE_KEY = "v";
 const doLocal = String.fromEnvironment('DOLOCAL', defaultValue: 'false');
-const WEBAPP_URL = doLocal == 'true' ? "http://localhost:8000/" : "../";
+// Optional absolute backend base URL, expected with trailing slash, for example:
+// --dart-define=GSS_BASE_URL=http://5.8.125.188:8080/
+const gssBaseUrl = String.fromEnvironment('GSS_BASE_URL', defaultValue: '');
+const WEBAPP_URL =
+    gssBaseUrl != '' ? gssBaseUrl : (doLocal == 'true' ? "http://localhost:8000/" : "../");
 
 // const API_CONFIGRATION_URL = "${WEBAPP_URL}admin/";
 const API_LOGIN = "${WEBAPP_URL}api/login/";
@@ -357,7 +361,6 @@ class WebServerApi {
               },
               maxZoom: 21,
               maxNativeZoom: 21,
-              backgroundColor: Colors.transparent,
               wmsOptions: WMSTileLayerOptions(
                 crs: crs,
                 version: item['version'],
@@ -369,7 +372,7 @@ class WebServerApi {
               // overrideTilesWhenUrlChanges: true,
               errorTileCallback: (tile, exception, stacktrace) {
                 // ignore tiles that can't load to avoid
-                SMLogger().e("Unable to load WMS tile: ${tile.coordinatesKey}",
+                SMLogger().e("Unable to load WMS tile: ${tile.coordinates}",
                     null, stacktrace);
               },
             ),
@@ -395,11 +398,10 @@ class WebServerApi {
                   : [],
               maxZoom: item['maxzoom'],
               urlTemplate: item['urltemplate'],
-              backgroundColor: Colors.transparent,
               // overrideTilesWhenUrlChanges: true,
               errorTileCallback: (tile, exception, stacktrace) {
                 // ignore tiles that can't load to avoid
-                SMLogger().e("Unable to load TMS tile: ${tile.coordinatesKey}",
+                SMLogger().e("Unable to load TMS tile: ${tile.coordinates}",
                     null, stacktrace);
               },
             ),
@@ -427,7 +429,7 @@ class WebServerApi {
       maxZoom: 21,
       maxNativeZoom: 16,
       urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      tileProvider: NetworkNoRetryTileProvider(),
+      tileProvider: NetworkTileProvider(),
     );
   }
 }

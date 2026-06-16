@@ -12,6 +12,22 @@ from PIL import ImageOps as PilOps
 import base64
 from gss.utils import Utilities
 
+
+def normalize_image_orientation(imageDataByteArray):
+    pilImage = PilImage.open(BytesIO(imageDataByteArray))
+    imageFormat = pilImage.format or "JPEG"
+    pilImage = PilOps.exif_transpose(pilImage)
+
+    if imageFormat.upper() == "MPO":
+        imageFormat = "JPEG"
+    if imageFormat.upper() in ("JPEG", "JPG") and pilImage.mode not in ("RGB", "L"):
+        pilImage = pilImage.convert("RGB")
+
+    normalizedByteArray = BytesIO()
+    pilImage.save(normalizedByteArray, format=imageFormat)
+    return normalizedByteArray.getvalue()
+
+
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
@@ -138,6 +154,7 @@ class NoteSerializer(serializers.ModelSerializer):
                     for oldImageId, data in imagesList[0].items():
                         imageDataBase64 = data[DbNamings.IMAGE_IMAGEDATA][DbNamings.IMAGEDATA_DATA].encode('UTF-8')
                         imageDataByteArray = base64.b64decode(imageDataBase64)
+                        imageDataByteArray = normalize_image_orientation(imageDataByteArray)
 
                         # create a thumbnail
                         pilImage = PilImage.open(BytesIO(imageDataByteArray))
@@ -170,7 +187,15 @@ class NoteSerializer(serializers.ModelSerializer):
                         old2NewIdsMap[int(oldImageId)] = newImageId
                     
                     # now update form with new ids
-                    Utilities.updateImageIds(formDict, old2NewIdsMap)
+                    Utilities.updateImageIds(
+                        formDict,
+                        old2NewIdsMap,
+                        context={
+                            "note_id": note.id,
+                            "project_id": project.id if project else None,
+                            "username": user.username if user else None,
+                        },
+                    )
                     # newForm = json.dumps(formDict)
                     note.form = formDict
                     note.save()
@@ -269,6 +294,7 @@ class ImageSerializer(serializers.ModelSerializer):
             with transaction.atomic():
                 imageDataBase64 = validated_data[DbNamings.IMAGE_IMAGEDATA][DbNamings.IMAGEDATA_DATA].encode('UTF-8')
                 imageDataByteArray = base64.b64decode(imageDataBase64)
+                imageDataByteArray = normalize_image_orientation(imageDataByteArray)
 
                 # create a thumbnail
                 pilImage = PilImage.open(BytesIO(imageDataByteArray))

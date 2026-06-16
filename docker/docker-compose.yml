@@ -1,12 +1,11 @@
-version: '3'
-
 services:
   webapp:
-    image: moovida/gss-docker:4.9
+    image: bluebiloba/gss-docker:4.16_BB
+    restart: unless-stopped
     container_name: gss-docker
     ports:
-      - 80:80
-      - 443:443
+      - 8080:80
+      - 8443:443
     environment:
       POSTGRES_USER: ${GSS_POSTGRES_USER}
       POSTGRES_PASSWORD: ${GSS_POSTGRES_PASSWORD}
@@ -14,7 +13,8 @@ services:
       POSTGRES_DB: ${GSS_POSTGRES_DB}
       POSTGRES_HOST: 'database'
       SECRET_KEY: ${GSS_SECRETKEY}
-      DEBUG: "false"
+      DEBUG: ${DEBUG}
+      DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL}
       ALLOWED_HOSTS: ${GSS_ALLOWED_HOSTS}
       CORS_ALLOWED_ORIGINS: ${GSS_CORS_ALLOWED_ORIGINS}
       CSRF_TRUSTED_ORIGINS: ${GSS_CSRF_TRUSTED_ORIGINS}
@@ -24,11 +24,13 @@ services:
     volumes:
       - ${GSS_MEDIAFOLDER}:/basefolder/media
       - ${GSS_DYNAMICMIGRATIONSFOLDER}:/basefolder/gss/formlayers/migrations
+      - ${GSS_LOGS}:/basefolder/logs
     networks:
       - gss_network
 
   database:
     image: postgis/postgis:15-3.3
+    restart: unless-stopped
     container_name: gss-postgres
     hostname: postgres
     ports:
@@ -46,5 +48,3 @@ services:
 networks:
   gss_network:
     driver: bridge
-
-

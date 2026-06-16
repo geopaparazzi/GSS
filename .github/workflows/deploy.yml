@@ -37,6 +37,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Sync backend version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          chmod +x scripts/release_sync_version.sh
+          ./scripts/release_sync_version.sh "${GITHUB_REF_NAME}"
+
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign

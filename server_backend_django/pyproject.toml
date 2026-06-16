@@ -1,27 +1,28 @@
 [project]
 name = "GSS"
-version = "4.8"
+version = "4.31+BB"
 description = "GeoPaparazzi Survey Server"
 authors = [
     {name = "Andrea Antonello", email = "andrea.antonello@gmail.com"},
     {name = "Francesco Frassinelli", email = "francesco.frassinelli@nina.no"},
 ]
 dependencies = [
-    "Django>=4.2.7",
-    "djangorestframework>=3.14.0",
-    "psycopg2-binary>=2.9.7",
-    "django-cors-headers>=3.13.0",
-    "django-json-widget>=1.1.1",
-    "django-leaflet>=0.28.3",
-    "Pillow>=10.0.0",
-    "owslib>=0.27.2",
-    "django-cleanup>=6.0.0",
-    "django_debug_toolbar>=4.2.0",
-    "whitenoise>=6.6.0",
-    "gunicorn>=20.1.0",
+    "Django~=4.2.7",
+    "djangorestframework~=3.14.0",
+    "psycopg2-binary~=2.9.10",
+    "django-cors-headers~=3.13.0",
+    "django-json-widget~=1.1.1",
+    "django-leaflet~=0.28.3",
+    "Pillow~=11.1.0",
+    "PyYAML~=6.0.2",
+    "owslib~=0.27.2",
+    "django-cleanup~=6.0.0",
+    "django_debug_toolbar~=4.2.0",
+    "whitenoise~=6.6.0",
+    "gunicorn~=20.1.0",
     "hydrologis-utils @ git+https://moovida@github.com/g-ant-eu/hydrologis_utils.git@master" # version_0.1.8"
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "GPLv3"}
 
 [tool.pdm]

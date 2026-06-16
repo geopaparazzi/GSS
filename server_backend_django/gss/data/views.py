@@ -32,6 +32,9 @@ import logging
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 import json
+import ipaddress
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 
 LOGGER = logging.getLogger(__name__)
@@ -62,6 +65,47 @@ def login(request):
     else:
         LOGGER.warning(f"User '{username}' tried to login to project '{project}', but is not part of it.")
         return Response({'error': f'User is not part of project "{project}"'},status=HTTP_403_FORBIDDEN)
+
+
+@api_view(["GET"])
+@permission_classes((AllowAny,))
+def imageproxy(request):
+    url = request.query_params.get("url")
+    if not url:
+        return Response({"error": "Missing url parameter."}, status=HTTP_400_BAD_REQUEST)
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return Response({"error": "Invalid url parameter."}, status=HTTP_400_BAD_REQUEST)
+
+    host = parsed.hostname or ""
+    if host.lower() in ("localhost",):
+        return Response({"error": "Host not allowed."}, status=HTTP_403_FORBIDDEN)
+    try:
+        ip = ipaddress.ip_address(host)
+        if ip.is_private or ip.is_loopback or ip.is_link_local:
+            return Response({"error": "Host not allowed."}, status=HTTP_403_FORBIDDEN)
+    except ValueError:
+        pass
+
+    try:
+        req = Request(
+            url,
+            headers={
+                "User-Agent": "GSS Image Proxy",
+            },
+        )
+        with urlopen(req, timeout=10) as response:
+            content = response.read()
+            content_type = response.headers.get("Content-Type")
+            if not content_type:
+                content_type, _ = mimetypes.guess_type(parsed.path)
+            if not content_type:
+                content_type = "application/octet-stream"
+            return HttpResponse(content, content_type=content_type)
+    except Exception as exc:
+        LOGGER.warning("Image proxy failed for %s: %s", url, exc)
+        return Response({"error": "Unable to fetch image."}, status=HTTP_400_BAD_REQUEST)
 
 class StandardPermissionsViewSet(viewsets.ModelViewSet):
     """
@@ -792,4 +836,3 @@ class LastUserPositionViewSet(SurveyPermissionsViewSet):
         else: 
             response = {'message': 'The current user does not have access to the project.'}
             return Response(response, status=status.HTTP_401_UNAUTHORIZED)
-

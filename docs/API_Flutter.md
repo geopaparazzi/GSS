@@ -320,6 +320,143 @@ null
 ----dio-boundary-0720193152--
 ```
 
+# Enhanced Widgets
+
+Image grid widget (type: `imagegrid`)
+------------------------------------
+
+The `imagegrid` widget allows a user to select one or more images from a grid.
+
+Example form item:
+```json
+{
+  "key": "damage_type",
+  "type": "imagegrid",
+  "label": "Damage type",
+  "prompt": "Which damage is visible?",
+  "columns": 3,
+  "multi": true,
+  "images": [
+    {"id": "crack", "url": "https://example.org/images/crack.png"},
+    {"id": "spall", "url": "https://example.org/images/spall.png"},
+    {"id": "rust", "base64": "iVBORw0KGgo..."}
+  ],
+  "value": ""
+}
+```
+
+Value format:
+- Single select: `value` is a string id (e.g. `"crack"`).
+- Multi select: `value` is a semicolon-separated string (e.g. `"crack;rust"`).
+
+Notes:
+- `images` can reference `url` (client downloads directly) or `base64` (embedded image).
+- `columns` controls the grid width; rows adapt to the number of images.
+
+Dependent combo widget (type: `dependentcombo`)
+-----------------------------------------------
+
+The `dependentcombo` widget is a combo box whose options depend on the selected value of another combo (`depends_on`).
+
+Example form items:
+```json
+{
+  "key": "fuel_group",
+  "type": "stringcombo",
+  "label": "Fuel group",
+  "value": "",
+  "values": {
+    "items": [
+      {"item": "Prati"},
+      {"item": "Arbusteti"},
+      {"item": "Foreste"}
+    ]
+  },
+  "mandatory": "yes"
+},
+{
+  "key": "fuel_macrotype",
+  "type": "dependentcombo",
+  "label": "Fuel macrotype",
+  "depends_on": "fuel_group",
+  "value": "",
+  "values_by_parent": {
+    "Prati": [
+      {"item": "Prateria discontinua"},
+      {"item": "Prateria continua"}
+    ],
+    "Arbusteti": [
+      {"item": "Arbusteti subalpini"},
+      {"item": "Arbusteti temperati"}
+    ]
+  },
+  "mandatory": "yes"
+}
+```
+
+Behavior rules:
+- While parent is empty, child options are empty and child value is empty.
+- When parent changes, child value is reset to empty.
+- Child options are loaded from `values_by_parent[parent_value]`.
+- If child is `mandatory: "yes"`, selected value must be one of the currently available options.
+- If child is not mandatory, empty value is accepted.
+
+Dependent image grid widget (type: `dependentimagegrid`)
+--------------------------------------------------------
+
+The `dependentimagegrid` widget is an image grid whose available images depend on another form item (`depends_on`).
+
+Example form items:
+```json
+{
+  "key": "sit_sintetic_level1",
+  "type": "imagegrid",
+  "label": "Level 1",
+  "prompt": "Select main class",
+  "columns": 3,
+  "multi": false,
+  "images": [
+    {"id": "Praterie", "url": "https://example.org/1_F1.png"},
+    {"id": "Arbusti", "url": "https://example.org/1_F2.png"},
+    {"id": "Bosco", "url": "https://example.org/1_F3.png"}
+  ],
+  "value": "",
+  "mandatory": "yes"
+},
+{
+  "key": "sit_sintetic_level2",
+  "type": "dependentimagegrid",
+  "label": "Level 2",
+  "prompt": "Select type based on level 1",
+  "depends_on": "sit_sintetic_level1",
+  "disabled_hint": "You have to select level 1 first",
+  "columns": 3,
+  "multi": false,
+  "images_by_parent": {
+    "Praterie": [
+      {"id": "Tipo 1", "url": "https://example.org/Fig1.png"}
+    ],
+    "Arbusti": [
+      {"id": "Tipo 2", "url": "https://example.org/Fig2.png"},
+      {"id": "Tipo 3", "url": "https://example.org/Fig3.png"}
+    ]
+  },
+  "value": "",
+  "mandatory": "yes"
+}
+```
+
+Behavior rules:
+- If parent has no value, child grid is disabled.
+- If parent has no value, `disabled_hint` is shown (if missing, a default hint is used).
+- If parent has value, child is enabled and shows only `images_by_parent[parent_value]`.
+- If parent changes, child value is reset (`""` or `[]` when `multi=true`) and images are re-filtered.
+- If `images_by_parent[parent_value]` is missing or empty, child appears empty and disabled.
+
+Validation:
+- If child is `mandatory: "yes"`, selected value must be one of the currently available image ids.
+- If current child value becomes invalid after parent change, it is cleared automatically.
+
 Response:
 ```json
 {

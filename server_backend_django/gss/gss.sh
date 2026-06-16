@@ -31,7 +31,7 @@ stop_processes() {
     pkill -f "gunicorn gss.wsgi" 
 }
 
-# if no argument was passed to the script print usager
+# if no argument was passed to the script print usage
 if [ $# -eq 0 ]; then
     echo "Usage: $0 [start|stop]"
     exit 1

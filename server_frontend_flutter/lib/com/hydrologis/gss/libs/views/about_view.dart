@@ -43,7 +43,8 @@ class AboutPage extends StatefulWidget {
 }
 
 class AboutPageState extends State<AboutPage> with AfterLayoutMixin<AboutPage> {
-  String _version = "4.10";
+  static const String _version =
+      String.fromEnvironment("GSS_GIT_TAG", defaultValue: "unknown");
   List<Widget>? dbInfoWidgets;
 
   @override

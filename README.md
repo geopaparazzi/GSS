@@ -85,8 +85,8 @@ Connect SMASH to the server by filling in the **Settings -> GSS Connection Setti
 Steps are:
 
 * insert the server url
-* refresh the projects list. If the server is setup correctly, you will find at least the **Default** project
-* login to aquire the connection token
+* refresh the projects list. If the server is set up correctly, you will find at least the **Default** project
+* login to acquire the connection token
 
 Now you are ready to export your project to the server.
 

@@ -44,14 +44,14 @@ class Utilities():
                             idsList.append(int(tmpId))
 
     @staticmethod
-    def updateImageIds(dataMap, old2NewIdsMap):
+    def updateImageIds(dataMap, old2NewIdsMap, context=None):
         for key in dataMap.keys():
             value = dataMap[key]
             if isinstance(value, dict):
-                Utilities.updateImageIds(value, old2NewIdsMap)
+                Utilities.updateImageIds(value, old2NewIdsMap, context)
             elif isinstance(value, list):
                 for item in value:
-                    Utilities.updateImageIds(item, old2NewIdsMap)
+                    Utilities.updateImageIds(item, old2NewIdsMap, context)
             else:
                 if value == 'pictures':
                     id = dataMap["value"]
@@ -59,8 +59,30 @@ class Utilities():
                         previousIds = str(id).split(";")
                         newIds = []
                         for previousId in previousIds:
-                            newId = old2NewIdsMap[int(previousId)]
-                            newIds.append(str(newId))
+                            # Only remap ids we actually created during upload.
+                            # If missing, keep the original id to avoid crashing.
+                            try:
+                                newId = old2NewIdsMap[int(previousId)]
+                                newIds.append(str(newId))
+                            except (KeyError, ValueError):
+                                try:
+                                    note_id = None
+                                    project_id = None
+                                    username = None
+                                    if isinstance(context, dict):
+                                        note_id = context.get("note_id")
+                                        project_id = context.get("project_id")
+                                        username = context.get("username")
+                                    logger.warning(
+                                        "Unmapped image id in form update: id=%s note=%s project=%s user=%s",
+                                        previousId,
+                                        note_id,
+                                        project_id,
+                                        username,
+                                    )
+                                except Exception:
+                                    pass
+                                newIds.append(str(previousId))
                         
                         dataMap["value"] = ";".join(newIds)
 

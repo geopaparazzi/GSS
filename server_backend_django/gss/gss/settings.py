@@ -15,7 +15,7 @@ def get_env_variable(var_name):
 
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 
-GSS_VERSION = "4.8"
+GSS_VERSION = "4.31+BB"
 
 CORS_ALLOWED_ORIGINS = get_env_variable('CORS_ALLOWED_ORIGINS').split(' ')
 CSRF_TRUSTED_ORIGINS = get_env_variable('CSRF_TRUSTED_ORIGINS').split(' ')
@@ -191,13 +191,15 @@ STATIC_ROOT = os.path.join(BASE_DIR.parent, 'static')
 if not file_utils.exists(STATIC_ROOT):
     file_utils.createFolder(STATIC_ROOT)
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    ("imagegrid_assets", os.path.join(BASE_DIR.parent, "imagegrid_assets")),
+]
+
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1014 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2000 * 1024 * 1024
 
-
 LOGLEVEL = os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
-
 LOGGING_DIR = os.path.join(BASE_DIR.parent, 'logs')  # Change this to your desired log directory
 
 if not os.path.exists(LOGGING_DIR):

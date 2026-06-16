@@ -7,7 +7,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/formutils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
@@ -28,7 +27,7 @@ Marker buildSimpleNote(MapstateModel mapState, LatLng latLng, String name,
     width: lengthHeight[0],
     height: size + lengthHeight[1],
     point: latLng,
-    builder: (ctx) => new Container(
+    child: Container(
       child: GestureDetector(
         child: Column(
           children: <Widget>[
@@ -60,7 +59,10 @@ Marker buildSimpleNote(MapstateModel mapState, LatLng latLng, String name,
           //   model.selectedNoteId = noteId;
           //   model.refresh();
           // } else {
-          openNoteDialog(ctx, noteId);
+          var context = mapState.currentMapContext;
+          if (context != null) {
+            openNoteDialog(context, noteId);
+          }
           // }
         },
       ),
@@ -102,7 +104,7 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
     width: 180,
     height: 180,
     point: new LatLng(y, x),
-    builder: (ctx) => new Container(
+    child: Container(
       child: GestureDetector(
         onTap: () {
           // if (mapState.showAttributes) {
@@ -134,7 +136,7 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
     width: size * MARKER_ICON_TEXT_EXTRA_WIDTH_FACTOR,
     height: size + textExtraHeight,
     point: new LatLng(y, x),
-    builder: (ctx) => new Container(
+    child: Container(
       child: GestureDetector(
         child: MarkerIcon(
           iconData,
@@ -151,7 +153,10 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
           //   model.selectedNoteId = noteId;
           //   model.refresh();
           // } else {
-          await openNoteDialog(ctx, noteId);
+          var context = mapState.currentMapContext;
+          if (context != null) {
+            await openNoteDialog(context, noteId);
+          }
           // }
         },
       ),
@@ -159,7 +164,7 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
   );
 }
 
-Future<MarkerLayer> buildLastUserPositionLayer(
+Future<MarkerLayer> buildLastUserPositionLayer(BuildContext context,
     List<dynamic> lastUserPositions, var lastRefreshTimestamp) async {
   var list = <Marker>[];
   for (var e in lastUserPositions) {
@@ -177,7 +182,7 @@ Future<MarkerLayer> buildLastUserPositionLayer(
       width: size + 25,
       height: size + 25,
       point: LatLng(lat, lon),
-      builder: (ctx) => new Container(
+      child: Container(
         child: GestureDetector(
           child: MarkerIcon(
             MdiIcons.accountHardHat,
@@ -188,7 +193,7 @@ Future<MarkerLayer> buildLastUserPositionLayer(
             Colors.black.withAlpha(80),
           ),
           onTap: () async {
-            SmashDialogs.showInfoDialog(ctx, "", widgets: [
+            SmashDialogs.showInfoDialog(context, "", widgets: [
               SmashUI.normalText("Last position of user: " + userName),
               SmashUI.normalText("longitude = $lon"),
               SmashUI.normalText("latitude = $lat"),
@@ -793,9 +798,12 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                         color: SmashColors.mainDecorations,
                       ),
                       onPressed: () {
-                        if (mapstateModel.mapController != null)
-                          mapstateModel.mapController!.fitBounds(b);
-                        mapstateModel.currentMapBounds = b;
+                        if (mapstateModel.mapController != null) {
+                          mapstateModel.mapController!.fitCamera(
+                              CameraFit.bounds(bounds: b));
+                          mapstateModel.currentMapBounds =
+                              mapstateModel.mapController!.camera.visibleBounds;
+                        }
                         Provider.of<AttributesTableStateModel>(context,
                                 listen: false)
                             .refresh();
@@ -895,7 +903,7 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
       var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
       _dataRows = mapstateModel.attributes.where((arrt) {
         var bounds = mapstateModel.currentMapBounds ??=
-            mapstateModel.mapController?.bounds;
+            mapstateModel.mapController?.camera.visibleBounds;
         if (bounds == null || arrt.point == null) {
           return false;
         }

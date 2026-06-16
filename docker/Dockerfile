@@ -1,11 +1,11 @@
-FROM python:3.10
+FROM python:3.10-slim-trixie
 
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get -qy install nginx libgdal32
+    DEBIAN_FRONTEND=noninteractive apt-get -qy install nginx libgdal36 git
 
 WORKDIR /basefolder
 COPY server_backend_django/pyproject.toml server_backend_django/pdm.lock ./
-
+COPY server_backend_django/imagegrid_assets ./imagegrid_assets
 COPY server_backend_django/gss ./gss
 RUN rm -f ./gss/config.sh
 

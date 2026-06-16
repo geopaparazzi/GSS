@@ -347,6 +347,9 @@ class _ModelsRegistry:
                 djangoFields[k] = models.BooleanField(null=True, blank=True)
             elif v == 'pictures' or v == 'sketch':
                 djangoFields[k] = models.BinaryField(null=True, blank=True)
+            elif v == 'imagegrid':
+                # Store selected image id(s) or list as text.
+                djangoFields[k] = models.TextField(null=True, blank=True)
             elif v == 'connectedstringcombo' or v == 'autocompletestringcombo' or v == 'autocompleteconnectedstringcombo':
                 djangoFields[k] = models.TextField(null=True, blank=True)
             elif v == 'multistringcombo' or v == 'multiintcombo':

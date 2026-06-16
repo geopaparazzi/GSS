@@ -88,9 +88,6 @@ class _MainMapViewState extends State<MainMapView>
       var markerCluster = MarkerClusterLayerOptions(
         maxClusterRadius: 20,
         size: Size(40, 40),
-        fitBoundsOptions: FitBoundsOptions(
-          padding: EdgeInsets.all(50),
-        ),
         markers: mapstateModel.mapMarkers,
         showPolygon: false,
         zoomToBoundsOnClick: true,
@@ -167,9 +164,10 @@ class _MainMapViewState extends State<MainMapView>
                     if (e is PointerScrollEvent) {
                       var delta = e.scrollDelta.direction;
                       if (_mapController != null) {
-                        _mapController!.move(_mapController!.center,
-                            _mapController!.zoom + (delta > 0 ? -0.2 : 0.2));
-                        var bounds = _mapController!.bounds;
+                        _mapController!.move(_mapController!.camera.center,
+                            _mapController!.camera.zoom +
+                                (delta > 0 ? -0.2 : 0.2));
+                        var bounds = _mapController!.camera.visibleBounds;
                         mapstateModel.currentMapBounds = bounds;
                         Provider.of<AttributesTableStateModel>(context,
                                 listen: false)
@@ -188,7 +186,7 @@ class _MainMapViewState extends State<MainMapView>
                     if (mapPointers == 0) {
                       // print("onMoveEnd");
                       if (_mapController != null) {
-                        var bounds = _mapController!.bounds;
+                        var bounds = _mapController!.camera.visibleBounds;
                         mapstateModel.currentMapBounds = bounds;
                         Provider.of<AttributesTableStateModel>(context,
                                 listen: false)
@@ -204,8 +202,8 @@ class _MainMapViewState extends State<MainMapView>
                           //     ? backgroundLayersToLoad[0].wmsOptions.crs
                           //     :
                           Epsg3857(),
-                      center: new LatLng(xyz[1], xyz[0]),
-                      zoom: xyz[2],
+                      initialCenter: new LatLng(xyz[1], xyz[0]),
+                      initialZoom: xyz[2],
                       minZoom: minZoom,
                       maxZoom: maxZoom,
                     ),
@@ -292,8 +290,8 @@ class _MainMapViewState extends State<MainMapView>
                               delta = 1;
                             }
                             if (_mapController != null)
-                              _mapController!.move(_mapController!.center,
-                                  _mapController!.zoom + delta);
+                              _mapController!.move(_mapController!.camera.center,
+                                  _mapController!.camera.zoom + delta);
                           });
                           // mapstateModel.reloadMap();
                         }),
@@ -373,10 +371,11 @@ class _MainMapViewState extends State<MainMapView>
                       mini: true,
                       onPressed: () {
                         if (_mapController != null) {
-                          var zoom = _mapController!.zoom - 1;
+                          var zoom = _mapController!.camera.zoom - 1;
                           if (zoom < minZoom) zoom = minZoom;
-                          _mapController!.move(_mapController!.center, zoom);
-                          var bounds = _mapController!.bounds;
+                          _mapController!.move(
+                              _mapController!.camera.center, zoom);
+                          var bounds = _mapController!.camera.visibleBounds;
                           mapstateModel.currentMapBounds = bounds;
                           Provider.of<AttributesTableStateModel>(context,
                                   listen: false)
@@ -401,7 +400,8 @@ class _MainMapViewState extends State<MainMapView>
                       onPressed: () {
                         if (mapstateModel.dataBounds != null &&
                             _mapController != null) {
-                          _mapController!.fitBounds(mapstateModel.dataBounds!);
+                          _mapController!.fitCamera(CameraFit.bounds(
+                              bounds: mapstateModel.dataBounds!));
                           mapstateModel.currentMapBounds =
                               mapstateModel.dataBounds;
                           Provider.of<AttributesTableStateModel>(context,
@@ -443,10 +443,11 @@ class _MainMapViewState extends State<MainMapView>
                       mini: true,
                       onPressed: () {
                         if (_mapController != null) {
-                          var zoom = _mapController!.zoom + 1;
+                          var zoom = _mapController!.camera.zoom + 1;
                           if (zoom > maxZoom) zoom = maxZoom;
-                          _mapController!.move(_mapController!.center, zoom);
-                          var bounds = _mapController!.bounds;
+                          _mapController!.move(
+                              _mapController!.camera.center, zoom);
+                          var bounds = _mapController!.camera.visibleBounds;
                           mapstateModel.currentMapBounds = bounds;
                           Provider.of<AttributesTableStateModel>(context,
                                   listen: false)
@@ -594,6 +595,7 @@ class _MainMapViewState extends State<MainMapView>
                         if (lastUserPositions != null &&
                             lastUserPositions.isNotEmpty) {
                           userPositionsLayer = await buildLastUserPositionLayer(
+                              context,
                               lastUserPositions,
                               TimeUtilities.ISO8601_TS_FORMATTER
                                   .format(DateTime.now()));
@@ -606,6 +608,7 @@ class _MainMapViewState extends State<MainMapView>
                     if (lastUserPositions != null &&
                         lastUserPositions.isNotEmpty) {
                       userPositionsLayer = await buildLastUserPositionLayer(
+                          context,
                           lastUserPositions,
                           TimeUtilities.ISO8601_TS_FORMATTER
                               .format(DateTime.now()));
@@ -659,7 +662,7 @@ class _MainMapViewState extends State<MainMapView>
                   _showLastUserPositions = false;
                   SmashSession.logout(
                     mapCenter: _mapController != null
-                        ? "${_mapController!.center.longitude};${_mapController!.center.latitude};${_mapController!.zoom}"
+                        ? "${_mapController!.camera.center.longitude};${_mapController!.camera.center.latitude};${_mapController!.camera.zoom}"
                         : null,
                   );
                   Navigator.pushReplacement(
