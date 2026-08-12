@@ -1,0 +1,6 @@
+# Dynamic formlayer migrations are generated at runtime and persisted via the
+# GSS_DYNAMICMIGRATIONSFOLDER volume mount (see docker/docker-compose.yml) - they
+# must not be baked into the image from whatever local dev state happens to exist
+# on the machine running `docker build`.
+server_backend_django/gss/formlayers/migrations/*
+!server_backend_django/gss/formlayers/migrations/__init__.py
