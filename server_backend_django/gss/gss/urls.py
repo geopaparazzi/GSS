@@ -18,6 +18,7 @@ from django.urls import include, path
 from rest_framework import routers
 import data.views
 
+from django.conf import settings
 from django.conf.urls import  include
 from django.views.generic import RedirectView
 
@@ -57,6 +58,11 @@ urlpatterns = [
 
     path('accounts/login/', data.views.login),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path('__debug__/', include('debug_toolbar.urls')),
+    ]
 # urlpatterns.extend(admin_urls)
 
 # def updateUrlPatterns():

@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10-bookworm
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get -qy install nginx libgdal32

@@ -18,7 +18,7 @@ fi
 # go build the frontend
 cd ../../server_frontend_flutter/
 flutter clean
-flutter build web
+flutter build web --wasm --release --tree-shake-icons
 
 # copy the frontend to the static folder
 cp -rv build/web/* ../server_backend_django/static/
