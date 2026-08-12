@@ -35,8 +35,14 @@ echo "USING $CORES CORES."
 echo "WAIT FOR DB TO STARTUP..."
 sleep 20
 echo "ENSURE MINIMAL DB SETUP"
+# back-fill any enabled formlayer whose table/migration is missing (e.g. after
+# restoring/mounting a migrations folder that doesn't have it yet) - safe/idempotent,
+# a no-op if nothing is missing. This also runs migrate internally; the explicit
+# migrate call below is kept as a cheap safety net for any other pending migration
+# (other apps, manual changes) that isn't covered by the formlayers registry.
+python manage.py gss_makemigrations
 python manage.py migrate
-python manage.py populate_for_gss 
+python manage.py populate_for_gss
 echo "RUN COLLECTSTATIC"
 python manage.py collectstatic --noinput
 echo "START NGINX"

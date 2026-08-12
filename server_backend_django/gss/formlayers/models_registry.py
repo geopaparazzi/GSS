@@ -13,6 +13,16 @@ from datetime import datetime
 
 LOGGER = logging.getLogger(__name__)
 
+# Arbitrary constant used as a Postgres advisory lock key. The server runs multiple
+# gunicorn worker processes (and this can also be invoked manually via the
+# gss_makemigrations/gss_migrate management commands while the server is live), and
+# makemigrations/migrate read and write the same shared migrations directory and
+# database with no built-in protection against concurrent invocations. Without this
+# lock, two near-simultaneous triggers can race on generating/applying migration
+# files - e.g. both computing the same next migration number and overwriting each
+# other's file - silently losing the table creation for one of the forms involved.
+MIGRATION_LOCK_ID = 928374123
+
 class _ModelsRegistry:
     """
     Models registry helper class.
@@ -70,12 +80,27 @@ class _ModelsRegistry:
                 djangoFields[DbNamings.USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.USER, default=-1)
                 djangoFields[DbNamings.LASTEDIT_USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.LASTEDIT_USER, default=-1)
             if form.add_timestamp:
-                djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now())
-                djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now())
+                djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now)
+                djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now)
 
             # then create the model and register it (also migrate if necessary)
             modelsRegistry.registerModel(name, djangoFields)
     
+    def rebuildAndMigrate(self) -> None:
+        """
+        Rebuild the in-memory models registry from the current Form rows, then make
+        sure any pending migration (new/changed/removed formlayer table) is generated
+        and applied. Serialized via a Postgres advisory lock - see [MIGRATION_LOCK_ID].
+        """
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_lock(%s)", [MIGRATION_LOCK_ID])
+            try:
+                self.updateFormsRegistry()
+                call_command('makemigrations', interactive=False)
+                call_command('migrate', interactive=False)
+            finally:
+                cursor.execute("SELECT pg_advisory_unlock(%s)", [MIGRATION_LOCK_ID])
+
     def updateFormsRegistry(self) -> None:
         """
         Trigger the model registry to generate the table if necessary and anyways migrate.
@@ -109,12 +134,30 @@ class _ModelsRegistry:
                 djangoFields[DbNamings.USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.USER, default=-1)
                 djangoFields[DbNamings.LASTEDIT_USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.LASTEDIT_USER, default=-1)
             if form.add_timestamp:
-                djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now())
-                djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now())
+                djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now)
+                djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now)
 
             # then create the model and register it (also migrate if necessary)
             modelsRegistry.registerModel(name, djangoFields)
 
+
+    def checkModelsExistAndMigrate(self) -> None:
+        """
+        Additive, non-destructive counterpart to [rebuildAndMigrate]: only registers
+        enabled forms that are missing from the registry (via [checkModelsExist],
+        leaving already-registered models and disabled forms untouched), then makes
+        sure any pending migration is generated and applied. Safe to run at any time,
+        including while the server is live serving other requests, since it is
+        serialized via the same Postgres advisory lock - see [MIGRATION_LOCK_ID].
+        """
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_lock(%s)", [MIGRATION_LOCK_ID])
+            try:
+                self.checkModelsExist()
+                call_command('makemigrations', interactive=False)
+                call_command('migrate', interactive=False)
+            finally:
+                cursor.execute("SELECT pg_advisory_unlock(%s)", [MIGRATION_LOCK_ID])
 
     def checkModelsExist(self) -> None:
         """
@@ -148,8 +191,8 @@ class _ModelsRegistry:
                     djangoFields[DbNamings.USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.USER, default=-1)
                     djangoFields[DbNamings.LASTEDIT_USER] = models.ForeignKey(User, on_delete=models.DO_NOTHING, null=False, name=DbNamings.LASTEDIT_USER, default=-1)
                 if form.add_timestamp:
-                    djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now())
-                    djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now())
+                    djangoFields[DbNamings.CREATION_TIMESTAMP] = models.DateTimeField(name=DbNamings.CREATION_TIMESTAMP, null=False, default=datetime.now)
+                    djangoFields[DbNamings.LASTEDIT_TIMESTAMP] = models.DateTimeField(name=DbNamings.LASTEDIT_TIMESTAMP, null=False, default=datetime.now)
 
                 # then create the model and register it (also migrate if necessary)
                 model = modelsRegistry.registerModel(name, djangoFields)
