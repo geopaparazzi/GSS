@@ -10,7 +10,6 @@ The domain name or ip address of the server you will run the GSS on. If that one
 not be able to access the GSS from the browser.
 
 In the following steps we will assume that our server is: http://gisaster.com
-which btw is the demo server for the GSS.
 
 ## Step 1: create the docker yml 
 

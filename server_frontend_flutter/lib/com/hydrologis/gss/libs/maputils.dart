@@ -7,7 +7,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/formutils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
@@ -16,7 +15,7 @@ import 'package:flutter_server/com/hydrologis/gss/libs/utils.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:horizontal_data_table/horizontal_data_table.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 import 'package:dart_jts/dart_jts.dart' as JTS;
@@ -28,43 +27,45 @@ Marker buildSimpleNote(MapstateModel mapState, LatLng latLng, String name,
     width: lengthHeight[0],
     height: size + lengthHeight[1],
     point: latLng,
-    builder: (ctx) => new Container(
-      child: GestureDetector(
-        child: Column(
-          children: <Widget>[
-            icon,
-            FittedBox(
-              child: Container(
-                decoration: new BoxDecoration(
-                    color: color,
-                    borderRadius:
-                        new BorderRadius.all(const Radius.circular(5.0))),
-                child: new Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(5.0),
-                    child: Text(
-                      name,
-                      style: TextStyle(
-                          fontWeight: FontWeight.normal, color: Colors.black),
+    child: Builder(builder: (ctx) {
+      return Container(
+        child: GestureDetector(
+          child: Column(
+            children: <Widget>[
+              icon,
+              FittedBox(
+                child: Container(
+                  decoration: new BoxDecoration(
+                      color: color,
+                      borderRadius:
+                          new BorderRadius.all(const Radius.circular(5.0))),
+                  child: new Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(5.0),
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                            fontWeight: FontWeight.normal, color: Colors.black),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            )
-          ],
+              )
+            ],
+          ),
+          onTap: () async {
+            // if (mapState.showAttributes) {
+            //   var model =
+            //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
+            //   model.selectedNoteId = noteId;
+            //   model.refresh();
+            // } else {
+            openNoteDialog(ctx, noteId);
+            // }
+          },
         ),
-        onTap: () async {
-          // if (mapState.showAttributes) {
-          //   var model =
-          //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
-          //   model.selectedNoteId = noteId;
-          //   model.refresh();
-          // } else {
-          openNoteDialog(ctx, noteId);
-          // }
-        },
-      ),
-    ),
+      );
+    }),
   );
 }
 
@@ -102,22 +103,23 @@ Marker buildImage(MapstateModel mapState, double screenHeight, var x, var y,
     width: 180,
     height: 180,
     point: new LatLng(y, x),
-    builder: (ctx) => new Container(
-      child: GestureDetector(
-        onTap: () {
-          // if (mapState.showAttributes) {
-          //   var model =
-          //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
-          //   model.selectedNoteId = dataId;
-          //   model.refresh();
-          // } else {
-          openImageDialog(mapState.currentMapContext!, name, dataId,
-              hideRotate: false);
-          // }
-        },
-        child: imageWidget,
-      ),
-    ),
+    child: Builder(builder: (context) {
+      return Container(
+        child: GestureDetector(
+          onTap: () {
+            // if (mapState.showAttributes) {
+            //   var model =
+            //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
+            //   model.selectedNoteId = dataId;
+            //   model.refresh();
+            // } else {
+            openImageDialog(context, name, dataId, hideRotate: false);
+            // }
+          },
+          child: imageWidget,
+        ),
+      );
+    }),
   );
 }
 
@@ -126,7 +128,7 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
   // List lengthHeight = guessTextDimensions(name, size);
 
   double textExtraHeight = MARKER_ICON_TEXT_EXTRA_HEIGHT;
-  if (name == null || name.length == 0) {
+  if (name.length == 0) {
     textExtraHeight = 0;
   }
 
@@ -134,28 +136,30 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
     width: size * MARKER_ICON_TEXT_EXTRA_WIDTH_FACTOR,
     height: size + textExtraHeight,
     point: new LatLng(y, x),
-    builder: (ctx) => new Container(
-      child: GestureDetector(
-        child: MarkerIcon(
-          iconData,
-          color,
-          size,
-          name,
-          SmashColors.mainTextColorNeutral,
-          color.withAlpha(80),
+    child: Builder(builder: (context) {
+      return Container(
+        child: GestureDetector(
+          child: MarkerIcon(
+            iconData,
+            color,
+            size,
+            name,
+            SmashColors.mainTextColorNeutral,
+            color.withAlpha(80),
+          ),
+          onTap: () async {
+            // if (mapState.showAttributes) {
+            //   var model =
+            //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
+            //   model.selectedNoteId = noteId;
+            //   model.refresh();
+            // } else {
+            await openNoteDialog(context, noteId);
+            // }
+          },
         ),
-        onTap: () async {
-          // if (mapState.showAttributes) {
-          //   var model =
-          //       Provider.of<AttributesTableStateModel>(ctx, listen: false);
-          //   model.selectedNoteId = noteId;
-          //   model.refresh();
-          // } else {
-          await openNoteDialog(ctx, noteId);
-          // }
-        },
-      ),
-    ),
+      );
+    }),
   );
 }
 
@@ -177,29 +181,31 @@ Future<MarkerLayer> buildLastUserPositionLayer(
       width: size + 25,
       height: size + 25,
       point: LatLng(lat, lon),
-      builder: (ctx) => new Container(
-        child: GestureDetector(
-          child: MarkerIcon(
-            MdiIcons.accountHardHat,
-            Colors.black,
-            size,
-            userName,
-            Colors.white,
-            Colors.black.withAlpha(80),
+      child: Builder(builder: (context) {
+        return Container(
+          child: GestureDetector(
+            child: MarkerIcon(
+              MdiIcons.accountHardHat,
+              Colors.black,
+              size,
+              userName,
+              Colors.white,
+              Colors.black.withAlpha(80),
+            ),
+            onTap: () async {
+              SmashDialogs.showInfoDialog(context, "", widgets: [
+                SmashUI.normalText("Last position of user: " + userName),
+                SmashUI.normalText("longitude = $lon"),
+                SmashUI.normalText("latitude = $lat"),
+                SmashUI.normalText("at device time: " + ts),
+                SmashUI.normalText("uploaded at: " + uploadts),
+                SmashUI.normalText(
+                    "last server refresh: " + lastRefreshTimestamp),
+              ]);
+            },
           ),
-          onTap: () async {
-            SmashDialogs.showInfoDialog(ctx, "", widgets: [
-              SmashUI.normalText("Last position of user: " + userName),
-              SmashUI.normalText("longitude = $lon"),
-              SmashUI.normalText("latitude = $lat"),
-              SmashUI.normalText("at device time: " + ts),
-              SmashUI.normalText("uploaded at: " + uploadts),
-              SmashUI.normalText(
-                  "last server refresh: " + lastRefreshTimestamp),
-            ]);
-          },
-        ),
-      ),
+        );
+      }),
     ));
   }
 
@@ -793,8 +799,14 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
                         color: SmashColors.mainDecorations,
                       ),
                       onPressed: () {
-                        if (mapstateModel.mapController != null)
-                          mapstateModel.mapController!.fitBounds(b);
+                        if (mapstateModel.mapController != null) {
+                          mapstateModel.mapController!
+                              .fitCamera(CameraFit.bounds(
+                            bounds: b,
+                          ));
+
+                          // mapstateModel.mapController!.fitBounds(b);
+                        }
                         mapstateModel.currentMapBounds = b;
                         Provider.of<AttributesTableStateModel>(context,
                                 listen: false)
@@ -819,7 +831,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget>
               ),
             ),
           ),
-          ButtonBar(
+          OverflowBar(
             alignment: MainAxisAlignment.spaceEvenly,
             children: [
               TextButton(
@@ -895,7 +907,7 @@ class _AttributesTableWidgetState extends State<AttributesTableWidget> {
       var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
       _dataRows = mapstateModel.attributes.where((arrt) {
         var bounds = mapstateModel.currentMapBounds ??=
-            mapstateModel.mapController?.bounds;
+            mapstateModel.mapController?.camera.visibleBounds;
         if (bounds == null || arrt.point == null) {
           return false;
         }

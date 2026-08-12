@@ -4,7 +4,7 @@ import 'package:http/http.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:smashlibs/com/hydrologis/flutterlibs/utils/logging.dart';
@@ -357,7 +357,8 @@ class WebServerApi {
               },
               maxZoom: 21,
               maxNativeZoom: 21,
-              backgroundColor: Colors.transparent,
+
+              // backgroundColor: Colors.transparent,
               wmsOptions: WMSTileLayerOptions(
                 crs: crs,
                 version: item['version'],
@@ -369,8 +370,10 @@ class WebServerApi {
               // overrideTilesWhenUrlChanges: true,
               errorTileCallback: (tile, exception, stacktrace) {
                 // ignore tiles that can't load to avoid
-                SMLogger().e("Unable to load WMS tile: ${tile.coordinatesKey}",
-                    null, stacktrace);
+                SMLogger().e(
+                    "Unable to load WMS tile: ${tile.coordinates.toString()}",
+                    null,
+                    stacktrace);
               },
             ),
           );
@@ -395,12 +398,14 @@ class WebServerApi {
                   : [],
               maxZoom: item['maxzoom'],
               urlTemplate: item['urltemplate'],
-              backgroundColor: Colors.transparent,
+              // backgroundColor: Colors.transparent,
               // overrideTilesWhenUrlChanges: true,
               errorTileCallback: (tile, exception, stacktrace) {
                 // ignore tiles that can't load to avoid
-                SMLogger().e("Unable to load TMS tile: ${tile.coordinatesKey}",
-                    null, stacktrace);
+                SMLogger().e(
+                    "Unable to load TMS tile: ${tile.coordinates.toString()}",
+                    null,
+                    stacktrace);
               },
             ),
           );
@@ -423,12 +428,12 @@ class WebServerApi {
 
   static TileLayer getDefaultLayer() {
     return TileLayer(
-      // tms: false,
-      maxZoom: 21,
-      maxNativeZoom: 16,
-      urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      tileProvider: NetworkNoRetryTileProvider(),
-    );
+        // tms: false,
+        maxZoom: 21,
+        maxNativeZoom: 16,
+        urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        // tileProvider: NetworkNoRetryTileProvider(),
+        userAgentPackageName: USER_AGENT);
   }
 }
 

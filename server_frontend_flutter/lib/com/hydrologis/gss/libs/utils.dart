@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/models.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/network.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/session.dart';
 import 'package:flutter_server/com/hydrologis/gss/libs/variables.dart';
 import 'package:http/http.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:flutter_material_design_icons/flutter_material_design_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:smashlibs/smashlibs.dart';
 
@@ -186,8 +186,8 @@ class _OnlineSourceCardState extends State<OnlineSourceCard> {
                     height: 100,
                     child: FlutterMap(
                       options: new MapOptions(
-                        center: new LatLng(46.47781, 11.33140),
-                        zoom: 13.0,
+                        initialCenter: new LatLng(46.47781, 11.33140),
+                        initialZoom: 13.0,
                       ),
                       children: [widget.layer],
                     ),
@@ -195,7 +195,7 @@ class _OnlineSourceCardState extends State<OnlineSourceCard> {
                 ],
               ),
             ),
-            ButtonBar(
+            OverflowBar(
               children: <Widget>[
                 TextButton(
                   style: SmashUI.defaultFlatButtonStyle(),
