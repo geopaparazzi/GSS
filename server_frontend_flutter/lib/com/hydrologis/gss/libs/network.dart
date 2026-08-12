@@ -38,6 +38,9 @@ const API_USERCONFIGS = "${WEBAPP_URL}api/userconfigurations/";
 const API_FORMNAMES = "${WEBAPP_URL}api/formnames/";
 const API_FORMS = "${WEBAPP_URL}api/forms/";
 
+const API_FORMLAYERS_LAYERS = "${WEBAPP_URL}formlayers/layers/";
+const API_FORMLAYERS_DATA = "${WEBAPP_URL}formlayers/data/";
+
 // const API_PROJECT_PARAM = "project=";
 
 const LOG = "log";
@@ -281,6 +284,52 @@ class WebServerApi {
       return null;
     } else {
       return response.body;
+    }
+  }
+
+  /// Get the list of formlayers available for the current project.
+  ///
+  /// Each item is a map with keys 'name', 'geometrytype' and 'form' (the form
+  /// schema definition, same shape used for notes).
+  static Future<List<dynamic>> getFormLayers() async {
+    var tokenHeader = getTokenHeader();
+    var project = SmashSession.getSessionProject();
+    var uri =
+        Uri.parse(API_FORMLAYERS_LAYERS + "?$API_PROJECT_PARAM${project.id}");
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      return [];
+    }
+  }
+
+  /// Get all the features of a given formlayer as a decoded GeoJSON FeatureCollection.
+  static Future<Map<String, dynamic>?> getFormLayerData(String formName) async {
+    var tokenHeader = getTokenHeader();
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(
+        "$API_FORMLAYERS_DATA$formName/?$API_PROJECT_PARAM${project.id}&downloadmode=0");
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      return null;
+    }
+  }
+
+  /// Get a single formlayer feature (decoded GeoJSON Feature) by id.
+  static Future<Map<String, dynamic>?> getFormLayerFeature(
+      String formName, int featureId) async {
+    var tokenHeader = getTokenHeader();
+    var project = SmashSession.getSessionProject();
+    var uri = Uri.parse(
+        "$API_FORMLAYERS_DATA$formName/$featureId?$API_PROJECT_PARAM${project.id}");
+    var response = await get(uri, headers: tokenHeader);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      return null;
     }
   }
 

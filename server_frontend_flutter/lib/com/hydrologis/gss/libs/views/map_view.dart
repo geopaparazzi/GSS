@@ -48,6 +48,46 @@ class _MainMapViewState extends State<MainMapView>
   static const _mapIconsSizeNormal = 48.0;
   static const _mapIconsSizeMini = 38.0;
 
+  // Separate notifiers per layer type: flutter_map updates a LayerHitNotifier on
+  // every hover/pointer-move hit test (it's also how the cursor is changed to a
+  // pointer), not just on tap - so it must only ever be *read*, inside an explicit
+  // onTap handler, never listened to directly (that would open the dialog on hover).
+  // Keeping one notifier per layer also avoids one layer's "no hit" update
+  // clobbering another layer's hit result when they share screen space.
+  final LayerHitNotifier<String> _formLayerPolygonHitNotifier =
+      ValueNotifier(null);
+  final LayerHitNotifier<String> _formLayerPolylineHitNotifier =
+      ValueNotifier(null);
+
+  @override
+  void dispose() {
+    _formLayerPolygonHitNotifier.dispose();
+    _formLayerPolylineHitNotifier.dispose();
+    super.dispose();
+  }
+
+  void _handleFormLayerTap(LayerHitNotifier<String> hitNotifier) {
+    var hit = hitNotifier.value;
+    if (hit == null || hit.hitValues.isEmpty) {
+      return;
+    }
+    var hitValue = hit.hitValues.first;
+    var split = hitValue.split("::");
+    if (split.length != 2) {
+      return;
+    }
+    var formName = split[0];
+    var featureId = int.tryParse(split[1]);
+    if (featureId == null) {
+      return;
+    }
+    var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
+    var def = mapstateModel.formLayerDefsByName[formName];
+    if (def != null) {
+      openFormLayerDialog(context, formName, featureId, def['form']);
+    }
+  }
+
   @override
   void afterFirstLayout(BuildContext context) {
     var mapstateModel = Provider.of<MapstateModel>(context, listen: false);
@@ -83,6 +123,46 @@ class _MainMapViewState extends State<MainMapView>
 
     if (mapstateModel.logs != null) {
       layers.add(mapstateModel.logs!);
+    }
+    var formLayerPolygons = mapstateModel.getActiveFormLayerPolygons();
+    if (formLayerPolygons.isNotEmpty) {
+      layers.add(GestureDetector(
+        onTap: () => _handleFormLayerTap(_formLayerPolygonHitNotifier),
+        child: PolygonLayer<String>(
+          polygons: formLayerPolygons,
+          hitNotifier: _formLayerPolygonHitNotifier,
+        ),
+      ));
+    }
+    var formLayerLines = mapstateModel.getActiveFormLayerLines();
+    if (formLayerLines.isNotEmpty) {
+      layers.add(GestureDetector(
+        onTap: () => _handleFormLayerTap(_formLayerPolylineHitNotifier),
+        child: PolylineLayer<String>(
+          polylines: formLayerLines,
+          hitNotifier: _formLayerPolylineHitNotifier,
+        ),
+      ));
+    }
+    var formLayerMarkers = mapstateModel.getActiveFormLayerMarkers();
+    if (formLayerMarkers.isNotEmpty) {
+      var formLayerMarkerCluster = MarkerClusterLayerOptions(
+        maxClusterRadius: 20,
+        size: Size(40, 40),
+        markers: formLayerMarkers,
+        showPolygon: false,
+        zoomToBoundsOnClick: true,
+        builder: (context, markers) {
+          return FloatingActionButton(
+            child: Text(markers.length.toString()),
+            onPressed: null,
+            backgroundColor: SmashColors.mainDecorationsDarker,
+            foregroundColor: SmashColors.mainBackground,
+            heroTag: "FormLayerCluster_${_heroCount++}",
+          );
+        },
+      );
+      layers.add(MarkerClusterLayerWidget(options: formLayerMarkerCluster));
     }
     if (mapstateModel.mapMarkers.isNotEmpty) {
       var markerCluster = MarkerClusterLayerOptions(
@@ -258,6 +338,37 @@ class _MainMapViewState extends State<MainMapView>
                           mapState.reloadMap();
                         }
                       }),
+                  if (mapstateModel.formLayerDefs.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: FloatingActionButton(
+                          tooltip: "Select data layers.",
+                          heroTag: "formlayers_dialog_button",
+                          child: Icon(
+                            MdiIcons.layersTriple,
+                          ),
+                          backgroundColor: SmashColors.mainBackground,
+                          foregroundColor: SmashColors.mainDecorations,
+                          onPressed: () async {
+                            MapstateModel mapState = Provider.of<MapstateModel>(
+                                context,
+                                listen: false);
+                            var names = mapState.formLayerDefs
+                                .map<String>((def) => def['name'] as String)
+                                .toList();
+
+                            var selectedNames =
+                                await SmashDialogs.showMultiSelectionComboDialog(
+                                    context, "Select data layers", names,
+                                    selectedItems: mapState.activeFormLayerNames
+                                        .toList());
+                            if (selectedNames != null) {
+                              mapState.activeFormLayerNames =
+                                  selectedNames.toSet();
+                              mapState.reloadMap();
+                            }
+                          }),
+                    ),
                   // Padding(
                   //   padding: const EdgeInsets.only(top: 8.0),
                   //   child: FloatingActionButton(

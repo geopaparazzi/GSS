@@ -115,6 +115,42 @@ class MapstateModel extends ChangeNotifier {
 
   Map<String, Widget> layersMap = {};
 
+  // Formlayers (dynamic form-backed data layers): definitions keyed by name,
+  // and their rendered map elements, also keyed by name so the active set can
+  // be toggled from the UI without needing to refetch.
+  List<dynamic> formLayerDefs = [];
+  Map<String, dynamic> formLayerDefsByName = {};
+  Set<String> activeFormLayerNames = {};
+  bool _formLayersInitialized = false;
+
+  Map<String, List<Marker>> formLayerMarkersByName = {};
+  Map<String, List<Polyline<String>>> formLayerLinesByName = {};
+  Map<String, List<Polygon<String>>> formLayerPolygonsByName = {};
+
+  List<Marker> getActiveFormLayerMarkers() {
+    var list = <Marker>[];
+    for (var name in activeFormLayerNames) {
+      list.addAll(formLayerMarkersByName[name] ?? []);
+    }
+    return list;
+  }
+
+  List<Polyline<String>> getActiveFormLayerLines() {
+    var list = <Polyline<String>>[];
+    for (var name in activeFormLayerNames) {
+      list.addAll(formLayerLinesByName[name] ?? []);
+    }
+    return list;
+  }
+
+  List<Polygon<String>> getActiveFormLayerPolygons() {
+    var list = <Polygon<String>>[];
+    for (var name in activeFormLayerNames) {
+      list.addAll(formLayerPolygonsByName[name] ?? []);
+    }
+    return list;
+  }
+
   void reloadMap() {
     notifyListeners();
   }
@@ -307,11 +343,110 @@ class MapstateModel extends ChangeNotifier {
       }
     }
 
+    // LOAD FORMLAYERS (dynamic form-backed data layers)
+    formLayerDefs = await WebServerApi.getFormLayers();
+    formLayerDefsByName = {
+      for (var def in formLayerDefs) def['name'] as String: def
+    };
+    if (!_formLayersInitialized) {
+      // by default show every available formlayer
+      activeFormLayerNames =
+          formLayerDefs.map<String>((def) => def['name'] as String).toSet();
+      _formLayersInitialized = true;
+    }
+    formLayerMarkersByName = {};
+    formLayerLinesByName = {};
+    formLayerPolygonsByName = {};
+    for (var def in formLayerDefs) {
+      var layerName = def['name'] as String;
+      var formDefinition = def['form'];
+      var color = formLayerColorFor(layerName);
+      var iconData = formLayerIconFor(formDefinition);
+
+      var geojson = await WebServerApi.getFormLayerData(layerName);
+      var features = geojson?['features'] as List<dynamic>? ?? [];
+
+      var layerMarkers = <Marker>[];
+      var layerLines = <Polyline<String>>[];
+      var layerPolygons = <Polygon<String>>[];
+
+      for (var feature in features) {
+        var featureId = feature['id'];
+        if (featureId is! int) {
+          featureId = int.tryParse(featureId.toString());
+        }
+        if (featureId == null) continue;
+        var properties = feature['properties'] as Map<String, dynamic>? ?? {};
+        var label = properties['_label']?.toString() ?? "$layerName $featureId";
+        var geometry = feature['geometry'];
+        if (geometry == null) continue;
+        var gType = geometry['type'];
+        var coords = geometry['coordinates'];
+
+        if (gType == 'Point') {
+          var latLng = LatLongHelper.fromLatLon(coords[1], coords[0]);
+          if (dataBounds == null) {
+            dataBounds = LatLngBounds(latLng, latLng);
+          } else {
+            dataBounds!.extend(latLng);
+          }
+          layerMarkers.add(buildFormLayerMarker(coords[0], coords[1], label,
+              layerName, featureId, formDefinition, iconData, 32.0, color));
+
+          attributesList.add(Attributes()
+            ..id = featureId
+            ..marker = Icon(iconData, color: color)
+            ..point = latLng
+            ..text = label);
+        } else if (gType == 'LineString') {
+          var points = (coords as List)
+              .map<LatLng>((c) => LatLongHelper.fromLatLon(c[1], c[0]))
+              .toList();
+          for (var p in points) {
+            if (dataBounds == null) {
+              dataBounds = LatLngBounds(p, p);
+            } else {
+              dataBounds!.extend(p);
+            }
+          }
+          layerLines.add(
+              buildFormLayerPolyline(points, layerName, featureId, color));
+        } else if (gType == 'Polygon') {
+          var rings = coords as List;
+          var outer = (rings[0] as List)
+              .map<LatLng>((c) => LatLongHelper.fromLatLon(c[1], c[0]))
+              .toList();
+          List<List<LatLng>>? holes;
+          if (rings.length > 1) {
+            holes = rings
+                .sublist(1)
+                .map<List<LatLng>>((ring) => (ring as List)
+                    .map<LatLng>((c) => LatLongHelper.fromLatLon(c[1], c[0]))
+                    .toList())
+                .toList();
+          }
+          for (var p in outer) {
+            if (dataBounds == null) {
+              dataBounds = LatLngBounds(p, p);
+            } else {
+              dataBounds!.extend(p);
+            }
+          }
+          layerPolygons.add(buildFormLayerPolygon(
+              outer, holes, layerName, featureId, color));
+        }
+      }
+
+      formLayerMarkersByName[layerName] = layerMarkers;
+      formLayerLinesByName[layerName] = layerLines;
+      formLayerPolygonsByName[layerName] = layerPolygons;
+    }
+
     mapMarkers = markers;
     attributes = attributesList;
 
     var delta = 0.01;
-    if (mapMarkers.length > 0 && dataBounds != null) {
+    if (dataBounds != null) {
       dataBounds = LatLngBounds(
         LatLongHelper.fromLatLon(
             dataBounds!.south - delta, dataBounds!.west - delta),

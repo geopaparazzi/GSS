@@ -163,6 +163,204 @@ Marker buildFormNote(MapstateModel mapState, var x, var y, String name,
   );
 }
 
+/// A small fixed palette used to give each formlayer a distinct, stable color.
+const List<Color> FORMLAYER_COLOR_PALETTE = [
+  Colors.deepOrange,
+  Colors.teal,
+  Colors.indigo,
+  Colors.brown,
+  Colors.pink,
+  Colors.lightGreen,
+  Colors.cyan,
+  Colors.deepPurple,
+];
+
+/// Deterministically pick a color for a formlayer, so it stays the same across reloads.
+Color formLayerColorFor(String layerName) {
+  var index = layerName.hashCode.abs() % FORMLAYER_COLOR_PALETTE.length;
+  return FORMLAYER_COLOR_PALETTE[index];
+}
+
+/// Pick an icon for a formlayer's Point features, using the form's sectionicon if set.
+IconData formLayerIconFor(dynamic formDefinition) {
+  try {
+    var sectionMap = formDefinition[0];
+    var iconName = sectionMap[ATTR_SECTIONICON];
+    if (iconName != null && iconName.toString().isNotEmpty) {
+      return getSmashIcon(iconName);
+    }
+  } catch (e) {
+    // fall through to default below
+  }
+  return MdiIcons.shapeOutline;
+}
+
+Marker buildFormLayerMarker(double x, double y, String label, String formName,
+    int featureId, dynamic formDefinition, IconData iconData, double size,
+    Color color) {
+  double textExtraHeight = MARKER_ICON_TEXT_EXTRA_HEIGHT;
+  if (label.length == 0) {
+    textExtraHeight = 0;
+  }
+
+  return Marker(
+    width: size * MARKER_ICON_TEXT_EXTRA_WIDTH_FACTOR,
+    height: size + textExtraHeight,
+    point: new LatLng(y, x),
+    child: Builder(builder: (context) {
+      return Container(
+        child: GestureDetector(
+          child: MarkerIcon(
+            iconData,
+            color,
+            size,
+            label,
+            SmashColors.mainTextColorNeutral,
+            color.withAlpha(80),
+          ),
+          onTap: () async {
+            await openFormLayerDialog(
+                context, formName, featureId, formDefinition);
+          },
+        ),
+      );
+    }),
+  );
+}
+
+/// Build a [Polyline] for a LineString formlayer feature. Its [hitValue] encodes
+/// "formName::featureId" so a tap on the layer's shared hit notifier can be routed
+/// back to [openFormLayerDialog].
+Polyline<String> buildFormLayerPolyline(
+    List<LatLng> points, String formName, int featureId, Color color) {
+  return Polyline<String>(
+    points: points,
+    strokeWidth: 4.0,
+    color: color,
+    hitValue: "$formName::$featureId",
+  );
+}
+
+/// Build a [Polygon] for a Polygon formlayer feature. See [buildFormLayerPolyline]
+/// for the hitValue encoding.
+Polygon<String> buildFormLayerPolygon(List<LatLng> points,
+    List<List<LatLng>>? holes, String formName, int featureId, Color color) {
+  return Polygon<String>(
+    points: points,
+    holePointsList: holes,
+    color: color.withAlpha(80),
+    borderColor: color,
+    borderStrokeWidth: 3.0,
+    hitValue: "$formName::$featureId",
+  );
+}
+
+/// Opens the read-only form dialog for a formlayer feature, reusing the same
+/// smashlibs form-rendering pipeline used for classic point notes: the feature's
+/// column values (from GeoJSON properties) are injected into a clone of the form
+/// schema before it is handed to [SmashSection]/[MasterDetailPage].
+openFormLayerDialog(BuildContext context, String formName, int featureId,
+    dynamic formDefinition) async {
+  var feature = await WebServerApi.getFormLayerFeature(formName, featureId);
+  if (feature == null) {
+    await SmashDialogs.showErrorDialog(
+        context, "No data found for $formName with id $featureId.");
+    return;
+  }
+
+  var h = 900.0;
+  var w = 900.0;
+
+  Map<String, dynamic> properties = feature['properties'] ?? {};
+  var label = properties['_label']?.toString() ?? "$formName $featureId";
+
+  // clone the schema so injecting the values doesn't affect the cached definition
+  var sectionMap = jsonDecode(jsonEncode(formDefinition[0]));
+  var forms = sectionMap['forms'] as List<dynamic>? ?? [];
+  for (var form in forms) {
+    var formitems = form['formitems'] as List<dynamic>? ?? [];
+    for (var item in formitems) {
+      var key = item['key'];
+      if (key != null && properties.containsKey(key)) {
+        item['value'] = properties[key]?.toString() ?? "";
+      }
+    }
+  }
+
+  var section = SmashSection(sectionMap);
+  var sectionName = section.sectionName ?? formName;
+  var titleWidget = SmashUI.titleText(
+    sectionName,
+    color: SmashColors.mainBackground,
+    bold: true,
+  );
+
+  var geometry = feature['geometry'];
+  LatLng? p = _firstCoordinateOf(geometry);
+  var formHelper =
+      ServerFormHelper(featureId, sectionName, section, titleWidget, p);
+
+  Widget widget = Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SmashUI.titleText(
+          label,
+          textAlign: TextAlign.center,
+          useColor: true,
+        ),
+      ),
+      Expanded(
+        child: MasterDetailPage(
+          formHelper,
+          doScaffold: false,
+          presentationMode: PresentationMode(
+              isReadOnly: true,
+              doIgnoreEmpties: false,
+              detailMode: DetailMode.DETAILED),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SmashUI.smallText("Layer: $formName   Id: $featureId",
+            textAlign: TextAlign.center, color: Colors.grey),
+      ),
+    ],
+  );
+
+  Dialog formLayerDialog = Dialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+    child: Container(
+      height: h,
+      width: w,
+      child: Center(child: widget),
+    ),
+  );
+  await showDialog(
+      context: context, builder: (BuildContext context) => formLayerDialog);
+}
+
+LatLng? _firstCoordinateOf(dynamic geometry) {
+  if (geometry == null) return null;
+  var type = geometry['type'];
+  var coords = geometry['coordinates'];
+  try {
+    if (type == 'Point') {
+      return LatLng(coords[1], coords[0]);
+    } else if (type == 'LineString') {
+      var first = coords[0];
+      return LatLng(first[1], first[0]);
+    } else if (type == 'Polygon') {
+      var first = coords[0][0];
+      return LatLng(first[1], first[0]);
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
 Future<MarkerLayer> buildLastUserPositionLayer(
     List<dynamic> lastUserPositions, var lastRefreshTimestamp) async {
   var list = <Marker>[];

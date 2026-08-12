@@ -28,6 +28,60 @@ import datetime
 import base64
 
 
+def _computeLabel(formDefinition, dataMap, fallback):
+    """
+    Find the value of the form field marked as 'islabel' in the form definition
+    and use it as label for the feature. Falls back to the given fallback string.
+    """
+    try:
+        formMap = formDefinition[0]
+        for form in formMap.get('forms', []):
+            for formItem in form.get('formitems', []):
+                if str(formItem.get('islabel')).lower() == "true":
+                    key = formItem.get('key')
+                    if key and dataMap.get(key):
+                        return str(dataMap.get(key))
+    except Exception:
+        pass
+    return fallback
+
+
+def _fixPolygonGeometry(feature):
+    """
+    Work around a bug in hydrologis_utils.HyGeojsonUtils.mapToFeature: for Polygon
+    geometries it passes the exterior ring straight through without wrapping it in the
+    outer rings array, producing coordinates one nesting level too shallow (invalid
+    GeoJSON). Detect and fix that shape in place.
+    """
+    geometry = feature.get('geometry')
+    if geometry and geometry.get('type') == 'Polygon':
+        coords = geometry.get('coordinates')
+        if coords and isinstance(coords[0][0], (int, float)):
+            geometry['coordinates'] = [coords]
+    return feature
+
+
+def _formatValueForJson(model, key, value):
+    """
+    Convert a model attribute value into something JSON-serializable: dates/times/
+    datetimes become formatted strings and binary fields become base64 strings.
+    Anything else is returned unchanged.
+    """
+    if isinstance(value, datetime.time):
+        value = value.strftime("%H:%M:%S")
+    elif isinstance(value, datetime.date):
+        value = value.strftime("%Y-%m-%d")
+    elif isinstance(value, datetime.datetime):
+        value = value.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        if value:
+            field = model._meta.get_field(key)
+            fieldType = field.get_internal_type()
+            if fieldType == "BinaryField":
+                value = base64.b64encode(value).decode("utf-8")
+    return value
+
+
 def _getModelFormUserProject(request, form_name):
     user = Utilities.getRestAuthenticatedUser(request)
     if not user or not user.is_authenticated:
@@ -175,16 +229,18 @@ class DataListView(View):
             for key, value in formDef.items():
                 value = getattr(item, key)
                 if key != "id" and key != DbNamings.GEOM:
-                    dataMap[key] = value
+                    dataMap[key] = _formatValueForJson(model, key, value)
 
             # also add id
             id = getattr(item, "id")
+            dataMap["_label"] = _computeLabel(formDefinition, dataMap, f"{form_name} {id}")
             geom = getattr(item, DbNamings.GEOM)
             shapelyGeom = HyGeomUtils.fromWkt(geom.wkt)
             if shapelyGeom.is_empty:
                 return Utilities.toHttpResponseWithError(f"Geometry is empty for object with id {form_id}.")
 
             feature = HyGeojsonUtils.mapToFeature(properties=dataMap, geometry=shapelyGeom, id=id)
+            feature = _fixPolygonGeometry(feature)
             geojsonString = HyGeojsonUtils.featureToString(feature)
 
             return HttpResponse(geojsonString, content_type="application/json")
@@ -206,33 +262,18 @@ class DataListView(View):
                     if hasattr(item, key):
                         value = getattr(item, key)
                         if key != "id" and key != DbNamings.GEOM:
-                            # check if value is a datetime.time object
-                            if isinstance(value, datetime.time):
-                                value = value.strftime("%H:%M:%S")
-                            # check if value is a datetime.date object
-                            elif isinstance(value, datetime.date):
-                                value = value.strftime("%Y-%m-%d")
-                            # check if value is a datetime.datetime object
-                            elif isinstance(value, datetime.datetime):
-                                value = value.strftime("%Y-%m-%d %H:%M:%S")
-                            else:
-                                if value:
-                                    field = model._meta.get_field(key)
-                                    fieldType = field.get_internal_type()
-                                    if fieldType == "BinaryField":
-                                        # base 64 conversion
-                                        value = base64.b64encode(value).decode("utf-8")
-
-                            dataMap[key] = value
+                            dataMap[key] = _formatValueForJson(model, key, value)
 
                 # also add id
                 id = getattr(item, "id")
+                dataMap["_label"] = _computeLabel(formDefinition, dataMap, f"{form_name} {id}")
                 geom = getattr(item, DbNamings.GEOM)
                 shapelyGeom = HyGeomUtils.fromWkt(geom.wkt)
                 if shapelyGeom.is_empty:
                     return Utilities.toHttpResponseWithError(f"Geometry is empty for object with id {form_id}.")
 
                 feature = HyGeojsonUtils.mapToFeature(properties=dataMap, geometry=shapelyGeom, id=id)
+                feature = _fixPolygonGeometry(feature)
 
                 featuresList.append(feature)
 
