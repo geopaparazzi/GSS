@@ -20,8 +20,13 @@ if [ -f ./config.sh ]; then
 fi
 
 set -x
-# get the number of cores of the host machine
-if [ -f /proc/cpuinfo ]; then
+# WEB_CONCURRENCY, when set (e.g. via docker-compose), picks the gunicorn worker
+# count directly. Otherwise fall back to the host's CPU core count - note this
+# reads /proc/cpuinfo, which reflects the underlying host, not any container CPU
+# limit, so on a big host this can spawn far more workers than intended.
+if [ -n "${WEB_CONCURRENCY:-}" ] && [[ "$WEB_CONCURRENCY" =~ ^[0-9]+$ ]]; then
+    CORES=$WEB_CONCURRENCY
+elif [ -f /proc/cpuinfo ]; then
     CORES=$(grep -c ^processor /proc/cpuinfo)
     # make sure it is a number
     if ! [[ "$CORES" =~ ^[0-9]+$ ]]; then
@@ -34,6 +39,16 @@ echo "USING $CORES CORES."
 
 echo "WAIT FOR DB TO STARTUP..."
 sleep 20
+# GSS_DYNAMICMIGRATIONSFOLDER is bind-mounted over formlayers/migrations for
+# persistence across image upgrades. Bind mounts to a host path are never
+# pre-populated from the image (unlike named volumes), so on a fresh/empty host
+# folder this mount silently hides the __init__.py baked in by the Dockerfile.
+# Without it, formlayers/migrations becomes a namespace package and Django's
+# migration loader treats the whole app as unmigrated - makemigrations/migrate
+# then silently no-op for every dynamic form, with no error, forever (until this
+# is restored). Recreate it unconditionally so this can't happen regardless of
+# what's mounted here.
+touch formlayers/migrations/__init__.py
 echo "ENSURE MINIMAL DB SETUP"
 # bootstrap the core schema first (e.g. data_form, auth tables) - required before
 # gss_makemigrations can even query the Form model, which matters on a fresh/empty
